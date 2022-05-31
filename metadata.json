@@ -1,0 +1,8 @@
+{
+  "name": "Taskbar",
+  "description": "A simple Taskbar for Gnome Desktop",
+  "uuid": "taskbar@chepkun.github.com",
+  "shell-version": [
+    "42"
+  ]
+}
