@@ -2,6 +2,7 @@
   "name": "Taskbar",
   "description": "A simple Taskbar for Gnome Desktop",
   "uuid": "taskbar@chepkun.github.com",
+  "settings-schema": "org.gnome.shell.extensions.taskbar",
   "shell-version": [
     "42"
   ]
