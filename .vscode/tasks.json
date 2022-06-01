@@ -1,0 +1,32 @@
+{
+    /*
+     * You need to install these extensions:
+     * - Memento Inputs
+     * - Task Explorer - if you wish
+     */
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "install",
+            "type": "shell",
+            "command": "./install",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "uninstall",
+            "type": "shell",
+            "command": "./uninstall",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        }
+    ]
+}

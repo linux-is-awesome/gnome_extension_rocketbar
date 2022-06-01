@@ -1,0 +1,5 @@
+#!/bin/bash
+
+Path=~/.local/share/gnome-shell/extensions/`cat ./metadata.json | grep -oP '(?<="uuid": ")[^"]*'`
+
+rm -r $Path
