@@ -21,17 +21,10 @@ function enable() {
 }
 
 function disable() {
-    
-    if (taskbar) {
-        taskbar.destroy();
-        taskbar = null;
-    }
-
-    if (settings) {
-        settings.run_dispose();
-        settings = null;
-    }
-
+    taskbar?.destroy();
+    taskbar = null;
+    settings?.run_dispose();
+    settings = null;
 }
 
 function init() {
