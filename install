@@ -6,5 +6,5 @@ mkdir -p $Path
 
 glib-compile-schemas ./schemas/
 
-\cp extension.js taskbar.js metadata.json $Path
+\cp extension.js taskbar.js appButton.js metadata.json $Path
 \cp -r ./schemas $Path
