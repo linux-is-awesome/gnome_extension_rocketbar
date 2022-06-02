@@ -13,11 +13,12 @@ var AppButton = GObject.registerClass(
     class AppButton extends St.Button {
 
         rerender() {
-
+            this._updateIcon();
+            this.handlePosition();
         }
 
         handlePosition() {
-
+            this._updateIconGeometry();
         }
 
         _init(app, isFavorite, settings, eventHandler) {
@@ -42,11 +43,11 @@ var AppButton = GObject.registerClass(
 
             this._createLayout();
 
-            this._createConnections();
-
             this._updateIcon();
 
             this._updateStyle();
+
+            this._createConnections();
         }
 
         _setConfig() {
@@ -88,14 +89,6 @@ var AppButton = GObject.registerClass(
             this.set_child(layout);
         }
 
-        _createConnections() {
-            // internal connections
-            this.connect('clicked', (target, button) => this._click(button));
-            this.connect('destroy', () => this._destroy());
-            // external connections
-            this._connections = new Map();
-        }
-
         _updateStyle() {
             this._appIcon.style = (
                 `padding: 0 ${this._config.padding}px;`
@@ -104,6 +97,14 @@ var AppButton = GObject.registerClass(
 
         _updateIcon() {
             this._appIcon.set_child(this.app.create_icon_texture(this._config.iconSize));
+        }
+
+        _createConnections() {
+            // internal connections
+            this.connect('clicked', (target, button) => this._click(button));
+            this.connect('destroy', () => this._destroy());
+            // external connections
+            this._connections = new Map();
         }
 
         _click(button) {
@@ -168,15 +169,7 @@ var AppButton = GObject.registerClass(
             this._cycleAppWindows(windows);
         }
 
-        _getAppWindows() {
-            const workspaceIndex = global.workspace_manager.get_active_workspace_index();
-
-            return this.app.get_windows().filter(window => {
-                return window.get_workspace().index() === workspaceIndex && !window.skipTaskbar;
-            });
-        }
-
-        _cycleAppWindows(windows, reverse) {
+       _cycleAppWindows(windows, reverse) {
 
             if (!windows || !windows.length) {
                 return;
@@ -191,8 +184,11 @@ var AppButton = GObject.registerClass(
             const windowIndex = windows.indexOf(global.display.focus_window);
 
             let nextWindowIndex = (
+                // when the app has no focused windows
                 windowIndex < 0 ?
+                // using index of the last focused window
                 windows.indexOf(lastFocusedWindow) :
+                // otherwise go to the next window of the app
                 windowIndex + (reverse ? -1 : 1)
             );
 
@@ -205,6 +201,38 @@ var AppButton = GObject.registerClass(
             if (windowIndex != nextWindowIndex) {
                 Main.activateWindow(windows[nextWindowIndex]);
             }
+        }
+
+        /**
+        * Update target for minimization animation
+        * Credit: Dash to Dock
+        * https://github.com/micheleg/dash-to-dock/blob/master/appIcons.js
+        */
+        _updateIconGeometry() {
+
+            if (this.get_stage() === null) {
+                return;
+            }
+
+            this.get_allocation_box();
+            let rect = new Meta.Rectangle();
+
+            [rect.x, rect.y] = this.get_transformed_position();
+            [rect.width, rect.height] = this.get_transformed_size();
+
+            const windows = this._getAppWindows();
+
+            for (let i = 0, l = windows.length; i < l; ++i) {
+                windows[i].set_icon_geometry(rect);
+            }
+        }
+
+        _getAppWindows() {
+            const workspaceIndex = global.workspace_manager.get_active_workspace_index();
+
+            return this.app.get_windows().filter(window => {
+                return window.get_workspace().index() === workspaceIndex && !window.skipTaskbar;
+            });
         }
 
         _destroy() {
