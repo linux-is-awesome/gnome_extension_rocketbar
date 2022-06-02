@@ -21,7 +21,7 @@ var AppButton = GObject.registerClass(
             this._updateIconGeometry();
         }
 
-        _init(app, isFavorite, settings, eventHandler) {
+        _init(app, isFavorite, settings) {
 
             // init the button
             super._init({
@@ -37,16 +37,16 @@ var AppButton = GObject.registerClass(
 
             // set private properties
             this._settings = settings;
-            this._eventHandler = eventHandler;
 
+            // idenitify initial configuration
             this._setConfig();
 
+            // create layout
             this._createLayout();
-
             this._updateIcon();
-
             this._updateStyle();
 
+            // create connections
             this._createConnections();
         }
 
@@ -101,25 +101,38 @@ var AppButton = GObject.registerClass(
 
         _createConnections() {
             // internal connections
-            this.connect('clicked', (target, button) => this._click(button));
+            this.connect('clicked', () => this._activate());
+            this.connect('button_press_event', () => this._handleButtonPress());
             this.connect('destroy', () => this._destroy());
             // external connections
             this._connections = new Map();
         }
 
-        _click(button) {
-            this._activate(button);
+        _handleButtonPress() {
+
+            const event = Clutter.get_current_event();
+
+            if (!event) {
+                return;
+            }
+
+            if (event.get_button() === Clutter.BUTTON_SECONDARY) {
+                // TODO: open menu
+            }
         }
 
-        _activate(button) {
+        _activate() {
             const event = Clutter.get_current_event();
-            const modifiers = event ? event.get_state() : 0;
-            const isMiddleButton = button && button === Clutter.BUTTON_MIDDLE;
-            const isCtrlPressed = (modifiers & Clutter.ModifierType.CONTROL_MASK) != 0;
+
+            if (!event) {
+                return;
+            }
+
+            const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) != 0;
             const openNewWindow = (
                 this.app.can_open_new_window() &&
                 this.app.state === Shell.AppState.RUNNING &&
-                (isCtrlPressed || isMiddleButton)
+                (isCtrlPressed || event.get_button() === Clutter.BUTTON_MIDDLE)
             );
 
             // hide gnome overview
@@ -169,7 +182,7 @@ var AppButton = GObject.registerClass(
             this._cycleAppWindows(windows);
         }
 
-       _cycleAppWindows(windows, reverse) {
+        _cycleAppWindows(windows, reverse) {
 
             if (!windows || !windows.length) {
                 return;
