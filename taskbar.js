@@ -45,6 +45,19 @@ var Taskbar = GObject.registerClass(
             this._addToPanel();
         }
 
+        _setConfig() {
+            this._config = {
+                showFavorites: true,
+                // index to display the taskbar in the panel
+                // display after Activities button by default
+                panelIndex: 1,
+                // position to display the taskbar in the panel
+                // left box by default
+                // possible options: left, center
+                panelPosition: 'left'
+            };
+        }
+
         _createLayout() {
             this._layout = new St.BoxLayout({
                 x_expand: true,
@@ -73,19 +86,6 @@ var Taskbar = GObject.registerClass(
             this._connections.set(Main.layoutManager.connect('startup-complete', () => this._rerender()), Main.layoutManager);
         }
 
-        _setConfig() {
-            this._config = {
-                showFavorites: true,
-                // index to display the taskbar in the panel
-                // display after Activities button by default
-                panelIndex: 1,
-                // position to display the taskbar in the panel
-                // left box by default
-                // possible options: left, center
-                panelPosition: 'left'
-            };
-        }
-
         _addToPanel() {
             switch (this._config.panelPosition) {
 
@@ -101,6 +101,15 @@ var Taskbar = GObject.registerClass(
         }
 
         _render() {
+
+            // TODO: remove debug
+            this.renderCount = !this.renderCount ? 1 : this.renderCount + 1;
+
+            if (this.renderCount > 10000) {
+                this.renderCount = 1;
+            }
+
+            log('taskbar render: ' + this.renderCount);
 
             let taskbarAppsById = new Map();
             let taskbarAppButtonsByAppId = new Map();
@@ -165,7 +174,6 @@ var Taskbar = GObject.registerClass(
                 actor = null;
             }
 
-
             // update/create app buttons
 
             const taskbarAppIds = [...taskbarAppsById.keys()];
@@ -183,13 +191,17 @@ var Taskbar = GObject.registerClass(
 
                 // for existing app buttons check if position has changed
                 const {appButton, position} = taskbarAppButtonsByAppId.get(appId);
+
+                // update favorite status
+                appButton.isFavorite = isFavorite;
                 
-                // position has changed so move the app button
-                if (position !== i) {
+                // if favorite position has changed move the app button
+                if (isFavorite && position !== i) {
                     this._layout.remove_child(appButton);
                     this._layout.insert_child_at_index(appButton, i);
                 }
 
+                appButton.rerender();
             }
 
             this._layout.queue_relayout();
@@ -230,15 +242,31 @@ var Taskbar = GObject.registerClass(
         }
 
         _createAppButton(app, isFavorite, index) {
-            this._layout.insert_child_at_index(new AppButton(
+
+            const appButton = new AppButton(
                 app, isFavorite,
                 this._settings,
-                (appButton, event) => {} // TODO: implementation
-            ), index);
+                (appButton, event) => { } // TODO: implementation
+            );
+
+            this._layout.insert_child_at_index(appButton, index);
+
+            appButton.handlePosition();
         }
 
         _rerender() {
-            Main.queueDeferredWork(this._workId);
+            
+            // clear timeout if any
+            if (this._rerenderTimeout) {
+                GLib.source_remove(this._rerenderTimeout);
+            }
+
+            // delay to reduce number of rerenders
+            this._rerenderTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+                Main.queueDeferredWork(this._workId);
+                this._rerenderTimeout = null;
+                return GLib.SOURCE_REMOVE;
+            });
         }
 
         _destroy() {
@@ -254,6 +282,9 @@ var Taskbar = GObject.registerClass(
                 id = null;
             });
             this._connections = null;
+
+            // destroy layout
+            this._layout.get_children().forEach(item => item.destroy());
         }
 
     }
