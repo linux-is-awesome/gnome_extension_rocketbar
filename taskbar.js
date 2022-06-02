@@ -71,7 +71,7 @@ var Taskbar = GObject.registerClass(
         _createConnections() {
             // internal connections
             this.connect('destroy', () => this._destroy());
-            this.connect("notify::position", () => {}); // TODO
+            this.connect("notify::position", () => this._handlePosition());
             // external connections
             this._connections = new Map();
             this._connections.set(AppFavorites.getAppFavorites().connect('changed', () => this._rerender()), AppFavorites.getAppFavorites());
@@ -243,15 +243,24 @@ var Taskbar = GObject.registerClass(
 
         _createAppButton(app, isFavorite, index) {
 
-            const appButton = new AppButton(
-                app, isFavorite,
-                this._settings,
-                (appButton, event) => { } // TODO: implementation
-            );
+            const appButton = new AppButton(app, isFavorite, this._settings);
 
             this._layout.insert_child_at_index(appButton, index);
 
             appButton.handlePosition();
+        }
+
+        _handlePosition() {
+            const layoutActors = this._layout.get_children();
+
+            for (let i = 0, l = layoutActors.length; i < l; ++i) {
+
+                let actor = layoutActors[i];
+
+                if (actor instanceof AppButton) {
+                    actor.handlePosition();
+                }
+            }
         }
 
         _rerender() {
