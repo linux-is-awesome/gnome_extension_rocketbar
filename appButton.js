@@ -12,6 +12,8 @@ const DND = imports.ui.dnd;
 var AppButton = GObject.registerClass(
     class AppButton extends St.Button {
 
+        //#region public methods
+
         rerender() {
             this._updateIcon();
             this.handlePosition();
@@ -20,6 +22,10 @@ var AppButton = GObject.registerClass(
         handlePosition() {
             this._updateIconGeometry();
         }
+
+        //#endregion public methods
+
+        //#region private methods
 
         _init(app, isFavorite, settings) {
 
@@ -112,13 +118,12 @@ var AppButton = GObject.registerClass(
 
             const event = Clutter.get_current_event();
 
-            if (!event) {
-                return;
+            if (event?.get_button() === Clutter.BUTTON_SECONDARY) {
+                this._openMenu();
+                return Clutter.EVENT_STOP;
             }
 
-            if (event.get_button() === Clutter.BUTTON_SECONDARY) {
-                // TODO: open menu
-            }
+            return Clutter.EVENT_PROPAGATE;
         }
 
         _activate() {
@@ -128,6 +133,7 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
+            const isOverview = Main.overview._shown;
             const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) != 0;
             const openNewWindow = (
                 this.app.can_open_new_window() &&
@@ -135,7 +141,7 @@ var AppButton = GObject.registerClass(
                 (isCtrlPressed || event.get_button() === Clutter.BUTTON_MIDDLE)
             );
 
-            // hide gnome overview
+            // hide gnome shell overview
             Main.overview.hide();
 
             // app is running and we want to open a new window for it
@@ -163,12 +169,13 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
-            // activate a single window
-            if (windows.length === 1) {
+            // activate/minimize a single window
+            // or activate the first window when gnome shell overview is shown
+            if (windows.length === 1 || isOverview) {
                 
                 const window = windows[0];
                 
-                if (window.minimized || !window.has_focus()) {
+                if (window.minimized || !window.has_focus() || isOverview) {
                     Main.activateWindow(window);
                     return;
                 }
@@ -248,6 +255,34 @@ var AppButton = GObject.registerClass(
             });
         }
 
+        _openMenu() {
+
+            if (!this._menu) {
+
+                this._menu = new AppMenu(this, St.Side.TOP, {
+                    favoritesSection: true,
+                    showSingleWindows: true,
+                });
+
+                this._menu.blockSourceEvents = true;
+                this._menu.setApp(this.app);
+
+                this._connections.set(this._menu.connect('open-state-changed', (menu, isOpen) => {
+                    if (!isOpen) {
+                        // TODO: handle menu close
+                    }
+                }), this._menu);
+
+                Main.uiGroup.add_actor(this._menu.actor);
+
+                this._contextMenuManager = new PopupMenu.PopupMenuManager(this);
+                this._contextMenuManager.addMenu(this._menu);
+            }
+
+            this._menu.open();
+            this._contextMenuManager.ignoreRelease();
+        }
+
         _destroy() {
 
             // remove connections
@@ -257,6 +292,14 @@ var AppButton = GObject.registerClass(
             });
             this._connections = null;
 
+            // destroy context menu
+            this._menu?.close();
+            //this._menu?.destroy();
+            this._menu = null;
+            this._contextMenuManager = null;
+
         }
+
+        //#endregion private methods
     }
 );
