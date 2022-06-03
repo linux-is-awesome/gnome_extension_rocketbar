@@ -27,6 +27,17 @@
                 "panel": "shared"
             },
             "problemMatcher": []
+        },
+        {
+            "label": "debug",
+            "type": "shell",
+            "command": "journalctl -f -o cat /usr/bin/gnome-shell",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
         }
     ]
 }
