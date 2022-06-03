@@ -265,14 +265,15 @@ var Taskbar = GObject.registerClass(
 
         _rerender() {
             
-            // clear timeout if any
-            if (this._rerenderTimeout) {
-                GLib.source_remove(this._rerenderTimeout);
-            }
+            this._stopRerender();
 
             // delay to reduce number of rerenders
             this._rerenderTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
-                Main.queueDeferredWork(this._workId);
+
+                if (this._workId) {
+                    Main.queueDeferredWork(this._workId);
+                }
+                
                 this._rerenderTimeout = null;
                 return GLib.SOURCE_REMOVE;
             });
@@ -280,6 +281,10 @@ var Taskbar = GObject.registerClass(
 
         _destroy() {
             
+            // stop rendering
+            this._workId = null;
+            this._stopRerender();
+
             // restore default app button in the panel
             if (!Main.overview.visible && !Main.sessionMode.isLocked) {
                 Main.panel.statusArea.appMenu.container.show();
@@ -294,6 +299,13 @@ var Taskbar = GObject.registerClass(
 
             // destroy layout
             this._layout.get_children().forEach(item => item.destroy());
+        }
+
+        _stopRerender() {
+            // clear rerender timeout if any
+            if (this._rerenderTimeout) {
+                GLib.source_remove(this._rerenderTimeout);
+            }
         }
 
     }
