@@ -6,8 +6,178 @@ const AppFavorites = imports.ui.appFavorites;
 const PopupMenu = imports.ui.popupMenu;
 const Main = imports.ui.main;
 const DND = imports.ui.dnd;
+const IconGrid = imports.ui.iconGrid;
 
 //#endregion imports
+
+class AppButtonIndicator {
+
+    constructor(parent, settings) {
+        this._parent = parent;
+        this._settings = settings;
+        this._indicators = null;
+        this._activeState = false;
+
+        this._setConfig();
+    }
+
+    //#region public methods
+
+    destroy() {
+        this._destroyIndicators();
+    }
+
+    update(windows) {
+
+        // no need to display indicators
+        if (!windows?.length) {
+            this._destroyIndicators();
+            return;
+        }
+
+        // count the maximum number of indicators to display
+        let maxIndicators = (
+            windows.length > this._config.maxIndicators ?
+            this._config.maxIndicators :
+            windows.length
+        );
+
+        const indicatorsLength = this._indicators?.length || 0; 
+
+        // no need to change indicators
+        if (indicatorsLength === maxIndicators) {
+            return;
+        }
+
+        // check if some idicators should be destroyed
+        // this will be executed in case we have more than one indicator
+        if (indicatorsLength > maxIndicators) {
+
+            let indicatorsToDestroy = this._indicators.splice(maxIndicators - 1, indicatorsLength - maxIndicators);
+
+            indicatorsToDestroy.forEach(indicator => {
+                indicator.destroy();
+                indicator = null;
+            });
+
+        } else {
+
+            // don't create more than we need to display
+            maxIndicators -= indicatorsLength;
+
+            // create new indicators
+            for (let i = 0; i < maxIndicators; ++i) {
+                this._addIndicator();
+            }
+        }
+
+        this.rerender();
+    }
+
+    rerender() {
+
+        if (!this._indicators?.length) {
+            return;
+        }
+
+        for (let i = 0, l = this._indicators.length; i < l; ++i) {
+            this._indicators[i].style = this._getIndicatorStyle(i);
+        }   
+    }
+
+    //#endregion public methods
+
+    //#region private methods
+
+    _setConfig() {
+        this._config = {
+            color: 'white',
+            activeColor: 'blue',
+            size: 4,
+            maxIndicators: 2
+        };
+    }
+
+    _addIndicator() {
+
+        if (!this._parent) {
+            return;
+        }
+
+        if (!this._indicators) {
+            this._indicators = [];
+        }
+
+        const indicatorIndex = this._indicators.length;
+
+        const indicator = new St.Icon({
+            x_expand: false,
+            y_expand: true,
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.START,
+            opacity: 0
+        });
+
+        this._indicators.push(indicator);
+
+        this._parent.add_actor(indicator);
+
+        indicator.ease({
+            opacity: 255,
+            duration: 300,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+        });
+    }
+
+    _getIndicatorStyle(index) {
+
+        let result = (
+            `background-color: ${this._config.color};` +
+            `width: ${this._config.size}px;` +
+            `height: ${this._config.size}px;` +
+            `border-radius: ${this._config.size}px;`
+        );
+
+        const indicatorsLength = this._indicators?.length || 0; 
+
+        // check if no more indicators exist
+        if (indicatorsLength <= 1) {
+            return result;
+        }
+
+        // add margins when multiple idicators exist
+
+        const margin = this._config.size + (this._config.size / 2);
+
+        if (index === 0 || index < (indicatorsLength - 1)) {
+            const marginOffset = indicatorsLength - 1 - index;
+            result += `margin-right: ${margin * marginOffset}px;`;
+        }
+
+        if (index > 0) {
+            result += `margin-left: ${margin * index}px;`;
+        }
+
+        return result;
+    }
+
+    _destroyIndicators() {
+
+        if (!this._indicators?.length) {
+            return;
+        }
+
+        for (let i = 0, l = this._indicators.length; i < l; ++i) {
+            this._indicators[i].destroy();
+            this._indicators[i] = null;
+        }
+
+        this._indicators = null;
+    }
+
+    //#endregion private methods
+
+}
 
 var AppButton = GObject.registerClass(
     class AppButton extends St.Button {
@@ -16,6 +186,7 @@ var AppButton = GObject.registerClass(
 
         rerender() {
             this._updateIcon();
+            this._handleAppState();
             this.handlePosition();
         }
 
@@ -54,6 +225,9 @@ var AppButton = GObject.registerClass(
 
             // create connections
             this._createConnections();
+
+            // check if app is running
+            this._handleAppState();
         }
 
         _setConfig() {
@@ -79,7 +253,7 @@ var AppButton = GObject.registerClass(
             const container = new St.BoxLayout({
                 vertical: true,
                 y_expand: true,
-                y_align: Clutter.ActorAlign.FILL,
+                y_align: Clutter.ActorAlign.FILL
             });
 
             container.add_child(this._appIcon);
@@ -87,12 +261,14 @@ var AppButton = GObject.registerClass(
             const layout = new Clutter.Actor({
                 layout_manager: new Clutter.BinLayout(),
                 y_expand: true,
-                y_align: Clutter.ActorAlign.FILL,
+                y_align: Clutter.ActorAlign.FILL
             });
 
             layout.add_actor(container);
 
             this.set_child(layout);
+
+            this._indicator = new AppButtonIndicator(layout, this._settings);
         }
 
         _updateStyle() {
@@ -112,6 +288,7 @@ var AppButton = GObject.registerClass(
             this.connect('destroy', () => this._destroy());
             // external connections
             this._connections = new Map();
+            this._connections.set(global.display.connect('notify::focus-window', () => this._handleAppState()), global.display);
         }
 
         _handleButtonPress() {
@@ -146,6 +323,7 @@ var AppButton = GObject.registerClass(
 
             // app is running and we want to open a new window for it
             if (openNewWindow) {
+                IconGrid.zoomOutActor(this._appIcon);
                 this.app.open_new_window(-1);
                 return;
             }
@@ -156,7 +334,9 @@ var AppButton = GObject.registerClass(
             // open a new window for the app
             if (!windows.length) {
 
-                // a favorited app is running, but no windows on current workspace
+                IconGrid.zoomOutActor(this._appIcon);
+
+                // a favorited app is running, but no windows on the current workspace
                 // open a new window for the app
                 if (this.app.state === Shell.AppState.RUNNING) {
                     this.app.open_new_window(-1);
@@ -223,6 +403,13 @@ var AppButton = GObject.registerClass(
             }
         }
 
+        _handleAppState() {
+
+            const windows = this._getAppWindows();
+
+            this._indicator.update(windows);
+        }
+
         /**
         * Update target for minimization animation
         * Credit: Dash to Dock
@@ -234,13 +421,17 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
+            const windows = this._getAppWindows();
+
+            if (!windows.length) {
+                return;
+            }
+
             this.get_allocation_box();
             let rect = new Meta.Rectangle();
 
             [rect.x, rect.y] = this.get_transformed_position();
             [rect.width, rect.height] = this.get_transformed_size();
-
-            const windows = this._getAppWindows();
 
             for (let i = 0, l = windows.length; i < l; ++i) {
                 windows[i].set_icon_geometry(rect);
@@ -248,6 +439,12 @@ var AppButton = GObject.registerClass(
         }
 
         _getAppWindows() {
+
+            // no windows for a stopped app
+            if (this.app.state == Shell.AppState.STOPPED) {
+                return [];
+            }
+
             const workspaceIndex = global.workspace_manager.get_active_workspace_index();
 
             return this.app.get_windows().filter(window => {
@@ -298,6 +495,9 @@ var AppButton = GObject.registerClass(
             this._menu = null;
             this._contextMenuManager = null;
 
+            // destroy indicator
+            this._indicator?.destroy();
+            this._indicator = null;
         }
 
         //#endregion private methods
