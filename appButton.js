@@ -16,7 +16,7 @@ class AppButtonIndicator {
         this._parent = parent;
         this._settings = settings;
         this._indicators = null;
-        this._activeState = false;
+        this._isActive = false;
 
         this._setConfig();
     }
@@ -24,10 +24,18 @@ class AppButtonIndicator {
     //#region public methods
 
     destroy() {
+
+        this._parent = null;
+
         this._destroyIndicators();
     }
 
-    update(windows) {
+    update(windows, isActive) {
+
+        const oldIsActive = this._isActive;
+
+        // set active state
+        this._isActive = isActive;
 
         // no need to display indicators
         if (!windows?.length) {
@@ -46,6 +54,11 @@ class AppButtonIndicator {
 
         // no need to change indicators
         if (indicatorsLength === maxIndicators) {
+
+            if (oldIsActive !== this._isActive) {
+                this.rerender();
+            }
+
             return;
         }
 
@@ -53,12 +66,11 @@ class AppButtonIndicator {
         // this will be executed in case we have more than one indicator
         if (indicatorsLength > maxIndicators) {
 
-            let indicatorsToDestroy = this._indicators.splice(maxIndicators - 1, indicatorsLength - maxIndicators);
+            let indicatorsToDestroy = this._indicators.splice(maxIndicators, indicatorsLength - maxIndicators);
 
-            indicatorsToDestroy.forEach(indicator => {
-                indicator.destroy();
-                indicator = null;
-            });
+            for (let i = 0, l = indicatorsToDestroy.length; i < l; ++i) {
+                this._destroyIndicator(indicatorsToDestroy[i]);
+            }
 
         } else {
 
@@ -92,7 +104,7 @@ class AppButtonIndicator {
     _setConfig() {
         this._config = {
             color: 'white',
-            activeColor: 'blue',
+            activeColor: 'dodgerBlue',
             size: 4,
             maxIndicators: 2
         };
@@ -132,7 +144,7 @@ class AppButtonIndicator {
     _getIndicatorStyle(index) {
 
         let result = (
-            `background-color: ${this._config.color};` +
+            `background-color: ${this._isActive ? this._config.activeColor : this._config.color};` +
             `width: ${this._config.size}px;` +
             `height: ${this._config.size}px;` +
             `border-radius: ${this._config.size}px;`
@@ -168,11 +180,36 @@ class AppButtonIndicator {
         }
 
         for (let i = 0, l = this._indicators.length; i < l; ++i) {
-            this._indicators[i].destroy();
-            this._indicators[i] = null;
+            this._destroyIndicator(this._indicators[i]);
         }
 
         this._indicators = null;
+    }
+
+    _destroyIndicator(indicator) {
+
+        if (!indicator) {
+            return;
+        } 
+
+        indicator.remove_all_transitions();
+
+        // no animation in this case
+        if (!this._parent) {
+            indicator.destroy();
+            indicator = null;
+            return;
+        }
+
+        indicator.ease({
+            opacity: 0,
+            duration: 200,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            onComplete: () => {
+                indicator.destroy();
+                indicator = null;
+            }
+        });
     }
 
     //#endregion private methods
@@ -185,9 +222,14 @@ var AppButton = GObject.registerClass(
         //#region public methods
 
         rerender() {
+
             this._updateIcon();
-            this._handleAppState();
-            this.handlePosition();
+
+            // call the function only once to avoid multiple loops 
+            const windows = this._getAppWindows();
+
+            this._handleAppState(windows);
+            this.handlePosition(windows);
         }
 
         handlePosition() {
@@ -214,6 +256,7 @@ var AppButton = GObject.registerClass(
 
             // set private properties
             this._settings = settings;
+            this._isActive = false;
 
             // idenitify initial configuration
             this._setConfig();
@@ -403,11 +446,20 @@ var AppButton = GObject.registerClass(
             }
         }
 
-        _handleAppState() {
+        _handleAppState(windows) {
 
-            const windows = this._getAppWindows();
+            if (!windows) {
+                windows = this._getAppWindows();
+            }
 
-            this._indicator.update(windows);
+            if (this._isActive !== this._hasFocusedWindow) {
+
+                this._isActive = this._hasFocusedWindow;
+
+                // TODO: update style
+            }            
+
+            this._indicator.update(windows, this._isActive);
         }
 
         /**
@@ -415,13 +467,15 @@ var AppButton = GObject.registerClass(
         * Credit: Dash to Dock
         * https://github.com/micheleg/dash-to-dock/blob/master/appIcons.js
         */
-        _updateIconGeometry() {
+        _updateIconGeometry(windows) {
 
             if (this.get_stage() === null) {
                 return;
             }
 
-            const windows = this._getAppWindows();
+            if (!windows) {
+                windows = this._getAppWindows();
+            }
 
             if (!windows.length) {
                 return;
@@ -440,6 +494,8 @@ var AppButton = GObject.registerClass(
 
         _getAppWindows() {
 
+            this._hasFocusedWindow = false;
+
             // no windows for a stopped app
             if (this.app.state == Shell.AppState.STOPPED) {
                 return [];
@@ -448,7 +504,15 @@ var AppButton = GObject.registerClass(
             const workspaceIndex = global.workspace_manager.get_active_workspace_index();
 
             return this.app.get_windows().filter(window => {
-                return window.get_workspace().index() === workspaceIndex && !window.skipTaskbar;
+                const result = window.get_workspace().index() === workspaceIndex && !window.skipTaskbar;
+
+                if (result && window.has_focus()) {
+                    // just a trick to avoid multiple loops
+                    // one to find windows and another one to find focused windows
+                    this._hasFocusedWindow = true;
+                }
+
+                return result;
             });
         }
 
