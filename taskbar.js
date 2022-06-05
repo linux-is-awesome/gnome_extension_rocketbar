@@ -195,8 +195,8 @@ var Taskbar = GObject.registerClass(
                 // update favorite status
                 appButton.isFavorite = isFavorite;
                 
-                // if favorite position has changed move the app button
-                if (isFavorite && position !== i) {
+                // if position has changed move the app button
+                if (position !== i) {
                     this._layout.remove_child(appButton);
                     this._layout.insert_child_at_index(appButton, i);
                 }
