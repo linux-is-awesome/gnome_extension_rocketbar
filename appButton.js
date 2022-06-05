@@ -329,6 +329,7 @@ var AppButton = GObject.registerClass(
             // external connections
             this._connections = new Map();
             this._connections.set(global.display.connect('notify::focus-window', () => this._handleAppState()), global.display);
+            this._connections.set(global.display.connect('window-demands-attention', (display, window) => this._handleUrgentWindow(window)), global.display);
         }
 
         _handleButtonPress() {
@@ -455,7 +456,7 @@ var AppButton = GObject.registerClass(
                 this._menu.blockSourceEvents = true;
                 this._menu.setApp(this.app);
 
-                this._connections.set(this._menu.connect('open-state-changed', () => this._handleAppState()), this._menu);
+                this._connections.set(this._menu.connect('open-state-changed', () => this._focus()), this._menu);
 
                 Main.uiGroup.add_actor(this._menu.actor);
 
@@ -474,9 +475,9 @@ var AppButton = GObject.registerClass(
                 windows = this._getAppWindows();
             }
 
-            if (this._isActive !== (this._hasFocusedWindow || this._menu?.isOpen)) {
+            if (this._isActive !== this._hasFocusedWindow) {
 
-                this._isActive = this._hasFocusedWindow || this._menu?.isOpen;
+                this._isActive = this._hasFocusedWindow;
 
                 this._updateStyle();
             }
@@ -559,7 +560,28 @@ var AppButton = GObject.registerClass(
             });
         }
 
+        _handleUrgentWindow(window) {
+
+            if (!window) {
+                return;
+            }
+
+            const tracker = Shell.WindowTracker.get_default();
+            const windowApp = tracker.get_window_app(window);
+
+            if (!windowApp || windowApp.get_id() !== this.app.get_id()) {
+                return;
+            }
+
+            // set focus on urgent windows of this app
+            Main.activateWindow(window);
+        }
+
         _focus(isFocused) {
+
+            if (this._menu?.isOpen) {
+                isFocused = true;
+            }
 
             if (isFocused) {
                 this._appIcon.add_style_pseudo_class('focus');
