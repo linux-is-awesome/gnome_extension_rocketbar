@@ -276,7 +276,10 @@ var AppButton = GObject.registerClass(
         _setConfig() {
             this._config = {
                 iconSize: 20,
-                padding: 8
+                padding: 8,
+                verticalMargin: 2,
+                roundness: 100,
+                spacing: 0
             };
         }
 
@@ -482,9 +485,17 @@ var AppButton = GObject.registerClass(
         }
 
         _updateStyle() {
+
             this._appIcon.style = (
-                `padding: 0 ${this._config.padding}px;`
+                `padding: 0 ${this._config.padding}px;` +
+                `margin: ${this._config.verticalMargin}px 0;` +
+                `border-radius: ${this._config.roundness}px;` +
+                // currently I have no idea how to completely remove the border
+                // when border is 0 panel-button highlight doesn't work for some reason
+                `border-width: 1px;`
             );
+
+            this.style = `margin-right: ${this._config.spacing}px;`;
 
             if (this._isActive) {
                 this._appIcon.add_style_pseudo_class('active');
