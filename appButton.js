@@ -103,8 +103,8 @@ class AppButtonIndicator {
 
     _setConfig() {
         this._config = {
-            color: 'white',
-            activeColor: 'dodgerBlue',
+            color: 'rgb(255, 255, 255)',
+            activeColor: 'rgb(53, 132, 228)',
             size: 4,
             maxIndicators: 2
         };
@@ -276,7 +276,11 @@ var AppButton = GObject.registerClass(
         _setConfig() {
             this._config = {
                 iconSize: 20,
-                padding: 8
+                padding: 8,
+                spacing: 0,
+                verticalMargin: 3,
+                roundness: 100, 
+                activeColor: 'rgba(211, 211, 211, 0.20)'
             };
         }
 
@@ -312,12 +316,6 @@ var AppButton = GObject.registerClass(
             this.set_child(layout);
 
             this._indicator = new AppButtonIndicator(layout, this._settings);
-        }
-
-        _updateStyle() {
-            this._appIcon.style = (
-                `padding: 0 ${this._config.padding}px;`
-            );
         }
 
         _updateIcon() {
@@ -446,20 +444,54 @@ var AppButton = GObject.registerClass(
             }
         }
 
+        _openMenu() {
+
+            if (!this._menu) {
+
+                this._menu = new AppMenu(this, St.Side.TOP, {
+                    favoritesSection: true,
+                    showSingleWindows: true,
+                });
+
+                this._menu.blockSourceEvents = true;
+                this._menu.setApp(this.app);
+
+                this._connections.set(this._menu.connect('open-state-changed', () => this._handleAppState()), this._menu);
+
+                Main.uiGroup.add_actor(this._menu.actor);
+
+                this._contextMenuManager = new PopupMenu.PopupMenuManager(this);
+                this._contextMenuManager.addMenu(this._menu);
+            }
+
+            this._menu.open();
+            this._contextMenuManager.ignoreRelease();
+        }
+
         _handleAppState(windows) {
 
             if (!windows) {
+                // this code must be executed right here before validating the app state
                 windows = this._getAppWindows();
             }
 
-            if (this._isActive !== this._hasFocusedWindow) {
+            if (this._isActive !== (this._hasFocusedWindow || this._menu?.isOpen)) {
 
-                this._isActive = this._hasFocusedWindow;
+                this._isActive = this._hasFocusedWindow || this._menu?.isOpen;
 
-                // TODO: update style
-            }            
+                this._updateStyle();
+            }
 
             this._indicator.update(windows, this._isActive);
+        }
+
+        _updateStyle() {
+            this._appIcon.style = (
+                `padding: 0 ${this._config.padding}px;` +
+                `margin: ${this._config.verticalMargin}px ${this._config.spacing}px ${this._config.verticalMargin}px 0;` +
+                `border-radius: ${this._config.roundness}px;` +
+                `background-color: ${this._isActive ? this._config.activeColor : 'transparent'};`
+            );
         }
 
         /**
@@ -514,34 +546,6 @@ var AppButton = GObject.registerClass(
 
                 return result;
             });
-        }
-
-        _openMenu() {
-
-            if (!this._menu) {
-
-                this._menu = new AppMenu(this, St.Side.TOP, {
-                    favoritesSection: true,
-                    showSingleWindows: true,
-                });
-
-                this._menu.blockSourceEvents = true;
-                this._menu.setApp(this.app);
-
-                this._connections.set(this._menu.connect('open-state-changed', (menu, isOpen) => {
-                    if (!isOpen) {
-                        // TODO: handle menu close
-                    }
-                }), this._menu);
-
-                Main.uiGroup.add_actor(this._menu.actor);
-
-                this._contextMenuManager = new PopupMenu.PopupMenuManager(this);
-                this._contextMenuManager.addMenu(this._menu);
-            }
-
-            this._menu.open();
-            this._contextMenuManager.ignoreRelease();
         }
 
         _destroy() {
