@@ -276,23 +276,17 @@ var AppButton = GObject.registerClass(
         _setConfig() {
             this._config = {
                 iconSize: 20,
-                padding: 8,
-                spacing: 0,
-                verticalMargin: 3,
-                roundness: 100, 
-                activeColor: 'rgba(211, 211, 211, 0.20)'
+                padding: 8
             };
         }
 
         _createLayout() {
 
             this._appIcon = new St.Bin({
-                reactive: true,
-                can_focus: true,
-                track_hover: true,
-                x_align: Clutter.ActorAlign.CENTER,
                 y_expand: true,
-                y_align: Clutter.ActorAlign.FILL
+                x_align: Clutter.ActorAlign.CENTER,
+                y_align: Clutter.ActorAlign.FILL,
+                style_class: 'panel-button'
             });
 
             this.bind_property('hover', this._appIcon, 'hover', GObject.BindingFlags.SYNC_CREATE);
@@ -327,6 +321,8 @@ var AppButton = GObject.registerClass(
             this.connect('clicked', () => this._activate());
             this.connect('button_press_event', () => this._handleButtonPress());
             this.connect('destroy', () => this._destroy());
+            this.connect('key-focus-in', () => this._focus(true));
+            this.connect('key-focus-out', () => this._focus(false));
             // external connections
             this._connections = new Map();
             this._connections.set(global.display.connect('notify::focus-window', () => this._handleAppState()), global.display);
@@ -487,11 +483,15 @@ var AppButton = GObject.registerClass(
 
         _updateStyle() {
             this._appIcon.style = (
-                `padding: 0 ${this._config.padding}px;` +
-                `margin: ${this._config.verticalMargin}px ${this._config.spacing}px ${this._config.verticalMargin}px 0;` +
-                `border-radius: ${this._config.roundness}px;` +
-                `background-color: ${this._isActive ? this._config.activeColor : 'transparent'};`
+                `padding: 0 ${this._config.padding}px;`
             );
+
+            if (this._isActive) {
+                this._appIcon.add_style_pseudo_class('active');
+                return;
+            }
+
+            this._appIcon.remove_style_pseudo_class('active');
         }
 
         /**
@@ -546,6 +546,16 @@ var AppButton = GObject.registerClass(
 
                 return result;
             });
+        }
+
+        _focus(isFocused) {
+
+            if (isFocused) {
+                this._appIcon.add_style_pseudo_class('focus');
+                return;
+            }
+
+            this._appIcon.remove_style_pseudo_class('focus');
         }
 
         _destroy() {
