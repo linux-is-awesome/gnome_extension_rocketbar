@@ -562,7 +562,8 @@ var AppButton = GObject.registerClass(
 
         _handleUrgentWindow(window) {
 
-            if (!window) {
+            // make only active apps handle urgent windows
+            if (!window || !this._isActive || window.has_focus()) {
                 return;
             }
 
