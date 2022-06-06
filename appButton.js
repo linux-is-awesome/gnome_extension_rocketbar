@@ -221,6 +221,25 @@ var AppButton = GObject.registerClass(
 
         //#region public methods
 
+        setParent(parent, position) {
+
+            if (!parent) {
+                return;
+            }
+
+            this.opacity = 0;
+
+            parent.insert_child_at_index(this, position);
+
+            this.rerender();
+
+            this.ease({
+                opacity: 255,
+                duration: 300,
+                mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            });
+        }
+
         rerender() {
 
             this._updateIcon();
@@ -233,6 +252,11 @@ var AppButton = GObject.registerClass(
         }
 
         handlePosition() {
+
+            if (this._isActive) {
+                this._scrollToAppButton();
+            }
+
             this._updateIconGeometry();
         }
 
@@ -257,20 +281,17 @@ var AppButton = GObject.registerClass(
             // set private properties
             this._settings = settings;
             this._isActive = false;
+            this._delegate = this;
 
             // idenitify initial configuration
             this._setConfig();
 
             // create layout
             this._createLayout();
-            this._updateIcon();
             this._updateStyle();
 
             // create connections
             this._createConnections();
-
-            // check if app is running
-            this._handleAppState();
         }
 
         _setConfig() {
@@ -302,17 +323,17 @@ var AppButton = GObject.registerClass(
 
             container.add_child(this._appIcon);
 
-            const layout = new Clutter.Actor({
+            this._layout = new Clutter.Actor({
                 layout_manager: new Clutter.BinLayout(),
                 y_expand: true,
                 y_align: Clutter.ActorAlign.FILL
             });
 
-            layout.add_actor(container);
+            this._layout.add_actor(container);
 
-            this.set_child(layout);
+            this.set_child(this._layout);
 
-            this._indicator = new AppButtonIndicator(layout, this._settings);
+            this._indicator = new AppButtonIndicator(this._layout, this._settings);
         }
 
         _updateIcon() {
@@ -333,7 +354,6 @@ var AppButton = GObject.registerClass(
         }
 
         _handleButtonPress() {
-
             const event = Clutter.get_current_event();
 
             if (event?.get_button() === Clutter.BUTTON_SECONDARY) {
@@ -345,6 +365,7 @@ var AppButton = GObject.registerClass(
         }
 
         _activate() {
+
             const event = Clutter.get_current_event();
 
             if (!event) {
@@ -353,10 +374,14 @@ var AppButton = GObject.registerClass(
 
             const isOverview = Main.overview._shown;
             const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) != 0;
+            const isMiddleButton = (
+                event.type() === Clutter.EventType.BUTTON_RELEASE &&
+                event.get_button() === Clutter.BUTTON_MIDDLE
+            );
             const openNewWindow = (
                 this.app.can_open_new_window() &&
                 this.app.state === Shell.AppState.RUNNING &&
-                (isCtrlPressed || event.get_button() === Clutter.BUTTON_MIDDLE)
+                (isCtrlPressed || isMiddleButton)
             );
 
             // hide gnome shell overview
@@ -448,7 +473,7 @@ var AppButton = GObject.registerClass(
 
             if (!this._menu) {
 
-                this._menu = new AppMenu(this, St.Side.TOP, {
+                this._menu = new AppMenu(this._layout, St.Side.TOP, {
                     favoritesSection: true,
                     showSingleWindows: true,
                 });
@@ -464,15 +489,25 @@ var AppButton = GObject.registerClass(
                 this._contextMenuManager.addMenu(this._menu);
             }
 
-            this._menu.open();
+            this._menu.open(true);
             this._contextMenuManager.ignoreRelease();
         }
 
         _handleAppState(windows) {
 
+            if (this.get_stage() === null) {
+                return;
+            }
+
             if (!windows) {
                 // this code must be executed right here before validating the app state
                 windows = this._getAppWindows();
+            }
+
+            // self destroy :)
+            if (!this.isFavorite && !windows.length) {
+                this.destroy();
+                return;
             }
 
             if (this._isActive !== this._hasFocusedWindow) {
@@ -513,6 +548,8 @@ var AppButton = GObject.registerClass(
         */
         _updateIconGeometry(windows) {
 
+            // check if the app button is still present at all. When switching workpaces, the
+            // button might have been destroyed in between.
             if (this.get_stage() === null) {
                 return;
             }
@@ -586,6 +623,7 @@ var AppButton = GObject.registerClass(
 
             if (isFocused) {
                 this._appIcon.add_style_pseudo_class('focus');
+                this._scrollToAppButton();
                 return;
             }
 
@@ -593,6 +631,8 @@ var AppButton = GObject.registerClass(
         }
 
         _destroy() {
+
+            this.remove_all_transitions();
 
             // remove connections
             this._connections.forEach((connection, id) => {
@@ -602,7 +642,7 @@ var AppButton = GObject.registerClass(
             this._connections = null;
 
             // destroy context menu
-            this._menu?.close();
+            this._menu?.close(false);
             //this._menu?.destroy();
             this._menu = null;
             this._contextMenuManager = null;
@@ -610,6 +650,21 @@ var AppButton = GObject.registerClass(
             // destroy indicator
             this._indicator?.destroy();
             this._indicator = null;
+        }
+
+        _scrollToAppButton() {
+
+            if (this._menu?.isOpen) {
+                return;
+            }
+
+            const parent = this.get_parent();
+
+            if (!parent || !parent.scrollToAppButton) {
+                return;
+            }
+
+            parent.scrollToAppButton(this);
         }
 
         //#endregion private methods

@@ -64,7 +64,10 @@ var Taskbar = GObject.registerClass(
                 y_expand: true,
                 x_align: Clutter.ActorAlign.FILL,
                 y_align: Clutter.ActorAlign.FILL
-            })
+            });
+
+            this._layout.scrollToAppButton = appButton => this._scrollToAppButton(appButton);
+
             this.add_actor(this._layout);
         }
 
@@ -101,15 +104,6 @@ var Taskbar = GObject.registerClass(
         }
 
         _render() {
-
-            // TODO: remove debug
-            this.renderCount = !this.renderCount ? 1 : this.renderCount + 1;
-
-            if (this.renderCount > 10000) {
-                this.renderCount = 1;
-            }
-
-            log('DEBUG: taskbar render: ' + this.renderCount);
 
             let taskbarAppsById = new Map();
             let taskbarAppButtonsByAppId = new Map();
@@ -169,7 +163,6 @@ var Taskbar = GObject.registerClass(
                 }
 
                 // remove unnecessary items from the taskbar
-                this._layout.remove_child(actor);
                 actor.destroy();
                 actor = null;
             }
@@ -185,7 +178,7 @@ var Taskbar = GObject.registerClass(
 
                 // create new app buttons
                 if (!taskbarAppButtonsByAppId.has(appId)) {
-                    this._createAppButton(app, isFavorite, i);
+                    new AppButton(app, isFavorite, this._settings).setParent(this._layout, i);
                     continue;
                 }
 
@@ -195,10 +188,9 @@ var Taskbar = GObject.registerClass(
                 // update favorite status
                 appButton.isFavorite = isFavorite;
                 
-                // if position has changed move the app button
-                if (position !== i) {
-                    this._layout.remove_child(appButton);
-                    this._layout.insert_child_at_index(appButton, i);
+                // if favorite position has changed move the app button
+                if (isFavorite && position !== i) {
+                    this._layout.set_child_at_index(appButton, i);
                 }
 
                 appButton.rerender();
@@ -239,23 +231,6 @@ var Taskbar = GObject.registerClass(
             }
 
             return result;
-        }
-
-        _createAppButton(app, isFavorite, index) {
-
-            const appButton = new AppButton(app, isFavorite, this._settings);
-
-            appButton.opacity = 0;
-
-            this._layout.insert_child_at_index(appButton, index);
-
-            appButton.handlePosition();
-
-            appButton.ease({
-                opacity: 255,
-                duration: 300,
-                mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-            });
         }
 
         _handlePosition() {
@@ -320,6 +295,45 @@ var Taskbar = GObject.registerClass(
                 GLib.source_remove(this._rerenderTimeout);
                 this._rerenderTimeout = null;
             }
+        }
+
+        /**
+         * Adapted from GNOME Shell. Modified to work with a horizontal scrollView
+         */
+        _scrollToAppButton(appButton) {
+
+            if (this.get_stage() === null) {
+                return;
+            }
+
+            const adjustment = this.hscroll.adjustment;
+            let [value, lower_, upper, stepIncrement_, pageIncrement_, pageSize] = adjustment.get_values();
+
+            let offset = 0;
+            const hfade = this.get_effect("fade");
+            
+            if (hfade) {
+                offset = hfade.fade_margins.left;
+            }
+
+            let box = appButton.get_allocation_box();
+            let x1 = box.x1;
+            let x2 = box.x2;
+
+            box = this._layout.get_allocation_box();
+            x1 += box.x1;
+            x2 += box.x1;
+
+            if (x1 < value + offset) {
+                value = Math.max(0, x1 - offset);
+            } else if (x2 > value + pageSize - offset) {
+                value = Math.min(upper, x2 + offset - pageSize);
+            } else return;
+
+            adjustment.ease(value, {
+                mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+                duration: 100,
+            });
         }
 
     }
