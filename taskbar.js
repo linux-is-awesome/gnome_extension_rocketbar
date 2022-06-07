@@ -162,9 +162,9 @@ var Taskbar = GObject.registerClass(
                 let actor = layoutActors[i];
 
                 // check if the app button should stay in the taskbar
-                if (actor instanceof AppButton && actor.app &&
-                        taskbarAppsById.has(actor.app.get_id())) {
-                    taskbarAppButtonsByAppId.set(actor.app.get_id(), {
+                if (actor instanceof AppButton && actor.appId &&
+                        taskbarAppsById.has(actor.appId)) {
+                    taskbarAppButtonsByAppId.set(actor.appId, {
                         appButton: actor,
                         position: taskbarAppButtonsByAppId.size
                     });

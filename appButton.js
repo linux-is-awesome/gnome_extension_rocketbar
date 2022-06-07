@@ -271,6 +271,7 @@ var AppButton = GObject.registerClass(
 
             // set public properties
             this.app = app;
+            this.appId = app.get_id();
             this.isFavorite = isFavorite;
 
             // set private properties
@@ -608,7 +609,7 @@ var AppButton = GObject.registerClass(
             const tracker = Shell.WindowTracker.get_default();
             const windowApp = tracker.get_window_app(window);
 
-            if (!windowApp || windowApp.get_id() !== this.app.get_id()) {
+            if (!windowApp || windowApp.get_id() !== this.appId) {
                 return;
             }
 
