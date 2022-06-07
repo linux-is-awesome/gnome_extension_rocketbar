@@ -35,14 +35,18 @@ var Taskbar = GObject.registerClass(
             // create layout
             this._createLayout();
 
+            // put the taskbar into the panel
+            this._addToPanel();
+
             // create connections
             this._createConnections();
 
-            // init deferred work
-            this._workId = Main.initializeDeferredWork(this, () => this._render());
-
-            // put the taskbar into the panel
-            this._addToPanel();
+            // init deferred work with a small delay
+            this._initTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
+                this._workId = Main.initializeDeferredWork(this, () => this._render());
+                this._initTimeout = null;
+                return GLib.SOURCE_REMOVE;
+            });
         }
 
         _setConfig() {
@@ -59,6 +63,8 @@ var Taskbar = GObject.registerClass(
         }
 
         _createLayout() {
+
+            // create a parent for app buttons
             this._layout = new St.BoxLayout({
                 x_expand: true,
                 y_expand: true,
@@ -66,7 +72,10 @@ var Taskbar = GObject.registerClass(
                 y_align: Clutter.ActorAlign.FILL
             });
 
+            // add functions visible for app buttons
+            this._layout.setActiveAppButton = appButton => this._setActiveAppButton(appButton);
             this._layout.scrollToAppButton = appButton => this._scrollToAppButton(appButton);
+            this._layout.setScrollLock = (appButton, locked) => this._setScrollLock(appButton, locked);
 
             this.add_actor(this._layout);
         }
@@ -250,7 +259,11 @@ var Taskbar = GObject.registerClass(
             
             this._stopRerender();
 
-            if (highPriority && this._workId) {
+            if (!this._workId) {
+                return;
+            }
+
+            if (highPriority) {
                 Main.queueDeferredWork(this._workId);
                 return;
             }
@@ -269,9 +282,17 @@ var Taskbar = GObject.registerClass(
 
         _destroy() {
             
+            // clear init timeout
+            if (this._initTimeout) {
+                GLib.source_remove(this._initTimeout);
+            }
+
             // stop rendering
             this._workId = null;
             this._stopRerender();
+
+            // stop other timers
+            this._stopScrollToActiveButton();
 
             // remove connections
             this._connections.forEach((connection, id) => {
@@ -297,16 +318,64 @@ var Taskbar = GObject.registerClass(
             }
         }
 
+        _setActiveAppButton(appButton) {
+            this._activeAppButton = appButton;
+
+            if (!this._activeAppButton) {
+                this._stopScrollToActiveButton();
+            }
+        }
+
+        _setScrollLock(appButton, locked) {
+
+            if (locked && appButton) {
+
+                this._scrollLock = appButton;
+
+                this._scrollToAppButton(appButton);
+
+                return;
+            }
+
+            if (this._scrollLock === appButton) {
+
+                this._scrollLock = null;
+
+                this._scrollToActiveAppButton();
+            }
+        }
+
+        _scrollToActiveAppButton() {
+
+            this._stopScrollToActiveButton();
+
+            if (!this._activeAppButton) {
+                return;
+            }
+
+            this._scrollToActiveTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
+                this._scrollToAppButton(this._activeAppButton);
+                return GLib.SOURCE_REMOVE;
+            });
+        }
+
         /**
          * Adapted from GNOME Shell. Modified to work with a horizontal scrollView
          */
         _scrollToAppButton(appButton) {
 
-            if (this.get_stage() === null) {
+            if (this.get_stage() === null || !appButton || appButton.get_stage() === null) {
                 return;
             }
 
+            if (this._isScrollLockedForAppButton(appButton)) {
+                return;
+            }
+
+            this._stopScrollToActiveButton();
+
             const adjustment = this.hscroll.adjustment;
+
             let [value, lower_, upper, stepIncrement_, pageIncrement_, pageSize] = adjustment.get_values();
 
             let offset = 0;
@@ -332,8 +401,19 @@ var Taskbar = GObject.registerClass(
 
             adjustment.ease(value, {
                 mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-                duration: 100,
+                duration: 100
             });
+        }
+
+        _isScrollLockedForAppButton(appButton) {
+            return this._scrollLock && this._scrollLock !== appButton;
+        }
+
+        _stopScrollToActiveButton() {
+            if (this._scrollToActiveTimeout) {
+                GLib.source_remove(this._scrollToActiveTimeout);
+                this._scrollToActiveTimeout = null;
+            }
         }
 
     }

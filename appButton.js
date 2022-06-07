@@ -252,11 +252,6 @@ var AppButton = GObject.registerClass(
         }
 
         handlePosition() {
-
-            if (this._isActive) {
-                this._scrollToAppButton();
-            }
-
             this._updateIconGeometry();
         }
 
@@ -347,6 +342,7 @@ var AppButton = GObject.registerClass(
             this.connect('destroy', () => this._destroy());
             this.connect('key-focus-in', () => this._focus(true));
             this.connect('key-focus-out', () => this._focus(false));
+            this.connect('notify::hover', () => this._hover());
             // external connections
             this._connections = new Map();
             this._connections.set(global.display.connect('notify::focus-window', () => this._handleAppState()), global.display);
@@ -518,6 +514,11 @@ var AppButton = GObject.registerClass(
             }
 
             this._indicator.update(windows, this._isActive);
+
+            if (this._isActive) {
+                this.get_parent()?.setActiveAppButton(this);
+                this._scrollToAppButton();
+            }
         }
 
         _updateStyle() {
@@ -622,12 +623,21 @@ var AppButton = GObject.registerClass(
             }
 
             if (isFocused) {
+                
                 this._appIcon.add_style_pseudo_class('focus');
+                
+                this.get_parent()?.setActiveAppButton(null);
+                
                 this._scrollToAppButton();
+
                 return;
             }
 
             this._appIcon.remove_style_pseudo_class('focus');
+        }
+
+        _hover() {
+            this.get_parent()?.setScrollLock(this, this.hover);;
         }
 
         _destroy() {
@@ -660,7 +670,7 @@ var AppButton = GObject.registerClass(
 
             const parent = this.get_parent();
 
-            if (!parent || !parent.scrollToAppButton) {
+            if (!parent) {
                 return;
             }
 
