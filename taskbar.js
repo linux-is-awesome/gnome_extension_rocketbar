@@ -92,7 +92,7 @@ var Taskbar = GObject.registerClass(
                 AppFavorites.getAppFavorites().reload();
                 this._rerender();
             }), this._appSystem);
-            this._connections.set(global.window_manager.connect('switch-workspace', () => this._rerender()), global.window_manager);
+            this._connections.set(global.window_manager.connect('switch-workspace', () => this._rerender(true)), global.window_manager);
             this._connections.set(global.display.connect('window-entered-monitor', () => this._rerender()), global.display);
             this._connections.set(global.display.connect('restacked', () => this._rerender()), global.display);
             this._connections.set(Main.layoutManager.connect('startup-complete', () => this._rerender()), Main.layoutManager);
@@ -114,66 +114,30 @@ var Taskbar = GObject.registerClass(
 
         _render() {
 
-            let taskbarAppsById = new Map();
-            let taskbarAppButtonsByAppId = new Map();
-
-            // add favorites if enabled
-
-            if (this._config.showFavorites) {
-
-                const favoriteApps = AppFavorites.getAppFavorites().getFavorites();
-
-                for (let i = 0, l = favoriteApps.length; i < l; ++i) {
-
-                    const app = favoriteApps[i];
-
-                    taskbarAppsById.set(app.get_id(), {
-                        app: app,
-                        isFavorite: true
-                    });
-                }
-            }
-
-            // add running apps
-
-            const runningApps = this._getRunningApps();
-
-            for (let i = 0, l = runningApps.length; i < l; ++i) {
-
-                const app = runningApps[i];
-                const appId = app.get_id();
-
-                if (taskbarAppsById.has(appId)) {
-                    continue;
-                }
-
-                taskbarAppsById.set(appId, {
-                    app: app,
-                    isFavorite: false
-                });
-            }
+            const taskbarAppsById = this._getTaskbarApps();
 
             // validate existing items in the taskbar
 
+            let taskbarAppButtonsByAppId = new Map();
             const layoutActors = this._layout.get_children();
 
             for (let i = 0, l = layoutActors.length; i < l; ++i) {
 
                 let actor = layoutActors[i];
+                const appId = actor instanceof AppButton ? actor.appId : null;
 
-                // check if the app button should stay in the taskbar
-                if (actor instanceof AppButton && actor.appId &&
-                        taskbarAppsById.has(actor.appId)) {
-                    taskbarAppButtonsByAppId.set(actor.appId, {
-                        appButton: actor,
-                        position: taskbarAppButtonsByAppId.size
-                    });
+                // remove unnecessary items from the taskbar
+                if (!appId || !taskbarAppsById.has(appId)) {
+                    actor.destroy();
+                    actor = null;
                     continue;
                 }
 
-                // remove unnecessary items from the taskbar
-                actor.destroy();
-                actor = null;
+                // the app button should stay in the taskbar
+                taskbarAppButtonsByAppId.set(actor.appId, {
+                    appButton: actor,
+                    position: taskbarAppButtonsByAppId.size
+                });
             }
 
             // update/create app buttons
@@ -183,11 +147,12 @@ var Taskbar = GObject.registerClass(
             for (let i = 0, l = taskbarAppIds.length; i < l; ++i) {
                 
                 const appId = taskbarAppIds[i];
-                const {app, isFavorite} = taskbarAppsById.get(appId);
+                const {app, isFavorite, isRestored} = taskbarAppsById.get(appId);
 
                 // create new app buttons
                 if (!taskbarAppButtonsByAppId.has(appId)) {
-                    new AppButton(app, isFavorite, this._settings).setParent(this._layout, i);
+                    // disable animation for restored app buttons
+                    new AppButton(app, isFavorite, this._settings).setParent(this._layout, i, !isRestored);
                     continue;
                 }
 
@@ -197,9 +162,9 @@ var Taskbar = GObject.registerClass(
                 // update favorite status
                 appButton.isFavorite = isFavorite;
                 
-                // if favorite position has changed move the app button
-                if (isFavorite && position !== i) {
-                    this._layout.set_child_at_index(appButton, i);
+                // if position has changed move the app button
+                if (position !== i) {
+                    appButton.setPosition(i);
                 }
 
                 appButton.rerender();
@@ -208,21 +173,110 @@ var Taskbar = GObject.registerClass(
             this._layout.queue_relayout();
         }
 
+        _getTaskbarApps() {
+
+            const workspaceIndex = global.workspace_manager.get_active_workspace_index();
+
+            const favoriteApps = this._getFavoriteApps();
+
+            // get running apps
+
+            let runningApps = this._getRunningAppsForWorkspace(workspaceIndex, favoriteApps);
+
+            // no running apps so clear cache for the workspace and exit
+            if (!runningApps.size) {
+                this._runningAppsByWorkspace[workspaceIndex] = [];
+                return favoriteApps;
+            }
+
+            // restore position of the running apps for the current workspace
+
+            let oldRunningAppIds = this._restoreRunningAppsForWorkspace(workspaceIndex);
+
+            // no running apps in cache at this moment so skip
+            if (oldRunningAppIds.length) {
+
+                let newRunningApps = new Map();
+
+                for (let i = 0, l = oldRunningAppIds.length; i < l; ++i) {
+
+                    const oldRunningAppId = oldRunningAppIds[i];
+
+                    if (!runningApps.has(oldRunningAppId)) {
+                        continue;
+                    }
+
+                    let newRunningApp = runningApps.get(oldRunningAppId);
+
+                    // mark restored apps with the flag
+                    newRunningApp.isRestored = true;
+
+                    newRunningApps.set(oldRunningAppId, newRunningApp);
+
+                    runningApps.delete(oldRunningAppId);
+                }
+
+                if (runningApps.size) {
+                    // merge running apps together
+                    runningApps = new Map([...newRunningApps, ...runningApps]); 
+                } else {
+                    runningApps = newRunningApps;
+                }
+
+            }
+
+            // update cache for the workspace
+            this._runningAppsByWorkspace[workspaceIndex] = [...runningApps.keys()];
+
+            // merge all apps to a single result if it makes sense
+            if (favoriteApps.size) {
+                return new Map([...favoriteApps, ...runningApps]);
+            }
+
+            return runningApps;
+        }
+
+        _getFavoriteApps() {
+            let result = new Map();
+
+            if (this._config.showFavorites) {
+
+                const favoriteApps = AppFavorites.getAppFavorites().getFavorites();
+
+                for (let i = 0, l = favoriteApps.length; i < l; ++i) {
+
+                    const app = favoriteApps[i];
+                    const appId = app.get_id();
+
+                    if (!appId) {
+                        continue;
+                    }
+
+                    result.set(appId, {
+                        app: app,
+                        isFavorite: true
+                    });
+                }
+            }
+
+            return result;
+        }
+
         /**
          * appSystem.get_running() is slow to update
          * using implementation from Dash to Panel instead
         */
-        _getRunningApps() {
-            const workspaceIndex = global.workspace_manager.get_active_workspace_index();
+        _getRunningAppsForWorkspace(workspaceIndex, favoriteApps = new Map()) {
+
+            let result = new Map();
+
             const tracker = Shell.WindowTracker.get_default();
-            const windows = global.get_window_actors();
-            
-            let result = [];
+            const windows = global.get_window_actors();            
 
             for (let i = 0, l = windows.length; i < l; ++i) {
 
                 const window = windows[i].metaWindow;
-                
+
                 // get windows from the current workspace only
                 // skip windows that skip taskbar
                 if (window.get_workspace().index() !== workspaceIndex ||
@@ -231,15 +285,40 @@ var Taskbar = GObject.registerClass(
                 }
 
                 const app = tracker.get_window_app(window);
+                const appId = app ? app.get_id() : null;
 
-                if (!app || result.indexOf(app) >= 0) {
+                if (!appId || result.has(appId) || favoriteApps.has(appId)) {
                     continue;
                 }
 
-                result.push(app);
+                result.set(appId, {
+                    app: app,
+                    isFavorite: false
+                });
             }
 
             return result;
+        }
+
+        _restoreRunningAppsForWorkspace(workspaceIndex) {
+            
+            const workspacesLength = global.workspace_manager.get_n_workspaces();
+
+            if (!this._runningAppsByWorkspace) {
+                this._runningAppsByWorkspace = [];
+            }
+
+            // remove obsolete workspaces if any
+            if (this._runningAppsByWorkspace.length > workspacesLength) {
+                this._runningAppsByWorkspace.splice(workspacesLength - 1, this._runningAppsByWorkspace.length - workspacesLength);
+            }
+
+            // no cache for the workspace index so create it
+            if (this._runningAppsByWorkspace.length <= workspaceIndex) {
+                this._runningAppsByWorkspace.push([]);
+            }
+
+            return this._runningAppsByWorkspace[workspaceIndex];
         }
 
         _handlePosition() {

@@ -30,7 +30,7 @@ class AppButtonIndicator {
         this._destroyIndicators();
     }
 
-    update(windows, isActive) {
+    update(windows = [], isActive) {
 
         const oldIsActive = this._isActive;
 
@@ -38,7 +38,7 @@ class AppButtonIndicator {
         this._isActive = isActive;
 
         // no need to display indicators
-        if (!windows?.length) {
+        if (!windows.length) {
             this._destroyIndicators();
             return;
         }
@@ -221,7 +221,7 @@ var AppButton = GObject.registerClass(
 
         //#region public methods
 
-        setParent(parent, position) {
+        setParent(parent, position, animation) {
 
             if (!parent) {
                 return;
@@ -233,11 +233,29 @@ var AppButton = GObject.registerClass(
 
             this.rerender();
 
+            if (!animation) {
+                this.opacity = 255;
+                return;
+            }
+
             this.ease({
                 opacity: 255,
                 duration: 300,
                 mode: Clutter.AnimationMode.EASE_OUT_QUAD,
             });
+        }
+
+        setPosition(position) {
+
+            const parent = this.get_parent();
+
+            if (!parent) {
+                return;
+            }
+
+            //this.remove_all_transitions();
+
+            parent.set_child_at_index(this, position);
         }
 
         rerender() {
@@ -277,6 +295,7 @@ var AppButton = GObject.registerClass(
             // set private properties
             this._settings = settings;
             this._isActive = false;
+            this._isAppRunning = false; //TODO: use in a scroll action
             this._delegate = this;
 
             // idenitify initial configuration
@@ -507,6 +526,10 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
+            // update running state
+            this._isAppRunning = windows.length > 0;
+
+            // update active state
             if (this._isActive !== this._hasFocusedWindow) {
 
                 this._isActive = this._hasFocusedWindow;
