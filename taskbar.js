@@ -15,7 +15,23 @@ const { AppButton } = Me.imports.appButton;
 var Taskbar = GObject.registerClass(
     class Taskbar extends St.ScrollView {
 
-        _init(settings) {
+        //#region public methods
+
+        getSessionCache() {
+            return {
+                runningAppsByWorkspace: (
+                    this._runningAppsByWorkspace && this._runningAppsByWorkspace.length ?
+                    this._runningAppsByWorkspace :
+                    null
+                )
+            };
+        }
+
+        //#endregion public methods
+
+        //#region private methods
+
+        _init(settings, sessionCache) {
 
             // init scroll view
             super._init({ style_class: 'hfade' });
@@ -28,6 +44,9 @@ var Taskbar = GObject.registerClass(
             // set properties
             this._appSystem = Shell.AppSystem.get_default();
             this._settings = settings;
+
+            // restore cached data
+            this._restoreSessionCache(sessionCache);
 
             // idenitify initial configuration
             this._setConfig();
@@ -47,6 +66,15 @@ var Taskbar = GObject.registerClass(
                 this._initTimeout = null;
                 return GLib.SOURCE_REMOVE;
             });
+        }
+
+        _restoreSessionCache(sessionCache) {
+
+            if (!sessionCache) {
+                return;
+            }
+
+            this._runningAppsByWorkspace = sessionCache.runningAppsByWorkspace || null;
         }
 
         _setConfig() {
@@ -373,6 +401,9 @@ var Taskbar = GObject.registerClass(
             this._workId = null;
             this._stopRerender();
 
+            // remove some values that may cause exceptions
+            this._activeAppButton = null;
+
             // stop other timers
             this._stopScrollToActiveButton();
 
@@ -407,6 +438,8 @@ var Taskbar = GObject.registerClass(
                 this._stopScrollToActiveButton();
             }
         }
+
+        //#region scroll view tweaks
 
         _setScrollLock(appButton, locked) {
 
@@ -446,7 +479,7 @@ var Taskbar = GObject.registerClass(
          */
         _scrollToAppButton(appButton) {
 
-            if (this.get_stage() === null || !appButton || appButton.get_stage() === null) {
+            if (this.get_stage() === null || !appButton) {
                 return;
             }
 
@@ -497,6 +530,10 @@ var Taskbar = GObject.registerClass(
                 this._scrollToActiveTimeout = null;
             }
         }
+
+        //#endregion scroll view tweaks
+
+        //#endregion private methods
 
     }
 );

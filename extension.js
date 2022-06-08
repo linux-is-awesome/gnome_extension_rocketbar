@@ -9,7 +9,9 @@ const { Taskbar } = Me.imports.taskbar;
 //#region variables
 
 let settings = null;
+
 let taskbar = null;
+let taskbarCache = null;
 
 //#endregion variables
 
@@ -17,12 +19,17 @@ let taskbar = null;
 
 function enable() {
     settings = ExtensionUtils.getSettings();
-    taskbar = new Taskbar(settings);
+    taskbar = new Taskbar(settings, taskbarCache);
 }
 
 function disable() {
+
+    // save some of the taskbar's cached data in memory
+    // to restore it after unlocking user's session  
+    taskbarCache = taskbar?.getSessionCache();
     taskbar?.destroy();
     taskbar = null;
+
     settings?.run_dispose();
     settings = null;
 }
