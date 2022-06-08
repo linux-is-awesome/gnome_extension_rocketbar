@@ -216,6 +216,35 @@ class AppButtonIndicator {
 
 }
 
+class AppButtonMenu extends AppMenu {
+
+    constructor(actor, app) {
+
+        super(actor, St.Side.TOP, {
+            favoritesSection: true,
+            showSingleWindows: true,
+        });
+
+        this.blockSourceEvents = true;
+        this.setApp(app);
+
+        Main.uiGroup.add_actor(this.actor);
+    }
+
+    _updateFavoriteItem() {
+        super._updateFavoriteItem();
+
+        if (!this._toggleFavoriteItem.visible) {
+            return;
+        }
+
+        if (!this._appFavorites.isFavorite(this._app.id)) {
+            this._toggleFavoriteItem.label.text = _('Pin');
+        }
+    }
+
+}
+
 var AppButton = GObject.registerClass(
     class AppButton extends St.Button {
 
@@ -489,17 +518,9 @@ var AppButton = GObject.registerClass(
 
             if (!this._menu) {
 
-                this._menu = new AppMenu(this._layout, St.Side.TOP, {
-                    favoritesSection: true,
-                    showSingleWindows: true,
-                });
-
-                this._menu.blockSourceEvents = true;
-                this._menu.setApp(this.app);
+                this._menu = new AppButtonMenu(this._layout, this.app);
 
                 this._connections.set(this._menu.connect('open-state-changed', () => this._focus()), this._menu);
-
-                Main.uiGroup.add_actor(this._menu.actor);
 
                 this._contextMenuManager = new PopupMenu.PopupMenuManager(this);
                 this._contextMenuManager.addMenu(this._menu);
