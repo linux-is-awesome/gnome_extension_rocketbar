@@ -150,9 +150,10 @@ var Taskbar = GObject.registerClass(
                 const {app, isFavorite, isRestored} = taskbarAppsById.get(appId);
 
                 // create new app buttons
-                if (!taskbarAppButtonsByAppId.has(appId)) {
+                if (!taskbarAppButtonsByAppId.size || !taskbarAppButtonsByAppId.has(appId)) {
+                    const enableAnimation = !this._isRendered || !isRestored;
                     // disable animation for restored app buttons
-                    new AppButton(app, isFavorite, this._settings).setParent(this._layout, i, !isRestored);
+                    new AppButton(app, isFavorite, this._settings).setParent(this._layout, i, enableAnimation);
                     continue;
                 }
 
@@ -171,6 +172,8 @@ var Taskbar = GObject.registerClass(
             }
 
             this._layout.queue_relayout();
+
+            this._isRendered = true;
         }
 
         _getTaskbarApps() {
