@@ -106,6 +106,7 @@ var Taskbar = GObject.registerClass(
 
             // add functions visible for app buttons
             this._layout.setActiveAppButton = appButton => this._setActiveAppButton(appButton);
+            this._layout.handleAppButtonPosition = appButton => this._handleAppButtonPosition(appButton);
             this._layout.scrollToAppButton = appButton => this._scrollToAppButton(appButton);
             this._layout.setScrollLock = (appButton, locked) => this._setScrollLock(appButton, locked);
 
@@ -335,27 +336,6 @@ var Taskbar = GObject.registerClass(
             return result;
         }
 
-        _restoreRunningAppsForWorkspace(workspaceIndex) {
-            
-            const workspacesLength = global.workspace_manager.get_n_workspaces();
-
-            if (!this._runningAppsByWorkspace) {
-                this._runningAppsByWorkspace = [];
-            }
-
-            // remove obsolete workspaces if any
-            if (this._runningAppsByWorkspace.length > workspacesLength) {
-                this._runningAppsByWorkspace.splice(workspacesLength - 1, this._runningAppsByWorkspace.length - workspacesLength);
-            }
-
-            // no cache for the workspace index so create it
-            if (this._runningAppsByWorkspace.length <= workspaceIndex) {
-                this._runningAppsByWorkspace.push([]);
-            }
-
-            return this._runningAppsByWorkspace[workspaceIndex];
-        }
-
         _handlePosition() {
             const layoutActors = this._layout.get_children();
 
@@ -441,6 +421,74 @@ var Taskbar = GObject.registerClass(
             if (!this._activeAppButton) {
                 this._stopScrollToActiveButton();
             }
+        }
+
+        _handleAppButtonPosition(appButton) {
+
+            if (!appButton || !appButton.appId) {
+                return;
+            }
+
+            let newAppIds = [];
+
+            // update positions of appButtons in the taskbar
+
+            const layoutActors = this._layout.get_children();
+
+            for (let i = 0, l = layoutActors.length; i < l; ++i) {
+
+                let actor = layoutActors[i];
+                const appId = actor instanceof AppButton ? actor.appId : null;
+
+                if (!appId) {
+                    continue;
+                }
+
+                if (actor.isFavorite === appButton.isFavorite) {
+                    newAppIds.push(appId);
+                }
+            }
+
+            // update workspace cache for running apps
+
+            if (!appButton.isFavorite) {
+
+                const workspaceIndex = global.workspace_manager.get_active_workspace_index();
+
+                // call it just to make sure that we have workspace cache
+                this._restoreRunningAppsForWorkspace(workspaceIndex);
+
+                this._runningAppsByWorkspace[workspaceIndex] = newAppIds;
+
+                return;
+            }
+
+            // update favorites
+            
+            const newPosition = newAppIds.indexOf(appButton.appId);
+
+            AppFavorites.getAppFavorites().moveFavoriteToPos(appButton.appId, newPosition);
+        }
+
+        _restoreRunningAppsForWorkspace(workspaceIndex) {
+            
+            const workspacesLength = global.workspace_manager.get_n_workspaces();
+
+            if (!this._runningAppsByWorkspace) {
+                this._runningAppsByWorkspace = [];
+            }
+
+            // remove obsolete workspaces if any
+            if (this._runningAppsByWorkspace.length > workspacesLength) {
+                this._runningAppsByWorkspace.splice(workspacesLength - 1, this._runningAppsByWorkspace.length - workspacesLength);
+            }
+
+            // no cache for the workspace index so create it
+            if (this._runningAppsByWorkspace.length <= workspaceIndex) {
+                this._runningAppsByWorkspace.push([]);
+            }
+
+            return this._runningAppsByWorkspace[workspaceIndex];
         }
 
         //#region scroll view tweaks
