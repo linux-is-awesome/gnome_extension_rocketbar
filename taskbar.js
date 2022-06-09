@@ -218,6 +218,7 @@ var Taskbar = GObject.registerClass(
             // get running apps
 
             let runningApps = this._getRunningAppsForWorkspace(workspaceIndex, favoriteApps);
+            let oldRunningAppIds = this._restoreRunningAppsForWorkspace(workspaceIndex);
 
             // no running apps so clear cache for the workspace and exit
             if (!runningApps.size) {
@@ -226,10 +227,8 @@ var Taskbar = GObject.registerClass(
             }
 
             // restore position of the running apps for the current workspace
+            // if no running apps in cache at this moment then skip
 
-            let oldRunningAppIds = this._restoreRunningAppsForWorkspace(workspaceIndex);
-
-            // no running apps in cache at this moment so skip
             if (oldRunningAppIds.length) {
 
                 let newRunningApps = new Map();
