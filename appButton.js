@@ -123,6 +123,7 @@ class AppButtonIndicator {
         const indicatorIndex = this._indicators.length;
 
         const indicator = new St.Icon({
+            name: 'taskbar-appButton-indicator',
             x_expand: false,
             y_expand: true,
             x_align: Clutter.ActorAlign.CENTER,
@@ -282,7 +283,7 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
-            //this.remove_all_transitions();
+            this.remove_all_transitions();
 
             parent.set_child_at_index(this, position);
         }
@@ -302,6 +303,14 @@ var AppButton = GObject.registerClass(
             this._updateIconGeometry();
         }
 
+        getDragActor() {
+            return this.app.create_icon_texture(this._config.iconSize * 1.5);
+        }
+
+        getDragActorSource() {
+            return this;
+        }
+
         //#endregion public methods
 
         //#region private methods
@@ -310,6 +319,7 @@ var AppButton = GObject.registerClass(
 
             // init the button
             super._init({
+                name: 'taskbar-appButton',
                 reactive: true,
                 can_focus: true,
                 track_hover: true,
@@ -351,6 +361,7 @@ var AppButton = GObject.registerClass(
         _createLayout() {
 
             this._appIcon = new St.Bin({
+                name: 'taskbar-appButton-icon',
                 y_expand: true,
                 x_align: Clutter.ActorAlign.CENTER,
                 y_align: Clutter.ActorAlign.FILL,
@@ -360,6 +371,7 @@ var AppButton = GObject.registerClass(
             this.bind_property('hover', this._appIcon, 'hover', GObject.BindingFlags.SYNC_CREATE);
 
             const container = new St.BoxLayout({
+                name: 'taskbar-appButton-icon-container',
                 vertical: true,
                 y_expand: true,
                 y_align: Clutter.ActorAlign.FILL
@@ -368,6 +380,7 @@ var AppButton = GObject.registerClass(
             container.add_child(this._appIcon);
 
             this._layout = new Clutter.Actor({
+                name: 'taskbar-appButton-layout',
                 layout_manager: new Clutter.BinLayout(),
                 y_expand: true,
                 y_align: Clutter.ActorAlign.FILL
@@ -392,11 +405,130 @@ var AppButton = GObject.registerClass(
             this.connect('key-focus-in', () => this._focus(true));
             this.connect('key-focus-out', () => this._focus(false));
             this.connect('notify::hover', () => this._hover());
+            // enable drag & drop
+            this._draggable = DND.makeDraggable(this, { timeoutThreshold: 200 });
+            this._draggable.connect('drag-begin', () => this._dragBegin());
+            this._draggable.connect('drag-end', () => this._dragEnd());
             // external connections
             this._connections = new Map();
             this._connections.set(global.display.connect('notify::focus-window', () => this._handleAppState()), global.display);
             this._connections.set(global.display.connect('window-demands-attention', (display, window) => this._handleUrgentWindow(window)), global.display);
         }
+
+        _destroy() {
+
+            this.remove_all_transitions();
+
+            // remove connections
+            this._connections.forEach((connection, id) => {
+                connection.disconnect(id);
+                id = null;
+            }); this.opacity = 150;
+
+            this._connections = null;
+
+            // destroy context menu
+            this._menu?.close(false);
+            //this._menu?.destroy();
+            this._menu = null;
+            this._contextMenuManager = null;
+
+            // destroy indicator
+            this._indicator?.destroy();
+            this._indicator = null;
+
+            // destroy drag & drop functionality
+            this._draggable = null;
+            this._dragEnd();
+        }
+
+        //#region drag & drop
+
+        _dragBegin() {
+
+            this.remove_all_transitions();
+
+            this._dragMonitor = {
+                dragMotion: event => this._dragMotion(event)
+            };
+
+            DND.addDragMonitor(this._dragMonitor);
+
+            Main.overview.beginItemDrag(this);
+        }
+
+        _dragMotion(event) {
+
+            const parent = this.get_parent();
+
+            const [x, y] = parent.get_transformed_position();
+
+            const dragPosition = event.x - x;
+
+            let dragIndex = Math.round(dragPosition / this.width);
+
+            dragIndex = Math.min(Math.max(dragIndex, 0), parent.get_n_children() - 1);
+
+            const actorAtIndex = parent.get_child_at_index(dragIndex);
+
+            // works only for app buttons
+            if (!(actorAtIndex instanceof AppButton) || actorAtIndex === this) {
+                return DND.DragMotionResult.CONTINUE;
+            }
+
+            // don't allow to drop favorites over running apps and vice versa
+            if (this.isFavorite !== actorAtIndex.isFavorite) {
+                return DND.DragMotionResult.CONTINUE;
+            }
+
+            // drop the app button at the new index
+            this.remove_all_transitions();
+
+            this.opacity = 150;
+
+            parent.set_child_at_index(this, dragIndex);
+
+            this._scrollToAppButton();
+
+            this.ease({
+                opacity: 150,
+                duration: 1000,
+                onComplete: () => this.ease({
+                    opacity: 255,
+                    duration: 300,
+                    mode: Clutter.AnimationMode.EASE_OUT_QUAD
+                })
+            });
+
+            return DND.DragMotionResult.CONTINUE;
+        }
+
+        _dragEnd() {
+
+            if (!this._dragMonitor) {
+                return;
+            }
+
+            this.remove_all_transitions();
+
+            this.opacity = 255;
+
+            DND.removeDragMonitor(this._dragMonitor);
+            this._dragMonitor = null;
+
+            Main.overview.endItemDrag(this);
+
+            // handle destroy of the app button
+            if (!this._draggable) {
+                return;
+            }
+
+            this.get_parent()?.handleAppButtonPosition(this);
+
+            this._updateIconGeometry();
+        }
+
+        //#endregion drag & drop
 
         _handleButtonPress() {
             const event = Clutter.get_current_event();
@@ -683,28 +815,6 @@ var AppButton = GObject.registerClass(
 
         _hover() {
             this.get_parent()?.setScrollLock(this, this.hover);;
-        }
-
-        _destroy() {
-
-            this.remove_all_transitions();
-
-            // remove connections
-            this._connections.forEach((connection, id) => {
-                connection.disconnect(id);
-                id = null;
-            });
-            this._connections = null;
-
-            // destroy context menu
-            this._menu?.close(false);
-            //this._menu?.destroy();
-            this._menu = null;
-            this._contextMenuManager = null;
-
-            // destroy indicator
-            this._indicator?.destroy();
-            this._indicator = null;
         }
 
         _scrollToAppButton() {
