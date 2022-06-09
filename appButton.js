@@ -469,6 +469,11 @@ var AppButton = GObject.registerClass(
 
             dragIndex = Math.min(Math.max(dragIndex, 0), parent.get_n_children() - 1);
 
+            // makes dragging less aggressive
+            if (dragPosition < dragIndex * this.width) {
+                return DND.DragMotionResult.CONTINUE;
+            }
+
             const actorAtIndex = parent.get_child_at_index(dragIndex);
 
             // works only for app buttons
