@@ -34,7 +34,10 @@ var Taskbar = GObject.registerClass(
         _init(settings, sessionCache) {
 
             // init scroll view
-            super._init({ style_class: 'hfade' });
+            super._init({
+                name: 'taskbar', 
+                style_class: 'hfade'
+            });
             this.set_policy(St.PolicyType.EXTERNAL, St.PolicyType.NEVER);
             this.clip_to_allocation = true;
 
@@ -94,6 +97,7 @@ var Taskbar = GObject.registerClass(
 
             // create a parent for app buttons
             this._layout = new St.BoxLayout({
+                name: 'taskbar-layout',
                 x_expand: true,
                 y_expand: true,
                 x_align: Clutter.ActorAlign.FILL,
