@@ -1,6 +1,6 @@
 //#region imports
 
-const { Clutter, Gio, GLib, GObject, Meta, Shell, St } = imports.gi;
+const { Clutter, GObject, Meta, Shell, St } = imports.gi;
 const { AppMenu } = imports.ui.appMenu;
 const AppFavorites = imports.ui.appFavorites;
 const PopupMenu = imports.ui.popupMenu;
@@ -138,7 +138,7 @@ class AppButtonIndicator {
         indicator.ease({
             opacity: 255,
             duration: 300,
-            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD
         });
     }
 
@@ -352,7 +352,8 @@ var AppButton = GObject.registerClass(
                 padding: 8,
                 verticalMargin: 2,
                 roundness: 100,
-                spacing: 0
+                spacing: 0,
+                backlight: true
             };
         }
 
@@ -368,6 +369,15 @@ var AppButton = GObject.registerClass(
 
             this.bind_property('hover', this._appIcon, 'hover', GObject.BindingFlags.SYNC_CREATE);
 
+            this._backlight = new St.Icon({
+                name: 'taskbar-appButton-backlight',
+                x_expand: true,
+                y_expand: true,
+                x_align: Clutter.ActorAlign.CENTER,
+                y_align: Clutter.ActorAlign.CENTER,
+                opacity: 0
+            });
+
             this._layout = new Clutter.Actor({
                 name: 'taskbar-appButton-layout',
                 layout_manager: new Clutter.BinLayout(),
@@ -375,6 +385,7 @@ var AppButton = GObject.registerClass(
                 y_align: Clutter.ActorAlign.FILL
             });
 
+            this._layout.add_actor(this._backlight);
             this._layout.add_actor(this._appIcon);
 
             this.set_child(this._layout);
@@ -710,12 +721,53 @@ var AppButton = GObject.registerClass(
 
             this.style = `margin-right: ${this._config.spacing}px;`;
 
+            this._updateBacklight();
+
             if (this._isActive) {
                 this._appIcon.add_style_pseudo_class('active');
                 return;
             }
 
             this._appIcon.remove_style_pseudo_class('active');
+        }
+
+        _updateBacklight() {
+
+            if (!this._config.backlight && this._backlight.opacity > 0) {
+                this._backlight.opacity = 0;
+                return;
+            }
+
+            // just in case if the app icon is not accessible for some reason
+            if (this._appIcon.get_stage() === null) {
+                return;
+            }
+
+            // make backlight size equal to the appIcon size
+            this._backlight.width = this._appIcon.width;
+            this._backlight.height = this._appIcon.height - this._config.verticalMargin;
+
+            this._backlight.style = (
+                `border-radius: ${this._config.roundness}px;`
+            )
+
+            const targetOpacity = (
+                this._isActive ?
+                100 :
+                0
+            );
+    
+            if (this._backlight.opacity === targetOpacity) {
+                return;
+            }
+
+            this._backlight.remove_all_transitions();
+
+            this._backlight.ease({
+                opacity: targetOpacity,
+                duration: 500,
+                mode: Clutter.AnimationMode.EASE_OUT_QUAD
+            });
         }
 
         /**

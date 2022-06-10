@@ -1,11 +1,9 @@
 //#region imports
 
-const { Clutter, Gio, GLib, GObject, Meta, Shell, St } = imports.gi;
+const { Clutter, GLib, GObject, Shell, St } = imports.gi;
 const { AppMenu } = imports.ui.appMenu;
 const AppFavorites = imports.ui.appFavorites;
-const PopupMenu = imports.ui.popupMenu;
 const Main = imports.ui.main;
-const DND = imports.ui.dnd;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { AppButton } = Me.imports.appButton;
