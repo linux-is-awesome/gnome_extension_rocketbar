@@ -289,9 +289,6 @@ var AppButton = GObject.registerClass(
         }
 
         rerender() {
-
-            this._updateIcon();
-
             // call the function only once to avoid multiple loops 
             const windows = this._getAppWindows();
 
@@ -304,7 +301,7 @@ var AppButton = GObject.registerClass(
         }
 
         getDragActor() {
-            return this.app.create_icon_texture(this._config.iconSize * 1.5);
+            return this._createAppIconTexture(1.5);
         }
 
         getDragActorSource() {
@@ -342,6 +339,7 @@ var AppButton = GObject.registerClass(
 
             // create layout
             this._createLayout();
+            this._updateIcon();
             this._updateStyle();
 
             // create connections
@@ -370,15 +368,6 @@ var AppButton = GObject.registerClass(
 
             this.bind_property('hover', this._appIcon, 'hover', GObject.BindingFlags.SYNC_CREATE);
 
-            const container = new St.BoxLayout({
-                name: 'taskbar-appButton-icon-container',
-                vertical: true,
-                y_expand: true,
-                y_align: Clutter.ActorAlign.FILL
-            });
-
-            container.add_child(this._appIcon);
-
             this._layout = new Clutter.Actor({
                 name: 'taskbar-appButton-layout',
                 layout_manager: new Clutter.BinLayout(),
@@ -386,15 +375,11 @@ var AppButton = GObject.registerClass(
                 y_align: Clutter.ActorAlign.FILL
             });
 
-            this._layout.add_actor(container);
+            this._layout.add_actor(this._appIcon);
 
             this.set_child(this._layout);
 
             this._indicator = new AppButtonIndicator(this._layout, this._settings);
-        }
-
-        _updateIcon() {
-            this._appIcon.set_child(this.app.create_icon_texture(this._config.iconSize));
         }
 
         _createConnections() {
@@ -413,6 +398,7 @@ var AppButton = GObject.registerClass(
             this._connections = new Map();
             this._connections.set(global.display.connect('notify::focus-window', () => this._handleAppState()), global.display);
             this._connections.set(global.display.connect('window-demands-attention', (display, window) => this._handleUrgentWindow(window)), global.display);
+            this._connections.set(St.Settings.get().connect('notify::gtk-icon-theme', () => this._updateIcon()), St.Settings.get());
         }
 
         _destroy() {
@@ -423,7 +409,7 @@ var AppButton = GObject.registerClass(
             this._connections.forEach((connection, id) => {
                 connection.disconnect(id);
                 id = null;
-            }); this.opacity = 150;
+            });
 
             this._connections = null;
 
@@ -703,6 +689,14 @@ var AppButton = GObject.registerClass(
             }
         }
 
+        _updateIcon() {
+            this._appIcon.set_child(this._createAppIconTexture());
+        }
+
+        _createAppIconTexture(scale) {
+            return this.app.create_icon_texture(this._config.iconSize * (scale || 1))
+        }
+
         _updateStyle() {
 
             this._appIcon.style = (
@@ -745,7 +739,7 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
-            this.get_allocation_box();
+            // this.get_allocation_box();
             let rect = new Meta.Rectangle();
 
             [rect.x, rect.y] = this.get_transformed_position();
