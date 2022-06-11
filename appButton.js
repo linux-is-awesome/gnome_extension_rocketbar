@@ -352,11 +352,13 @@ var AppButton = GObject.registerClass(
 
         _setConfig() {
             this._config = {
-                iconSize: 20,
-                padding: 8,
-                verticalMargin: 2,
-                roundness: 100,
-                spacing: 0
+                iconSize: 20, // 16 - 64 pixels
+                padding: 8, // 0 - 50 pixels
+                verticalMargin: 2, // 0 - 10 pixels
+                roundness: 100, // 0 - 100 pixels
+                spacing: 0, // 0 - 10 pixels
+                backlight: true,
+                backlightIntensity: 1 // 1 - 9
             };
         }
 
@@ -700,6 +702,11 @@ var AppButton = GObject.registerClass(
         }
 
         _updateDominantColor() {
+
+            if (!this._config.backlight) {
+                return;
+            }
+
             this._dominantColor = new DominantColorExtractor(this.app).getColor();
 
             this._updateStyle();
@@ -750,13 +757,17 @@ var AppButton = GObject.registerClass(
                 ${this._dominantColor.r},
                 ${this._dominantColor.g},
                 ${this._dominantColor.b},
-            0.1);`);
+                ${'0.' + this._config.backlightIntensity}
+            );`);
+
+            const endIntensity = this._config.backlightIntensity + 1;
 
             this._appIcon.style += (`background-gradient-end: rgba(
                 ${this._dominantColor.r},
                 ${this._dominantColor.g},
                 ${this._dominantColor.b},
-            0.2);`);
+                ${endIntensity < 10 ? '0.' + endIntensity : endIntensity}
+            );`);
         }
 
         /**
