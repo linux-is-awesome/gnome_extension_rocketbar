@@ -7,6 +7,9 @@ const PopupMenu = imports.ui.popupMenu;
 const Main = imports.ui.main;
 const DND = imports.ui.dnd;
 const IconGrid = imports.ui.iconGrid;
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
+const { DominantColorExtractor } = Me.imports.dominantColorExtractor;
 
 //#endregion imports
 
@@ -122,7 +125,7 @@ class AppButtonIndicator {
 
         const indicatorIndex = this._indicators.length;
 
-        const indicator = new St.Icon({
+        const indicator = new St.Bin({
             name: 'taskbar-appButton-indicator',
             x_expand: false,
             y_expand: true,
@@ -271,7 +274,7 @@ var AppButton = GObject.registerClass(
             this.ease({
                 opacity: 255,
                 duration: 300,
-                mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+                mode: Clutter.AnimationMode.EASE_OUT_QUAD
             });
         }
 
@@ -333,6 +336,7 @@ var AppButton = GObject.registerClass(
             this._isActive = false;
             this._isAppRunning = false; //TODO: use in a scroll action
             this._delegate = this;
+            this._dominantColor = null;
 
             // idenitify initial configuration
             this._setConfig();
@@ -352,8 +356,7 @@ var AppButton = GObject.registerClass(
                 padding: 8,
                 verticalMargin: 2,
                 roundness: 100,
-                spacing: 0,
-                backlight: true
+                spacing: 0
             };
         }
 
@@ -369,15 +372,6 @@ var AppButton = GObject.registerClass(
 
             this.bind_property('hover', this._appIcon, 'hover', GObject.BindingFlags.SYNC_CREATE);
 
-            this._backlight = new St.Icon({
-                name: 'taskbar-appButton-backlight',
-                x_expand: true,
-                y_expand: true,
-                x_align: Clutter.ActorAlign.CENTER,
-                y_align: Clutter.ActorAlign.CENTER,
-                opacity: 0
-            });
-
             this._layout = new Clutter.Actor({
                 name: 'taskbar-appButton-layout',
                 layout_manager: new Clutter.BinLayout(),
@@ -385,7 +379,6 @@ var AppButton = GObject.registerClass(
                 y_align: Clutter.ActorAlign.FILL
             });
 
-            this._layout.add_actor(this._backlight);
             this._layout.add_actor(this._appIcon);
 
             this.set_child(this._layout);
@@ -702,6 +695,14 @@ var AppButton = GObject.registerClass(
 
         _updateIcon() {
             this._appIcon.set_child(this._createAppIconTexture());
+
+            this._updateDominantColor();
+        }
+
+        _updateDominantColor() {
+            this._dominantColor = new DominantColorExtractor(this.app).getColor();
+
+            this._updateStyle();
         }
 
         _createAppIconTexture(scale) {
@@ -709,6 +710,8 @@ var AppButton = GObject.registerClass(
         }
 
         _updateStyle() {
+
+            this.style = `margin-right: ${this._config.spacing}px;`;
 
             this._appIcon.style = (
                 `padding: 0 ${this._config.padding}px;` +
@@ -719,55 +722,41 @@ var AppButton = GObject.registerClass(
                 `border-width: 1px;`
             );
 
-            this.style = `margin-right: ${this._config.spacing}px;`;
-
-            this._updateBacklight();
-
             if (this._isActive) {
+
                 this._appIcon.add_style_pseudo_class('active');
+
+                this._applyDominantColor();
+
                 return;
             }
 
             this._appIcon.remove_style_pseudo_class('active');
         }
 
-        _updateBacklight() {
-
-            if (!this._config.backlight && this._backlight.opacity > 0) {
-                this._backlight.opacity = 0;
+        _applyDominantColor() {
+            
+            if (!this._dominantColor) {
                 return;
             }
 
-            // just in case if the app icon is not accessible for some reason
-            if (this._appIcon.get_stage() === null) {
-                return;
+            if (!this._appIcon.style) {
+                this._appIcon.style = '';
             }
 
-            // make backlight size equal to the appIcon size
-            this._backlight.width = this._appIcon.width;
-            this._backlight.height = this._appIcon.height - this._config.verticalMargin;
+            this._appIcon.style += 'background-gradient-direction: vertical;';
 
-            this._backlight.style = (
-                `border-radius: ${this._config.roundness}px;`
-            )
+            this._appIcon.style += (`background-gradient-start: rgba(
+                ${this._dominantColor.r},
+                ${this._dominantColor.g},
+                ${this._dominantColor.b},
+            0.1);`);
 
-            const targetOpacity = (
-                this._isActive ?
-                100 :
-                0
-            );
-    
-            if (this._backlight.opacity === targetOpacity) {
-                return;
-            }
-
-            this._backlight.remove_all_transitions();
-
-            this._backlight.ease({
-                opacity: targetOpacity,
-                duration: 500,
-                mode: Clutter.AnimationMode.EASE_OUT_QUAD
-            });
+            this._appIcon.style += (`background-gradient-end: rgba(
+                ${this._dominantColor.r},
+                ${this._dominantColor.g},
+                ${this._dominantColor.b},
+            0.2);`);
         }
 
         /**
@@ -791,7 +780,6 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
-            // this.get_allocation_box();
             let rect = new Meta.Rectangle();
 
             [rect.x, rect.y] = this.get_transformed_position();
