@@ -1,4 +1,4 @@
-const { Gio, St, Gtk } = imports.gi;
+const { Gio, St, Gtk, GdkPixbuf } = imports.gi;
 
 const DOMINANT_COLOR_ICON_SIZE = 64;
 
@@ -115,6 +115,14 @@ var DominantColorExtractor = class DominantColorExtractor {
         if (iconTexture instanceof Gio.FileIcon) {
             // Use GdkPixBuf to load the pixel buffer from the provided file path
             return GdkPixbuf.Pixbuf.new_from_file(iconTexture.get_file().get_path());
+        }
+
+        // for some applications iconTexture.get_gicon() returns St.ImageContent
+        // it doesn have get_names function
+        // for ex: Open Office
+        // TODO: no solution as of now
+        if (!iconTexture.get_names) {
+            return null;
         }
 
         const iconTheme = new Gtk.IconTheme();
