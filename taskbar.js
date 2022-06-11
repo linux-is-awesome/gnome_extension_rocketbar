@@ -279,13 +279,12 @@ var Taskbar = GObject.registerClass(
                 for (let i = 0, l = favoriteApps.length; i < l; ++i) {
 
                     const app = favoriteApps[i];
-                    const appId = app.get_id();
 
-                    if (!appId) {
+                    if (!app.id) {
                         continue;
                     }
 
-                    result.set(appId, {
+                    result.set(app.id, {
                         app: app,
                         isFavorite: true
                     });
@@ -318,7 +317,7 @@ var Taskbar = GObject.registerClass(
                 }
 
                 const app = tracker.get_window_app(window);
-                const appId = app ? app.get_id() : null;
+                const appId = app ? app.id : null;
 
                 if (!appId || result.has(appId) || favoriteApps.has(appId)) {
                     continue;
