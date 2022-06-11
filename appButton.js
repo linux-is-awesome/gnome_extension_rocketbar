@@ -20,6 +20,7 @@ class AppButtonIndicator {
         this._settings = settings;
         this._indicators = null;
         this._isActive = false;
+        this._dominantColor = null;
 
         this._setConfig();
     }
@@ -89,6 +90,17 @@ class AppButtonIndicator {
         this.rerender();
     }
 
+    setDominantColor(rgb) {
+
+        this._dominantColor = (
+            rgb ?
+            `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})` :
+            null
+        );
+
+        this.rerender();
+    }
+
     rerender() {
 
         if (!this._indicators?.length) {
@@ -108,6 +120,8 @@ class AppButtonIndicator {
         this._config = {
             color: 'rgb(255, 255, 255)',
             activeColor: 'rgb(53, 132, 228)',
+            dominantColor: true,
+            activeDominantColor: true,
             size: 4,
             maxIndicators: 2
         };
@@ -147,8 +161,13 @@ class AppButtonIndicator {
 
     _getIndicatorStyle(index) {
 
+        const backgroundColor = (
+            this._isActive ? (this._config.activeDominantColor && this._dominantColor ? this._dominantColor : this._config.activeColor) :
+                             (this._config.dominantColor && this._dominantColor ? this._dominantColor : this._config.color) 
+        );
+
         let result = (
-            `background-color: ${this._isActive ? this._config.activeColor : this._config.color};` +
+            `background-color: ${backgroundColor};` +
             `width: ${this._config.size}px;` +
             `height: ${this._config.size}px;` +
             `border-radius: ${this._config.size}px;`
@@ -687,7 +706,7 @@ var AppButton = GObject.registerClass(
                 this._updateStyle();
             }
 
-            this._indicator.update(windows, this._isActive);
+            this._indicator?.update(windows, this._isActive);
 
             if (this._isActive) {
                 this.get_parent()?.setActiveAppButton(this);
@@ -709,6 +728,11 @@ var AppButton = GObject.registerClass(
 
             this._dominantColor = new DominantColorExtractor(this.app).getColor();
 
+            this._handleDominantColorChange();
+        }
+
+        _handleDominantColorChange() {
+            this._indicator?.setDominantColor(this._dominantColor);
             this._updateStyle();
         }
 
