@@ -22,7 +22,12 @@ var DominantColorExtractor = class DominantColorExtractor {
         let pixBuf = this._getIconPixBuf();
 
         if (pixBuf == null) {
-            return null;
+            // return white color in edge cases
+            return {
+                r: 255,
+                g: 255,
+                b: 255
+            };
         }
 
         let pixels = pixBuf.get_pixels();
