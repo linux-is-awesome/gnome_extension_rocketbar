@@ -6,5 +6,6 @@ mkdir -p $Path
 
 glib-compile-schemas ./schemas/
 
-\cp extension.js taskbar.js appButton.js dominantColorExtractor.js metadata.json $Path
+\cp extension.js metadata.json $Path
+\cp -r ./modules $Path
 \cp -r ./schemas $Path

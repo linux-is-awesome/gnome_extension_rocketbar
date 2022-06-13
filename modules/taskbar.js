@@ -6,7 +6,7 @@ const AppFavorites = imports.ui.appFavorites;
 const Main = imports.ui.main;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
-const { AppButton } = Me.imports.appButton;
+const { AppButton } = Me.imports.modules.appButton;
 
 //#endregion imports
 
