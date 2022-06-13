@@ -21,7 +21,7 @@ var DominantColorExtractor = class DominantColorExtractor {
     getColor() {
         let pixBuf = this._getIconPixBuf();
 
-        if (pixBuf == null) {
+        if (pixBuf === null) {
             // return white color in edge cases
             return {
                 r: 255,
@@ -232,11 +232,11 @@ var DominantColorExtractor = class DominantColorExtractor {
         let m = Math.min(r, g, b);
         let c = M - m;
 
-        if (c == 0) {
+        if (c === 0) {
             h = 0;
-        } else if (M == r) {
+        } else if (M === r) {
             h = ((g - b) / c) % 6;
-        } else if (M == g) {
+        } else if (M === g) {
             h = (b - r) / c + 2;
         } else {
             h = (r - g) / c + 4;
