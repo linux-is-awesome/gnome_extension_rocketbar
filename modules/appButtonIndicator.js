@@ -19,6 +19,8 @@ var AppButtonIndicator = class AppButtonIndicator {
         this._parent = null;
 
         this._destroyIndicators();
+
+        this._toggleNotificationBadge(false);
     }
 
     update(windows = [], isActive) {
@@ -99,6 +101,15 @@ var AppButtonIndicator = class AppButtonIndicator {
         }   
     }
 
+    setNotifications(count) {
+
+        if (!this._parent) {
+            return;
+        }
+
+        this._toggleNotificationBadge(count ? true : false);
+    }
+
     //#endregion public methods
 
     //#region private methods
@@ -110,7 +121,12 @@ var AppButtonIndicator = class AppButtonIndicator {
             dominantColor: true,
             activeDominantColor: true,
             size: 4,
-            maxIndicators: 2
+            maxIndicators: 2,
+            // notification badge
+            notificationBadgeSize: 5,
+            notificationBadgeMargin: 7,
+            notificationBadgeColor: 'rgb(255, 0, 0)',
+            notificationBadgeBorderColor: 'rgb(70, 70, 70)'
         };
     }
 
@@ -220,6 +236,77 @@ var AppButtonIndicator = class AppButtonIndicator {
                 indicator = null;
             }
         });
+    }
+
+    _toggleNotificationBadge(show) {
+
+        if (!show) {
+
+            if (this._notificationBadge) {
+                this._notificationBadge.remove_all_transitions();
+
+                // destroy without animation
+                if (!this._parent) {
+                    this._notificationBadge.destroy();
+                    return;
+                }
+
+                // animate and destroy
+                this._notificationBadge.ease({
+                    opacity: 0,
+                    duration: 200,
+                    mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+                    onComplete: () => {
+                        this._notificationBadge.destroy();
+                        this._notificationBadge = null;
+                    }
+                });
+            }
+            
+            return;
+        }
+
+        if (this._notificationBadge) {
+            // just in case stop ease to prevent destroying
+            this._notificationBadge.remove_all_transitions();
+            return;
+        }
+
+        this._notificationBadge = new St.Bin({
+            name: 'taskbar-appButton-notification-badge',
+            x_expand: true,
+            y_expand: true,
+            x_align: Clutter.ActorAlign.END,
+            y_align: Clutter.ActorAlign.END,
+            opacity: 0
+        });
+
+        this._updateNotificationBadgeStyle();
+
+        this._parent.add_actor(this._notificationBadge);
+
+        this._notificationBadge.ease({
+            opacity: 255,
+            duration: 300,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD
+        });
+    }
+
+    _updateNotificationBadgeStyle() {
+
+        if (!this._notificationBadge) {
+            return;
+        }
+
+        this._notificationBadge.style = (
+            `background-color: ${this._config.notificationBadgeColor};` +
+            `width: ${this._config.notificationBadgeSize}px;` +
+            `height: ${this._config.notificationBadgeSize}px;` +
+            `border-radius: ${this._config.notificationBadgeSize}px;` +
+            `border: 1px solid ${this._config.notificationBadgeBorderColor};` +
+            `margin-right: ${this._config.notificationBadgeMargin}px;` +
+            `margin-bottom: ${this._config.notificationBadgeMargin}px;`
+        );
     }
 
     //#endregion private methods

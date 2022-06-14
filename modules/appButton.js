@@ -12,6 +12,7 @@ const { DominantColorExtractor } = Me.imports.modules.dominantColorExtractor;
 const { AppButtonIndicator } = Me.imports.modules.appButtonIndicator;
 const { AppButtonMenu } = Me.imports.modules.appButtonMenu;
 const { AppButtonTooltip } = Me.imports.modules.appButtonTooltip;
+const { NotificationHandler } = Me.imports.modules.notificationHandler;
 
 //#endregion imports
 
@@ -77,6 +78,17 @@ var AppButton = GObject.registerClass(
             return this;
         }
 
+        setNotifications(count) {
+
+            if (this._notifications === count) {
+                return;
+            }
+
+            this._notifications = count;
+
+            this._indicator.setNotifications(count);
+        }
+
         //#endregion public methods
 
         //#region private methods
@@ -103,6 +115,7 @@ var AppButton = GObject.registerClass(
             this._isAppRunning = false; //TODO: use in a scroll action
             this._delegate = this;
             this._dominantColor = null;
+            this._notifications = 0;
 
             // idenitify initial configuration
             this._setConfig();
@@ -114,6 +127,9 @@ var AppButton = GObject.registerClass(
 
             // create connections
             this._createConnections();
+
+            // add notifications for the button
+            NotificationHandler.addAppButton(this);
         }
 
         _setConfig() {
@@ -186,9 +202,12 @@ var AppButton = GObject.registerClass(
 
             this._connections = null;
 
+            // remove app information
+            this.app = null;
+            this.appId = null;
+
             // destroy context menu
             this._menu?.close(false);
-            //this._menu?.destroy();
             this._menu = null;
             this._contextMenuManager = null;
 
