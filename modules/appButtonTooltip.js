@@ -12,6 +12,7 @@ var AppButtonTooltip = class AppButtonTooltip {
         this._tooltip = new St.Label({
             style_class: 'dash-label',
             text: appButton.app.get_name(),
+            style: 'border: 1px solid rgba(0, 0, 0, 0.1);',
             opacity: 0
         });
 
