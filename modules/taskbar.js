@@ -7,6 +7,7 @@ const Main = imports.ui.main;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { AppButton } = Me.imports.modules.appButton;
+const { NotificationHandler } = Me.imports.modules.notificationHandler;
 
 //#endregion imports
 
@@ -45,6 +46,7 @@ var Taskbar = GObject.registerClass(
             // set properties
             this._appSystem = Shell.AppSystem.get_default();
             this._settings = settings;
+            this._notifications = new NotificationHandler();
 
             // restore cached data
             this._restoreSessionCache(sessionCache);
@@ -333,6 +335,7 @@ var Taskbar = GObject.registerClass(
         }
 
         _handlePosition() {
+
             const layoutActors = this._layout.get_children();
 
             for (let i = 0, l = layoutActors.length; i < l; ++i) {
@@ -393,6 +396,10 @@ var Taskbar = GObject.registerClass(
                 id = null;
             });
             this._connections = null;
+
+            // destroy notification handler
+            NotificationHandler.destroyCache();
+            this._notifications?.destroy();
 
             // destroy layout
             this._layout.get_children().forEach(item => item.destroy());
