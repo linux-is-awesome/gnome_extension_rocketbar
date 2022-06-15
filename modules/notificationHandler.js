@@ -8,11 +8,13 @@ const { GLib } = imports.gi;
 
 var NotificationHandler = class NotificationHandler {
 
-    static _notificationsCache = null; // Map: appId => { appButton: appButton, count: int }
+    // don't destroy this map while extension is enabled
+    static _notificationsCache = new Map(); // Map: appId => { appButton: appButton, count: int }
 
     static addAppButton(source) {
 
-        if (!source || !source.appId || !source.setNotifications) {
+        if (!NotificationHandler._notificationsCache ||
+                !source || !source.appId || !source.setNotifications) {
             return;
         }
 
@@ -47,6 +49,7 @@ var NotificationHandler = class NotificationHandler {
         }
     }
 
+    // should be used only in case the extension becomes disabled
     static destroyCache() {
         NotificationHandler._notificationsCache = null;
     }
