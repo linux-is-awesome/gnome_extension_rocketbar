@@ -141,7 +141,7 @@ var AppButton = GObject.registerClass(
                 spacing: 0, // 0 - 10 pixels
                 backlight: true,
                 backlightIntensity: 2, // 1 - 9
-                enableTooltips: false
+                enableTooltips: true
             };
         }
 
@@ -320,6 +320,9 @@ var AppButton = GObject.registerClass(
         _handleButtonPress() {
             const event = Clutter.get_current_event();
 
+            // hide the tooltip if any
+            this._toggleTooltip(false);
+
             if (event?.get_button() === Clutter.BUTTON_SECONDARY) {
                 this._openMenu();
                 return Clutter.EVENT_STOP;
@@ -335,6 +338,9 @@ var AppButton = GObject.registerClass(
             if (!event) {
                 return;
             }
+
+            // hide the tooltip if any
+            this._toggleTooltip(false);
 
             const isOverview = Main.overview._shown;
             const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) != 0;
@@ -638,11 +644,14 @@ var AppButton = GObject.registerClass(
             Main.activateWindow(window);
         }
 
-        _focus(isFocused) {
+        _focus(isFocused = false) {
 
             if (this._menu?.isOpen) {
                 isFocused = true;
             }
+
+            // show tooltip when focused and menu is not open
+            this._toggleTooltip(isFocused && !this._menu?.isOpen);
 
             if (isFocused) {
                 
@@ -673,6 +682,11 @@ var AppButton = GObject.registerClass(
             }
 
             if (show) {
+
+                if (this._tooltip) {
+                    return;
+                }
+
                 this._tooltip = new AppButtonTooltip(this);
                 return;
             }
