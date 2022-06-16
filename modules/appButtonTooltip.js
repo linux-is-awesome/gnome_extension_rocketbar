@@ -60,9 +60,10 @@ var AppButtonTooltip = class AppButtonTooltip {
 
         this._tooltip.add_actor(this._tooltipText);
 
-        // create common style for counters
+        // create common styles for counters
         const counterStyle = 'margin-left: 8px;'
         const counterTextStyle = 'margin-left: 5px;'
+        const counterIconSize = 15;
 
         // create windows counter
 
@@ -75,8 +76,9 @@ var AppButtonTooltip = class AppButtonTooltip {
             name: 'appButton-tooltip-windows-counter-icon',
             icon_name: 'window-symbolic',
             style_class: 'system-status-icon',
-            width: 16,
-            height: 16
+            width: counterIconSize,
+            height: counterIconSize,
+            opacity: 200
         }));
 
         this._windowsCounterText = new St.Label({
@@ -99,8 +101,9 @@ var AppButtonTooltip = class AppButtonTooltip {
             name: 'appButton-tooltip-windows-notifications-icon',
             icon_name: 'notifications-symbolic',
             style_class: 'system-status-icon',
-            width: 16,
-            height: 16
+            width: counterIconSize,
+            height: counterIconSize,
+            opacity: 200
         }));
 
         this._notificationsCounterText = new St.Label({

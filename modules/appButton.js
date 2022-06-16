@@ -6,6 +6,8 @@ const PopupMenu = imports.ui.popupMenu;
 const Main = imports.ui.main;
 const DND = imports.ui.dnd;
 const IconGrid = imports.ui.iconGrid;
+
+// custom modules import
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { DominantColorExtractor } = Me.imports.modules.dominantColorExtractor;
