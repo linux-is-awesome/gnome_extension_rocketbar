@@ -4,6 +4,8 @@ const { Clutter, GLib, GObject, Shell, St } = imports.gi;
 const { AppMenu } = imports.ui.appMenu;
 const AppFavorites = imports.ui.appFavorites;
 const Main = imports.ui.main;
+
+// custom modules import
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { AppButton } = Me.imports.modules.appButton;
@@ -13,19 +15,13 @@ const { AppButton } = Me.imports.modules.appButton;
 var Taskbar = GObject.registerClass(
     class Taskbar extends St.ScrollView {
 
-        //#region public methods
+        //#region static
 
-        getSessionCache() {
-            return {
-                runningAppsByWorkspace: (
-                    this._runningAppsByWorkspace && this._runningAppsByWorkspace.length ?
-                    this._runningAppsByWorkspace :
-                    null
-                )
-            };
-        }
+        // save ids of running apps in the order they are placed in the taskbar
+        // to restore position of the apps after unlocking user's session
+        static _runningAppsCache = null; // [appId...]
 
-        //#endregion public methods
+        //#endregion static
 
         //#region private methods
 
@@ -46,9 +42,6 @@ var Taskbar = GObject.registerClass(
             this._appSystem = Shell.AppSystem.get_default();
             this._settings = settings;
 
-            // restore cached data
-            this._restoreSessionCache(sessionCache);
-
             // idenitify initial configuration
             this._setConfig();
 
@@ -67,15 +60,6 @@ var Taskbar = GObject.registerClass(
                 this._initTimeout = null;
                 return GLib.SOURCE_REMOVE;
             });
-        }
-
-        _restoreSessionCache(sessionCache) {
-
-            if (!sessionCache) {
-                return;
-            }
-
-            this._runningAppsByWorkspace = sessionCache.runningAppsByWorkspace || null;
         }
 
         _setConfig() {
@@ -220,7 +204,7 @@ var Taskbar = GObject.registerClass(
 
             // no running apps so clear cache for the workspace and exit
             if (!runningApps.size) {
-                this._runningAppsByWorkspace[workspaceIndex] = [];
+                Taskbar._runningAppsCache[workspaceIndex] = [];
                 return favoriteApps;
             }
 
@@ -259,7 +243,7 @@ var Taskbar = GObject.registerClass(
             }
 
             // update cache for the workspace
-            this._runningAppsByWorkspace[workspaceIndex] = [...runningApps.keys()];
+            Taskbar._runningAppsCache[workspaceIndex] = [...runningApps.keys()];
 
             // merge all apps to a single result if it makes sense
             if (favoriteApps.size) {
@@ -455,7 +439,7 @@ var Taskbar = GObject.registerClass(
                 // call it just to make sure that we have workspace cache
                 this._restoreRunningAppsForWorkspace(workspaceIndex);
 
-                this._runningAppsByWorkspace[workspaceIndex] = newAppIds;
+                Taskbar._runningAppsCache[workspaceIndex] = newAppIds;
 
                 return;
             }
@@ -471,21 +455,21 @@ var Taskbar = GObject.registerClass(
             
             const workspacesLength = global.workspace_manager.get_n_workspaces();
 
-            if (!this._runningAppsByWorkspace) {
-                this._runningAppsByWorkspace = [];
+            if (!Taskbar._runningAppsCache) {
+                Taskbar._runningAppsCache = [];
             }
 
             // remove obsolete workspaces if any
-            if (this._runningAppsByWorkspace.length > workspacesLength) {
-                this._runningAppsByWorkspace.splice(workspacesLength - 1, this._runningAppsByWorkspace.length - workspacesLength);
+            if (Taskbar._runningAppsCache.length > workspacesLength) {
+                Taskbar._runningAppsCache.splice(workspacesLength - 1, Taskbar._runningAppsCache.length - workspacesLength);
             }
 
             // no cache for the workspace index so create it
-            if (this._runningAppsByWorkspace.length <= workspaceIndex) {
-                this._runningAppsByWorkspace.push([]);
+            if (Taskbar._runningAppsCache.length <= workspaceIndex) {
+                Taskbar._runningAppsCache.push([]);
             }
 
-            return this._runningAppsByWorkspace[workspaceIndex];
+            return Taskbar._runningAppsCache[workspaceIndex];
         }
 
         //#region scroll view tweaks
