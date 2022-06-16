@@ -453,14 +453,19 @@ var AppButton = GObject.registerClass(
                 windows = this._getAppWindows();
             }
 
-            // store current windows count to show in tooltips
-            this.windows = windows.length;
-
             // self destroy :)
             if (!this.isFavorite && !windows.length) {
                 this.destroy();
                 return;
             }
+
+            // store current active window 
+            this.activeWindow = windows[0];
+            // store current windows count
+            this.windows = windows.length;
+
+            // refresh tooltip
+            this._tooltip?.refresh();
 
             // update running state
             this._isAppRunning = windows.length > 0;

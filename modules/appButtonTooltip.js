@@ -9,16 +9,15 @@ var AppButtonTooltip = class AppButtonTooltip {
 
         this._appButton = appButton;
 
-        this._tooltip = new St.Label({
-            style_class: 'dash-label',
-            text: appButton.app.get_name(),
-            style: 'border: 1px solid rgba(0, 0, 0, 0.1);',
-            opacity: 0
-        });
-
-        Main.layoutManager.addChrome(this._tooltip);
+        this._createTooltip();
 
         this._show();
+    }
+
+    refresh() {
+        this._refreshAppTitle();
+        this._refreshWindowsCount();
+        this._refreshNotificationsCount();
     }
 
     destroy(animation) {
@@ -39,6 +38,119 @@ var AppButtonTooltip = class AppButtonTooltip {
         }
 
         this._tooltip.destroy();
+    }
+
+    _createTooltip() {
+
+        this._tooltip = new St.BoxLayout({
+            name: 'appButton-tooltip',
+            style_class: 'dash-label',
+            style: (
+                'border: 1px solid rgba(255, 255, 255, 0.1);' +
+                'box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);'
+            ),
+            opacity: 0
+        });
+
+        // create tooltip text
+
+        this._tooltipText = new St.Label({
+            name: 'appButton-tooltip-text'
+        });
+
+        this._tooltip.add_actor(this._tooltipText);
+
+        // create common style for counters
+        const counterStyle = 'margin-left: 8px;'
+        const counterTextStyle = 'margin-left: 5px;'
+
+        // create windows counter
+
+        this._windowsCounter = new St.BoxLayout({
+            name: 'appButton-tooltip-windows-counter',
+            style: counterStyle
+        });
+        
+        this._windowsCounter.add_actor(new St.Icon({
+            name: 'appButton-tooltip-windows-counter-icon',
+            icon_name: 'window-symbolic',
+            style_class: 'system-status-icon',
+            width: 16,
+            height: 16
+        }));
+
+        this._windowsCounterText = new St.Label({
+            name: 'appButton-tooltip-windows-counter-text',
+            style: counterTextStyle
+        });
+
+        this._windowsCounter.add_actor(this._windowsCounterText);
+
+        this._tooltip.add_actor(this._windowsCounter);
+
+        // create notifications counter
+
+        this._notificationsCounter = new St.BoxLayout({
+            name: 'appButton-tooltip-notifications-counter',
+            style: counterStyle
+        });
+
+        this._notificationsCounter.add_actor(new St.Icon({
+            name: 'appButton-tooltip-windows-notifications-icon',
+            icon_name: 'notifications-symbolic',
+            style_class: 'system-status-icon',
+            width: 16,
+            height: 16
+        }));
+
+        this._notificationsCounterText = new St.Label({
+            name: 'appButton-tooltip-windows-notifications-text',
+            style: counterTextStyle
+        });
+
+        this._notificationsCounter.add_actor(this._notificationsCounterText);
+
+        this._tooltip.add_actor(this._notificationsCounter);
+
+        // all ui elements created!
+
+        Main.layoutManager.addChrome(this._tooltip);
+
+        this._refreshAppTitle();
+        this._refreshWindowsCount();
+        this._refreshNotificationsCount();
+    }
+
+    _refreshAppTitle() {
+        this._tooltipText.text = (
+            this._appButton.activeWindow ?
+            this._appButton.activeWindow.title :
+            this._appButton.app.get_name()
+        );
+    }
+
+    _refreshWindowsCount() {
+
+        this._windowsCounterText.text = this._appButton.windows.toString();
+
+        if (this._appButton.windows > 1) {
+            this._windowsCounter.show();
+            return;
+        }
+
+        this._windowsCounter.hide();
+    }
+
+    _refreshNotificationsCount() {
+
+        this._notificationsCounterText.text = this._appButton.notifications.toString();
+
+        if (this._appButton.notifications) {
+            this._notificationsCounter.show();
+            return;
+        }
+
+        this._notificationsCounter.hide();
     }
 
     _show() {
