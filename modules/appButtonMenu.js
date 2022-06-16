@@ -4,9 +4,9 @@ const Main = imports.ui.main;
 
 var AppButtonMenu = class AppButtonMenu extends AppMenu {
 
-    constructor(actor, app) {
+    constructor(parent, app) {
 
-        super(actor, St.Side.TOP, {
+        super(parent, St.Side.TOP, {
             favoritesSection: true,
             showSingleWindows: true,
         });
@@ -27,6 +27,25 @@ var AppButtonMenu = class AppButtonMenu extends AppMenu {
         if (!this._appFavorites.isFavorite(this._app.id)) {
             this._toggleFavoriteItem.label.text = _('Pin');
         }
+    }
+
+    _updateWindowsSection() {
+        
+        // show windows from the current workspace only
+        // using a trick to avoid complete overriding of the method
+
+        const workspaceIndex = global.workspace_manager.get_active_workspace_index();
+
+        const originalApp = this._app;
+
+        this._app = {
+            get_windows: () => originalApp.get_windows().filter(window => window.get_workspace().index() === workspaceIndex),
+            get_name: () => originalApp.get_name()
+        };
+
+        super._updateWindowsSection();
+
+        this._app = originalApp;
     }
 
 }
