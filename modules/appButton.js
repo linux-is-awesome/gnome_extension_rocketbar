@@ -12,7 +12,7 @@ const { DominantColorExtractor } = Me.imports.modules.dominantColorExtractor;
 const { AppButtonIndicator } = Me.imports.modules.appButtonIndicator;
 const { AppButtonMenu } = Me.imports.modules.appButtonMenu;
 const { AppButtonTooltip } = Me.imports.modules.appButtonTooltip;
-const { NotificationHandler } = Me.imports.modules.notificationHandler;
+const { NotificationHandler } = Me.imports.modules.notificationService;
 
 //#endregion imports
 
@@ -78,17 +78,6 @@ var AppButton = GObject.registerClass(
             return this;
         }
 
-        setNotifications(count) {
-
-            if (this._notifications === count) {
-                return;
-            }
-
-            this._notifications = count;
-
-            this._indicator.setNotifications(count);
-        }
-
         //#endregion public methods
 
         //#region private methods
@@ -101,13 +90,16 @@ var AppButton = GObject.registerClass(
                 reactive: true,
                 can_focus: true,
                 track_hover: true,
-                button_mask: St.ButtonMask.ONE | St.ButtonMask.TWO
+                button_mask: St.ButtonMask.ONE | St.ButtonMask.TWO | St.ButtonMask.THREE
             });
 
             // set public properties
             this.app = app;
             this.appId = app.id;
             this.isFavorite = isFavorite;
+            this.activeWindow = null;
+            this.notifications = 0;
+            this.windows = 0;
 
             // set private properties
             this._settings = settings;
@@ -115,7 +107,9 @@ var AppButton = GObject.registerClass(
             this._isAppRunning = false; //TODO: use in a scroll action
             this._delegate = this;
             this._dominantColor = null;
-            this._notifications = 0;
+
+            // add notifications for the button
+            this._notificationHandler = new NotificationHandler(count => this._setNotifications(count), this.appId);
 
             // idenitify initial configuration
             this._setConfig();
@@ -127,9 +121,6 @@ var AppButton = GObject.registerClass(
 
             // create connections
             this._createConnections();
-
-            // add notifications for the button
-            NotificationHandler.addAppButton(this);
         }
 
         _setConfig() {
@@ -174,7 +165,6 @@ var AppButton = GObject.registerClass(
         _createConnections() {
             // internal connections
             this.connect('clicked', () => this._activate());
-            this.connect('button_press_event', () => this._handleButtonPress());
             this.connect('destroy', () => this._destroy());
             this.connect('key-focus-in', () => this._focus(true));
             this.connect('key-focus-out', () => this._focus(false));
@@ -222,6 +212,10 @@ var AppButton = GObject.registerClass(
             // destroy drag & drop functionality
             this._draggable = null;
             this._dragEnd();
+
+            // destroy notification handler
+            this._notificationHandler?.destroy();
+            this._notificationHandler = null;
         }
 
         //#region drag & drop
@@ -317,20 +311,6 @@ var AppButton = GObject.registerClass(
 
         //#endregion drag & drop
 
-        _handleButtonPress() {
-            const event = Clutter.get_current_event();
-
-            // hide the tooltip if any
-            this._toggleTooltip(false);
-
-            if (event?.get_button() === Clutter.BUTTON_SECONDARY) {
-                this._openMenu();
-                return Clutter.EVENT_STOP;
-            }
-
-            return Clutter.EVENT_PROPAGATE;
-        }
-
         _activate() {
 
             const event = Clutter.get_current_event();
@@ -341,6 +321,13 @@ var AppButton = GObject.registerClass(
 
             // hide the tooltip if any
             this._toggleTooltip(false);
+
+            // handle secondary button clicks to show the context menu
+            if (event.type() === Clutter.EventType.BUTTON_RELEASE &&
+                    event.get_button() === Clutter.BUTTON_SECONDARY) {
+                this._openMenu();
+                return;
+            }
 
             const isOverview = Main.overview._shown;
             const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) != 0;
@@ -465,6 +452,9 @@ var AppButton = GObject.registerClass(
                 // this code must be executed right here before validating the app state
                 windows = this._getAppWindows();
             }
+
+            // store current windows count to show in tooltips
+            this.windows = windows.length;
 
             // self destroy :)
             if (!this.isFavorite && !windows.length) {
@@ -614,7 +604,7 @@ var AppButton = GObject.registerClass(
             const workspaceIndex = global.workspace_manager.get_active_workspace_index();
 
             return this.app.get_windows().filter(window => {
-                const result = window.get_workspace().index() === workspaceIndex && !window.skipTaskbar;
+                const result = window.get_workspace().index() === workspaceIndex && !window.is_skip_taskbar();
 
                 if (result && window.has_focus()) {
                     // just a trick to avoid multiple loops
@@ -708,6 +698,19 @@ var AppButton = GObject.registerClass(
             }
 
             parent.scrollToAppButton(this);
+        }
+
+        _setNotifications(count) {
+
+            if (this.notifications === count) {
+                return;
+            }
+
+            this.notifications = count;
+
+            this._indicator?.setNotifications(count);
+
+            this._tooltip?.refresh();
         }
 
         //#endregion private methods
