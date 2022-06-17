@@ -323,27 +323,36 @@ var AppButton = GObject.registerClass(
             // hide the tooltip if any
             this._toggleTooltip(false);
 
+            const button = (
+                event.type() === Clutter.EventType.BUTTON_RELEASE ?
+                event.get_button() :
+                null
+            );
+
             // handle secondary button clicks to show the context menu
-            if (event.type() === Clutter.EventType.BUTTON_RELEASE &&
-                    event.get_button() === Clutter.BUTTON_SECONDARY) {
+            if (button === Clutter.BUTTON_SECONDARY) {
                 this._openMenu();
                 return;
             }
 
             const isOverview = Main.overview._shown;
             const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) != 0;
-            const isMiddleButton = (
-                event.type() === Clutter.EventType.BUTTON_RELEASE &&
-                event.get_button() === Clutter.BUTTON_MIDDLE
-            );
+            const isMiddleButton = button === Clutter.BUTTON_MIDDLE;
+
+            // close opened windows
+            if (isCtrlPressed && isMiddleButton) {
+                this._closeFirstAppWindow();
+                return;
+            }
+
+            // hide gnome shell overview
+            Main.overview.hide();
+
             const openNewWindow = (
                 this.app.can_open_new_window() &&
                 this.app.state === Shell.AppState.RUNNING &&
                 (isCtrlPressed || isMiddleButton)
             );
-
-            // hide gnome shell overview
-            Main.overview.hide();
 
             // app is running and we want to open a new window for it
             if (openNewWindow) {
@@ -391,6 +400,16 @@ var AppButton = GObject.registerClass(
             }
 
             this._cycleAppWindows(windows);
+        }
+
+        _closeFirstAppWindow() {
+            const windows = this._getAppWindows();
+
+            if (!windows.length) {
+                return;
+            }
+
+            windows[0].delete(global.get_current_time());
         }
 
         _cycleAppWindows(windows, reverse) {
