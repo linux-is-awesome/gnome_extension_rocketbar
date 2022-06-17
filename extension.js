@@ -3,6 +3,7 @@
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { Taskbar } = Me.imports.ui.taskbar;
+const { ShellTweaks } = Me.imports.shell.tweaks;
 
 //#endregion imports
 
@@ -17,11 +18,13 @@ class ExtensionInstance {
     enable() {
         this.settings = ExtensionUtils.getSettings();
         this.taskbar = new Taskbar(this.settings);
+        this.shellTweaks = new ShellTweaks(this.settings);
     }
 
     disable() {
 
         this.taskbar?.destroy();
+        this.shellTweaks?.destroy();
         this.settings?.run_dispose();
 
         this.destroyCallback();
