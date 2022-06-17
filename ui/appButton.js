@@ -79,6 +79,22 @@ var AppButton = GObject.registerClass(
             return this;
         }
 
+        handleScroll(direction) {
+
+            // when app is not running
+            if (!this.windows || this._handleScrollTimeout) {
+                return;
+            }
+
+            // make scrolling less aggressive
+            this._handleScrollTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
+                this._handleScrollTimeout = null;
+                return GLib.SOURCE_REMOVE;
+            });
+
+            this._cycleAppWindows(this._getAppWindows(), direction === Clutter.ScrollDirection.UP);
+        }
+
         //#endregion public methods
 
         //#region private methods
