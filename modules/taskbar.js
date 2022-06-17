@@ -71,7 +71,9 @@ var Taskbar = GObject.registerClass(
                 // position to display the taskbar in the panel
                 // left box by default
                 // possible options: left, center
-                panelPosition: 'left'
+                panelPosition: 'left',
+                // by default display apps from the current workspace only
+                isolateWorkspaces: true
             };
         }
 
@@ -195,11 +197,11 @@ var Taskbar = GObject.registerClass(
 
             const workspaceIndex = global.workspace_manager.get_active_workspace_index();
 
+            // get apps to display
+
             const favoriteApps = this._getFavoriteApps();
 
-            // get running apps
-
-            let runningApps = this._getRunningAppsForWorkspace(workspaceIndex, favoriteApps);
+            let runningApps = this._getRunningApps(favoriteApps);
             let oldRunningAppIds = this._restoreRunningAppsForWorkspace(workspaceIndex);
 
             // no running apps so clear cache for the workspace and exit
@@ -282,21 +284,27 @@ var Taskbar = GObject.registerClass(
          * appSystem.get_running() is slow to update
          * using implementation from Dash to Panel instead
         */
-        _getRunningAppsForWorkspace(workspaceIndex, favoriteApps = new Map()) {
+        _getRunningApps(favoriteApps = new Map()) {
 
             let result = new Map();
 
             const tracker = Shell.WindowTracker.get_default();
-            const windows = global.get_window_actors();            
+            const windows = (
+                this._config.isolateWorkspaces ?
+                // get windows from the current workspace only
+                global.workspace_manager.get_active_workspace().list_windows() :
+                // get all windows
+                global.get_window_actors()
+            );            
 
             for (let i = 0, l = windows.length; i < l; ++i) {
 
-                const window = windows[i].metaWindow;
+                // workspace_manager.get_active_workspace().list_windows() returns meta windows
+                // global.get_window_actors() returns window actors
+                const window = windows[i].metaWindow || windows[i];
 
-                // get windows from the current workspace only
                 // skip windows that skip taskbar
-                if (window.get_workspace().index() !== workspaceIndex ||
-                        window.is_skip_taskbar()) {
+                if (window.skip_taskbar) {
                     continue;
                 }
 

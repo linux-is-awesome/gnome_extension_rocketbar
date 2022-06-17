@@ -601,26 +601,36 @@ var AppButton = GObject.registerClass(
 
         _getAppWindows() {
 
+            let result = [];
+    
             this._hasFocusedWindow = false;
 
             // no windows for a stopped app
             if (this.app.state == Shell.AppState.STOPPED) {
-                return [];
+                return result;
             }
 
             const workspaceIndex = global.workspace_manager.get_active_workspace_index();
+            const appWindows = this.app.get_windows();
 
-            return this.app.get_windows().filter(window => {
-                const result = window.get_workspace().index() === workspaceIndex && !window.is_skip_taskbar();
+            for (let i = 0, l = appWindows.length; i < l; ++i) {
 
-                if (result && window.has_focus()) {
+                const appWindow = appWindows[i];
+
+                if (appWindow.get_workspace().index() !== workspaceIndex || appWindow.skip_taskbar) {
+                    continue;
+                }
+
+                if (appWindow.has_focus()) {
                     // just a trick to avoid multiple loops
                     // one to find windows and another one to find focused windows
                     this._hasFocusedWindow = true;
                 }
 
-                return result;
-            });
+                result.push(appWindow);
+            }
+
+            return result;
         }
 
         _handleUrgentWindow(window) {

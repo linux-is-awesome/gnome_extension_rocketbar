@@ -34,9 +34,9 @@ var AppButtonMenu = class AppButtonMenu extends AppMenu {
         // show windows from the current workspace only
         // using a trick to avoid complete overriding of the method
 
-        const workspaceIndex = global.workspace_manager.get_active_workspace_index();
-
         const originalApp = this._app;
+
+        const workspaceIndex = global.workspace_manager.get_active_workspace_index();
 
         this._app = {
             get_windows: () => originalApp.get_windows().filter(window => window.get_workspace().index() === workspaceIndex),
