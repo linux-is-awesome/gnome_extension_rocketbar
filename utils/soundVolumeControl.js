@@ -31,7 +31,7 @@ var SoundVolumeControl = class SoundVolumeControl {
             return;
         }
 
-        let resultVolume = this._sink.volume + volume;
+        let resultVolume = this._sink.volume + (this._volumeMax / 100 * volume);
 
         resultVolume = Math.min(resultVolume, this._volumeMax);
         resultVolume = Math.max(resultVolume, 0);
@@ -40,10 +40,6 @@ var SoundVolumeControl = class SoundVolumeControl {
         this._sink.push_volume();
 
         this._showOSD();
-    }
-
-    getMaxVolume() {
-        return this._volumeMax;
     }
 
     _handleMixerSinc(sincId) {
