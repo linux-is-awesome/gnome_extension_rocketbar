@@ -188,6 +188,8 @@ var ShellTweaks = class ShellTweaks {
         const activitiesButton = Main.panel.statusArea['activities'];
 
         activitiesButton.disconnect(this._activitiesClickHandler);
+
+        this._activitiesClickHandler = null;
     }
 
     //#endregion activities button tweaks
