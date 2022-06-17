@@ -1,7 +1,6 @@
 const Clutter = imports.gi.Clutter;
 const Main = imports.ui.main;
 const HotCorner = imports.ui.layout.HotCorner;
-//const { ActivitiesButton } = imports.ui.panel;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
@@ -171,8 +170,10 @@ var ShellTweaks = class ShellTweaks {
                     Main.overview._overview._controls.dash.showAppsButton.checked) {
                 return Clutter.EVENT_PROPAGATE;
             }
-            
-            Main.overview._overview._controls._toggleAppsPage();
+
+            if (Main.overview.shouldToggleByCornerOrButton()) {
+                Main.overview._overview._controls._toggleAppsPage();
+            }
 
             return Clutter.EVENT_STOP;
         });
