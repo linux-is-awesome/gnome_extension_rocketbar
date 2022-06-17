@@ -6,31 +6,38 @@ const { Taskbar } = Me.imports.ui.taskbar;
 
 //#endregion imports
 
-//#region variables
-
-let settings = null;
-let taskbar = null;
-
-//#endregion variables
-
 //#region main
 
-function enable() {
-    settings = ExtensionUtils.getSettings();
-    taskbar = new Taskbar(settings);
-}
+class ExtensionInstance {
 
-function disable() {
-    // destroy
-    taskbar?.destroy();
-    settings?.run_dispose();
-    // nullify
-    taskbar = null;
-    settings = null;
+    constructor(destroyCallback) {
+        this.destroyCallback = destroyCallback;
+    }
+
+    enable() {
+        this.settings = ExtensionUtils.getSettings();
+        this.taskbar = new Taskbar(this.settings);
+    }
+
+    disable() {
+
+        this.taskbar?.destroy();
+        this.settings?.run_dispose();
+
+        this.destroyCallback();
+    }
+
 }
 
 function init() {
-    // TODO: init translations?
+
+    let extensionInstance = new ExtensionInstance(() => {
+        // nullify the instance
+        // I'm not really sure it's necessary but let's do it no matter why
+        extensionInstance = null;
+    });
+
+    return extensionInstance;
 }
 
 //#endregion main

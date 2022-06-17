@@ -1,8 +1,7 @@
 //#region imports
 
 const { Clutter, GLib, GObject, Meta, Shell, St } = imports.gi;
-const AppFavorites = imports.ui.appFavorites;
-const PopupMenu = imports.ui.popupMenu;
+const { PopupMenuManager } = imports.ui.popupMenu;
 const Main = imports.ui.main;
 const DND = imports.ui.dnd;
 const IconGrid = imports.ui.iconGrid;
