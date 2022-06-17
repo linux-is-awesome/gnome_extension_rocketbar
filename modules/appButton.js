@@ -106,7 +106,6 @@ var AppButton = GObject.registerClass(
             // set private properties
             this._settings = settings;
             this._isActive = false;
-            this._isAppRunning = false; //TODO: use in a scroll action
             this._delegate = this;
             this._dominantColor = null;
 
@@ -306,7 +305,7 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
-            this.get_parent()?.handleAppButtonPosition(this);
+            this._getTaskbar()?.handleAppButtonPosition(this);
 
             this._updateIconGeometry();
         }
@@ -462,15 +461,12 @@ var AppButton = GObject.registerClass(
             }
 
             // store current active window 
-            this.activeWindow = windows[0];
+            this.activeWindow = windows.length ? windows[0] : null;
             // store current windows count
             this.windows = windows.length;
 
             // refresh tooltip
             this._tooltip?.refresh();
-
-            // update running state
-            this._isAppRunning = windows.length > 0;
 
             // update active state
             if (this._isActive !== this._hasFocusedWindow) {
@@ -483,7 +479,7 @@ var AppButton = GObject.registerClass(
             this._indicator?.update(windows, this._isActive);
 
             if (this._isActive) {
-                this.get_parent()?.setActiveAppButton(this);
+                this._getTaskbar()?.setActiveAppButton(this);
                 this._scrollToAppButton();
             }
         }
@@ -664,7 +660,7 @@ var AppButton = GObject.registerClass(
                 
                 this._appIcon.add_style_pseudo_class('focus');
                 
-                this.get_parent()?.setActiveAppButton(null);
+                this._getTaskbar()?.setActiveAppButton(null);
                 
                 this._scrollToAppButton();
 
@@ -677,7 +673,7 @@ var AppButton = GObject.registerClass(
         _hover() {
 
             // lock taskbar scroll while hovering the app button 
-            this.get_parent()?.setScrollLock(this, this.hover);
+            this._getTaskbar()?.setScrollLock(this, this.hover);
 
             this._toggleTooltip(this.hover);
         }
@@ -708,13 +704,7 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
-            const parent = this.get_parent();
-
-            if (!parent) {
-                return;
-            }
-
-            parent.scrollToAppButton(this);
+            this._getTaskbar()?.scrollToAppButton(this);
         }
 
         _setNotifications(count) {
@@ -728,6 +718,10 @@ var AppButton = GObject.registerClass(
             this._indicator?.setNotifications(count);
 
             this._tooltip?.refresh();
+        }
+
+        _getTaskbar() {
+            return this.get_parent()?.get_parent();
         }
 
         //#endregion private methods

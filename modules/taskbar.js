@@ -23,9 +23,33 @@ var Taskbar = GObject.registerClass(
 
         //#endregion static
 
+        //#region public methods
+
+        setActiveAppButton(appButton) {
+            this._activeAppButton = appButton;
+
+            if (!this._activeAppButton) {
+                this._stopScrollToActiveButton();
+            }
+        }
+
+        handleAppButtonPosition(appButton)  {
+            this._handleAppButtonPosition(appButton);
+        }
+
+        scrollToAppButton(appButton) {
+            this._scrollToAppButton(appButton);
+        }
+
+        setScrollLock(appButton, locked) {
+            this._setScrollLock(appButton, locked);
+        }
+
+        //#endregion public methods
+    
         //#region private methods
 
-        _init(settings, sessionCache) {
+        _init(settings) {
 
             // init scroll view
             super._init({
@@ -87,12 +111,6 @@ var Taskbar = GObject.registerClass(
                 x_align: Clutter.ActorAlign.FILL,
                 y_align: Clutter.ActorAlign.FILL
             });
-
-            // add functions visible for app buttons
-            this._layout.setActiveAppButton = appButton => this._setActiveAppButton(appButton);
-            this._layout.handleAppButtonPosition = appButton => this._handleAppButtonPosition(appButton);
-            this._layout.scrollToAppButton = appButton => this._scrollToAppButton(appButton);
-            this._layout.setScrollLock = (appButton, locked) => this._setScrollLock(appButton, locked);
 
             this.add_actor(this._layout);
         }
@@ -401,14 +419,6 @@ var Taskbar = GObject.registerClass(
             if (this._rerenderTimeout) {
                 GLib.source_remove(this._rerenderTimeout);
                 this._rerenderTimeout = null;
-            }
-        }
-
-        _setActiveAppButton(appButton) {
-            this._activeAppButton = appButton;
-
-            if (!this._activeAppButton) {
-                this._stopScrollToActiveButton();
             }
         }
 
