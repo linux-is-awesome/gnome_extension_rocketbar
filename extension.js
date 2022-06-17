@@ -7,40 +7,35 @@ const { ShellTweaks } = Me.imports.shell.tweaks;
 
 //#endregion imports
 
+//#region variables
+
+let settings = null;
+let taskbar = null;
+let shellTweaks = null;
+
+//#endregion variables
+
 //#region main
 
-class ExtensionInstance {
+function enable() {
+    settings = ExtensionUtils.getSettings();
+    taskbar = new Taskbar(settings);
+    shellTweaks = new ShellTweaks(settings);
+}
 
-    constructor(destroyCallback) {
-        this.destroyCallback = destroyCallback;
-    }
-
-    enable() {
-        this.settings = ExtensionUtils.getSettings();
-        this.taskbar = new Taskbar(this.settings);
-        this.shellTweaks = new ShellTweaks(this.settings);
-    }
-
-    disable() {
-
-        this.taskbar?.destroy();
-        this.shellTweaks?.destroy();
-        this.settings?.run_dispose();
-
-        this.destroyCallback();
-    }
-
+function disable() {
+    // destroy all
+    taskbar?.destroy();
+    shellTweaks?.destroy();
+    settings?.run_dispose();
+    // and nullify all
+    taskbar = null;
+    shellTweaks = null;
+    settings = null;
 }
 
 function init() {
-
-    let extensionInstance = new ExtensionInstance(() => {
-        // nullify the instance
-        // I'm not really sure it's necessary but let's do it no matter why
-        extensionInstance = null;
-    });
-
-    return extensionInstance;
+    //TODO: ExtensionUtils.initTranslations();
 }
 
 //#endregion main
