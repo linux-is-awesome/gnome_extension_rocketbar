@@ -121,7 +121,7 @@ var AppButtonIndicator = class AppButtonIndicator {
             dominantColor: true,
             activeDominantColor: true,
             size: 4,
-            maxIndicators: 2,
+            maxIndicators: 3,
             // notification badge
             notificationBadgeSize: 5,
             notificationBadgeMargin: 7,
