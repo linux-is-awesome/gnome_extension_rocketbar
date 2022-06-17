@@ -54,7 +54,8 @@ var Taskbar = GObject.registerClass(
             // init scroll view
             super._init({
                 name: 'taskbar', 
-                style_class: 'hfade'
+                style_class: 'hfade',
+                reactive: false // allow to handle scroll events on the panel
             });
             this.set_policy(St.PolicyType.EXTERNAL, St.PolicyType.NEVER);
             this.clip_to_allocation = true;
