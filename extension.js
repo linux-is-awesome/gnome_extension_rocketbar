@@ -2,7 +2,7 @@
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
-const { Taskbar } = Me.imports.modules.taskbar;
+const { Taskbar } = Me.imports.ui.taskbar;
 
 //#endregion imports
 

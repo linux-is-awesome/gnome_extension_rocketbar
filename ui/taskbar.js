@@ -8,7 +8,7 @@ const Main = imports.ui.main;
 // custom modules import
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
-const { AppButton } = Me.imports.modules.appButton;
+const { AppButton } = Me.imports.ui.appButton;
 
 //#endregion imports
 

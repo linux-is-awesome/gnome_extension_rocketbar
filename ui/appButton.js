@@ -10,11 +10,11 @@ const IconGrid = imports.ui.iconGrid;
 // custom modules import
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
-const { DominantColorExtractor } = Me.imports.modules.dominantColorExtractor;
-const { AppButtonIndicator } = Me.imports.modules.appButtonIndicator;
-const { AppButtonMenu } = Me.imports.modules.appButtonMenu;
-const { AppButtonTooltip } = Me.imports.modules.appButtonTooltip;
-const { NotificationHandler } = Me.imports.modules.notificationService;
+const { AppButtonIndicator } = Me.imports.ui.appButtonIndicator;
+const { AppButtonMenu } = Me.imports.ui.appButtonMenu;
+const { AppButtonTooltip } = Me.imports.ui.appButtonTooltip;
+const { DominantColorExtractor } = Me.imports.utils.dominantColorExtractor;
+const { NotificationHandler } = Me.imports.utils.notificationService;
 
 //#endregion imports
 
