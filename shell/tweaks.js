@@ -1,6 +1,7 @@
 const Clutter = imports.gi.Clutter;
 const Main = imports.ui.main;
 const HotCorner = imports.ui.layout.HotCorner;
+//const { ActivitiesButton } = imports.ui.panel;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
@@ -18,6 +19,8 @@ var ShellTweaks = class ShellTweaks {
         this._addPanelScrollHandler();
 
         this._enableFullscreenHotCorner();
+
+        this._enableActivitiesClickOverride();
     }
 
     destroy() {
@@ -28,6 +31,8 @@ var ShellTweaks = class ShellTweaks {
         this._removePanelScrollHandler();
 
         this._disableFullscreenHotCorner();
+
+        this._disableActivitiesClickOverride();
     }
 
     _setConfig(settings) {
@@ -90,12 +95,10 @@ var ShellTweaks = class ShellTweaks {
             return Clutter.EVENT_PROPAGATE;
         }
 
-        // calculate a volume step
-        const soundVolumeStep = this._soundVolumeControl.getMaxVolume() / 100 * this._config.soundVolumeStep;
-
         this._soundVolumeControl.addVolume(
-            scrollDirection == Clutter.ScrollDirection.UP ?
-            soundVolumeStep : -soundVolumeStep
+            scrollDirection === Clutter.ScrollDirection.UP ?
+            this._config.soundVolumeStep :
+            -this._config.soundVolumeStep
         );
 
         return Clutter.EVENT_STOP;
@@ -106,16 +109,30 @@ var ShellTweaks = class ShellTweaks {
     //#region hot corner tweaks
 
     _enableFullscreenHotCorner() {
-        // backup default function
+
+        if (this._originalToggleOverview) {
+            return;
+        }
+
+        // backup the original function
         this._originalToggleOverview = HotCorner.prototype._toggleOverview;
+
         // override the function
         HotCorner.prototype._toggleOverview = function() {
-            if (Main.overview.shouldToggleByCornerOrButton()) {
-                Main.overview.toggle();
-                if (Main.overview.animationInProgress)
-                    this._ripples.playAnimation(this._x, this._y);
+
+            if (!Main.overview.shouldToggleByCornerOrButton()) {
+                return;
             }
+            
+            Main.overview.toggle();
+            
+            if (!Main.overview.animationInProgress) {
+                return;
+            }
+            
+            this._ripples.playAnimation(this._x, this._y);
         };
+
         Main.layoutManager._updateHotCorners();
     }
 
@@ -127,7 +144,50 @@ var ShellTweaks = class ShellTweaks {
 
         HotCorner.prototype._toggleOverview = this._originalToggleOverview;
         Main.layoutManager._updateHotCorners();
+
+        this._originalToggleOverview = null;
     }
 
     //#endregion hot corner tweaks
+
+    //#region activities button tweaks
+
+    _enableActivitiesClickOverride() {
+
+        if (this._activitiesClickHandler) {
+            return;
+        }
+
+        const activitiesButton = Main.panel.statusArea['activities'];
+
+        this._activitiesClickHandler = activitiesButton.connect('captured_event', (actor, event) => {
+
+            if (event.type() !== Clutter.EventType.BUTTON_RELEASE ||
+                    event.get_button() !== Clutter.BUTTON_SECONDARY) {
+                return Clutter.EVENT_PROPAGATE;
+            }
+
+            if (Main.overview.visible &&
+                    Main.overview._overview._controls.dash.showAppsButton.checked) {
+                return Clutter.EVENT_PROPAGATE;
+            }
+            
+            Main.overview._overview._controls._toggleAppsPage();
+
+            return Clutter.EVENT_STOP;
+        });
+    }
+
+    _disableActivitiesClickOverride() {
+
+        if (!this._activitiesClickHandler) {
+            return;
+        }
+
+        const activitiesButton = Main.panel.statusArea['activities'];
+
+        activitiesButton.disconnect(this._activitiesClickHandler);
+    }
+
+    //#endregion activities button tweaks
 }
