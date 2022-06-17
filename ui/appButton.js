@@ -453,7 +453,7 @@ var AppButton = GObject.registerClass(
 
                 this._connections.set(this._menu.connect('open-state-changed', () => this._focus()), this._menu);
 
-                this._contextMenuManager = new PopupMenu.PopupMenuManager(this);
+                this._contextMenuManager = new PopupMenuManager(this);
                 this._contextMenuManager.addMenu(this._menu);
             }
 
