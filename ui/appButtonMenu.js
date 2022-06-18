@@ -4,17 +4,38 @@ const Main = imports.ui.main;
 
 var AppButtonMenu = class AppButtonMenu extends AppMenu {
 
-    constructor(parent, app) {
+    constructor(parent, app, settings) {
 
         super(parent, St.Side.TOP, {
             favoritesSection: true,
             showSingleWindows: true,
         });
 
+        this._settings = settings;
+
         this.blockSourceEvents = true;
+
+        this._setConfig();
+
         this.setApp(app);
 
         Main.uiGroup.add_actor(this.actor);
+    }
+
+    updateConfig() {
+        const oldConfig = this._config;
+
+        this._setConfig();
+
+        if (oldConfig.isolateWorkspaces !== this._config.isolateWorkspaces) {
+            this._updateWindowsSection();
+        }
+    }
+
+    _setConfig() {
+        this._config = {
+            isolateWorkspaces: this._settings.get_boolean('taskbar-isolate-workspaces')
+        };
     }
 
     _updateFavoriteItem() {
@@ -31,6 +52,11 @@ var AppButtonMenu = class AppButtonMenu extends AppMenu {
 
     _updateWindowsSection() {
         
+        if (!this._config.isolateWorkspaces) {
+            super._updateWindowsSection();
+            return;
+        }
+
         // show windows from the current workspace only
         // using a trick to avoid complete overriding of the method
 

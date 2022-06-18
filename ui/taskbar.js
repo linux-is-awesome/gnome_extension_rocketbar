@@ -87,21 +87,6 @@ var Taskbar = GObject.registerClass(
             });
         }
 
-        _setConfig() {
-            this._config = {
-                showFavorites: true,
-                // index to display the taskbar in the panel
-                // display after Activities button by default
-                panelIndex: 1,
-                // position to display the taskbar in the panel
-                // left box by default
-                // possible options: left, center
-                panelPosition: 'left',
-                // by default display apps from the current workspace only
-                isolateWorkspaces: true
-            };
-        }
-
         _createLayout() {
 
             // create a parent for app buttons
@@ -132,6 +117,35 @@ var Taskbar = GObject.registerClass(
             this._connections.set(global.display.connect('window-entered-monitor', () => this._rerender()), global.display);
             this._connections.set(global.display.connect('restacked', () => this._rerender()), global.display);
             this._connections.set(Main.layoutManager.connect('startup-complete', () => this._rerender()), Main.layoutManager);
+            // handle settings
+            this._connections.set(this._settings.connect('changed::taskbar-show-favorites', () => this._handleSettingsChange()), this._settings);
+            this._connections.set(this._settings.connect('changed::taskbar-isolate-workspaces', () => this._handleSettingsChange()), this._settings);
+        }
+
+        _handleSettingsChange() {
+            const oldConfig = this._config;
+
+            this._setConfig();
+
+            if (oldConfig.showFavorites !== this._config.showFavorites ||
+                    oldConfig.isolateWorkspaces !== this._config.isolateWorkspaces) {
+                this._rerender();
+            }
+        }
+
+        _setConfig() {
+            this._config = {
+                showFavorites: this._settings.get_boolean('taskbar-show-favorites'),
+                // display running apps from the current workspace only or from all workspaces
+                isolateWorkspaces: this._settings.get_boolean('taskbar-isolate-workspaces'),
+                // index to display the taskbar in the panel
+                // display after Activities button by default
+                panelIndex: 1,
+                // position to display the taskbar in the panel
+                // left box by default
+                // possible options: left, center
+                panelPosition: 'left'
+            };
         }
 
         _addToPanel() {

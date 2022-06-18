@@ -123,19 +123,6 @@ var AppButton = GObject.registerClass(
             this._createConnections();
         }
 
-        _setConfig() {
-            this._config = {
-                iconSize: 20, // 16 - 64 pixels
-                padding: 8, // 0 - 50 pixels
-                verticalMargin: 2, // 0 - 10 pixels
-                roundness: 100, // 0 - 100 pixels
-                spacing: 0, // 0 - 10 pixels
-                backlight: true,
-                backlightIntensity: 2, // 1 - 9
-                enableTooltips: true
-            };
-        }
-
         _createLayout() {
 
             this._appIcon = new St.Bin({
@@ -179,6 +166,22 @@ var AppButton = GObject.registerClass(
             this._connections.set(global.display.connect('notify::focus-window', () => this._handleAppState()), global.display);
             this._connections.set(global.display.connect('window-demands-attention', (display, window) => this._handleUrgentWindow(window)), global.display);
             this._connections.set(St.Settings.get().connect('notify::gtk-icon-theme', () => this._updateIcon()), St.Settings.get());
+            // handle settings
+            this._connections.set(this._settings.connect('changed::taskbar-isolate-workspaces', () => this._setConfig()), this._settings);
+        }
+
+        _setConfig() {
+            this._config = {
+                isolateWorkspaces: this._settings.get_boolean('taskbar-isolate-workspaces'),
+                iconSize: 20, // 16 - 64 pixels
+                padding: 8, // 0 - 50 pixels
+                verticalMargin: 2, // 0 - 10 pixels
+                roundness: 100, // 0 - 100 pixels
+                spacing: 0, // 0 - 10 pixels
+                backlight: true,
+                backlightIntensity: 2, // 1 - 9
+                enableTooltips: true
+            };
         }
 
         _destroy() {
@@ -476,7 +479,7 @@ var AppButton = GObject.registerClass(
 
             if (!this._menu) {
 
-                this._menu = new AppButtonMenu(this._layout, this.app);
+                this._menu = new AppButtonMenu(this._layout, this.app, this._settings);
 
                 this._connections.set(this._menu.connect('open-state-changed', () => this._focus()), this._menu);
 
@@ -484,7 +487,10 @@ var AppButton = GObject.registerClass(
                 this._contextMenuManager.addMenu(this._menu);
             }
 
+            this._menu.updateConfig();
+
             this._menu.open(true);
+
             this._contextMenuManager.ignoreRelease();
         }
 
@@ -660,7 +666,8 @@ var AppButton = GObject.registerClass(
 
                 const appWindow = appWindows[i];
 
-                if (appWindow.get_workspace().index() !== workspaceIndex || appWindow.skip_taskbar) {
+                if ((this._config.isolateWorkspaces && appWindow.get_workspace().index() !== workspaceIndex) ||
+                        appWindow.skip_taskbar) {
                     continue;
                 }
 

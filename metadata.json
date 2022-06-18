@@ -1,9 +1,9 @@
 {
-  "name": "Taskbar",
-  "description": "A simple but powerful replacement of the default Dash with additional tweaks for the GNOME Shell.",
-  "uuid": "taskbar@chepkun.github.com",
-  "settings-schema": "org.gnome.shell.extensions.taskbar",
-  "shell-version": [
-    "42"
-  ]
+    "name": "Taskbar",
+    "description": "A simple but powerful replacement of the default Dash with additional tweaks for the GNOME Shell.",
+    "uuid": "taskbar@chepkun.github.com",
+    "settings-schema": "org.gnome.shell.extensions.taskbar",
+    "shell-version": [
+        "42"
+    ]
 }

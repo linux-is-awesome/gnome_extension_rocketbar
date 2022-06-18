@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
     <schema id="org.gnome.shell.extensions.taskbar" path="/org/gnome/shell/extensions/taskbar/">
-
+        <key type="b" name="taskbar-show-favorites">
+            <default>true</default>
+            <summary>Show favorite applications</summary>
+            <description>Show favorite applications.</description>
+        </key>
+        <key type="b" name="taskbar-isolate-workspaces">
+            <default>true</default>
+            <summary>Isolate running apps by the current workspace</summary>
+            <description>Display running apps from the current workspace only or from all workspaces.</description>
+        </key>
     </schema>
 </schemalist>
