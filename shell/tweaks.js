@@ -1,5 +1,6 @@
 //#region imports
 
+const { GLib } = imports.gi;
 const Clutter = imports.gi.Clutter;
 const Main = imports.ui.main;
 const HotCorner = imports.ui.layout.HotCorner;
@@ -18,16 +19,23 @@ var ShellTweaks = class ShellTweaks {
 
         this._setConfig(settings);
 
-        this._addPanelScrollHandler();
+        // enable tweaks with a small delay
+        this._initTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
 
-        this._enableFullscreenHotCorner();
+            this._initTimeout = null;
 
-        this._enableActivitiesClickOverride();
+            this._update();
 
-        this._addOverviewClickHandler();
+            return GLib.SOURCE_REMOVE;
+        });
     }
 
     destroy() {
+
+        // clear init timeout if exists
+        if (this._initTimeout) {
+            GLib.source_remove(this._initTimeout);
+        }
 
         this._removePanelScrollHandler();
 
@@ -43,6 +51,17 @@ var ShellTweaks = class ShellTweaks {
             soundVolumeStep: 2, // 2% by default, 20% max - very fast, 1% min - very slow
             soundVolumeFastStep: 10
         };
+    }
+
+    _update() {
+
+        this._addPanelScrollHandler();
+
+        this._enableFullscreenHotCorner();
+
+        this._enableActivitiesClickOverride();
+
+        this._addOverviewClickHandler();
     }
 
     //#region panel scroll handling
