@@ -25,6 +25,8 @@ var ShellTweaks = class ShellTweaks {
         this._enableFullscreenHotCorner();
 
         this._enableActivitiesClickOverride();
+
+        this._addOverviewClickHandler();
     }
 
     destroy() {
@@ -37,6 +39,8 @@ var ShellTweaks = class ShellTweaks {
         this._disableFullscreenHotCorner();
 
         this._disableActivitiesClickOverride();
+
+        this._removeOverviewClickHandler();
     }
 
     _setConfig(settings) {
@@ -46,7 +50,7 @@ var ShellTweaks = class ShellTweaks {
         };
     }
 
-    //#region panel scroll override
+    //#region panel scroll handling
 
     _addPanelScrollHandler() {
 
@@ -116,7 +120,7 @@ var ShellTweaks = class ShellTweaks {
         return Clutter.EVENT_STOP;
     }
 
-    //#endregion panel scroll override
+    //#endregion panel scroll handling
 
     //#region hot corner tweaks
 
@@ -206,4 +210,57 @@ var ShellTweaks = class ShellTweaks {
     }
 
     //#endregion activities button tweaks
+
+    //#region overview tweaks
+
+    _addOverviewClickHandler() {
+
+        if (this._overviewClickHandler) {
+            return;
+        }
+
+        // backup the overview reactivity
+        this._overviewOldReactivity = Main.overview._overview._controls.reactive;
+
+        // make the overview reactive
+        Main.overview._overview._controls.reactive = true;
+
+        // create a click handler
+        this._overviewClickHandler = new Clutter.ClickAction();
+        this._overviewClickHandler.connect('clicked', action => {
+
+            // just toggle overview when primary button clicked
+            if (action.get_button() == Clutter.BUTTON_PRIMARY) {
+                Main.overview.toggle();
+                return;
+            }
+            
+            // toggle apps page when secondary button clicked
+            if (action.get_button() === Clutter.BUTTON_SECONDARY) {
+                Main.overview._overview._controls._toggleAppsPage()
+            }
+
+        });
+
+        // add click action to the overview
+        Main.overview._overview._controls.add_action(this._overviewClickHandler);
+    }
+
+    _removeOverviewClickHandler() {
+
+        if (!this._overviewClickHandler) {
+            return;
+        }
+
+        // restore overview reactivity
+        Main.overview._overview._controls.reactive = this._overviewOldReactivity;
+        this._overviewOldReactivity = null;
+
+        // remove custom click action from the overview
+        Main.overview._overview._controls.remove_action(this._overviewClickHandler);
+        this._overviewClickHandler = null;
+    }
+
+    //#endregion overview tweaks
+
 }
