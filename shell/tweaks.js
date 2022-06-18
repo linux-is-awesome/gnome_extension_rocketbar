@@ -18,8 +18,6 @@ var ShellTweaks = class ShellTweaks {
 
         this._setConfig(settings);
 
-        this._soundVolumeControl = new SoundVolumeControl();
-
         this._addPanelScrollHandler();
 
         this._enableFullscreenHotCorner();
@@ -30,9 +28,6 @@ var ShellTweaks = class ShellTweaks {
     }
 
     destroy() {
-
-        this._soundVolumeControl.destroy();
-        this._soundVolumeControl = null;
 
         this._removePanelScrollHandler();
 
@@ -58,6 +53,8 @@ var ShellTweaks = class ShellTweaks {
             return;
         }
 
+        this._soundVolumeControl = new SoundVolumeControl();
+
         this._panelScrollHandler = Main.panel.connect(
             'scroll-event',
             (actor, event) => this._handlePanelScroll(event)
@@ -73,29 +70,19 @@ var ShellTweaks = class ShellTweaks {
         Main.panel.disconnect(this._panelScrollHandler);
 
         this._panelScrollHandler = null;
+
+        this._soundVolumeControl.destroy();
+        this._soundVolumeControl = null;
     }
 
     _handlePanelScroll(event) {
-
-        if (!event) {
-            return;
-        }
         
-        const scrollDirection = event.get_scroll_direction();
+        const scrollDirection = event?.get_scroll_direction();
 
         // handle only 2 directions: UP and DOWN
         if (scrollDirection !== Clutter.ScrollDirection.UP &&
                 scrollDirection !== Clutter.ScrollDirection.DOWN) {
             return Clutter.EVENT_PROPAGATE;
-        }
-
-        // get actor under the mouse cursor
-        const eventSource = event.get_source();
-
-        // handle scroll by the app button
-        if (eventSource instanceof AppButton) {
-            eventSource.handleScroll(scrollDirection);
-            return Clutter.EVENT_STOP;
         }
 
         // change sound volume

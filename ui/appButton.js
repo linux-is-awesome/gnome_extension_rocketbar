@@ -79,22 +79,6 @@ var AppButton = GObject.registerClass(
             return this;
         }
 
-        handleScroll(direction) {
-
-            // when app is not running
-            if (!this.windows || this._handleScrollTimeout) {
-                return;
-            }
-
-            // make scrolling less aggressive
-            this._handleScrollTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
-                this._handleScrollTimeout = null;
-                return GLib.SOURCE_REMOVE;
-            });
-
-            this._cycleAppWindows(this._getAppWindows(), direction === Clutter.ScrollDirection.UP);
-        }
-
         //#endregion public methods
 
         //#region private methods
@@ -185,6 +169,7 @@ var AppButton = GObject.registerClass(
             this.connect('key-focus-in', () => this._focus(true));
             this.connect('key-focus-out', () => this._focus(false));
             this.connect('notify::hover', () => this._hover());
+            this.connect('scroll-event', (actor, event) => this._handleScroll(event));
             // enable drag & drop
             this._draggable = DND.makeDraggable(this, { timeoutThreshold: 200 });
             this._draggable.connect('drag-begin', () => this._dragBegin());
@@ -425,6 +410,32 @@ var AppButton = GObject.registerClass(
             }
 
             windows[0].delete(global.get_current_time());
+        }
+
+        _handleScroll(event) {
+
+            const scrollDirection = event?.get_scroll_direction();
+
+            // handle only 2 directions: UP and DOWN
+            if (scrollDirection !== Clutter.ScrollDirection.UP &&
+                    scrollDirection !== Clutter.ScrollDirection.DOWN) {
+                return Clutter.EVENT_PROPAGATE;
+            }
+
+            // when app is not running
+            if (!this.windows || this._handleScrollTimeout) {
+                return Clutter.EVENT_STOP;
+            }
+
+            // make scrolling less aggressive
+            this._handleScrollTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
+                this._handleScrollTimeout = null;
+                return GLib.SOURCE_REMOVE;
+            });
+
+            this._cycleAppWindows(this._getAppWindows(), scrollDirection === Clutter.ScrollDirection.UP);
+
+            return Clutter.EVENT_STOP;
         }
 
         _cycleAppWindows(windows, reverse) {
