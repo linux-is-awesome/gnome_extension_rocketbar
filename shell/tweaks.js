@@ -36,7 +36,8 @@ var ShellTweaks = class ShellTweaks {
 
     _setConfig(settings) {
         this._config = {
-            soundVolumeStep: 2 // 2% by default, 20% max - very fast, 1% min - very slow
+            soundVolumeStep: 2, // 2% by default, 20% max - very fast, 1% min - very slow
+            soundVolumeFastStep: 10
         };
     }
 
@@ -94,10 +95,17 @@ var ShellTweaks = class ShellTweaks {
             return Clutter.EVENT_PROPAGATE;
         }
 
+        const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) != 0;
+        const soundVolumeStep = (
+            isCtrlPressed ?
+            this._config.soundVolumeFastStep :
+            this._config.soundVolumeStep
+        );
+
         this._soundVolumeControl.addVolume(
             scrollDirection === Clutter.ScrollDirection.UP ?
-            this._config.soundVolumeStep :
-            -this._config.soundVolumeStep
+            soundVolumeStep :
+            -soundVolumeStep
         );
 
         return Clutter.EVENT_STOP;
