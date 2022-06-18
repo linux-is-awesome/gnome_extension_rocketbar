@@ -9,21 +9,34 @@ var AppButtonTooltip = class AppButtonTooltip {
 
         this._appButton = appButton;
 
-        this._createTooltip();
+        this._showTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, this._showDelay, () => {
 
-        this._show();
+            this._showTimeout = null;
+
+            this._show();
+
+            return GLib.SOURCE_REMOVE;
+        });
     }
 
     refresh() {
-        this._refreshAppTitle();
-        this._refreshWindowsCount();
-        this._refreshNotificationsCount();
+        this._refresh();
     }
 
     destroy(animation) {
+
+        if (this._showTimeout) {
+            GLib.source_remove(this._showTimeout);
+            this._showTimeout = null;
+        }
+
+        if (!this._tooltip) {
+            return;
+        }
+
         this._tooltip.remove_all_transitions();
 
-        if (animation && !this._showTimeout) {
+        if (animation) {
             this._tooltip.ease({
                 opacity: 0,
                 duration: 100,
@@ -33,11 +46,22 @@ var AppButtonTooltip = class AppButtonTooltip {
             return;
         }
 
-        if (this._showTimeout) {
-            GLib.source_remove(this._showTimeout);
-        }
-
         this._tooltip.destroy();
+    }
+
+    _show() {
+
+        this._createTooltip();
+
+        this._refresh();
+
+        this._setPosition();
+
+        this._tooltip.ease({
+            opacity: 255,
+            duration: 300,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD
+        });
     }
 
     _createTooltip() {
@@ -118,10 +142,19 @@ var AppButtonTooltip = class AppButtonTooltip {
         // all ui elements created!
 
         Main.layoutManager.addChrome(this._tooltip);
+    }
+
+    _refresh() {
+
+        if (!this._tooltip) {
+            return;
+        }
 
         this._refreshAppTitle();
         this._refreshWindowsCount();
         this._refreshNotificationsCount();
+
+        this._setPosition();
     }
 
     _refreshAppTitle() {
@@ -156,14 +189,11 @@ var AppButtonTooltip = class AppButtonTooltip {
         this._notificationsCounter.hide();
     }
 
-    _show() {
+    _setPosition() {
 
-        if (!this._showTimeout) {
-            this._showTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, this._showDelay, () => this._show());
+        if (!this._tooltip) {
             return;
         }
-
-        this._showTimeout = null;
 
         let [stageX, stageY] = this._appButton.get_transformed_position();
 
@@ -178,8 +208,8 @@ var AppButtonTooltip = class AppButtonTooltip {
 
         const x = Math.clamp(stageX + xOffset, 0, global.stage.width - labelWidth);
 
-        //Check if should place tool-tip above or below app icon
-        //Needed in case user has moved the panel to bottom of screen
+        // check if should place tooltip above or below app button
+        // needed in case user has moved the panel to bottom of screen
         let labelBelowIconRect = new Meta.Rectangle({
             x,
             y: stageY + itemHeight + yOffset,
@@ -198,14 +228,6 @@ var AppButtonTooltip = class AppButtonTooltip {
         }
 
         this._tooltip.set_position(x, y);
-
-        this._tooltip.ease({
-            opacity: 255,
-            duration: 300,
-            mode: Clutter.AnimationMode.EASE_OUT_QUAD
-        });
-
-        return GLib.SOURCE_REMOVE;
     }
 
 }
