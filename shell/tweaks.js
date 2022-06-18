@@ -1,11 +1,16 @@
+//#region imports
+
 const Clutter = imports.gi.Clutter;
 const Main = imports.ui.main;
 const HotCorner = imports.ui.layout.HotCorner;
 
+// custom modules import
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { AppButton } = Me.imports.ui.appButton;
 const { SoundVolumeControl } = Me.imports.utils.soundVolumeControl;
+
+//#endregion imports
 
 var ShellTweaks = class ShellTweaks {
 
