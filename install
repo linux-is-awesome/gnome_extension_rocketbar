@@ -6,8 +6,9 @@ mkdir -p $Path
 
 glib-compile-schemas ./schemas/
 
-\cp extension.js metadata.json $Path
+\cp extension.js prefs.js metadata.json $Path
 \cp -r ./ui $Path
 \cp -r ./shell $Path
 \cp -r ./utils $Path
+\cp -r ./settings $Path
 \cp -r ./schemas $Path

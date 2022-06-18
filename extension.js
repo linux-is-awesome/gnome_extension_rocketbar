@@ -17,6 +17,10 @@ let shellTweaks = null;
 
 //#region main
 
+function init() {
+    //TODO: ExtensionUtils.initTranslations();
+}
+
 function enable() {
     settings = ExtensionUtils.getSettings();
     taskbar = new Taskbar(settings);
@@ -32,10 +36,6 @@ function disable() {
     taskbar = null;
     shellTweaks = null;
     settings = null;
-}
-
-function init() {
-    //TODO: ExtensionUtils.initTranslations();
 }
 
 //#endregion main
