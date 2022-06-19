@@ -3,9 +3,11 @@ const Main = imports.ui.main;
 
 var AppButtonTooltip = class AppButtonTooltip {
 
-    constructor(appButton) {
+    //#region public methods
 
-        this._showDelay = 1000;
+    constructor(appButton, settings) {
+
+        this._showDelay = 1000; // TODO: settings
 
         this._appButton = appButton;
 
@@ -48,6 +50,10 @@ var AppButtonTooltip = class AppButtonTooltip {
 
         this._tooltip.destroy();
     }
+
+    //#endregion public methods
+
+    //#region private methods
 
     _show() {
 
@@ -229,5 +235,7 @@ var AppButtonTooltip = class AppButtonTooltip {
 
         this._tooltip.set_position(x, y);
     }
+
+    //#endregion private methods
 
 }
