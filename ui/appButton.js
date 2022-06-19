@@ -108,19 +108,17 @@ var AppButton = GObject.registerClass(
             this._isActive = false;
             this._delegate = this;
 
-            // add notifications for the button
-            this._notificationHandler = new NotificationHandler(count => this._setNotifications(count), this.appId);
-
-            // idenitify initial configuration
-            this._setConfig();
-
             // create layout
             this._createLayout();
+            this._handleSettings();
             this._updateIcon();
             this._updateStyle();
 
             // create connections
             this._createConnections();
+
+            // add notifications for the button
+            this._notificationHandler = new NotificationHandler(count => this._setNotifications(count), this.appId);
         }
 
         _createLayout() {
@@ -145,12 +143,6 @@ var AppButton = GObject.registerClass(
             this._layout.add_actor(this._appIcon);
 
             this.set_child(this._layout);
-
-            if (!this._config.enableIndicators && !this._config.enableNotificationBadges) {
-                return;
-            }
-
-            this._indicator = new AppButtonIndicator(this, this._layout, this._settings);
         }
 
         _createConnections() {
@@ -173,12 +165,14 @@ var AppButton = GObject.registerClass(
             // handle settings
             this._connections.set(this._settings.connect('changed::taskbar-isolate-workspaces', () => this._setConfig()), this._settings);
             this._connections.set(this._settings.connect('changed::appbutton-enable-tooltips', () => this._setConfig()), this._settings);
-            this._connections.set(this._settings.connect('changed::appbutton-enable-indicators', () => this._handleSettingsChange()), this._settings);
-            this._connections.set(this._settings.connect('changed::appbutton-enable-notification-badges', () => this._handleSettingsChange()), this._settings);
+            this._connections.set(this._settings.connect('changed::appbutton-enable-indicators', () => this._handleSettings()), this._settings);
+            this._connections.set(this._settings.connect('changed::appbutton-enable-notification-badges', () => this._handleSettings()), this._settings);
+            this._connections.set(this._settings.connect('changed::appbutton-enable-scroll', () => this._setConfig()), this._settings);
+            this._connections.set(this._settings.connect('changed::appbutton-enable-drag-and-drop', () => this._setConfig()), this._settings);
         }
 
-        _handleSettingsChange() {
-            const oldConfig = this._config;
+        _handleSettings() {
+            const oldConfig = this._config || {};
 
             this._setConfig();
 
@@ -197,8 +191,6 @@ var AppButton = GObject.registerClass(
                 }
 
             }
-
-            this._handleAppState();
         }
 
         _setConfig() {
@@ -207,6 +199,9 @@ var AppButton = GObject.registerClass(
                 enableTooltips: this._settings.get_boolean('appbutton-enable-tooltips'),
                 enableIndicators: this._settings.get_boolean('appbutton-enable-indicators'),
                 enableNotificationBadges: this._settings.get_boolean('appbutton-enable-notification-badges'),
+                enableDragAndDrop: this._settings.get_boolean('appbutton-enable-drag-and-drop'),
+                enableScrollHandler: this._settings.get_boolean('appbutton-enable-scroll'),
+                // visual customization settings
                 iconSize: 20, // 16 - 64 pixels
                 padding: 8, // 0 - 50 pixels
                 verticalMargin: 2, // 0 - 10 pixels
@@ -260,6 +255,10 @@ var AppButton = GObject.registerClass(
         _dragBegin() {
 
             this.remove_all_transitions();
+
+            if (!this._config.enableDragAndDrop) {
+                return;
+            }
 
             this._dragMonitor = {
                 dragMotion: event => this._dragMotion(event)
@@ -449,6 +448,10 @@ var AppButton = GObject.registerClass(
         }
 
         _handleScroll(event) {
+
+            if (!this._config.enableScrollHandler) {
+                return Clutter.EVENT_PROPAGATE;
+            }
 
             const scrollDirection = event?.get_scroll_direction();
 

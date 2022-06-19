@@ -13,6 +13,8 @@ var AppButtonIndicator = class AppButtonIndicator {
         this._dominantColor = null;
 
         this._setConfig();
+
+        this.rerender();
     }
 
     //#region public methods
