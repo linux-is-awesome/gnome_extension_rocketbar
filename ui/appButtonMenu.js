@@ -4,9 +4,11 @@ const Main = imports.ui.main;
 
 var AppButtonMenu = class AppButtonMenu extends AppMenu {
 
-    constructor(parent, app, settings) {
+    //#region public methods
 
-        super(parent, St.Side.TOP, {
+    constructor(appButton, settings) {
+
+        super(appButton, St.Side.TOP, {
             favoritesSection: true,
             showSingleWindows: true,
         });
@@ -17,7 +19,7 @@ var AppButtonMenu = class AppButtonMenu extends AppMenu {
 
         this._setConfig();
 
-        this.setApp(app);
+        this.setApp(appButton.app);
 
         Main.uiGroup.add_actor(this.actor);
     }
@@ -30,10 +32,19 @@ var AppButtonMenu = class AppButtonMenu extends AppMenu {
         if (oldConfig.isolateWorkspaces !== this._config.isolateWorkspaces) {
             this._updateWindowsSection();
         }
+
+        if (oldConfig.showFavorites !== this._config.showFavorites) {
+            this._updateFavoriteItem();
+        }
     }
+
+    //#endregion public methods
+
+    //#region private methods
 
     _setConfig() {
         this._config = {
+            showFavorites: this._settings.get_boolean('taskbar-show-favorites'),
             isolateWorkspaces: this._settings.get_boolean('taskbar-isolate-workspaces')
         };
     }
@@ -45,8 +56,14 @@ var AppButtonMenu = class AppButtonMenu extends AppMenu {
             return;
         }
 
-        if (!this._appFavorites.isFavorite(this._app.id)) {
+        const isFavorite = this._appFavorites.isFavorite(this._app.id);
+
+        if (this._config.showFavorites && !isFavorite) {
             this._toggleFavoriteItem.label.text = _('Pin');
+        }
+
+        if (!this._config.showFavorites && isFavorite) {
+            this._toggleFavoriteItem.label.text = _('Unpin from Dash');
         }
     }
 
@@ -73,5 +90,7 @@ var AppButtonMenu = class AppButtonMenu extends AppMenu {
 
         this._app = originalApp;
     }
+
+    //#endregion private methods
 
 }
