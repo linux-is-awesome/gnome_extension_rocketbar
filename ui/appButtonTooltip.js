@@ -21,8 +21,8 @@ var AppButtonTooltip = class AppButtonTooltip {
         });
     }
 
-    refresh() {
-        this._refresh();
+    rerender() {
+        this._update();
     }
 
     destroy(animation) {
@@ -59,7 +59,7 @@ var AppButtonTooltip = class AppButtonTooltip {
 
         this._createTooltip();
 
-        this._refresh();
+        this._update();
 
         this._setPosition();
 
@@ -150,20 +150,20 @@ var AppButtonTooltip = class AppButtonTooltip {
         Main.layoutManager.addChrome(this._tooltip);
     }
 
-    _refresh() {
+    _update() {
 
         if (!this._tooltip) {
             return;
         }
 
-        this._refreshAppTitle();
-        this._refreshWindowsCount();
-        this._refreshNotificationsCount();
+        this._updateAppTitle();
+        this._updateWindowsCount();
+        this._updateNotificationsCount();
 
         this._setPosition();
     }
 
-    _refreshAppTitle() {
+    _updateAppTitle() {
         this._tooltipText.text = (
             this._appButton.activeWindow ?
             this._appButton.activeWindow.title :
@@ -171,7 +171,7 @@ var AppButtonTooltip = class AppButtonTooltip {
         );
     }
 
-    _refreshWindowsCount() {
+    _updateWindowsCount() {
 
         this._windowsCounterText.text = this._appButton.windows.toString();
 
@@ -183,7 +183,7 @@ var AppButtonTooltip = class AppButtonTooltip {
         this._windowsCounter.hide();
     }
 
-    _refreshNotificationsCount() {
+    _updateNotificationsCount() {
 
         this._notificationsCounterText.text = this._appButton.notifications.toString();
 
