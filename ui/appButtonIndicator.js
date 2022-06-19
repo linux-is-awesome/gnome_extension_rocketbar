@@ -2,10 +2,13 @@ const { Clutter, St } = imports.gi;
 
 var AppButtonIndicator = class AppButtonIndicator {
 
-    constructor(parent, settings) {
-        this._parent = parent;
+    constructor(appButton, layout, settings) {
+
+        this._appButton = appButton;
+        this._layout = layout;
         this._settings = settings;
         this._indicators = null;
+        this._notificationBadge = null;
         this._isActive = false;
         this._dominantColor = null;
 
@@ -16,31 +19,65 @@ var AppButtonIndicator = class AppButtonIndicator {
 
     destroy() {
 
-        this._parent = null;
+        this._layout = null;
 
         this._destroyIndicators();
-
-        this._toggleNotificationBadge(false);
+        this._updateNotificationBadge();
     }
 
-    update(windows = [], isActive) {
+    updateConfig() {
+        const oldConfig = this._config;
+
+        this._setConfig();
+
+        this.rerender();
+    }
+
+    rerender() {
+        this._updateIndicators();
+        this._updateNotificationBadge();
+    }
+
+    //#endregion public methods
+
+    //#region private methods
+
+    _setConfig() {
+        this._config = {
+            enableIndicators: this._settings.get_boolean('appbutton-enable-indicators'),
+            enableNotificationBadges: this._settings.get_boolean('appbutton-enable-notification-badges'),
+            color: 'rgb(255, 255, 255)',
+            activeColor: 'rgb(53, 132, 228)',
+            dominantColor: true,
+            activeDominantColor: true,
+            size: 4,
+            maxIndicators: 3,
+            // notification badge
+            notificationBadgeSize: 5,
+            notificationBadgeMargin: 7,
+            notificationBadgeColor: 'rgb(255, 0, 0)',
+            notificationBadgeBorderColor: 'rgb(70, 70, 70)'
+        };
+    }
+
+    _updateIndicators() {
 
         const oldIsActive = this._isActive;
 
         // set active state
-        this._isActive = isActive;
+        this._isActive = this._appButton.windows > 0;
 
         // no need to display indicators
-        if (!windows.length) {
+        if (!this._config.enableIndicators || !this._isActive) {
             this._destroyIndicators();
             return;
         }
 
         // count the maximum number of indicators to display
         let maxIndicators = (
-            windows.length > this._config.maxIndicators ?
+            this._appButton.windows > this._config.maxIndicators ?
             this._config.maxIndicators :
-            windows.length
+            this._appButton.windows
         );
 
         const indicatorsLength = this._indicators?.length || 0; 
@@ -49,7 +86,7 @@ var AppButtonIndicator = class AppButtonIndicator {
         if (indicatorsLength === maxIndicators) {
 
             if (oldIsActive !== this._isActive) {
-                this.rerender();
+                this._updateIndicatorsStyle();
             }
 
             return;
@@ -76,71 +113,18 @@ var AppButtonIndicator = class AppButtonIndicator {
             }
         }
 
-        this.rerender();
-    }
-
-    setDominantColor(rgb) {
-
-        this._dominantColor = (
-            rgb ?
-            `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})` :
-            null
-        );
-
-        this.rerender();
-    }
-
-    rerender() {
-
-        if (!this._indicators?.length) {
-            return;
-        }
-
-        for (let i = 0, l = this._indicators.length; i < l; ++i) {
-            this._indicators[i].style = this._getIndicatorStyle(i);
-        }   
-    }
-
-    setNotifications(count) {
-
-        if (!this._parent) {
-            return;
-        }
-
-        this._toggleNotificationBadge(count ? true : false);
-    }
-
-    //#endregion public methods
-
-    //#region private methods
-
-    _setConfig() {
-        this._config = {
-            color: 'rgb(255, 255, 255)',
-            activeColor: 'rgb(53, 132, 228)',
-            dominantColor: true,
-            activeDominantColor: true,
-            size: 4,
-            maxIndicators: 3,
-            // notification badge
-            notificationBadgeSize: 5,
-            notificationBadgeMargin: 7,
-            notificationBadgeColor: 'rgb(255, 0, 0)',
-            notificationBadgeBorderColor: 'rgb(70, 70, 70)'
-        };
+        this._updateIndicatorsStyle();
     }
 
     _addIndicator() {
 
-        if (!this._parent) {
+        if (!this._layout) {
             return;
         }
 
         if (!this._indicators) {
             this._indicators = [];
         }
-
-        const indicatorIndex = this._indicators.length;
 
         const indicator = new St.Bin({
             name: 'taskbar-appButton-indicator',
@@ -153,13 +137,30 @@ var AppButtonIndicator = class AppButtonIndicator {
 
         this._indicators.push(indicator);
 
-        this._parent.add_actor(indicator);
+        this._layout.add_actor(indicator);
 
         indicator.ease({
             opacity: 255,
             duration: 300,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD
         });
+    }
+
+    _updateIndicatorsStyle() {
+
+        if (!this._indicators?.length) {
+            return;
+        }
+
+        this._dominantColor = (
+            (this._config.dominantColor || this._config.activeDominantColor) && this._appButton.dominantColor ?
+            `rgb(${this._appButton.dominantColor.r}, ${this._appButton.dominantColor.g}, ${this._appButton.dominantColor.b})` :
+            null
+        );
+
+        for (let i = 0, l = this._indicators.length; i < l; ++i) {
+            this._indicators[i].style = this._getIndicatorStyle(i);
+        }   
     }
 
     _getIndicatorStyle(index) {
@@ -221,7 +222,7 @@ var AppButtonIndicator = class AppButtonIndicator {
         indicator.remove_all_transitions();
 
         // no animation in this case
-        if (!this._parent) {
+        if (!this._layout) {
             indicator.destroy();
             indicator = null;
             return;
@@ -238,7 +239,13 @@ var AppButtonIndicator = class AppButtonIndicator {
         });
     }
 
-    _toggleNotificationBadge(show) {
+    _updateNotificationBadge() {
+
+        const show = (
+            this._config.enableNotificationBadges &&
+            this._layout &&
+            this._appButton.notifications > 0
+        );
 
         if (!show) {
 
@@ -246,19 +253,23 @@ var AppButtonIndicator = class AppButtonIndicator {
                 this._notificationBadge.remove_all_transitions();
 
                 // destroy without animation
-                if (!this._parent) {
+                if (!this._layout) {
                     this._notificationBadge.destroy();
+                    this._notificationBadge = null;
                     return;
                 }
 
+                // reasign badge instance
+                let oldNotificationBadge = this._notificationBadge;
+                this._notificationBadge = null;
+
                 // animate and destroy
-                this._notificationBadge.ease({
+                oldNotificationBadge.ease({
                     opacity: 0,
                     duration: 200,
                     mode: Clutter.AnimationMode.EASE_OUT_QUAD,
                     onComplete: () => {
-                        this._notificationBadge.destroy();
-                        this._notificationBadge = null;
+                        oldNotificationBadge.destroy();
                     }
                 });
             }
@@ -267,8 +278,6 @@ var AppButtonIndicator = class AppButtonIndicator {
         }
 
         if (this._notificationBadge) {
-            // just in case stop ease to prevent destroying
-            this._notificationBadge.remove_all_transitions();
             return;
         }
 
@@ -283,7 +292,7 @@ var AppButtonIndicator = class AppButtonIndicator {
 
         this._updateNotificationBadgeStyle();
 
-        this._parent.add_actor(this._notificationBadge);
+        this._layout.add_actor(this._notificationBadge);
 
         this._notificationBadge.ease({
             opacity: 255,
