@@ -114,7 +114,6 @@ var Taskbar = GObject.registerClass(
                 this._rerender();
             }), this._appSystem);
             this._connections.set(global.window_manager.connect('switch-workspace', () => this._rerender(true)), global.window_manager);
-            this._connections.set(global.display.connect('window-entered-monitor', () => this._rerender()), global.display);
             this._connections.set(global.display.connect('restacked', () => this._rerender()), global.display);
             this._connections.set(Main.layoutManager.connect('startup-complete', () => this._rerender()), Main.layoutManager);
             // handle settings
@@ -129,7 +128,7 @@ var Taskbar = GObject.registerClass(
 
             if (oldConfig.showFavorites !== this._config.showFavorites ||
                     oldConfig.isolateWorkspaces !== this._config.isolateWorkspaces) {
-                this._rerender();
+                this._rerender(true);
             }
         }
 
@@ -169,6 +168,8 @@ var Taskbar = GObject.registerClass(
             // validate existing items in the taskbar
 
             let taskbarAppButtonsByAppId = new Map();
+            let taskbarAppButtonsPosition = [];
+    
             const layoutActors = this._layout.get_children();
 
             for (let i = 0, l = layoutActors.length; i < l; ++i) {
@@ -184,10 +185,10 @@ var Taskbar = GObject.registerClass(
                 }
 
                 // the app button should stay in the taskbar
-                taskbarAppButtonsByAppId.set(actor.appId, {
-                    appButton: actor,
-                    position: taskbarAppButtonsByAppId.size
-                });
+                taskbarAppButtonsByAppId.set(actor.appId, actor);
+
+                // save position of the app button
+                taskbarAppButtonsPosition.push(actor.appId);
             }
 
             // update/create app buttons
@@ -208,7 +209,8 @@ var Taskbar = GObject.registerClass(
                 }
 
                 // for existing app buttons check if position has changed
-                const {appButton, position} = taskbarAppButtonsByAppId.get(appId);
+                const appButton = taskbarAppButtonsByAppId.get(appId);
+                const position = taskbarAppButtonsPosition.indexOf(appId);
 
                 // update favorite status
                 appButton.isFavorite = isFavorite;
@@ -216,6 +218,10 @@ var Taskbar = GObject.registerClass(
                 // if position has changed move the app button
                 if (position !== i) {
                     appButton.setPosition(i);
+
+                    // replace position in the array
+                    taskbarAppButtonsPosition.splice(position, 1);
+                    taskbarAppButtonsPosition.splice(i, 0, appId);
                 }
 
                 appButton.rerender();
