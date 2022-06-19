@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
     <schema id="org.gnome.shell.extensions.taskbar" path="/org/gnome/shell/extensions/taskbar/">
+
+        <!-- general page -->
         <key type="b" name="taskbar-show-favorites">
             <default>true</default>
             <summary>Show favorite applications</summary>
@@ -11,5 +13,22 @@
             <summary>Isolate running apps by the current workspace</summary>
             <description>Display running apps from the current workspace only or from all workspaces.</description>
         </key>
+        <key type="b" name="appbutton-enable-tooltips">
+            <default>true</default>
+            <summary>Show tooltips on hover</summary>
+            <description>Show tooltips on hover.</description>
+        </key>
+        <key type="b" name="appbutton-enable-indicators">
+            <default>true</default>
+            <summary>Show running app indicators</summary>
+            <description>Show running app indicators.</description>
+        </key>
+        <key type="b" name="appbutton-enable-notification-badges">
+            <default>true</default>
+            <summary>Show notifications badges</summary>
+            <description>Show notifications badges for apps in the taskbar.</description>
+        </key>
+        <!-- /general page -->
+
     </schema>
 </schemalist>
