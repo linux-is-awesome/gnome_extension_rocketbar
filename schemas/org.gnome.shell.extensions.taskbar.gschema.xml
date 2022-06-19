@@ -30,5 +30,18 @@
         </key>
         <!-- /general page -->
 
+        <!-- behavior page -->
+        <key type="b" name="appbutton-enable-drag-and-drop">
+            <default>true</default>
+            <summary>Allow Drag and Drop to reorder Apps in the taskbar</summary>
+            <description>Allow Drag and Drop to reorder Apps in the taskbar.</description>
+        </key>
+        <key type="b" name="appbutton-enable-scroll">
+            <default>true</default>
+            <summary>Allow cycle app windows using scroll</summary>
+            <description>>Allow cycle app windows using scroll.</description>
+        </key>
+        <!-- /behavior page -->
+
     </schema>
 </schemalist>

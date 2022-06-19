@@ -1,19 +1,30 @@
-const { Adw, Gio, GLib, GObject, Gtk } = imports.gi;
-
-// TODO
-const _ = (text) => {
-    return text;
-};
+const { GObject } = imports.gi;
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
+const { SettingsPageTemplate } = Me.imports.settings.pageTemplate;
 
 var BehaviorPage = GObject.registerClass(
-    class BehaviorPage extends Adw.PreferencesPage {
+    class BehaviorPage extends SettingsPageTemplate {
 
         _init(settings) {
+
             super._init({
-                title: _('Behavior'),
+                title: 'Behavior',
                 name: 'BehaviorPage',
-                icon_name: 'applications-engineering-symbolic'
+                icon: 'applications-engineering-symbolic',
+                settings: settings
             });
+
+            this._populateOptions();
+        }
+
+        _populateOptions() {
+
+            // Taskbar
+            this.addGroup('Taskbar', [
+                this.createSwitch('Allow Drag and Drop', 'appbutton-enable-drag-and-drop'),
+                this.createSwitch('Scroll to cycle app windows', 'appbutton-enable-scroll')
+            ]);
         }
 
     }
