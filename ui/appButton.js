@@ -99,14 +99,14 @@ var AppButton = GObject.registerClass(
             this.appId = app.id;
             this.isFavorite = isFavorite;
             this.activeWindow = null;
-            this.notifications = 0;
             this.windows = 0;
+            this.notifications = 0;
+            this.dominantColor = null;
 
             // set private properties
             this._settings = settings;
             this._isActive = false;
             this._delegate = this;
-            this._dominantColor = null;
 
             // add notifications for the button
             this._notificationHandler = new NotificationHandler(count => this._setNotifications(count), this.appId);
@@ -146,7 +146,11 @@ var AppButton = GObject.registerClass(
 
             this.set_child(this._layout);
 
-            this._indicator = new AppButtonIndicator(this._layout, this._settings);
+            if (!this._config.enableIndicators && !this._config.enableNotificationBadges) {
+                return;
+            }
+
+            this._indicator = new AppButtonIndicator(this, this._layout, this._settings);
         }
 
         _createConnections() {
@@ -168,11 +172,41 @@ var AppButton = GObject.registerClass(
             this._connections.set(St.Settings.get().connect('notify::gtk-icon-theme', () => this._updateIcon()), St.Settings.get());
             // handle settings
             this._connections.set(this._settings.connect('changed::taskbar-isolate-workspaces', () => this._setConfig()), this._settings);
+            this._connections.set(this._settings.connect('changed::appbutton-enable-tooltips', () => this._setConfig()), this._settings);
+            this._connections.set(this._settings.connect('changed::appbutton-enable-indicators', () => this._handleSettingsChange()), this._settings);
+            this._connections.set(this._settings.connect('changed::appbutton-enable-notification-badges', () => this._handleSettingsChange()), this._settings);
+        }
+
+        _handleSettingsChange() {
+            const oldConfig = this._config;
+
+            this._setConfig();
+
+            if (!this._config.enableIndicators && !this._config.enableNotificationBadges) {
+
+                this._indicator?.destroy();
+                this._indicator = null;
+
+            } else if (oldConfig.enableIndicators !== this._config.enableIndicators ||
+                            oldConfig.enableNotificationBadges !== this._config.enableNotificationBadges) {
+                
+                if (!this._indicator) {
+                    this._indicator = new AppButtonIndicator(this, this._layout, this._settings);
+                } else {
+                    this._indicator.updateConfig();
+                }
+
+            }
+
+            this._handleAppState();
         }
 
         _setConfig() {
             this._config = {
                 isolateWorkspaces: this._settings.get_boolean('taskbar-isolate-workspaces'),
+                enableTooltips: this._settings.get_boolean('appbutton-enable-tooltips'),
+                enableIndicators: this._settings.get_boolean('appbutton-enable-indicators'),
+                enableNotificationBadges: this._settings.get_boolean('appbutton-enable-notification-badges'),
                 iconSize: 20, // 16 - 64 pixels
                 padding: 8, // 0 - 50 pixels
                 verticalMargin: 2, // 0 - 10 pixels
@@ -180,7 +214,6 @@ var AppButton = GObject.registerClass(
                 spacing: 0, // 0 - 10 pixels
                 backlight: true,
                 backlightIntensity: 2, // 1 - 9
-                enableTooltips: true
             };
         }
 
@@ -479,7 +512,7 @@ var AppButton = GObject.registerClass(
 
             if (!this._menu) {
 
-                this._menu = new AppButtonMenu(this._layout, this.app, this._settings);
+                this._menu = new AppButtonMenu(this, this._settings);
 
                 this._connections.set(this._menu.connect('open-state-changed', () => this._focus()), this._menu);
 
@@ -516,8 +549,8 @@ var AppButton = GObject.registerClass(
             // store current windows count
             this.windows = windows.length;
 
-            // refresh tooltip
-            this._tooltip?.refresh();
+            // rerender tooltip
+            this._tooltip?.rerender();
 
             // update active state
             if (this._isActive !== this._hasFocusedWindow) {
@@ -527,7 +560,7 @@ var AppButton = GObject.registerClass(
                 this._updateStyle();
             }
 
-            this._indicator?.update(windows, this._isActive);
+            this._indicator?.rerender();
 
             if (this._isActive) {
                 this._getTaskbar()?.setActiveAppButton(this);
@@ -547,13 +580,13 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
-            this._dominantColor = new DominantColorExtractor(this.app).getColor();
+            this.dominantColor = new DominantColorExtractor(this.app).getColor();
 
             this._handleDominantColorChange();
         }
 
         _handleDominantColorChange() {
-            this._indicator?.setDominantColor(this._dominantColor);
+            this._indicator?.rerender();
             this._updateStyle();
         }
 
@@ -590,7 +623,7 @@ var AppButton = GObject.registerClass(
 
         _applyDominantColor() {
             
-            if (!this._dominantColor) {
+            if (!this.dominantColor) {
                 return;
             }
 
@@ -603,16 +636,16 @@ var AppButton = GObject.registerClass(
             const startIntensity = this._config.backlightIntensity - 1;
 
             this._appIcon.style += (`background-gradient-start: rgba(
-                ${this._dominantColor.r},
-                ${this._dominantColor.g},
-                ${this._dominantColor.b},
+                ${this.dominantColor.r},
+                ${this.dominantColor.g},
+                ${this.dominantColor.b},
                 ${startIntensity >= 0 ? '0.' + startIntensity : 0}
             );`);
 
             this._appIcon.style += (`background-gradient-end: rgba(
-                ${this._dominantColor.r},
-                ${this._dominantColor.g},
-                ${this._dominantColor.b},
+                ${this.dominantColor.r},
+                ${this.dominantColor.g},
+                ${this.dominantColor.b},
                 ${'0.' + this._config.backlightIntensity}
             );`);
         }
@@ -744,7 +777,7 @@ var AppButton = GObject.registerClass(
                     return;
                 }
 
-                this._tooltip = new AppButtonTooltip(this);
+                this._tooltip = new AppButtonTooltip(this, this._settings);
                 return;
             }
 
@@ -769,9 +802,9 @@ var AppButton = GObject.registerClass(
 
             this.notifications = count;
 
-            this._indicator?.setNotifications(count);
+            this._indicator?.rerender();
 
-            this._tooltip?.refresh();
+            this._tooltip?.rerender();
         }
 
         _getTaskbar() {
