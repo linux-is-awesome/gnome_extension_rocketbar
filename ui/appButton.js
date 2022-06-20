@@ -64,7 +64,7 @@ var AppButton = GObject.registerClass(
             const windows = this._getAppWindows();
 
             this._handleAppState(windows);
-            this.handlePosition(windows);
+            this._updateIconGeometry(windows);
         }
 
         handlePosition() {
