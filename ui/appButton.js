@@ -153,10 +153,6 @@ var AppButton = GObject.registerClass(
             this.connect('key-focus-out', () => this._focus(false));
             this.connect('notify::hover', () => this._hover());
             this.connect('scroll-event', (actor, event) => this._handleScroll(event));
-            // enable drag & drop
-            this._draggable = DND.makeDraggable(this, { timeoutThreshold: 200 });
-            this._draggable.connect('drag-begin', () => this._dragBegin());
-            this._draggable.connect('drag-end', () => this._dragEnd());
             // external connections
             this._connections = new Map();
             this._connections.set(global.display.connect('notify::focus-window', () => this._handleAppState()), global.display);
@@ -168,7 +164,7 @@ var AppButton = GObject.registerClass(
             this._connections.set(this._settings.connect('changed::appbutton-enable-indicators', () => this._handleSettings()), this._settings);
             this._connections.set(this._settings.connect('changed::appbutton-enable-notification-badges', () => this._handleSettings()), this._settings);
             this._connections.set(this._settings.connect('changed::appbutton-enable-scroll', () => this._setConfig()), this._settings);
-            this._connections.set(this._settings.connect('changed::appbutton-enable-drag-and-drop', () => this._setConfig()), this._settings);
+            this._connections.set(this._settings.connect('changed::appbutton-enable-drag-and-drop', () => this._handleSettings()), this._settings);
         }
 
         _handleSettings() {
@@ -176,6 +172,7 @@ var AppButton = GObject.registerClass(
 
             this._setConfig();
 
+            // enable/disable indicators
             if (!this._config.enableIndicators && !this._config.enableNotificationBadges) {
 
                 this._indicator?.destroy();
@@ -189,6 +186,35 @@ var AppButton = GObject.registerClass(
                 } else {
                     this._indicator.updateConfig();
                 }
+
+            }
+
+            // enable/disable drag and drop
+            if (!this._config.enableDragAndDrop && this._draggablePressHandler) {
+
+                this.disconnect(this._draggablePressHandler);
+                this.disconnect(this._draggableTouchHandler);
+
+                this._draggablePressHandler = null;
+                this._draggableTouchHandler = null;
+
+            } else if (this._config.enableDragAndDrop && !this._draggablePressHandler) {
+
+                if (!this._draggable) {
+                    this._draggable = DND.makeDraggable(this, { manualMode: true, timeoutThreshold: 200 });
+                    this._draggable.connect('drag-begin', () => this._dragBegin());
+                    this._draggable.connect('drag-end', () => this._dragEnd());
+                }
+
+                this._draggablePressHandler = this.connect(
+                    'button-press-event',
+                    this._draggable._onButtonPress.bind(this._draggable)
+                );
+
+                this._draggableTouchHandler = this.connect(
+                    'touch-event',
+                    this._draggable._onTouchEvent.bind(this._draggable)
+                );
 
             }
         }
@@ -255,10 +281,6 @@ var AppButton = GObject.registerClass(
         _dragBegin() {
 
             this.remove_all_transitions();
-
-            if (!this._config.enableDragAndDrop) {
-                return;
-            }
 
             this._dragMonitor = {
                 dragMotion: event => this._dragMotion(event)
