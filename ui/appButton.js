@@ -14,6 +14,7 @@ const { AppButtonMenu } = Me.imports.ui.appButtonMenu;
 const { AppButtonTooltip } = Me.imports.ui.appButtonTooltip;
 const { DominantColorExtractor } = Me.imports.utils.dominantColorExtractor;
 const { NotificationHandler } = Me.imports.utils.notificationService;
+const { Connections } = Me.imports.utils.connections;
 
 //#endregion imports
 
@@ -154,17 +155,17 @@ var AppButton = GObject.registerClass(
             this.connect('notify::hover', () => this._hover());
             this.connect('scroll-event', (actor, event) => this._handleScroll(event));
             // external connections
-            this._connections = new Map();
-            this._connections.set(global.display.connect('notify::focus-window', () => this._handleAppState()), global.display);
-            this._connections.set(global.display.connect('window-demands-attention', (display, window) => this._handleUrgentWindow(window)), global.display);
-            this._connections.set(St.Settings.get().connect('notify::gtk-icon-theme', () => this._updateIcon()), St.Settings.get());
+            this._connections = new Connections();
+            this._connections.add(global.display, 'notify::focus-window', () => this._handleAppState());
+            this._connections.add(global.display, 'window-demands-attention', (display, window) => this._handleUrgentWindow(window));
+            this._connections.add(St.Settings.get(), 'notify::gtk-icon-theme', () => this._updateIcon());
             // handle settings
-            this._connections.set(this._settings.connect('changed::taskbar-isolate-workspaces', () => this._setConfig()), this._settings);
-            this._connections.set(this._settings.connect('changed::appbutton-enable-tooltips', () => this._setConfig()), this._settings);
-            this._connections.set(this._settings.connect('changed::appbutton-enable-indicators', () => this._handleSettings()), this._settings);
-            this._connections.set(this._settings.connect('changed::appbutton-enable-notification-badges', () => this._handleSettings()), this._settings);
-            this._connections.set(this._settings.connect('changed::appbutton-enable-scroll', () => this._setConfig()), this._settings);
-            this._connections.set(this._settings.connect('changed::appbutton-enable-drag-and-drop', () => this._handleSettings()), this._settings);
+            this._connections.add(this._settings, 'changed::taskbar-isolate-workspaces', () => this._setConfig());
+            this._connections.add(this._settings, 'changed::appbutton-enable-tooltips', () => this._setConfig());
+            this._connections.add(this._settings, 'changed::appbutton-enable-indicators', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::appbutton-enable-notification-badges', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::appbutton-enable-scroll', () => this._setConfig());
+            this._connections.add(this._settings, 'changed::appbutton-enable-drag-and-drop', () => this._handleSettings());
         }
 
         _handleSettings() {
@@ -243,12 +244,7 @@ var AppButton = GObject.registerClass(
             this.remove_all_transitions();
 
             // remove connections
-            this._connections.forEach((connection, id) => {
-                connection.disconnect(id);
-                id = null;
-            });
-
-            this._connections = null;
+            this._connections.destroy();
 
             // remove app information
             this.app = null;
@@ -539,7 +535,7 @@ var AppButton = GObject.registerClass(
 
                 this._menu = new AppButtonMenu(this, this._settings);
 
-                this._connections.set(this._menu.connect('open-state-changed', () => this._focus()), this._menu);
+                this._connections.add(this._menu, 'open-state-changed', () => this._focus());
 
                 this._contextMenuManager = new PopupMenuManager(this);
                 this._contextMenuManager.addMenu(this._menu);

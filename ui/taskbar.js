@@ -9,6 +9,7 @@ const Main = imports.ui.main;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { AppButton } = Me.imports.ui.appButton;
+const { Connections } = Me.imports.utils.connections;
 
 //#endregion imports
 
@@ -108,7 +109,7 @@ var Taskbar = GObject.registerClass(
             this.connect("notify::position", () => this._handlePosition());
             
             // create external connections
-            this._connections = new Map();
+            this._connections = new Connections();
 
             // rendering events
             this._connectRender(this._appSystem, 'app-state-changed');
@@ -118,12 +119,12 @@ var Taskbar = GObject.registerClass(
             this._connectRender(AppFavorites.getAppFavorites(), 'changed');
 
             // handle settings
-            this._connections.set(this._settings.connect('changed::taskbar-show-favorites', () => this._handleSettings()), this._settings);
-            this._connections.set(this._settings.connect('changed::taskbar-isolate-workspaces', () => this._handleSettings()), this._settings);
+            this._connections.add(this._settings, 'changed::taskbar-show-favorites', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::taskbar-isolate-workspaces', () => this._handleSettings());
         }
 
         _connectRender(target, event) {
-            this._connections.set(target.connect(event, (sender, param) => this._rerender(event, param)), target);
+            this._connections.add(target, event, (sender, param) => this._rerender(event, param));
         }
 
         _handleSettings() {
@@ -477,11 +478,7 @@ var Taskbar = GObject.registerClass(
             this._stopScrollToActiveButton();
 
             // remove connections
-            this._connections.forEach((connection, id) => {
-                connection.disconnect(id);
-                id = null;
-            });
-            this._connections = null;
+            this._connections.destroy();
 
             // destroy layout
             this._layout.get_children().forEach(item => item.destroy());

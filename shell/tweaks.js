@@ -10,6 +10,7 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { AppButton } = Me.imports.ui.appButton;
 const { SoundVolumeControl } = Me.imports.utils.soundVolumeControl;
+const { Connections } = Me.imports.utils.connections;
 
 //#endregion imports
 
@@ -40,11 +41,7 @@ var ShellTweaks = class ShellTweaks {
         }
 
         // remove connections
-        this._connections?.forEach((connection, id) => {
-            connection.disconnect(id);
-            id = null;
-        });
-        this._connections = null;
+        this._connections?.destroy();
 
         this._removePanelScrollHandler();
 
@@ -56,11 +53,11 @@ var ShellTweaks = class ShellTweaks {
     }
 
     _createConnections() {
-        this._connections = new Map();
-        this._connections.set(this._settings.connect('changed::panel-enable-scroll', () => this._handleSettings()), this._settings);
-        this._connections.set(this._settings.connect('changed::hotcorner-enable-in-fullscreen', () => this._handleSettings()), this._settings);
-        this._connections.set(this._settings.connect('changed::activities-enable-click-override', () => this._handleSettings()), this._settings);
-        this._connections.set(this._settings.connect('changed::overview-enable-empty-space-clicks', () => this._handleSettings()), this._settings);
+        this._connections = new Connections();
+        this._connections.add(this._settings, 'changed::panel-enable-scroll', () => this._handleSettings());
+        this._connections.add(this._settings, 'changed::hotcorner-enable-in-fullscreen', () => this._handleSettings());
+        this._connections.add(this._settings, 'changed::activities-enable-click-override', () => this._handleSettings());
+        this._connections.add(this._settings, 'changed::overview-enable-empty-space-clicks', () => this._handleSettings());
     }
 
     _handleSettings() {
