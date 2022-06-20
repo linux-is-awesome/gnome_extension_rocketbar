@@ -118,15 +118,15 @@ var Taskbar = GObject.registerClass(
             this._connectRender(AppFavorites.getAppFavorites(), 'changed');
 
             // handle settings
-            this._connections.set(this._settings.connect('changed::taskbar-show-favorites', () => this._handleSettingsChange()), this._settings);
-            this._connections.set(this._settings.connect('changed::taskbar-isolate-workspaces', () => this._handleSettingsChange()), this._settings);
+            this._connections.set(this._settings.connect('changed::taskbar-show-favorites', () => this._handleSettings()), this._settings);
+            this._connections.set(this._settings.connect('changed::taskbar-isolate-workspaces', () => this._handleSettings()), this._settings);
         }
 
         _connectRender(target, event) {
             this._connections.set(target.connect(event, (sender, param) => this._rerender(event, param)), target);
         }
 
-        _handleSettingsChange() {
+        _handleSettings() {
             const oldConfig = this._config;
 
             this._setConfig();

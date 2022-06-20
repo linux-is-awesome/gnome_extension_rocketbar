@@ -17,14 +17,16 @@ var ShellTweaks = class ShellTweaks {
 
     constructor(settings) {
 
-        this._setConfig(settings);
+        this._settings = settings;
 
         // enable tweaks with a small delay
         this._initTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
 
             this._initTimeout = null;
 
-            this._update();
+            this._handleSettings();
+
+            this._createConnections();
 
             return GLib.SOURCE_REMOVE;
         });
@@ -37,6 +39,13 @@ var ShellTweaks = class ShellTweaks {
             GLib.source_remove(this._initTimeout);
         }
 
+        // remove connections
+        this._connections?.forEach((connection, id) => {
+            connection.disconnect(id);
+            id = null;
+        });
+        this._connections = null;
+
         this._removePanelScrollHandler();
 
         this._disableFullscreenHotCorner();
@@ -46,22 +55,52 @@ var ShellTweaks = class ShellTweaks {
         this._removeOverviewClickHandler();
     }
 
-    _setConfig(settings) {
+    _createConnections() {
+        this._connections = new Map();
+        this._connections.set(this._settings.connect('changed::panel-enable-scroll', () => this._handleSettings()), this._settings);
+        this._connections.set(this._settings.connect('changed::hotcorner-enable-in-fullscreen', () => this._handleSettings()), this._settings);
+        this._connections.set(this._settings.connect('changed::activities-enable-click-override', () => this._handleSettings()), this._settings);
+        this._connections.set(this._settings.connect('changed::overview-enable-empty-space-clicks', () => this._handleSettings()), this._settings);
+    }
+
+    _handleSettings() {
+
+        this._setConfig();
+
+        if (this._config.enablePanelScrollHandler) {
+            this._addPanelScrollHandler();
+        } else {
+            this._removePanelScrollHandler();
+        }
+
+        if (this._config.enableFullscreenHotCorner) {
+            this._enableFullscreenHotCorner();
+        } else {
+            this._disableFullscreenHotCorner();
+        }
+
+        if (this._config.enableActivitiesClickOverride) {
+            this._enableActivitiesClickOverride();
+        } else {
+            this._disableActivitiesClickOverride();
+        }
+
+        if (this._config.enableOverviewClickHandler) {
+            this._addOverviewClickHandler();
+        } else {
+            this._removeOverviewClickHandler();
+        }
+    }
+
+    _setConfig() {
         this._config = {
+            enablePanelScrollHandler: this._settings.get_boolean('panel-enable-scroll'),
+            enableFullscreenHotCorner: this._settings.get_boolean('hotcorner-enable-in-fullscreen'),
+            enableActivitiesClickOverride: this._settings.get_boolean('activities-enable-click-override'),
+            enableOverviewClickHandler: this._settings.get_boolean('overview-enable-empty-space-clicks'),
             soundVolumeStep: 2, // 2% by default, 20% max - very fast, 1% min - very slow
             soundVolumeFastStep: 10
         };
-    }
-
-    _update() {
-
-        this._addPanelScrollHandler();
-
-        this._enableFullscreenHotCorner();
-
-        this._enableActivitiesClickOverride();
-
-        this._addOverviewClickHandler();
     }
 
     //#region panel scroll handling

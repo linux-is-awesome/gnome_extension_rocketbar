@@ -5,41 +5,50 @@
         <!-- general page -->
         <key type="b" name="taskbar-show-favorites">
             <default>true</default>
-            <summary>Show favorite applications</summary>
-            <description>Show favorite applications.</description>
+            <summary>Show Favorites</summary>
         </key>
         <key type="b" name="taskbar-isolate-workspaces">
             <default>true</default>
-            <summary>Isolate running apps by the current workspace</summary>
-            <description>Display running apps from the current workspace only or from all workspaces.</description>
+            <summary>Isolate Workspaces</summary>
         </key>
         <key type="b" name="appbutton-enable-tooltips">
             <default>true</default>
-            <summary>Show tooltips on hover</summary>
-            <description>Show tooltips on hover.</description>
+            <summary>Enable Tooltips</summary>
         </key>
         <key type="b" name="appbutton-enable-indicators">
             <default>true</default>
-            <summary>Show running app indicators</summary>
-            <description>Show running app indicators.</description>
+            <summary>Enable Indicators</summary>
         </key>
         <key type="b" name="appbutton-enable-notification-badges">
             <default>true</default>
-            <summary>Show notifications badges</summary>
-            <description>Show notifications badges for apps in the taskbar.</description>
+            <summary>Enable Notification Badges</summary>
         </key>
         <!-- /general page -->
 
         <!-- behavior page -->
         <key type="b" name="appbutton-enable-drag-and-drop">
             <default>true</default>
-            <summary>Allow Drag and Drop to reorder Apps in the taskbar</summary>
-            <description>Allow Drag and Drop to reorder Apps in the taskbar.</description>
+            <summary>Allow Drag and Drop</summary>
         </key>
         <key type="b" name="appbutton-enable-scroll">
             <default>true</default>
-            <summary>Allow cycle app windows using scroll</summary>
-            <description>>Allow cycle app windows using scroll.</description>
+            <summary>Scroll to cycle app windows</summary>
+        </key>
+        <key type="b" name="panel-enable-scroll">
+            <default>true</default>
+            <summary>Scroll to changes sound volume</summary>
+        </key>
+        <key type="b" name="hotcorner-enable-in-fullscreen">
+            <default>true</default>
+            <summary>Enable Hot Corner in fullscreen mode</summary>
+        </key>
+        <key type="b" name="activities-enable-click-override">
+            <default>true</default>
+            <summary>Activities right button click to show apps screen</summary>
+        </key>
+        <key type="b" name="overview-enable-empty-space-clicks">
+            <default>true</default>
+            <summary>Click Overview empty space to close it or show apps screen</summary>
         </key>
         <!-- /behavior page -->
 
