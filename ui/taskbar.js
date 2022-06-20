@@ -102,23 +102,28 @@ var Taskbar = GObject.registerClass(
         }
 
         _createConnections() {
+            
             // internal connections
             this.connect('destroy', () => this._destroy());
             this.connect("notify::position", () => this._handlePosition());
-            // external connections
+            
+            // create external connections
             this._connections = new Map();
-            this._connections.set(AppFavorites.getAppFavorites().connect('changed', () => this._rerender()), AppFavorites.getAppFavorites());
-            this._connections.set(this._appSystem.connect('app-state-changed', () => this._rerender(true)), this._appSystem);
-            this._connections.set(this._appSystem.connect('installed-changed', () => {
-                AppFavorites.getAppFavorites().reload();
-                this._rerender();
-            }), this._appSystem);
-            this._connections.set(global.window_manager.connect('switch-workspace', () => this._rerender(true)), global.window_manager);
-            this._connections.set(global.display.connect('restacked', () => this._rerender()), global.display);
-            this._connections.set(Main.layoutManager.connect('startup-complete', () => this._rerender()), Main.layoutManager);
+
+            // rendering events
+            this._connectRender(this._appSystem, 'app-state-changed');
+            this._connectRender(this._appSystem, 'installed-changed');
+            this._connectRender(global.window_manager, 'switch-workspace');
+            this._connectRender(global.display, 'restacked');
+            this._connectRender(AppFavorites.getAppFavorites(), 'changed');
+
             // handle settings
             this._connections.set(this._settings.connect('changed::taskbar-show-favorites', () => this._handleSettingsChange()), this._settings);
             this._connections.set(this._settings.connect('changed::taskbar-isolate-workspaces', () => this._handleSettingsChange()), this._settings);
+        }
+
+        _connectRender(target, event) {
+            this._connections.set(target.connect(event, (sender, param) => this._rerender(event, param)), target);
         }
 
         _handleSettingsChange() {
@@ -128,7 +133,7 @@ var Taskbar = GObject.registerClass(
 
             if (oldConfig.showFavorites !== this._config.showFavorites ||
                     oldConfig.isolateWorkspaces !== this._config.isolateWorkspaces) {
-                this._rerender(true);
+                this._rerender('changed');
             }
         }
 
@@ -161,9 +166,72 @@ var Taskbar = GObject.registerClass(
             }
         }
 
+        _rerender(event, param) {
+            
+            this._stopRerender();
+
+            if (!this._workId) {
+                return;
+            }
+
+            let highPriority = false;
+
+            // configure rendering based on the handled event
+            switch (event) {
+
+                case 'app-state-changed':
+                    // ignore starting apps
+                    if (param instanceof Shell.App &&
+                            param.state === Shell.AppState.STARTING) {
+                        break;
+                    }
+                case 'switch-workspace':
+                    highPriority = true;
+                    // drop taskbar apps cache
+                    this._taskbarApps = null;
+                    break;
+
+                case 'installed-changed':
+                    // reload favorite apps
+                    AppFavorites.getAppFavorites().reload();
+                case 'changed':
+                    // drop all caches
+                    this._favoriteApps = null;
+                    this._taskbarApps = null;
+                    break;
+
+                case 'restacked':
+                    // just rerender existing app buttons with low priority
+                    break;
+            }
+
+            if (highPriority) {
+                Main.queueDeferredWork(this._workId);
+                return;
+            }
+
+            // delay to reduce number of rerenders
+            this._rerenderTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+
+                if (this._workId) {
+                    Main.queueDeferredWork(this._workId);
+                }
+                
+                this._rerenderTimeout = null;
+                return GLib.SOURCE_REMOVE;
+            });
+        }
+
         _render() {
 
-            const taskbarAppsById = this._getTaskbarApps();
+            const taskbarAppsById = (
+                // check if we have cache
+                this._taskbarApps ?
+                // get apps from the cache
+                this._taskbarApps :
+                // otherwise reload apps
+                this._getTaskbarApps()
+            );
 
             // validate existing items in the taskbar
 
@@ -230,6 +298,9 @@ var Taskbar = GObject.registerClass(
             this._layout.queue_relayout();
 
             this._isRendered = true;
+
+            // update cache
+            this._taskbarApps = taskbarAppsById;
         }
 
         _getTaskbarApps() {
@@ -295,26 +366,37 @@ var Taskbar = GObject.registerClass(
         }
 
         _getFavoriteApps() {
+
+            if (!this._config.showFavorites) {
+                this._favoriteApps = null;
+                return new Map();
+            }
+
+            // return cached data
+            if (this._favoriteApps) {
+                return this._favoriteApps;
+            }
+
             let result = new Map();
 
-            if (this._config.showFavorites) {
+            const favoriteApps = AppFavorites.getAppFavorites().getFavorites();
 
-                const favoriteApps = AppFavorites.getAppFavorites().getFavorites();
+            for (let i = 0, l = favoriteApps.length; i < l; ++i) {
 
-                for (let i = 0, l = favoriteApps.length; i < l; ++i) {
+                const app = favoriteApps[i];
 
-                    const app = favoriteApps[i];
-
-                    if (!app.id) {
-                        continue;
-                    }
-
-                    result.set(app.id, {
-                        app: app,
-                        isFavorite: true
-                    });
+                if (!app.id) {
+                    continue;
                 }
+
+                result.set(app.id, {
+                    app: app,
+                    isFavorite: true
+                });
             }
+
+            // cache the result
+            this._favoriteApps = result;
 
             return result;
         }
@@ -375,31 +457,6 @@ var Taskbar = GObject.registerClass(
                     actor.handlePosition();
                 }
             }
-        }
-
-        _rerender(highPriority) {
-            
-            this._stopRerender();
-
-            if (!this._workId) {
-                return;
-            }
-
-            if (highPriority) {
-                Main.queueDeferredWork(this._workId);
-                return;
-            }
-
-            // delay to reduce number of rerenders
-            this._rerenderTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
-
-                if (this._workId) {
-                    Main.queueDeferredWork(this._workId);
-                }
-                
-                this._rerenderTimeout = null;
-                return GLib.SOURCE_REMOVE;
-            });
         }
 
         _destroy() {
@@ -479,6 +536,9 @@ var Taskbar = GObject.registerClass(
                 this._restoreRunningAppsForWorkspace(workspaceIndex);
 
                 Taskbar._runningAppsCache[workspaceIndex] = newAppIds;
+
+                // drop taskbar cache
+                this._taskbarApps = null;
 
                 return;
             }
