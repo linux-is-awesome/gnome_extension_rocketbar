@@ -36,7 +36,11 @@
         </key>
         <key type="b" name="panel-enable-scroll">
             <default>true</default>
-            <summary>Scroll to changes sound volume</summary>
+            <summary>Scroll panel to changes sound volume</summary>
+        </key>
+        <key type="b" name="panel-enable-middle-button">
+            <default>true</default>
+            <summary>Middle click on panel empty space to mute/unmute sound volume</summary>
         </key>
         <key type="b" name="hotcorner-enable-in-fullscreen">
             <default>true</default>

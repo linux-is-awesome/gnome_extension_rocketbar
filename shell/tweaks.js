@@ -50,11 +50,15 @@ var ShellTweaks = class ShellTweaks {
         this._disableActivitiesClickOverride();
 
         this._removeOverviewClickHandler();
+
+        this._soundVolumeControl?.destroy();
+        this._soundVolumeControl = null;
     }
 
     _createConnections() {
         this._connections = new Connections();
         this._connections.add(this._settings, 'changed::panel-enable-scroll', () => this._handleSettings());
+        this._connections.add(this._settings, 'changed::panel-enable-middle-button', () => this._handleSettings());
         this._connections.add(this._settings, 'changed::hotcorner-enable-in-fullscreen', () => this._handleSettings());
         this._connections.add(this._settings, 'changed::activities-enable-click-override', () => this._handleSettings());
         this._connections.add(this._settings, 'changed::overview-enable-empty-space-clicks', () => this._handleSettings());
@@ -64,10 +68,28 @@ var ShellTweaks = class ShellTweaks {
 
         this._setConfig();
 
+        if (this._config.enablePanelScrollHandler ||
+                this._config.enablePanelMiddleButtonHandler) {
+
+            if (!this._soundVolumeControl) {
+                this._soundVolumeControl = new SoundVolumeControl();
+            }
+
+        } else {
+            this._soundVolumeControl?.destroy();
+            this._soundVolumeControl = null;
+        }
+
         if (this._config.enablePanelScrollHandler) {
             this._addPanelScrollHandler();
         } else {
             this._removePanelScrollHandler();
+        }
+
+        if (this._config.enablePanelMiddleButtonHandler) {
+            this._addPanelMiddleButtonHandler();
+        } else {
+            this._removePanelMiddleButtonHandler();
         }
 
         if (this._config.enableFullscreenHotCorner) {
@@ -92,6 +114,7 @@ var ShellTweaks = class ShellTweaks {
     _setConfig() {
         this._config = {
             enablePanelScrollHandler: this._settings.get_boolean('panel-enable-scroll'),
+            enablePanelMiddleButtonHandler: this._settings.get_boolean('panel-enable-middle-button'),
             enableFullscreenHotCorner: this._settings.get_boolean('hotcorner-enable-in-fullscreen'),
             enableActivitiesClickOverride: this._settings.get_boolean('activities-enable-click-override'),
             enableOverviewClickHandler: this._settings.get_boolean('overview-enable-empty-space-clicks'),
@@ -108,8 +131,6 @@ var ShellTweaks = class ShellTweaks {
             return;
         }
 
-        this._soundVolumeControl = new SoundVolumeControl();
-
         this._panelScrollHandler = Main.panel.connect(
             'scroll-event',
             (actor, event) => this._handlePanelScroll(event)
@@ -125,9 +146,6 @@ var ShellTweaks = class ShellTweaks {
         Main.panel.disconnect(this._panelScrollHandler);
 
         this._panelScrollHandler = null;
-
-        this._soundVolumeControl.destroy();
-        this._soundVolumeControl = null;
     }
 
     _handlePanelScroll(event) {
@@ -163,6 +181,48 @@ var ShellTweaks = class ShellTweaks {
     }
 
     //#endregion panel scroll handling
+
+    //#region panel middle button handling
+
+    _addPanelMiddleButtonHandler() {
+
+        if (this._panelMiddleButtonHandler) {
+            return;
+        }
+
+        this._panelMiddleButtonHandler = Main.panel.connect(
+            'button-press-event',
+            (actor, event) => this._handlePanelMiddleButton(event)
+        );
+    }
+
+    _removePanelMiddleButtonHandler() {
+
+        if (!this._panelMiddleButtonHandler) {
+            return;
+        }
+
+        Main.panel.disconnect(this._panelMiddleButtonHandler);
+
+        this._panelMiddleButtonHandler = null;
+    }
+
+    _handlePanelMiddleButton(event) {
+
+        // handle middle button press on empty space only
+        if (!event || event.get_source() !== Main.panel ||
+                event.get_button() !== Clutter.BUTTON_MIDDLE) {
+            return Clutter.EVENT_PROPAGATE;
+        }
+
+        // mute/unmute sound volume
+
+        this._soundVolumeControl?.toggleMute();
+
+        return Clutter.EVENT_STOP;
+    }
+
+    //#endregion middle button handling
 
     //#region hot corner tweaks
 

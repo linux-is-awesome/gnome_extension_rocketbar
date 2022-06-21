@@ -28,6 +28,7 @@ var BehaviorPage = GObject.registerClass(
 
             // Panel
             this.addGroup('Panel', [
+                this.createSwitch('Middle click on empty space to mute/unmute sound volume', 'panel-enable-middle-button'),
                 this.createSwitch('Scroll to change sound volume', 'panel-enable-scroll')
             ]);
 
