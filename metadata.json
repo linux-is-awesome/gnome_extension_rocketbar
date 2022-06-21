@@ -3,6 +3,7 @@
     "description": "A simple but powerful replacement of the default Dash with additional tweaks for the GNOME Shell.",
     "uuid": "taskbar@chepkun.github.com",
     "settings-schema": "org.gnome.shell.extensions.taskbar",
+    "url": "https://github.com/linux-is-awesome/gnome_extension_taskbar",
     "shell-version": [
         "42"
     ]
