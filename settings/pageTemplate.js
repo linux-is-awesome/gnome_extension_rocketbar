@@ -53,5 +53,49 @@ var SettingsPageTemplate = GObject.registerClass(
             return switchRow;
         }
 
+        createPicklist(title, settingsKey, options, subtitle) {
+
+            let stringOptions = false;
+            let values = [];
+            let picklistOptions = new Gtk.StringList();
+
+            options.forEach((option) => {
+
+                if (!stringOptions) {
+                    stringOptions = !Number.isInteger(option.value);
+                }
+
+                values.push(option.value);
+
+                picklistOptions.append(_(option.label))
+            });
+
+            let selectedIndex = values.indexOf(
+                stringOptions ?
+                this._settings.get_string(settingsKey) :
+                this._settings.get_int(settingsKey)
+            );
+
+            let picklistRow = new Adw.ComboRow({
+                title: _(title),
+                model: picklistOptions,
+                selected: selectedIndex >= 0 ? selectedIndex : 0
+            });
+
+            picklistRow.connect("notify::selected", (widget) => {
+
+                let value = values[widget.selected];
+
+                if (stringOptions) {
+                    this._settings.set_string(settingsKey, value);
+                    return;
+                }
+                
+                this._settings.set_int(settingsKey, value);
+            });
+
+            return picklistRow;
+        }
+
     }
 );
