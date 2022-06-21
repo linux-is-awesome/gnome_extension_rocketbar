@@ -3,6 +3,10 @@
     <schema id="org.gnome.shell.extensions.taskbar" path="/org/gnome/shell/extensions/taskbar/">
 
         <!-- general page -->
+        <key type="b" name="taskbar-enabled">
+            <default>true</default>
+            <summary>Enable Taskbar</summary>
+        </key>
         <key type="b" name="taskbar-show-favorites">
             <default>true</default>
             <summary>Show Favorites</summary>

@@ -22,6 +22,7 @@ var GeneralPage = GObject.registerClass(
 
             // Taskbar
             this.addGroup('Taskbar', [
+                this.createSwitch('Enabled', 'taskbar-enabled'),
                 this.createSwitch('Show Favorites', 'taskbar-show-favorites'),
                 this.createSwitch('Isolate Workspaces', 'taskbar-isolate-workspaces'),
                 this.createSwitch('Enable Tooltips', 'appbutton-enable-tooltips'),
