@@ -57,22 +57,17 @@ var BehaviorPage = GObject.registerClass(
                 { label: 'Turbo', value: 10 }
             ];
 
-            let group = this.addGroup('Panel', [
-                this.createSwitch('Middle click to mute/unmute sound', 'panel-enable-middle-button',
-                                  'Press middle button on empty space of the panel to mute or unmute sound')
-            ]);
-
-            let volumeSpeedPicklist = this.createPicklist(
+            const volumeSpeedPicklist = this.createPicklist(
                 'Volume change speed', 'panel-scroll-volume-change-speed',
                 volumeChangeSpeedOptions
             );
 
-            let volumeSpeedCtrlPicklist = this.createPicklist(
+            const volumeSpeedCtrlPicklist = this.createPicklist(
                 'Volume change speed when Ctrl pressed', 'panel-scroll-volume-change-speed-ctrl',
                 volumeChangeSpeedOptions
             );
 
-            let scrollSwitch = this.createSwitch('Scroll to change sound volume', 'panel-enable-scroll');
+            const scrollSwitch = this.createSwitch('Scroll to change sound volume', 'panel-enable-scroll');
 
             scrollSwitch.activatable_widget.connect('notify::active', (widget) => {
 
@@ -91,9 +86,13 @@ var BehaviorPage = GObject.registerClass(
                 volumeSpeedCtrlPicklist.hide();
             }
     
-            group.add(scrollSwitch);
-            group.add(volumeSpeedPicklist);
-            group.add(volumeSpeedCtrlPicklist);
+            this.addGroup('Panel', [
+                this.createSwitch('Middle click to mute/unmute sound', 'panel-enable-middle-button',
+                    'Press middle button on empty space of the panel to mute or unmute sound'),
+                scrollSwitch,
+                volumeSpeedPicklist,
+                volumeSpeedCtrlPicklist
+            ]);
         }
 
     }

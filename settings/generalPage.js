@@ -21,14 +21,39 @@ var GeneralPage = GObject.registerClass(
         _populateOptions() {
 
             // Taskbar
-            this.addGroup('Taskbar', [
-                this.createSwitch('Enabled', 'taskbar-enabled'),
+
+            const taskbarEnabledSwitch = this.createSwitch('Enabled', 'taskbar-enabled');
+
+            const taskbarGroup = [
+                taskbarEnabledSwitch,
                 this.createSwitch('Show Favorites', 'taskbar-show-favorites'),
                 this.createSwitch('Isolate Workspaces', 'taskbar-isolate-workspaces'),
                 this.createSwitch('Enable Tooltips', 'appbutton-enable-tooltips'),
                 this.createSwitch('Enable Indicators', 'appbutton-enable-indicators'),
                 this.createSwitch('Enable Notification Badges', 'appbutton-enable-notification-badges')
-            ]);
+            ];
+
+            const updateTaskbarGroup = () => {
+                taskbarGroup.forEach(control => {
+
+                    if (control === taskbarEnabledSwitch) {
+                        return;
+                    }
+
+                    if (taskbarEnabledSwitch.activatable_widget.get_active()) {
+                        control.show();
+                    } else {
+                        control.hide();
+                    }
+
+                });
+            };
+
+            taskbarEnabledSwitch.activatable_widget.connect('notify::active', updateTaskbarGroup);
+
+            updateTaskbarGroup();
+
+            this.addGroup('Taskbar', taskbarGroup);
         }
 
     }
