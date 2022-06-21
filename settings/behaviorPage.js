@@ -22,13 +22,15 @@ var BehaviorPage = GObject.registerClass(
 
             // Taskbar
             this.addGroup('Taskbar', [
-                this.createSwitch('Allow Drag and Drop', 'appbutton-enable-drag-and-drop'),
+                this.createSwitch('Allow Drag and Drop', 'appbutton-enable-drag-and-drop',
+                                  'Reorder apps in the taskbar using Drag and Drop'),
                 this.createSwitch('Scroll to cycle app windows', 'appbutton-enable-scroll')
             ]);
 
             // Panel
             this.addGroup('Panel', [
-                this.createSwitch('Middle click on empty space to mute/unmute sound volume', 'panel-enable-middle-button'),
+                this.createSwitch('Middle click to mute/unmute sound', 'panel-enable-middle-button',
+                                  'Press middle button on empty space of the panel to mute or unmute sound'),
                 this.createSwitch('Scroll to change sound volume', 'panel-enable-scroll')
             ]);
 

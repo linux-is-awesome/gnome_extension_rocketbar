@@ -30,7 +30,7 @@ var SettingsPageTemplate = GObject.registerClass(
             return newGroup;
         }
 
-        createSwitch(title, settingsKey) {
+        createSwitch(title, settingsKey, subtitle) {
 
             let newSwitch = new Gtk.Switch({
                 valign: Gtk.Align.CENTER
@@ -44,6 +44,7 @@ var SettingsPageTemplate = GObject.registerClass(
 
             let switchRow = new Adw.ActionRow({
                 title: _(title),
+                subtitle: subtitle ? _(subtitle) : null,
                 activatable_widget: newSwitch
             });
 
