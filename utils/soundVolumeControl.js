@@ -27,7 +27,13 @@ var SoundVolumeControl = class SoundVolumeControl {
      */
     addVolume(volume) {
 
-        if (!volume) {
+        if (!volume || !this._stream) {
+            return;
+        }
+
+        // unmute the stream
+        if (this._stream.is_muted) {
+            this.toggleMute();
             return;
         }
 
@@ -44,6 +50,21 @@ var SoundVolumeControl = class SoundVolumeControl {
         this._notifyVolumeChange();
     }
 
+    toggleMute() {
+
+        if (!this._stream) {
+            return;
+        }
+
+        const muteState = this._stream.is_muted;
+
+        this._stream.change_is_muted(!muteState);
+
+        // change_is_muted changes state of the stream with a delay
+        // so we need to pass the actual state manually
+        this._showOSD(!muteState);
+    }
+
     _handleMixerStream(streamId) {
         this._stream = (
             streamId ?
@@ -52,7 +73,7 @@ var SoundVolumeControl = class SoundVolumeControl {
         );
     }
 
-    _showOSD() {
+    _showOSD(isMuted) {
 
         const volumeIcons = [
             'audio-volume-muted-symbolic',
@@ -61,11 +82,14 @@ var SoundVolumeControl = class SoundVolumeControl {
             'audio-volume-high-symbolic'
         ];
 
-        const volumeLevel = this._stream.volume / this._volumeMax;
+        const volumeLevel = (
+            isMuted ? 0 :
+            this._stream.volume / this._volumeMax
+        );
 
         let iconIndex = 0;
 
-        if (this._stream.volume > 0) {
+        if (volumeLevel > 0) {
 
             const iconIndexMax = volumeIcons.length - 1;
 
