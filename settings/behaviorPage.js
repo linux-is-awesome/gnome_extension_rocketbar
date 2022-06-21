@@ -28,23 +28,7 @@ var BehaviorPage = GObject.registerClass(
             ]);
 
             // Panel
-
-            const volumeChangeSpeedOptions = [
-                { label: 'Slowest', value: 1 },
-                { label: 'Slow', value: 2 }, 
-                { label: 'Normal', value: 4 },
-                { label: 'Fast', value: 6 },
-                { label: 'Faster', value: 8 },
-                { label: 'Turbo', value: 10 }
-            ];
-
-            this.addGroup('Panel', [
-                this.createSwitch('Middle click to mute/unmute sound', 'panel-enable-middle-button',
-                                  'Press middle button on empty space of the panel to mute or unmute sound'),
-                this.createSwitch('Scroll to change sound volume', 'panel-enable-scroll'),
-                this.createPicklist('Volume change speed', 'panel-scroll-volume-change-speed', volumeChangeSpeedOptions),
-                this.createPicklist('Volume change speed when Ctrl pressed', 'panel-scroll-volume-change-speed-ctrl', volumeChangeSpeedOptions)
-            ]);
+            this._addPanelOptions();
 
             // Activities
             this.addGroup('Activities', [
@@ -60,6 +44,56 @@ var BehaviorPage = GObject.registerClass(
             this.addGroup('Hot Corner', [
                 this.createSwitch('Enable Fullscreen Hot Corner', 'hotcorner-enable-in-fullscreen')
             ]);
+        }
+
+        _addPanelOptions() {
+
+            const volumeChangeSpeedOptions = [
+                { label: 'Slowest', value: 1 },
+                { label: 'Slow', value: 2 }, 
+                { label: 'Normal', value: 4 },
+                { label: 'Fast', value: 6 },
+                { label: 'Faster', value: 8 },
+                { label: 'Turbo', value: 10 }
+            ];
+
+            let group = this.addGroup('Panel', [
+                this.createSwitch('Middle click to mute/unmute sound', 'panel-enable-middle-button',
+                                  'Press middle button on empty space of the panel to mute or unmute sound')
+            ]);
+
+            let volumeSpeedPicklist = this.createPicklist(
+                'Volume change speed', 'panel-scroll-volume-change-speed',
+                volumeChangeSpeedOptions
+            );
+
+            let volumeSpeedCtrlPicklist = this.createPicklist(
+                'Volume change speed when Ctrl pressed', 'panel-scroll-volume-change-speed-ctrl',
+                volumeChangeSpeedOptions
+            );
+
+            let scrollSwitch = this.createSwitch('Scroll to change sound volume', 'panel-enable-scroll');
+
+            scrollSwitch.activatable_widget.connect('notify::active', (widget) => {
+
+                if (widget.get_active()) {
+                    volumeSpeedPicklist.show();
+                    volumeSpeedCtrlPicklist.show();
+                    return;
+                }
+
+                volumeSpeedPicklist.hide();
+                volumeSpeedCtrlPicklist.hide();
+            });
+
+            if (!scrollSwitch.activatable_widget.get_active()) {
+                volumeSpeedPicklist.hide();
+                volumeSpeedCtrlPicklist.hide();
+            }
+    
+            group.add(scrollSwitch);
+            group.add(volumeSpeedPicklist);
+            group.add(volumeSpeedCtrlPicklist);
         }
 
     }
