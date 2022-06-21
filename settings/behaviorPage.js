@@ -21,11 +21,7 @@ var BehaviorPage = GObject.registerClass(
         _populateOptions() {
 
             // Taskbar
-            this.addGroup('Taskbar', [
-                this.createSwitch('Allow Drag and Drop', 'appbutton-enable-drag-and-drop',
-                                  'Reorder apps in the taskbar using Drag and Drop'),
-                this.createSwitch('Scroll to cycle app windows', 'appbutton-enable-scroll')
-            ]);
+            this._addTaskbarOptions();
 
             // Panel
             this._addPanelOptions();
@@ -44,6 +40,27 @@ var BehaviorPage = GObject.registerClass(
             this.addGroup('Hot Corner', [
                 this.createSwitch('Enable Fullscreen Hot Corner', 'hotcorner-enable-in-fullscreen')
             ]);
+        }
+
+        _addTaskbarOptions() {
+
+            const taskbarGroup = this.addGroup('Taskbar', [
+                this.createSwitch('Allow Drag and Drop', 'appbutton-enable-drag-and-drop',
+                                  'Reorder apps in the taskbar using Drag and Drop'),
+                this.createSwitch('Scroll to cycle app windows', 'appbutton-enable-scroll')
+            ]);
+
+            if (!this._settings.get_boolean('taskbar-enabled')) {
+                taskbarGroup.hide();
+            }
+
+            this._settings.connect('changed::taskbar-enabled', () => {
+                if (!this._settings.get_boolean('taskbar-enabled')) {
+                    taskbarGroup.hide();
+                    return;
+                }
+                taskbarGroup.show();
+            });
         }
 
         _addPanelOptions() {
