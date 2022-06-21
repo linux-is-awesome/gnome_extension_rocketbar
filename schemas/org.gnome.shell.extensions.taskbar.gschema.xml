@@ -34,13 +34,21 @@
             <default>true</default>
             <summary>Scroll to cycle app windows</summary>
         </key>
+        <key type="b" name="panel-enable-middle-button">
+            <default>true</default>
+            <summary>Middle click on panel empty space to mute/unmute sound volume</summary>
+        </key>
         <key type="b" name="panel-enable-scroll">
             <default>true</default>
             <summary>Scroll panel to changes sound volume</summary>
         </key>
-        <key type="b" name="panel-enable-middle-button">
-            <default>true</default>
-            <summary>Middle click on panel empty space to mute/unmute sound volume</summary>
+        <key type="i" name="panel-scroll-volume-change-speed">
+            <default>2</default>
+            <summary>Sound volume change speed</summary>
+        </key>
+        <key type="i" name="panel-scroll-volume-change-speed-ctrl">
+            <default>10</default>
+            <summary>Sound volume change speed when Ctrl pressed</summary>
         </key>
         <key type="b" name="hotcorner-enable-in-fullscreen">
             <default>true</default>

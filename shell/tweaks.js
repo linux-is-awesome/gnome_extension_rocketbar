@@ -62,6 +62,8 @@ var ShellTweaks = class ShellTweaks {
         this._connections.add(this._settings, 'changed::hotcorner-enable-in-fullscreen', () => this._handleSettings());
         this._connections.add(this._settings, 'changed::activities-enable-click-override', () => this._handleSettings());
         this._connections.add(this._settings, 'changed::overview-enable-empty-space-clicks', () => this._handleSettings());
+        this._connections.add(this._settings, 'changed::panel-scroll-volume-change-speed', () => this._setConfig());
+        this._connections.add(this._settings, 'changed::panel-scroll-volume-change-speed-ctrl', () => this._setConfig());
     }
 
     _handleSettings() {
@@ -118,8 +120,8 @@ var ShellTweaks = class ShellTweaks {
             enableFullscreenHotCorner: this._settings.get_boolean('hotcorner-enable-in-fullscreen'),
             enableActivitiesClickOverride: this._settings.get_boolean('activities-enable-click-override'),
             enableOverviewClickHandler: this._settings.get_boolean('overview-enable-empty-space-clicks'),
-            soundVolumeStep: 2, // 2% by default, 20% max - very fast, 1% min - very slow
-            soundVolumeFastStep: 10
+            soundVolumeStep: this._settings.get_int('panel-scroll-volume-change-speed'),
+            soundVolumeStepCtrl: this._settings.get_int('panel-scroll-volume-change-speed-ctrl')
         };
     }
 
@@ -167,7 +169,7 @@ var ShellTweaks = class ShellTweaks {
         const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) != 0;
         const soundVolumeStep = (
             isCtrlPressed ?
-            this._config.soundVolumeFastStep :
+            this._config.soundVolumeStepCtrl :
             this._config.soundVolumeStep
         );
 
