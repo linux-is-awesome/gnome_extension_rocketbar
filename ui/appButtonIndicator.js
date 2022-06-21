@@ -1,4 +1,5 @@
 const { Clutter, St } = imports.gi;
+const IconGrid = imports.ui.iconGrid;
 
 var AppButtonIndicator = class AppButtonIndicator {
 
@@ -243,10 +244,14 @@ var AppButtonIndicator = class AppButtonIndicator {
 
     _updateNotificationBadge() {
 
+        const oldNotificationCount = this._notificationCount || 0;
+
+        this._notificationCount = this._appButton.notifications;
+
         const show = (
             this._config.enableNotificationBadges &&
             this._layout &&
-            this._appButton.notifications > 0
+            this._notificationCount > 0
         );
 
         if (!show) {
@@ -280,6 +285,12 @@ var AppButtonIndicator = class AppButtonIndicator {
         }
 
         if (this._notificationBadge) {
+            
+            // zoom out the badge when new notifications comes up
+            if (oldNotificationCount < this._notificationCount) {
+                IconGrid.zoomOutActor(this._notificationBadge);
+            }
+
             return;
         }
 
