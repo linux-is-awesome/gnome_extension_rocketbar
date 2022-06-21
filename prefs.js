@@ -15,6 +15,12 @@ function fillPreferencesWindow(window) {
     // enable search
     window.set_search_enabled(true);
 
+    // resize the window
+    window.set_size_request(
+        window.default_width + 50,
+        window.default_height + 150
+    );
+
     // create pages
     window.add(new GeneralPage(settings));
     window.add(new CustomizePage(settings));
