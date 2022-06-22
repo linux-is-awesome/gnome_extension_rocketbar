@@ -33,7 +33,7 @@ var AppButton = GObject.registerClass(
 
             parent.insert_child_at_index(this, position);
 
-            this.rerender();
+            this._handleAppState();
 
             if (!animation) {
                 this.opacity = 255;
@@ -150,6 +150,7 @@ var AppButton = GObject.registerClass(
             this.connect('key-focus-out', () => this._focus(false));
             this.connect('notify::hover', () => this._hover());
             this.connect('scroll-event', (actor, event) => this._handleScroll(event));
+            this.connect('notify::position', () => this._updateIconGeometry());
             // external connections
             this._connections = new Connections();
             this._connections.add(global.display, 'notify::focus-window', () => this._handleAppState());
@@ -546,7 +547,7 @@ var AppButton = GObject.registerClass(
 
         _handleAppState(windows) {
 
-            if (this.get_stage() === null) {
+            if (!this.mapped || this.get_stage() === null) {
                 return;
             }
 
@@ -676,7 +677,7 @@ var AppButton = GObject.registerClass(
 
             // check if the app button is still present at all. When switching workpaces, the
             // button might have been destroyed in between.
-            if (this.get_stage() === null) {
+            if (!this.mapped || this.get_stage() === null) {
                 return;
             }
 

@@ -324,7 +324,6 @@ var Taskbar = GObject.registerClass(
                 // remove unnecessary items from the taskbar
                 if (!appId || !taskbarAppsById.has(appId)) {
                     actor.destroy();
-                    actor = null;
                     continue;
                 }
 
@@ -546,10 +545,10 @@ var Taskbar = GObject.registerClass(
             this._stopScrollToActiveButton();
 
             // remove connections
-            this._connections?.destroy();
+            this._connections.destroy();
 
             // destroy layout
-            this._layout?.get_children().forEach(item => item.destroy());
+            this._layout.get_children().forEach(item => item.destroy());
 
             // restore default app button in the panel
             if (!Main.overview.visible && !Main.sessionMode.isLocked) {
