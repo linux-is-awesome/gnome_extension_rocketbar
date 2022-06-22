@@ -219,18 +219,19 @@ var Taskbar = GObject.registerClass(
             // configure rendering based on the handled event
             switch (event) {
 
+                case 'switch-workspace':
+                    highPriority = true;
                 case 'app-state-changed':
                     // ignore starting apps
-                    if (param instanceof Shell.App &&
+                    if (param && param instanceof Shell.App &&
                             param.state === Shell.AppState.STARTING) {
                         return;
                     }
-                case 'switch-workspace':
-                    highPriority = true;
                 case 'window_added':
                 case 'window_removed':
                     // ignore windows that skip taskbar
-                    if (param instanceof Meta.Window && param.skip_taskbar) {
+                    if (param && param instanceof Meta.Window &&
+                            param.skip_taskbar) {
                         return;
                     }
                     // drop taskbar apps cache
