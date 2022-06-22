@@ -106,7 +106,7 @@ var Taskbar = GObject.registerClass(
             
             // internal connections
             this.connect('destroy', () => this._destroy());
-            this.connect("notify::position", () => this._handlePosition());
+            this.connect("notify::position", () => this._rerender());
             
             // create external connections
             this._connections = new Connections();
@@ -121,6 +121,8 @@ var Taskbar = GObject.registerClass(
             // handle settings
             this._connections.add(this._settings, 'changed::taskbar-show-favorites', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::taskbar-isolate-workspaces', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::taskbar-position', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::taskbar-position-offset', () => this._handleSettings());
         }
 
         _connectRender(target, event) {
@@ -136,6 +138,12 @@ var Taskbar = GObject.registerClass(
                     oldConfig.isolateWorkspaces !== this._config.isolateWorkspaces) {
                 this._rerender('changed');
             }
+
+            if (oldConfig.position !== this._config.position ||
+                    oldConfig.positionOffset !== this._config.positionOffset) {
+                this._addToPanel();
+            }
+            
         }
 
         _setConfig() {
@@ -143,32 +151,56 @@ var Taskbar = GObject.registerClass(
                 showFavorites: this._settings.get_boolean('taskbar-show-favorites'),
                 // display running apps from the current workspace only or from all workspaces
                 isolateWorkspaces: this._settings.get_boolean('taskbar-isolate-workspaces'),
-                // index to display the taskbar in the panel
-                // display after Activities button by default
-                panelIndex: 1,
                 // position to display the taskbar in the panel
                 // left box by default
-                // possible options: left, center
-                panelPosition: 'left'
+                // possible options: left, center, right
+                position: this._settings.get_string('taskbar-position'),
+                // index to display the taskbar in the panel
+                // display after Activities button by default
+                positionOffset: this._settings.get_int('taskbar-position-offset')
             };
         }
 
         _addToPanel() {
-            switch (this._config.panelPosition) {
 
+            this._stopRerender();
+
+            const parent = this.mapped ? this.get_parent() : null;
+            let targetParent = null;
+
+            switch (this._config.position) {
                 case 'left':
-                    Main.panel._leftBox.insert_child_at_index(this, this._config.panelIndex);
+                    targetParent = Main.panel._leftBox;
                     break;
-
                 case 'center':
-                    Main.panel._centerBox.insert_child_at_index(this, this._config.panelIndex);
+                    targetParent = Main.panel._centerBox;
                     break;
-
+                case 'right':
+                    targetParent = Main.panel._rightBox;
+                    break;
             }
+
+            if (!targetParent) {
+                return;
+            }
+
+            // this block is useful only when we change offset in settings
+            if (parent && parent === targetParent) {
+                if (targetParent.get_n_children() > this._config.positionOffset) {
+                    targetParent.set_child_at_index(this, this._config.positionOffset);
+                }
+                return;
+            }
+
+            if (parent) {
+                parent.remove_actor(this);
+            }
+
+            targetParent.insert_child_at_index(this, this._config.positionOffset);
         }
 
         _rerender(event, param) {
-            
+
             this._stopRerender();
 
             if (!this._workId) {
@@ -225,6 +257,10 @@ var Taskbar = GObject.registerClass(
 
         _render() {
 
+            if (!this._workId) {
+                return;
+            }
+
             const taskbarAppsById = (
                 // check if we have cache
                 this._taskbarApps ?
@@ -274,6 +310,7 @@ var Taskbar = GObject.registerClass(
                     const enableAnimation = !this._isRendered || !isRestored;
                     // disable animation for restored app buttons
                     new AppButton(app, isFavorite, this._settings).setParent(this._layout, i, enableAnimation);
+                    taskbarAppButtonsPosition.splice(i, 0, appId);
                     continue;
                 }
 
@@ -444,20 +481,6 @@ var Taskbar = GObject.registerClass(
             }
 
             return result;
-        }
-
-        _handlePosition() {
-
-            const layoutActors = this._layout.get_children();
-
-            for (let i = 0, l = layoutActors.length; i < l; ++i) {
-
-                let actor = layoutActors[i];
-
-                if (actor instanceof AppButton) {
-                    actor.handlePosition();
-                }
-            }
         }
 
         _destroy() {

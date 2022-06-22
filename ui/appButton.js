@@ -68,10 +68,6 @@ var AppButton = GObject.registerClass(
             this._updateIconGeometry(windows);
         }
 
-        handlePosition() {
-            this._updateIconGeometry();
-        }
-
         getDragActor() {
             return this._createAppIconTexture(1.5);
         }

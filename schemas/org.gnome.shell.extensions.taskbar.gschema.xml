@@ -29,6 +29,17 @@
         </key>
         <!-- /general page -->
 
+        <!-- customize page -->
+        <key type="s" name="taskbar-position">
+            <default>'left'</default>
+            <summary>Taskbar position in the panel</summary>
+        </key>
+        <key type="i" name="taskbar-position-offset">
+            <default>1</default>
+            <summary>Taskbar position offset</summary>
+        </key>
+        <!-- /customize page -->
+
         <!-- behavior page -->
         <key type="b" name="appbutton-enable-drag-and-drop">
             <default>true</default>
