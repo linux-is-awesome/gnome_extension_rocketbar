@@ -5,9 +5,8 @@ var Connections = class Connections {
     }
 
     destroy() {
-        this._connections.forEach((target, id) => {
-            target.disconnect(id);
-            id = null;
+        this._connections.forEach(connection => {
+            connection.target.disconnect(connection.id);
         });
         this._connections = null;
     }
@@ -18,6 +17,22 @@ var Connections = class Connections {
             return;
         }
 
-        this._connections.set(target.connect(event, callback), target);
+        this._connections.set(event, {
+            target: target,
+            id: target.connect(event, callback)
+        });
+    }
+
+    remove(event) {
+
+        if (!event || !this._connections.has(event)) {
+            return;
+        }
+
+        const connection = this._connections.get(event);
+
+        connection.target.disconnect(connection.id);
+
+        this._connections.delete(event);
     }
 }

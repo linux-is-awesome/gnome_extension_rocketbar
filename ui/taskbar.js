@@ -1,6 +1,6 @@
 //#region imports
 
-const { Clutter, GLib, GObject, Shell, St } = imports.gi;
+const { Clutter, GLib, GObject, Shell, St, Meta } = imports.gi;
 const { AppMenu } = imports.ui.appMenu;
 const AppFavorites = imports.ui.appFavorites;
 const Main = imports.ui.main;
@@ -64,9 +64,15 @@ var Taskbar = GObject.registerClass(
             // hide default app button in the panel
             Main.panel.statusArea.appMenu.container.hide();
 
-            // set properties
+            // set private properties
             this._appSystem = Shell.AppSystem.get_default();
             this._settings = settings;
+            this._isRendered = false; // for the first render execution
+            this._currentWorkspace = null;
+
+            // caches
+            this._favoriteApps = null;
+            this._taskbarApps = null;
 
             // idenitify initial configuration
             this._setConfig();
@@ -106,27 +112,23 @@ var Taskbar = GObject.registerClass(
             
             // internal connections
             this.connect('destroy', () => this._destroy());
-            this.connect("notify::position", () => this._rerender());
             
             // create external connections
             this._connections = new Connections();
 
             // rendering events
+            this._connectRender(Main.layoutManager, 'startup-complete');
             this._connectRender(this._appSystem, 'app-state-changed');
-            this._connectRender(this._appSystem, 'installed-changed');
+            //this._connectRender(this._appSystem, 'installed-changed');
             this._connectRender(global.window_manager, 'switch-workspace');
-            this._connectRender(global.display, 'restacked');
             this._connectRender(AppFavorites.getAppFavorites(), 'changed');
+            this._connectWorkspace();
 
             // handle settings
             this._connections.add(this._settings, 'changed::taskbar-show-favorites', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::taskbar-isolate-workspaces', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::taskbar-position', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::taskbar-position-offset', () => this._handleSettings());
-        }
-
-        _connectRender(target, event) {
-            this._connections.add(target, event, (sender, param) => this._rerender(event, param));
         }
 
         _handleSettings() {
@@ -201,13 +203,18 @@ var Taskbar = GObject.registerClass(
 
         _rerender(event, param) {
 
-            this._stopRerender();
-
             if (!this._workId) {
+                this._stopRerender();
                 return;
             }
 
             let highPriority = false;
+
+            log('DEBUG rerender event ' + event + ' param ' + param);
+
+            // check current workspace
+            // this should be executed on every render due to shell issues
+            this._connectWorkspace();
 
             // configure rendering based on the handled event
             switch (event) {
@@ -216,17 +223,23 @@ var Taskbar = GObject.registerClass(
                     // ignore starting apps
                     if (param instanceof Shell.App &&
                             param.state === Shell.AppState.STARTING) {
-                        break;
+                        return;
                     }
                 case 'switch-workspace':
                     highPriority = true;
+                case 'window_added':
+                case 'window_removed':
+                    // ignore windows that skip taskbar
+                    if (param instanceof Meta.Window && param.skip_taskbar) {
+                        return;
+                    }
                     // drop taskbar apps cache
                     this._taskbarApps = null;
                     break;
 
                 case 'installed-changed':
                     // reload favorite apps
-                    AppFavorites.getAppFavorites().reload();
+                    //AppFavorites.getAppFavorites().reload();
                 case 'changed':
                     // drop all caches
                     this._favoriteApps = null;
@@ -234,9 +247,12 @@ var Taskbar = GObject.registerClass(
                     break;
 
                 case 'restacked':
+                    return;
                     // just rerender existing app buttons with low priority
                     break;
             }
+
+            this._stopRerender();
 
             if (highPriority) {
                 Main.queueDeferredWork(this._workId);
@@ -255,11 +271,34 @@ var Taskbar = GObject.registerClass(
             });
         }
 
+        _connectWorkspace() {
+            const currentWorkspace = global.workspace_manager.get_active_workspace();
+
+            if (this._currentWorkspace !== currentWorkspace) {
+
+                log('DEBUG connect workspace');
+
+                this._connections.remove('window_added');
+                this._connections.remove('window_removed');
+
+                this._currentWorkspace = currentWorkspace;
+
+                this._connectRender(this._currentWorkspace, 'window_added');
+                this._connectRender(this._currentWorkspace, 'window_removed');
+            }
+        }
+
+        _connectRender(target, event) {
+            this._connections.add(target, event, (sender, param) => this._rerender(event, param));
+        }
+
         _render() {
 
             if (!this._workId) {
                 return;
             }
+
+            log('DEBUG render');
 
             const taskbarAppsById = (
                 // check if we have cache
@@ -335,7 +374,13 @@ var Taskbar = GObject.registerClass(
 
             this._layout.queue_relayout();
 
-            this._isRendered = true;
+            if (!this._isRendered) {
+
+                this._isRendered = true;
+
+                // start position handling after the first rendering cycle
+                this.connect("notify::position", () => this._rerender('position'));
+            }
 
             // update cache
             this._taskbarApps = taskbarAppsById;
@@ -501,10 +546,10 @@ var Taskbar = GObject.registerClass(
             this._stopScrollToActiveButton();
 
             // remove connections
-            this._connections.destroy();
+            this._connections?.destroy();
 
             // destroy layout
-            this._layout.get_children().forEach(item => item.destroy());
+            this._layout?.get_children().forEach(item => item.destroy());
 
             // restore default app button in the panel
             if (!Main.overview.visible && !Main.sessionMode.isLocked) {
@@ -585,7 +630,9 @@ var Taskbar = GObject.registerClass(
 
             // no cache for the workspace index so create it
             if (Taskbar._runningAppsCache.length <= workspaceIndex) {
-                Taskbar._runningAppsCache.push([]);
+                while (Taskbar._runningAppsCache.length <= workspaceIndex) {
+                    Taskbar._runningAppsCache.push([]);
+                }
             }
 
             return Taskbar._runningAppsCache[workspaceIndex];
