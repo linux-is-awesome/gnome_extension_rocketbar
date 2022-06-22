@@ -119,7 +119,7 @@ var Taskbar = GObject.registerClass(
             // rendering events
             this._connectRender(Main.layoutManager, 'startup-complete');
             this._connectRender(this._appSystem, 'app-state-changed');
-            //this._connectRender(this._appSystem, 'installed-changed');
+            this._connectRender(this._appSystem, 'installed-changed');
             this._connectRender(global.window_manager, 'switch-workspace');
             this._connectRender(AppFavorites.getAppFavorites(), 'changed');
             this._connectWorkspace();
@@ -239,18 +239,14 @@ var Taskbar = GObject.registerClass(
                     break;
 
                 case 'installed-changed':
-                    // reload favorite apps
-                    //AppFavorites.getAppFavorites().reload();
+                    // it's required to handle favorite app uninstall
+                    AppFavorites.getAppFavorites().reload();
                 case 'changed':
                     // drop all caches
                     this._favoriteApps = null;
                     this._taskbarApps = null;
                     break;
 
-                case 'restacked':
-                    return;
-                    // just rerender existing app buttons with low priority
-                    break;
             }
 
             this._stopRerender();
