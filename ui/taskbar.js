@@ -1,7 +1,6 @@
 //#region imports
 
 const { Clutter, GLib, GObject, Shell, St, Meta } = imports.gi;
-const { AppMenu } = imports.ui.appMenu;
 const Main = imports.ui.main;
 
 // custom modules import
