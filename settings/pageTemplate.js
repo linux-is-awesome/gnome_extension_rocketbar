@@ -19,7 +19,7 @@ var SettingsPageTemplate = GObject.registerClass(
 
         addGroup(title, options) {
 
-            let newGroup = new Adw.PreferencesGroup({
+            const newGroup = new Adw.PreferencesGroup({
                 title: _(title)
             });
 
@@ -32,7 +32,7 @@ var SettingsPageTemplate = GObject.registerClass(
 
         createSwitch(title, settingsKey, subtitle) {
 
-            let newSwitch = new Gtk.Switch({
+            const newSwitch = new Gtk.Switch({
                 valign: Gtk.Align.CENTER
             });
 
@@ -42,7 +42,7 @@ var SettingsPageTemplate = GObject.registerClass(
                 this._settings.set_boolean(settingsKey, widget.get_active());
             });
 
-            let switchRow = new Adw.ActionRow({
+            const switchRow = new Adw.ActionRow({
                 title: _(title),
                 subtitle: subtitle ? _(subtitle) : null,
                 activatable_widget: newSwitch
@@ -70,21 +70,22 @@ var SettingsPageTemplate = GObject.registerClass(
                 picklistOptions.append(_(option.label))
             });
 
-            let selectedIndex = values.indexOf(
+            const selectedIndex = values.indexOf(
                 stringOptions ?
                 this._settings.get_string(settingsKey) :
                 this._settings.get_int(settingsKey)
             );
 
-            let picklistRow = new Adw.ComboRow({
+            const picklistRow = new Adw.ComboRow({
                 title: _(title),
+                subtitle: subtitle ? _(subtitle) : null,
                 model: picklistOptions,
                 selected: selectedIndex >= 0 ? selectedIndex : 0
             });
 
             picklistRow.connect("notify::selected", (widget) => {
 
-                let value = values[widget.selected];
+                const value = values[widget.selected];
 
                 if (stringOptions) {
                     this._settings.set_string(settingsKey, value);
@@ -95,6 +96,93 @@ var SettingsPageTemplate = GObject.registerClass(
             });
 
             return picklistRow;
+        }
+
+        createSpinButton(title, settingsKey, params, subtitle) {
+
+            const spinButton = new Gtk.SpinButton({
+                adjustment: new Gtk.Adjustment({
+                    lower: params.min || 0,
+                    upper: params.max || 0,
+                    step_increment: params.step || 1
+                }),
+                climb_rate: 1,
+                digits: 0,
+                numeric: true,
+                valign: Gtk.Align.CENTER,
+            });
+
+            spinButton.set_value(this._settings.get_int(settingsKey));
+
+            spinButton.connect('value-changed', (widget) => {
+
+                if (spinButton._changeTimeout) {
+                    GLib.source_remove(spinButton._changeTimeout);
+                }
+
+                spinButton._changeTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
+                    this._settings.set_int(settingsKey, widget.get_value());
+                    spinButton._changeTimeout = null;
+                    return GLib.SOURCE_REMOVE;
+                });
+
+            });
+
+            const spinButtonRow = new Adw.ActionRow({
+                title: _(title),
+                subtitle: subtitle ? _(subtitle) : null,
+                activatable_widget: spinButton
+            });
+
+            spinButtonRow.add_suffix(spinButton);
+
+            return spinButtonRow;
+        }
+
+        createSlider(title, settingsKey, params, subtitle) {
+        
+            const slider = new Gtk.Scale({
+                adjustment: new Gtk.Adjustment({
+                    lower: params.min || 0,
+                    upper: params.max || 1,
+                    step_increment: params.step || 1
+                }),
+                digits: 0,
+                hexpand: true,
+                draw_value: true,
+                value_pos: Gtk.PositionType.BOTTOM,
+                valign: Gtk.Align.CENTER
+            });
+
+            if (params.marks) {
+                params.marks.forEach(mark => slider.add_mark(mark, Gtk.PositionType.TOP, mark.toString()));
+            }
+
+            slider.set_value(this._settings.get_int(settingsKey));
+
+            slider.connect('value-changed', (widget) => {
+
+                if (slider._changeTimeout) {
+                    GLib.source_remove(slider._changeTimeout);
+                }
+
+                slider._changeTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
+                    this._settings.set_int(settingsKey, widget.get_value());
+                    slider._changeTimeout = null;
+                    return GLib.SOURCE_REMOVE;
+                });
+
+            });
+
+            const sliderRow = new Adw.ActionRow({
+                title: _(title),
+                subtitle: subtitle ? _(subtitle) : null,
+                activatable_widget: slider
+            });
+
+            sliderRow.add_suffix(slider);
+
+            return sliderRow;
         }
 
     }
