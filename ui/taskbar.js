@@ -71,6 +71,7 @@ var Taskbar = GObject.registerClass(
             this._settings = settings;
             this._isRendered = false; // for the first render execution
             this._currentWorkspace = null;
+            this._workId = null;
 
             // caches
             this._favoriteApps = null;
@@ -88,12 +89,8 @@ var Taskbar = GObject.registerClass(
             // create connections
             this._createConnections();
 
-            // init deferred work with a small delay
-            this._initTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
-                this._workId = Main.initializeDeferredWork(this, () => this._render());
-                this._initTimeout = null;
-                return GLib.SOURCE_REMOVE;
-            });
+            // init render
+            this._initRender();
         }
 
         _createLayout() {
@@ -117,13 +114,7 @@ var Taskbar = GObject.registerClass(
             
             // create external connections
             this._connections = new Connections();
-
-            // rendering events
-            this._connectRender(Main.layoutManager, 'startup-complete');
-            this._connectRender(Shell.AppSystem.get_default(), 'app-state-changed');
-            this._connectRender(global.window_manager, 'switch-workspace');
-            this._connectWorkspace();
-            this._favorites.connect(() => this._rerender('changed'));
+            this._connections.add(Main.layoutManager, 'startup-complete', () => this._initRender());
 
             // handle settings
             this._connections.add(this._settings, 'changed::taskbar-show-favorites', () => this._handleSettings());
@@ -200,6 +191,31 @@ var Taskbar = GObject.registerClass(
             }
 
             targetParent.insert_child_at_index(this, this._config.positionOffset);
+        }
+
+        //#region taskbar render
+
+        _initRender() {
+
+            // it's not the right time to render the taskbar
+            if (Main.layoutManager._startingUp || this._workId) {
+                return;
+            }
+
+            this._initRenderTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
+
+                this._initRenderTimeout = null;
+
+                // init rendering work id
+                this._workId = Main.initializeDeferredWork(this, () => this._render());
+
+                // connect rendering events
+                this._favorites.connect(() => this._rerender('changed'));
+                this._connectRender(Shell.AppSystem.get_default(), 'app-state-changed');
+                this._connectRender(global.window_manager, 'switch-workspace');
+
+                return GLib.SOURCE_REMOVE;
+            });
         }
 
         _rerender(event, param) {
@@ -373,6 +389,8 @@ var Taskbar = GObject.registerClass(
             this._taskbarApps = taskbarAppsById;
         }
 
+        //#endregion taskbar render
+
         _getTaskbarApps() {
 
             const workspaceIndex = global.workspace_manager.get_active_workspace_index();
@@ -517,9 +535,9 @@ var Taskbar = GObject.registerClass(
 
         _destroy() {
             
-            // clear init timeout
-            if (this._initTimeout) {
-                GLib.source_remove(this._initTimeout);
+            // clear init render timeout
+            if (this._initRenderTimeout) {
+                GLib.source_remove(this._initRenderTimeout);
             }
 
             this.isDestroying = true;
@@ -527,6 +545,9 @@ var Taskbar = GObject.registerClass(
             // stop rendering
             this._workId = null;
             this._stopRerender();
+
+            // remove connections
+            this._connections.destroy();
 
             // remove some values that may cause exceptions
             this._activeAppButton = null;
@@ -536,9 +557,6 @@ var Taskbar = GObject.registerClass(
 
             // destroy favorites
             this._favorites.destroy();
-
-            // remove connections
-            this._connections.destroy();
 
             // destroy layout
             this._layout.get_children().forEach(item => item.destroy());
