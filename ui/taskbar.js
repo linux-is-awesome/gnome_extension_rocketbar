@@ -2,7 +2,6 @@
 
 const { Clutter, GLib, GObject, Shell, St, Meta } = imports.gi;
 const { AppMenu } = imports.ui.appMenu;
-const AppFavorites = imports.ui.appFavorites;
 const Main = imports.ui.main;
 
 // custom modules import
@@ -10,6 +9,7 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { AppButton } = Me.imports.ui.appButton;
 const { Connections } = Me.imports.utils.connections;
+const { Favorites } = Me.imports.utils.favorites;
 
 //#endregion imports
 
@@ -64,8 +64,11 @@ var Taskbar = GObject.registerClass(
             // hide default app button in the panel
             Main.panel.statusArea.appMenu.container.hide();
 
+            // used by app buttons to stop any kind of updates
+            this.isDestroying = false;
+
             // set private properties
-            this._appSystem = Shell.AppSystem.get_default();
+            this._favorites = new Favorites();
             this._settings = settings;
             this._isRendered = false; // for the first render execution
             this._currentWorkspace = null;
@@ -118,11 +121,10 @@ var Taskbar = GObject.registerClass(
 
             // rendering events
             this._connectRender(Main.layoutManager, 'startup-complete');
-            this._connectRender(this._appSystem, 'app-state-changed');
-            this._connectRender(this._appSystem, 'installed-changed');
+            this._connectRender(Shell.AppSystem.get_default(), 'app-state-changed');
             this._connectRender(global.window_manager, 'switch-workspace');
-            this._connectRender(AppFavorites.getAppFavorites(), 'changed');
             this._connectWorkspace();
+            this._favorites.connect(() => this._rerender('changed'));
 
             // handle settings
             this._connections.add(this._settings, 'changed::taskbar-show-favorites', () => this._handleSettings());
@@ -238,9 +240,6 @@ var Taskbar = GObject.registerClass(
                     this._taskbarApps = null;
                     break;
 
-                case 'installed-changed':
-                    // it's required to handle favorite app uninstall
-                    AppFavorites.getAppFavorites().reload();
                 case 'changed':
                     // drop all caches
                     this._favoriteApps = null;
@@ -272,8 +271,6 @@ var Taskbar = GObject.registerClass(
             const currentWorkspace = global.workspace_manager.get_active_workspace();
 
             if (this._currentWorkspace !== currentWorkspace) {
-
-                log('DEBUG connect workspace');
 
                 this._connections.remove('window_added');
                 this._connections.remove('window_removed');
@@ -368,15 +365,10 @@ var Taskbar = GObject.registerClass(
                 appButton.rerender();
             }
 
+            // notify app buttons that position or size may have changed
             this._layout.queue_relayout();
 
-            if (!this._isRendered) {
-
-                this._isRendered = true;
-
-                // start position handling after the first rendering cycle
-                this.connect("notify::position", () => this._rerender('position'));
-            }
+            this._isRendered = true;
 
             // update cache
             this._taskbarApps = taskbarAppsById;
@@ -458,7 +450,7 @@ var Taskbar = GObject.registerClass(
 
             let result = new Map();
 
-            const favoriteApps = AppFavorites.getAppFavorites().getFavorites();
+            const favoriteApps = this._favorites.getApps();
 
             for (let i = 0, l = favoriteApps.length; i < l; ++i) {
 
@@ -531,6 +523,8 @@ var Taskbar = GObject.registerClass(
                 GLib.source_remove(this._initTimeout);
             }
 
+            this.isDestroying = true;
+
             // stop rendering
             this._workId = null;
             this._stopRerender();
@@ -540,6 +534,9 @@ var Taskbar = GObject.registerClass(
 
             // stop other timers
             this._stopScrollToActiveButton();
+
+            // destroy favorites
+            this._favorites.destroy();
 
             // remove connections
             this._connections.destroy();
@@ -608,7 +605,7 @@ var Taskbar = GObject.registerClass(
             
             const newPosition = newAppIds.indexOf(appButton.appId);
 
-            AppFavorites.getAppFavorites().moveFavoriteToPos(appButton.appId, newPosition);
+            this._favorites.moveAppToPosition(appButton.appId, newPosition);
         }
 
         _restoreRunningAppsForWorkspace(workspaceIndex) {
