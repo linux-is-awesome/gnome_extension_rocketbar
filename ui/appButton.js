@@ -157,9 +157,10 @@ var AppButton = GObject.registerClass(
             // handle settings
             this._connections.add(this._settings, 'changed::taskbar-isolate-workspaces', () => this._setConfig());
             this._connections.add(this._settings, 'changed::appbutton-enable-tooltips', () => this._setConfig());
+            this._connections.add(this._settings, 'changed::appbutton-enable-scroll', () => this._setConfig());
+            this._connections.add(this._settings, 'changed::appbutton-running-app-activate-behavior', () => this._setConfig());
             this._connections.add(this._settings, 'changed::appbutton-enable-indicators', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::appbutton-enable-notification-badges', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::appbutton-enable-scroll', () => this._setConfig());
             this._connections.add(this._settings, 'changed::appbutton-enable-drag-and-drop', () => this._handleSettings());
         }
 
@@ -223,7 +224,7 @@ var AppButton = GObject.registerClass(
                 enableNotificationBadges: this._settings.get_boolean('appbutton-enable-notification-badges'),
                 enableDragAndDrop: this._settings.get_boolean('appbutton-enable-drag-and-drop'),
                 enableScrollHandler: this._settings.get_boolean('appbutton-enable-scroll'),
-                activateRunningBehavior: 'move_windows', //'new_window', // move_windows
+                activateRunningBehavior: this._settings.get_string('appbutton-running-app-activate-behavior'),
                 // visual customization settings
                 iconSize: 20, // 16 - 64 pixels
                 padding: 8, // 0 - 50 pixels

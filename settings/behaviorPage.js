@@ -44,14 +44,30 @@ var BehaviorPage = GObject.registerClass(
 
         _addTaskbarOptions() {
 
+            const activateBehaviorOptions = [
+                { label: 'New window', value: 'new_window' },
+                { label: 'Move windows', value: 'move_windows' }, 
+            ];
+
+            const activateBehaviorPicklist = this.createPicklist(
+                'Running apps activation behavior', 'appbutton-running-app-activate-behavior',
+                activateBehaviorOptions,
+                'Controls the behavior when an app is running but has not windows on the active workspace, applicable for isolated workspaces only'
+            );
+
             const taskbarGroup = this.addGroup('Taskbar', [
                 this.createSwitch('Allow Drag and Drop', 'appbutton-enable-drag-and-drop',
                                   'Reorder apps in the taskbar using Drag and Drop'),
-                this.createSwitch('Scroll to cycle app windows', 'appbutton-enable-scroll')
+                this.createSwitch('Scroll to cycle app windows', 'appbutton-enable-scroll'),
+                activateBehaviorPicklist
             ]);
 
             if (!this._settings.get_boolean('taskbar-enabled')) {
                 taskbarGroup.hide();
+            }
+
+            if (!this._settings.get_boolean('taskbar-isolate-workspaces')) {
+                activateBehaviorPicklist.hide();
             }
 
             this._settings.connect('changed::taskbar-enabled', () => {
@@ -60,6 +76,14 @@ var BehaviorPage = GObject.registerClass(
                     return;
                 }
                 taskbarGroup.show();
+            });
+
+            this._settings.connect('changed::taskbar-isolate-workspaces', () => {
+                if (!this._settings.get_boolean('taskbar-isolate-workspaces')) {
+                    activateBehaviorPicklist.hide();
+                    return;
+                }
+                activateBehaviorPicklist.show();
             });
         }
 
