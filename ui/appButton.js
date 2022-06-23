@@ -29,6 +29,9 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
+            // connect parent to handle size and position changes
+            this._connections.add(parent, 'queue_relayout', () => this._queueUpdateIconGeometry());
+
             this.opacity = 0;
 
             parent.insert_child_at_index(this, position);
@@ -61,11 +64,7 @@ var AppButton = GObject.registerClass(
         }
 
         rerender() {
-            // call the function only once to avoid multiple loops 
-            const windows = this._getAppWindows();
-
-            this._handleAppState(windows);
-            this._updateIconGeometry(windows);
+            this._handleAppState();
         }
 
         getDragActor() {
@@ -150,7 +149,6 @@ var AppButton = GObject.registerClass(
             this.connect('key-focus-out', () => this._focus(false));
             this.connect('notify::hover', () => this._hover());
             this.connect('scroll-event', (actor, event) => this._handleScroll(event));
-            this.connect('notify::position', () => this._updateIconGeometry());
             // external connections
             this._connections = new Connections();
             this._connections.add(global.display, 'notify::focus-window', () => this._handleAppState());
@@ -239,6 +237,11 @@ var AppButton = GObject.registerClass(
         _destroy() {
 
             this.remove_all_transitions();
+
+            if (this._updateIconGeometryTimeout) {
+                GLib.source_remove(this._updateIconGeometryTimeout);
+                this._updateIconGeometryTimeout = null;
+            }
 
             // remove connections
             this._connections.destroy();
@@ -356,8 +359,6 @@ var AppButton = GObject.registerClass(
             }
 
             this._getTaskbar()?.handleAppButtonPosition(this);
-
-            this._updateIconGeometry();
         }
 
         //#endregion drag & drop
@@ -545,16 +546,14 @@ var AppButton = GObject.registerClass(
             this._contextMenuManager.ignoreRelease();
         }
 
-        _handleAppState(windows) {
+        _handleAppState() {
 
-            if (!this.mapped || this.get_stage() === null) {
+            if (!this._isValid()) {
                 return;
             }
 
-            if (!windows) {
-                // this code must be executed right here before validating the app state
-                windows = this._getAppWindows();
-            }
+            // this code must be executed right here before validating the app state
+            const windows = this._getAppWindows();
 
             // self destroy :)
             if (!this.isFavorite && !windows.length) {
@@ -668,22 +667,37 @@ var AppButton = GObject.registerClass(
             );`);
         }
 
+        _queueUpdateIconGeometry() {
+
+            if (!this._isValid()) {
+                return;
+            }
+
+            if (this._updateIconGeometryTimeout) {
+                GLib.source_remove(this._updateIconGeometryTimeout);
+            }
+
+            this._updateIconGeometryTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+                this._updateIconGeometry();
+                this._updateIconGeometryTimeout = null;
+                return GLib.SOURCE_REMOVE;
+            });
+        }
+
         /**
         * Update target for minimization animation
         * Credit: Dash to Dock
         * https://github.com/micheleg/dash-to-dock/blob/master/appIcons.js
         */
-        _updateIconGeometry(windows) {
+        _updateIconGeometry() {
 
             // check if the app button is still present at all. When switching workpaces, the
             // button might have been destroyed in between.
-            if (!this.mapped || this.get_stage() === null) {
+            if (!this._isValid()) {
                 return;
             }
 
-            if (!windows) {
-                windows = this._getAppWindows();
-            }
+            const windows = this._getAppWindows();
 
             if (!windows.length) {
                 return;
@@ -825,8 +839,15 @@ var AppButton = GObject.registerClass(
             this._tooltip?.rerender();
         }
 
+        _isValid() {
+            return !(!this.mapped || this.get_stage() === null || !this._getTaskbar());
+        }
+
         _getTaskbar() {
-            return this.get_parent()?.get_parent();
+
+            const taskbar = this.get_parent()?.get_parent();
+
+            return taskbar && !taskbar.isDestroying ? taskbar  : null;
         }
 
         //#endregion private methods
