@@ -223,6 +223,7 @@ var AppButton = GObject.registerClass(
                 enableNotificationBadges: this._settings.get_boolean('appbutton-enable-notification-badges'),
                 enableDragAndDrop: this._settings.get_boolean('appbutton-enable-drag-and-drop'),
                 enableScrollHandler: this._settings.get_boolean('appbutton-enable-scroll'),
+                activateRunningBehavior: 'move_windows', //'new_window', // move_windows
                 // visual customization settings
                 iconSize: 20, // 16 - 64 pixels
                 padding: 8, // 0 - 50 pixels
@@ -420,16 +421,35 @@ var AppButton = GObject.registerClass(
 
                 IconGrid.zoomOutActor(this._appIcon);
 
-                // a favorited app is running, but no windows on the current workspace
-                // open a new window for the app
-                if (this.app.state === Shell.AppState.RUNNING) {
-                    this.app.open_new_window(-1);
+                // when app is not running at all
+                if (this.app.state !== Shell.AppState.RUNNING) {
+                    this.app.activate();
                     return;
                 }
 
-                // app is not running
-                // so run the app
-                this.app.activate();
+                // a favorited app is running, but no windows on the current workspace
+                switch (this._config.activateRunningBehavior) {
+
+                    // move all app windows to the current workspace
+                    case 'move_windows':
+
+                        const workspaceIndex = global.workspace_manager.get_active_workspace();
+                        
+                        this.app.get_windows().forEach(window => {
+                            window.change_workspace(workspaceIndex);
+                        });
+
+                        // now we have windows on the workpace to activate the first one
+                        this._activate();
+
+                        break;
+
+                    // just open a new window
+                    default:
+                        this.app.open_new_window(-1);
+
+                }
+
                 return;
             }
 
