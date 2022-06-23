@@ -72,7 +72,7 @@ var Favorites = class Favorites {
         let result = [];
 
         for (let i = 0, l = this._apps.length; i < l; ++i) {
-            result.push(this._apps.id);
+            result.push(this._apps[i].id);
         }
 
         return result.toString();
