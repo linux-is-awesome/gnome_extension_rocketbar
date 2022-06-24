@@ -107,8 +107,6 @@ var AppButton = GObject.registerClass(
             // create layout
             this._createLayout();
             this._handleSettings();
-            this._updateIcon();
-            this._updateStyle();
 
             // create connections
             this._createConnections();
@@ -162,12 +160,19 @@ var AppButton = GObject.registerClass(
             this._connections.add(this._settings, 'changed::appbutton-enable-indicators', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::appbutton-enable-notification-badges', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::appbutton-enable-drag-and-drop', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::appbutton-icon-size', () => this._handleSettings());
         }
 
         _handleSettings() {
             const oldConfig = this._config || {};
 
             this._setConfig();
+
+            // set icon size
+            if (this._config.iconSize !== oldConfig.iconSize) {
+                this._updateIcon();
+                this._updateStyle();
+            }
 
             // enable/disable indicators
             if (!this._config.enableIndicators && !this._config.enableNotificationBadges) {
@@ -226,7 +231,8 @@ var AppButton = GObject.registerClass(
                 enableScrollHandler: this._settings.get_boolean('appbutton-enable-scroll'),
                 activateRunningBehavior: this._settings.get_string('appbutton-running-app-activate-behavior'),
                 // visual customization settings
-                iconSize: 20, // 16 - 64 pixels
+                iconSize: this._settings.get_int('appbutton-icon-size'),
+                iconTextureSize: this._settings.get_int('appbutton-icon-size'),
                 padding: 8, // 0 - 50 pixels
                 verticalMargin: 2, // 0 - 10 pixels
                 roundness: 100, // 0 - 100 pixels
@@ -629,7 +635,7 @@ var AppButton = GObject.registerClass(
         }
 
         _createAppIconTexture(scale) {
-            return this.app.create_icon_texture(this._config.iconSize * (scale || 1))
+            return this.app.create_icon_texture(this._config.iconTextureSize * (scale || 1))
         }
 
         _updateStyle() {

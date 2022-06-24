@@ -66,13 +66,13 @@ var CustomizePage = GObject.registerClass(
         }
 
         _addAppButtonOptions() {
-        
-            return this.addGroup('App Buttons'/*, [
+
+            return this.addGroup('App Buttons', [
                 this.createSlider(
-                    'Icon Size', '',
+                    'Icon Size', 'appbutton-icon-size',
                     { min: 16, max: 64, marks: [16, 24, 32, 48, 64] }
                 )
-            ]*/);
+            ]);
         }
 
     }

@@ -38,6 +38,10 @@
             <default>1</default>
             <summary>Taskbar position offset</summary>
         </key>
+        <key type="i" name="appbutton-icon-size">
+            <default>20</default>
+            <summary>App Buttons icon size</summary>
+        </key>
         <!-- /customize page -->
 
         <!-- behavior page -->
