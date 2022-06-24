@@ -297,9 +297,17 @@ var AppButton = GObject.registerClass(
 
         _dragMotion(event) {
 
+            const isOverview = Main.overview._shown;
+
             const parent = this.get_parent();
 
             const [x, y] = parent.get_transformed_position();
+
+            // when in overview mode
+            // alow to reorder app buttons only when hovering the taskbar
+            if (isOverview && (event.y > (y + parent.height) || event.y < y)) {
+                return DND.DragMotionResult.CONTINUE;
+            }
 
             const dragPosition = event.x - x;
 
