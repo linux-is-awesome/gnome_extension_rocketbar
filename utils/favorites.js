@@ -34,6 +34,18 @@ var Favorites = class Favorites {
     }
 
     moveAppToPosition(appId, position) {
+
+        // in this case we can't relay on this._apps
+        // because it can be null at some point of time
+        const appIds = this._appFavorites._getIds();
+
+        const oldPosition = appIds.indexOf(appId);
+
+        // check if the position hasn't changed
+        if (position === oldPosition) {
+            return;
+        }
+
         this._appFavorites.moveFavoriteToPos(appId, position);
     }
 
