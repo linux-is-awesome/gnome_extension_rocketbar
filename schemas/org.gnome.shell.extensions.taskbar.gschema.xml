@@ -42,6 +42,22 @@
             <default>20</default>
             <summary>App Buttons icon size</summary>
         </key>
+        <key type="i" name="appbutton-icon-padding">
+            <default>8</default>
+            <summary>App Buttons icon padding</summary>
+        </key>
+        <key type="i" name="appbutton-vertical-margin">
+            <default>2</default>
+            <summary>App Buttons vertical margin</summary>
+        </key>
+        <key type="i" name="appbutton-spacing">
+            <default>0</default>
+            <summary>App Buttons spacing</summary>
+        </key>
+        <key type="i" name="appbutton-roundness">
+            <default>50</default>
+            <summary>App Buttons roundness</summary>
+        </key>
         <!-- /customize page -->
 
         <!-- behavior page -->

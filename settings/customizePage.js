@@ -71,6 +71,22 @@ var CustomizePage = GObject.registerClass(
                 this.createSlider(
                     'Icon Size', 'appbutton-icon-size',
                     { min: 16, max: 64, marks: [16, 24, 32, 48, 64] }
+                ),
+                this.createSlider(
+                    'Icon Padding', 'appbutton-icon-padding',
+                    { min: 0, max: 20, marks: [0, 20] }
+                ),
+                this.createSlider(
+                    'Vertical Margin', 'appbutton-vertical-margin',
+                    { min: 0, max: 10, marks: [0, 10] }
+                ),
+                this.createSlider(
+                    'Spacing', 'appbutton-spacing',
+                    { min: 0, max: 10, marks: [0, 10] }
+                ),
+                this.createSlider(
+                    'Roundness', 'appbutton-roundness',
+                    { min: 0, max: 100, marks: [0, 100] }
                 )
             ]);
         }

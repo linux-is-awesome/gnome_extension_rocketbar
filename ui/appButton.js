@@ -161,6 +161,10 @@ var AppButton = GObject.registerClass(
             this._connections.add(this._settings, 'changed::appbutton-enable-notification-badges', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::appbutton-enable-drag-and-drop', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::appbutton-icon-size', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::appbutton-icon-padding', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::appbutton-vertical-margin', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::appbutton-spacing', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::appbutton-roundness', () => this._handleSettings());
         }
 
         _handleSettings() {
@@ -171,6 +175,14 @@ var AppButton = GObject.registerClass(
             // set icon size
             if (this._config.iconSize !== oldConfig.iconSize) {
                 this._updateIcon();
+            }
+
+            // set style
+            if (this._config.iconSize !== oldConfig.iconSize ||
+                    this._config.iconPadding !== oldConfig.iconPadding ||
+                    this._config.verticalMargin !== oldConfig.verticalMargin ||
+                    this._config.roundness !== oldConfig.roundness ||
+                    this._config.spacing !== oldConfig.spacing) {
                 this._updateStyle();
             }
 
@@ -233,10 +245,10 @@ var AppButton = GObject.registerClass(
                 // visual customization settings
                 iconSize: this._settings.get_int('appbutton-icon-size'),
                 iconTextureSize: this._settings.get_int('appbutton-icon-size'),
-                padding: 8, // 0 - 50 pixels
-                verticalMargin: 2, // 0 - 10 pixels
-                roundness: 100, // 0 - 100 pixels
-                spacing: 0, // 0 - 10 pixels
+                iconPadding: this._settings.get_int('appbutton-icon-padding'),
+                verticalMargin: this._settings.get_int('appbutton-vertical-margin'),
+                roundness: this._settings.get_int('appbutton-roundness'),
+                spacing: this._settings.get_int('appbutton-spacing'),
                 backlight: true,
                 backlightIntensity: 2, // 1 - 9
             };
@@ -656,7 +668,7 @@ var AppButton = GObject.registerClass(
             this._appIcon.style = (
                 `width: ${this._config.iconSize}px;` +
                 `height: ${this._config.iconSize}px;` +
-                `padding: 0 ${this._config.padding}px;` +
+                `padding: 0 ${this._config.iconPadding}px;` +
                 `margin: ${this._config.verticalMargin}px 0;` +
                 `border-radius: ${this._config.roundness}px;` +
                 // currently I have no idea how to completely remove the border
