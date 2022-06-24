@@ -6,18 +6,13 @@ const { Connections } = Me.imports.utils.connections;
 
 var Favorites = class Favorites {
 
-    constructor() {
-        this._callback = null;
+    constructor(callback) {
+        this._callback = callback;
         this._apps = null;
         this._appFavorites = AppFavorites.getAppFavorites();
         this._connections = new Connections();
         this._connections.add(Shell.AppSystem.get_default(), 'installed-changed', () => this._handleInstalledChanged());
         this._connections.add(this._appFavorites, 'changed', () => this._handleChanged());
-    }
-
-    connect(callback) {
-        this._callback = callback;
-        return this;
     }
 
     destroy() {

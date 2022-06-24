@@ -67,7 +67,6 @@ var Taskbar = GObject.registerClass(
             this.isDestroying = false;
 
             // set private properties
-            this._favorites = new Favorites();
             this._settings = settings;
             this._isRendered = false; // for the first render execution
             this._currentWorkspace = null;
@@ -77,14 +76,11 @@ var Taskbar = GObject.registerClass(
             this._favoriteApps = null;
             this._taskbarApps = null;
 
-            // idenitify initial configuration
-            this._setConfig();
-
             // create layout
             this._createLayout();
 
-            // put the taskbar into the panel
-            this._addToPanel();
+            // handle settings
+            this._handleSettings();
 
             // create connections
             this._createConnections();
@@ -124,20 +120,26 @@ var Taskbar = GObject.registerClass(
         }
 
         _handleSettings() {
-            const oldConfig = this._config;
+            const oldConfig = this._config || {};
 
             this._setConfig();
-
-            if (oldConfig.showFavorites !== this._config.showFavorites ||
-                    oldConfig.isolateWorkspaces !== this._config.isolateWorkspaces) {
-                this._rerender('changed');
-            }
 
             if (oldConfig.position !== this._config.position ||
                     oldConfig.positionOffset !== this._config.positionOffset) {
                 this._addToPanel();
             }
-            
+
+            if (this._config.showFavorites && !this._favorites) {
+                this._favorites = new Favorites(() => this._rerender('changed'));
+            } else if (!this._config.showFavorites && this._favorites)  {
+                this._favorites.destroy();
+                this._favorites = null;
+            }
+
+            if (oldConfig.showFavorites !== this._config.showFavorites ||
+                    oldConfig.isolateWorkspaces !== this._config.isolateWorkspaces) {
+                this._rerender('changed');
+            }
         }
 
         _setConfig() {
@@ -210,7 +212,6 @@ var Taskbar = GObject.registerClass(
                 this._workId = Main.initializeDeferredWork(this, () => this._render());
 
                 // connect rendering events
-                this._favorites.connect(() => this._rerender('changed'));
                 this._connectRender(Shell.AppSystem.get_default(), 'app-state-changed');
                 this._connectRender(global.window_manager, 'switch-workspace');
 
@@ -455,7 +456,7 @@ var Taskbar = GObject.registerClass(
 
         _getFavoriteApps() {
 
-            if (!this._config.showFavorites) {
+            if (!this._config.showFavorites || !this._favorites) {
                 this._favoriteApps = null;
                 return new Map();
             }
@@ -546,6 +547,9 @@ var Taskbar = GObject.registerClass(
             this._workId = null;
             this._stopRerender();
 
+            // destroy favorites
+            this._favorites?.destroy();
+
             // remove connections
             this._connections.destroy();
 
@@ -554,9 +558,6 @@ var Taskbar = GObject.registerClass(
 
             // stop other timers
             this._stopScrollToActiveButton();
-
-            // destroy favorites
-            this._favorites.destroy();
 
             // destroy layout
             this._layout.get_children().forEach(item => item.destroy());
@@ -619,6 +620,10 @@ var Taskbar = GObject.registerClass(
             }
 
             // update favorites
+
+            if (!this._favorites) {
+                return;
+            }
             
             const newPosition = newAppIds.indexOf(appButton.appId);
 
