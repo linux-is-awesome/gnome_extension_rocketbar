@@ -690,7 +690,16 @@ var AppButton = GObject.registerClass(
 
         _queueUpdateIconGeometry() {
 
-            if (!this._isValid()) {
+            if (!this._isValid() || !this.windows) {
+                this._firstUpdateIconGeometry = true;
+                return;
+            }
+
+            // for the first opened window update icon geometry without a delay
+            // with the delay it happens that on double click window could be minimized with wrong icon geometry 
+            if (this._firstUpdateIconGeometry) {
+                this._firstUpdateIconGeometry = false;
+                this._updateIconGeometry();
                 return;
             }
 
@@ -699,8 +708,8 @@ var AppButton = GObject.registerClass(
             }
 
             this._updateIconGeometryTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
-                this._updateIconGeometry();
                 this._updateIconGeometryTimeout = null;
+                this._updateIconGeometry();
                 return GLib.SOURCE_REMOVE;
             });
         }
