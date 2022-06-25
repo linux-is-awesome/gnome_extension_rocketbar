@@ -20,9 +20,17 @@ var AboutPage = GObject.registerClass(
 
             const metadata = Me.metadata;
 
-            this.addGroup(null, [
+            this.addGroup('Useful Links', [
                 this.createLink('Report bugs', metadata.url + '/issues'),
                 this.createLink('Share your ideas', metadata.url + '/discussions/categories/ideas')
+            ]);
+
+            this.addGroup('Credits', [
+                this.createLink('App Icons Taskbar', 'https://gitlab.com/AndrewZaech/aztaskbar'),
+                this.createLink('Dash to Dock', 'https://github.com/micheleg/dash-to-dock'),
+                this.createLink('Overview Clicking', 'https://github.com/mechtifs/overview-clicking'),
+                this.createLink('Volume Scroller', 'https://github.com/trflynn89/gnome-shell-volume-scroller'),
+                this.createLink('Fullscreen Hot Corner', 'https://github.com/soal/gnome-shell-fullscreen-hot-corner'),
             ]);
         }
 
