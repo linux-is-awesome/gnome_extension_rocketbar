@@ -25,7 +25,7 @@ var AppButtonMenu = class AppButtonMenu extends AppMenu {
     }
 
     updateConfig() {
-        const oldConfig = this._config;
+        const oldConfig = this._config || {};
 
         this._setConfig();
 

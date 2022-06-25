@@ -13,9 +13,7 @@ var AppButtonIndicator = class AppButtonIndicator {
         this._isActive = false;
         this._dominantColor = null;
 
-        this._setConfig();
-
-        this.rerender();
+        this.updateConfig();
     }
 
     //#region public methods
@@ -32,6 +30,11 @@ var AppButtonIndicator = class AppButtonIndicator {
         const oldConfig = this._config;
 
         this._setConfig();
+
+        // check if nothing has changed
+        if (oldConfig && JSON.stringify(oldConfig) === JSON.stringify(this._config)) {
+            return;
+        }
 
         this.rerender();
     }

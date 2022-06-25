@@ -151,7 +151,7 @@ var AppButton = GObject.registerClass(
             this._connections = new Connections();
             this._connections.add(global.display, 'notify::focus-window', () => this._handleAppState());
             this._connections.add(global.display, 'window-demands-attention', (display, window) => this._handleUrgentWindow(window));
-            this._connections.add(St.Settings.get(), 'notify::gtk-icon-theme', () => this._updateIcon());
+            this._connections.add(St.Settings.get(), 'notify::gtk-icon-theme', () => this._handleIconTheme());
             // handle settings
             this._connections.add(this._settings, 'changed::taskbar-isolate-workspaces', () => this._setConfig());
             this._connections.add(this._settings, 'changed::appbutton-enable-tooltips', () => this._setConfig());
@@ -165,6 +165,8 @@ var AppButton = GObject.registerClass(
             this._connections.add(this._settings, 'changed::appbutton-vertical-margin', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::appbutton-spacing', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::appbutton-roundness', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::appbutton-backlight', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::appbutton-backlight-intensity', () => this._handleSettings());
         }
 
         _handleSettings() {
@@ -178,29 +180,26 @@ var AppButton = GObject.registerClass(
             }
 
             // set style
-            if (this._config.iconSize !== oldConfig.iconSize ||
-                    this._config.iconPadding !== oldConfig.iconPadding ||
-                    this._config.verticalMargin !== oldConfig.verticalMargin ||
-                    this._config.roundness !== oldConfig.roundness ||
-                    this._config.spacing !== oldConfig.spacing) {
+            if (
+                this._config.iconSize !== oldConfig.iconSize ||
+                this._config.iconPadding !== oldConfig.iconPadding ||
+                this._config.verticalMargin !== oldConfig.verticalMargin ||
+                this._config.roundness !== oldConfig.roundness ||
+                this._config.spacing !== oldConfig.spacing ||
+                this._config.backlight !== oldConfig.backlight ||
+                this._config.backlightIntensity !== oldConfig.backlightIntensity
+            ) {
                 this._updateStyle();
             }
 
             // enable/disable indicators
             if (!this._config.enableIndicators && !this._config.enableNotificationBadges) {
-
                 this._indicator?.destroy();
                 this._indicator = null;
-
-            } else if (oldConfig.enableIndicators !== this._config.enableIndicators ||
-                            oldConfig.enableNotificationBadges !== this._config.enableNotificationBadges) {
-                
-                if (!this._indicator) {
-                    this._indicator = new AppButtonIndicator(this, this._layout, this._settings);
-                } else {
-                    this._indicator.updateConfig();
-                }
-
+            } else if (!this._indicator) {
+                this._indicator = new AppButtonIndicator(this, this._layout, this._settings);
+            } else {
+                this._indicator.updateConfig();
             }
 
             // enable/disable drag and drop
@@ -249,8 +248,8 @@ var AppButton = GObject.registerClass(
                 verticalMargin: this._settings.get_int('appbutton-vertical-margin'),
                 roundness: this._settings.get_int('appbutton-roundness'),
                 spacing: this._settings.get_int('appbutton-spacing'),
-                backlight: true,
-                backlightIntensity: 2, // 1 - 9
+                backlight: this._settings.get_boolean('appbutton-backlight'),
+                backlightIntensity: this._settings.get_int('appbutton-backlight-intensity'),
             };
         }
 
@@ -632,7 +631,15 @@ var AppButton = GObject.registerClass(
             }
         }
 
+        _handleIconTheme() {
+
+            this.dominantColor = null;
+
+            this._updateIcon();
+        }
+
         _updateIcon() {
+
             this._appIcon.set_child(this._createAppIconTexture());
 
             this._updateDominantColor();
@@ -640,18 +647,15 @@ var AppButton = GObject.registerClass(
 
         _updateDominantColor() {
 
-            if (!this._config.backlight) {
+            if (this.dominantColor) {
                 return;
             }
 
             this.dominantColor = new DominantColorExtractor(this.app).getColor();
 
-            this._handleDominantColorChange();
-        }
-
-        _handleDominantColorChange() {
-            this._indicator?.rerender();
             this._updateStyle();
+
+            this._indicator?.rerender();
         }
 
         _createAppIconTexture(scale) {
@@ -690,7 +694,7 @@ var AppButton = GObject.registerClass(
 
         _applyDominantColor() {
             
-            if (!this.dominantColor) {
+            if (!this.dominantColor || !this._config.backlight) {
                 return;
             }
 
