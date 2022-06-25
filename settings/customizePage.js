@@ -17,9 +17,11 @@ var CustomizePage = GObject.registerClass(
 
             this._options = [];
 
-            this._emptyMessage = this.createMessage('No customizations available');
+            this._emptyMessage = this.addGroup(null, [
+                this.createMessage('No customizations available')
+            ]);
+
             this._emptyMessage.hide();
-            this.add(this._emptyMessage);
 
             this._populateOptions();
         }

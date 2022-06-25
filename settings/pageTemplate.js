@@ -211,18 +211,30 @@ var SettingsPageTemplate = GObject.registerClass(
             return colorButtonRow;
         }
 
+        createLink(title, url) {
+
+            const link = new Gtk.LinkButton({
+                uri: url,
+                opacity: 0
+            });
+
+            const linkRow = new Adw.ActionRow({
+                title: _(title),
+                activatable_widget: link
+            });
+
+            linkRow.add_suffix(link);
+
+            return linkRow;
+        }
+
         createMessage(text) {
-
-            const result = new Adw.PreferencesGroup();
-
-            result.add(new Gtk.Label({
+            return new Gtk.Label({
                 label: `<span size="larger"><b>${_(text)}</b></span>`,
                 use_markup: true,
                 vexpand: true,
                 valign: Gtk.Align.FILL
-            }))
-
-            return result;
+            });
         }
 
     }

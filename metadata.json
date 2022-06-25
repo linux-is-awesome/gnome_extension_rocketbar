@@ -4,6 +4,7 @@
     "uuid": "taskbar@chepkun.github.com",
     "settings-schema": "org.gnome.shell.extensions.taskbar",
     "url": "https://github.com/linux-is-awesome/gnome_extension_taskbar",
+    "version": 1,
     "shell-version": [
         "42"
     ]
