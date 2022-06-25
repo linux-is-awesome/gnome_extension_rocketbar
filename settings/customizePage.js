@@ -22,39 +22,76 @@ var CustomizePage = GObject.registerClass(
 
             const taskbarOptions = this._addTaskbarOptions();
             const appButtonOptions = this._addAppButtonOptions();
-
-            this.addGroup('Indicators');
-            this.addGroup('Notification Badges');
-            
+            const indicatorOptions = this._addIndicatorOptions();
+            const notificationBadgeOptions = this._addNotificationBadgeOptions();
             const tooltipOptions = this._addTooltipOptions();
+
+            const taskbarRelatedOptions = [
+                taskbarOptions,
+                appButtonOptions,
+                indicatorOptions,
+                notificationBadgeOptions,
+                tooltipOptions
+            ];
 
             // handle settings changes in order to hide some options
 
             if (!this._settings.get_boolean('taskbar-enabled')) {
-                taskbarOptions.hide();
-                appButtonOptions.hide();
-                tooltipOptions.hide();
-            }
+                taskbarRelatedOptions.forEach(options => options.hide());
+            } else {
 
-            if (!this._settings.get_boolean('appbutton-enable-tooltips')) {
-                tooltipOptions.hide();
+                if (!this._settings.get_boolean('appbutton-enable-indicators')) {
+                    indicatorOptions.hide();
+                }
+
+                if (!this._settings.get_boolean('appbutton-enable-notification-badges')) {
+                    notificationBadgeOptions.hide();
+                }
+
+                if (!this._settings.get_boolean('appbutton-enable-tooltips')) {
+                    tooltipOptions.hide();
+                }
+
             }
 
             this._settings.connect('changed::taskbar-enabled', () => {
 
                 if (!this._settings.get_boolean('taskbar-enabled')) {
-                    taskbarOptions.hide();
-                    appButtonOptions.hide();
-                    tooltipOptions.hide();
+                    taskbarRelatedOptions.forEach(options => options.hide());
                     return;
                 }
 
                 taskbarOptions.show();
                 appButtonOptions.show();
 
+                if (this._settings.get_boolean('appbutton-enable-indicators')) {
+                    indicatorOptions.show();
+                }
+
+                if (this._settings.get_boolean('appbutton-enable-notification-badges')) {
+                    notificationBadgeOptions.show();
+                }
+
                 if (this._settings.get_boolean('appbutton-enable-tooltips')) {
                     tooltipOptions.show();
                 }
+
+            });
+
+            this._settings.connect('changed::appbutton-enable-indicators', () => {
+                if (!this._settings.get_boolean('appbutton-enable-indicators')) {
+                    indicatorOptions.hide();
+                    return;
+                }
+                indicatorOptions.show();
+            });
+
+            this._settings.connect('changed::appbutton-enable-notification-badges', () => {
+                if (!this._settings.get_boolean('appbutton-enable-notification-badges')) {
+                    notificationBadgeOptions.hide();
+                    return;
+                }
+                notificationBadgeOptions.show();
             });
 
             this._settings.connect('changed::appbutton-enable-tooltips', () => {
@@ -125,6 +162,27 @@ var CustomizePage = GObject.registerClass(
                     'Spacing', 'appbutton-spacing',
                     { min: 0, max: 10 }
                 )
+            ]);
+        }
+
+        _addIndicatorOptions() {
+            return this.addGroup('Indicators', [
+                this.createSwitch('Active dominant color', 'indicator-dominant-color-active'),
+                this.createSwitch('Inactive dominant color', 'indicator-dominant-color-inactive'),
+                this.createSlider(
+                    'Size', 'indicator-size',
+                    { min: 2, max: 10 }
+                ),
+                this.createSlider(
+                    'Max indicators to display', 'indicator-display-limit',
+                    { min: 1, max: 5 }
+                )
+            ]);
+        }
+
+        _addNotificationBadgeOptions() {
+            return this.addGroup('Notification Badges', [
+
             ]);
         }
 

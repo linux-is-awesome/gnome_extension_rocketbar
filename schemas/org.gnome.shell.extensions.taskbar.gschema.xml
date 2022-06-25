@@ -66,6 +66,22 @@
             <default>2</default>
             <summary>App Buttons backlight intensity</summary>
         </key>
+        <key type="b" name="indicator-dominant-color-active">
+            <default>true</default>
+            <summary>Use dominant color for active indicators</summary>
+        </key>
+        <key type="b" name="indicator-dominant-color-inactive">
+            <default>true</default>
+            <summary>Use dominant color for inactive indicators</summary>
+        </key>
+        <key type="i" name="indicator-size">
+            <default>4</default>
+            <summary>Indicators size</summary>
+        </key>
+        <key type="i" name="indicator-display-limit">
+            <default>3</default>
+            <summary>Max number of indicators to display for running apps</summary>
+        </key>
         <key type="i" name="tooltip-show-delay">
             <default>500</default>
             <summary>Tooltips show delay</summary>

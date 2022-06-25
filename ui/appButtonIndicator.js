@@ -31,17 +31,31 @@ var AppButtonIndicator = class AppButtonIndicator {
 
         this._setConfig();
 
-        // check if nothing has changed
-        if (oldConfig && JSON.stringify(oldConfig) === JSON.stringify(this._config)) {
-            return;
+        if (!oldConfig ||
+                oldConfig.enableIndicators !== this._config.enableIndicators ||
+                oldConfig.enableNotificationBadges !== this._config.enableNotificationBadges ||
+                oldConfig.maxIndicators !== this._config.maxIndicators) {
+            this.rerender();
         }
 
-        this.rerender();
+        if (!oldConfig) {
+            return;
+        }
+        
+        if (oldConfig.dominantColor !== this._config.dominantColor ||
+                oldConfig.activeDominantColor !== this._config.activeDominantColor ||
+                oldConfig.size !== this._config.size) {
+            this._updateIndicatorsStyle();
+        }
     }
 
     rerender() {
         this._updateIndicators();
         this._updateNotificationBadge();
+    }
+
+    updateStyle() {
+        this._updateIndicatorsStyle();
     }
 
     //#endregion public methods
@@ -54,10 +68,10 @@ var AppButtonIndicator = class AppButtonIndicator {
             enableNotificationBadges: this._settings.get_boolean('appbutton-enable-notification-badges'),
             color: 'rgb(255, 255, 255)',
             activeColor: 'rgb(53, 132, 228)',
-            dominantColor: true,
-            activeDominantColor: true,
-            size: 4,
-            maxIndicators: 3,
+            dominantColor: this._settings.get_boolean('indicator-dominant-color-inactive'),
+            activeDominantColor: this._settings.get_boolean('indicator-dominant-color-active'),
+            size: this._settings.get_int('indicator-size'),
+            maxIndicators: this._settings.get_int('indicator-display-limit'),
             // notification badge
             notificationBadgeSize: 5,
             notificationBadgeMargin: 7,
@@ -71,10 +85,10 @@ var AppButtonIndicator = class AppButtonIndicator {
         const oldIsActive = this._isActive;
 
         // set active state
-        this._isActive = this._appButton.windows > 0;
+        this._isActive = this._appButton.isActive;
 
         // no need to display indicators
-        if (!this._config.enableIndicators || !this._isActive) {
+        if (!this._config.enableIndicators || !this._appButton.windows) {
             this._destroyIndicators();
             return;
         }

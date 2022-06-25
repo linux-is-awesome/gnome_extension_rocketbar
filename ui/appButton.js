@@ -94,6 +94,7 @@ var AppButton = GObject.registerClass(
             this.app = app;
             this.appId = app.id;
             this.isFavorite = isFavorite;
+            this.isActive = false;
             this.activeWindow = null;
             this.windows = 0;
             this.notifications = 0;
@@ -101,7 +102,6 @@ var AppButton = GObject.registerClass(
 
             // set private properties
             this._settings = settings;
-            this._isActive = false;
             this._delegate = this;
 
             // create layout
@@ -167,6 +167,10 @@ var AppButton = GObject.registerClass(
             this._connections.add(this._settings, 'changed::appbutton-roundness', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::appbutton-backlight', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::appbutton-backlight-intensity', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::indicator-dominant-color-active', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::indicator-dominant-color-inactive', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::indicator-size', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::indicator-display-limit', () => this._handleSettings());
         }
 
         _handleSettings() {
@@ -620,16 +624,16 @@ var AppButton = GObject.registerClass(
             this._tooltip?.rerender();
 
             // update active state
-            if (this._isActive !== this._hasFocusedWindow) {
+            if (this.isActive !== this._hasFocusedWindow) {
 
-                this._isActive = this._hasFocusedWindow;
+                this.isActive = this._hasFocusedWindow;
 
                 this._updateStyle();
             }
 
             this._indicator?.rerender();
 
-            if (this._isActive) {
+            if (this.isActive) {
                 this._getTaskbar()?.setActiveAppButton(this);
                 this._scrollToAppButton();
             }
@@ -659,7 +663,7 @@ var AppButton = GObject.registerClass(
 
             this._updateStyle();
 
-            this._indicator?.rerender();
+            this._indicator?.updateStyle();
         }
 
         _createAppIconTexture(scale) {
@@ -684,7 +688,7 @@ var AppButton = GObject.registerClass(
                 `border-width: 1px;`
             );
 
-            if (this._isActive) {
+            if (this.isActive) {
 
                 this._appIcon.add_style_pseudo_class('active');
 
@@ -818,7 +822,7 @@ var AppButton = GObject.registerClass(
         _handleUrgentWindow(window) {
 
             // make only active apps handle urgent windows
-            if (!window || !this._isActive || window.has_focus()) {
+            if (!window || !this.isActive || window.has_focus()) {
                 return;
             }
 
