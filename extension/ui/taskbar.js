@@ -141,6 +141,7 @@ var Taskbar = GObject.registerClass(
             
             // internal connections
             this.connect('destroy', () => this._destroy());
+            this.connect('notify::position', () => this._handlePosition());
             
             // create external connections
             this._connections = new Connections();
@@ -151,6 +152,7 @@ var Taskbar = GObject.registerClass(
             this._connections.add(this._settings, 'changed::taskbar-isolate-workspaces', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::taskbar-position', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::taskbar-position-offset', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::taskbar-preserve-position', () => this._handleSettings());
         }
 
         _handleSettings() {
@@ -159,7 +161,8 @@ var Taskbar = GObject.registerClass(
             this._setConfig();
 
             if (oldConfig.position !== this._config.position ||
-                    oldConfig.positionOffset !== this._config.positionOffset) {
+                    oldConfig.positionOffset !== this._config.positionOffset ||
+                        (this._config.preservePosition && !oldConfig.preservePosition)) {
                 this._addToPanel();
             }
 
@@ -186,8 +189,26 @@ var Taskbar = GObject.registerClass(
                 position: this._settings.get_string('taskbar-position'),
                 // index to display the taskbar in the panel
                 // display after Activities button by default
-                positionOffset: this._settings.get_int('taskbar-position-offset')
+                positionOffset: this._settings.get_int('taskbar-position-offset'),
+                preservePosition: this._settings.get_boolean('taskbar-preserve-position')
             };
+        }
+
+        _handlePosition() {
+
+            if (!this._config.preservePosition) {
+                return;
+            }
+
+            const parent = this.mapped ? this.get_parent() : null;
+
+            if (!parent || parent.get_child_at_index(this._config.positionOffset) === this) {
+                return;
+            }
+
+            this._addToPanel();
+
+            this._rerender();
         }
 
         _addToPanel() {
@@ -213,7 +234,6 @@ var Taskbar = GObject.registerClass(
                 return;
             }
 
-            // this block is useful only when we change offset in settings
             if (parent && parent === targetParent) {
                 if (targetParent.get_n_children() > this._config.positionOffset) {
                     targetParent.set_child_at_index(this, this._config.positionOffset);

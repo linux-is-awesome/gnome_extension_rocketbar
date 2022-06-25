@@ -117,7 +117,9 @@ var CustomizePage = GObject.registerClass(
                 this.createSpinButton(
                     'Position Offset', 'taskbar-position-offset',
                     { min: 0, max: 15 }
-                )
+                ),
+                this.createSwitch('Preserve Position', 'taskbar-preserve-position',
+                                  'Prevent position changes caused by other extensions in the panel')
             ]);
         }
 
