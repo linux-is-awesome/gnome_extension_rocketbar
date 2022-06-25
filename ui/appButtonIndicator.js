@@ -51,7 +51,9 @@ var AppButtonIndicator = class AppButtonIndicator {
             this._updateIndicatorsStyle();
         }
 
-        if (oldConfig.notificationBadgePosition !== this._config.notificationBadgePosition ||
+        if (oldConfig.notificationBadgeColor !== this._config.notificationBadgeColor ||
+                oldConfig.notificationBadgeBorderColor !== this._config.notificationBadgeBorderColor ||
+                oldConfig.notificationBadgePosition !== this._config.notificationBadgePosition ||
                 oldConfig.notificationBadgeSize !== this._config.notificationBadgeSize ||
                 oldConfig.notificationBadgeMargin !== this._config.notificationBadgeMargin) {
             this._updateNotificationBadgeStyle();
@@ -83,8 +85,8 @@ var AppButtonIndicator = class AppButtonIndicator {
             size: this._settings.get_int('indicator-size'),
             maxIndicators: this._settings.get_int('indicator-display-limit'),
             // notification badge
-            notificationBadgeColor: 'rgb(255, 0, 0)',
-            notificationBadgeBorderColor: 'rgb(70, 70, 70)',
+            notificationBadgeColor: this._settings.get_string('notification-badge-color'),
+            notificationBadgeBorderColor: this._settings.get_string('notification-badge-border-color'),
             notificationBadgePosition: this._settings.get_string('notification-badge-position'),
             notificationBadgeSize: this._settings.get_int('notification-badge-size'),
             notificationBadgeMargin: this._settings.get_int('notification-badge-margin')

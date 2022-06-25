@@ -36,47 +36,33 @@ var CustomizePage = GObject.registerClass(
 
             // handle settings changes in order to hide some options
 
-            if (!this._settings.get_boolean('taskbar-enabled')) {
-                taskbarRelatedOptions.forEach(options => options.hide());
-            } else {
-
-                if (!this._settings.get_boolean('appbutton-enable-indicators')) {
-                    indicatorOptions.hide();
-                }
-
-                if (!this._settings.get_boolean('appbutton-enable-notification-badges')) {
-                    notificationBadgeOptions.hide();
-                }
-
-                if (!this._settings.get_boolean('appbutton-enable-tooltips')) {
-                    tooltipOptions.hide();
-                }
-
-            }
-
-            this._settings.connect('changed::taskbar-enabled', () => {
+            const toggleTaskbarRelatedOptions = () => {
 
                 if (!this._settings.get_boolean('taskbar-enabled')) {
                     taskbarRelatedOptions.forEach(options => options.hide());
-                    return;
+                } else {
+
+                    taskbarOptions.show();
+                    appButtonOptions.show();
+
+                    if (!this._settings.get_boolean('appbutton-enable-indicators')) {
+                        indicatorOptions.hide();
+                    }
+
+                    if (!this._settings.get_boolean('appbutton-enable-notification-badges')) {
+                        notificationBadgeOptions.hide();
+                    }
+
+                    if (!this._settings.get_boolean('appbutton-enable-tooltips')) {
+                        tooltipOptions.hide();
+                    }
+
                 }
+            };
 
-                taskbarOptions.show();
-                appButtonOptions.show();
+            toggleTaskbarRelatedOptions();
 
-                if (this._settings.get_boolean('appbutton-enable-indicators')) {
-                    indicatorOptions.show();
-                }
-
-                if (this._settings.get_boolean('appbutton-enable-notification-badges')) {
-                    notificationBadgeOptions.show();
-                }
-
-                if (this._settings.get_boolean('appbutton-enable-tooltips')) {
-                    tooltipOptions.show();
-                }
-
-            });
+            this._settings.connect('changed::taskbar-enabled', () => toggleTaskbarRelatedOptions());
 
             this._settings.connect('changed::appbutton-enable-indicators', () => {
                 if (!this._settings.get_boolean('appbutton-enable-indicators')) {
@@ -125,7 +111,7 @@ var CustomizePage = GObject.registerClass(
 
         _addAppButtonOptions() {
 
-            const backlightSwitch = this.createSwitch('Dominant color backlight', 'appbutton-backlight');
+            const backlightSwitch = this.createSwitch('Dominant Color Backlight', 'appbutton-backlight');
 
             const backlightIntensitySlider = this.createSlider('Backlight Intensity', 'appbutton-backlight-intensity', {
                 min: 1, max: 9
@@ -172,7 +158,7 @@ var CustomizePage = GObject.registerClass(
                 { label: 'Bottom', value: 'bottom' }
             ];
 
-            const activeColorButton = this.createColorButton('Active color', 'indicator-color-active');
+            const activeColorButton = this.createColorButton('Active Color', 'indicator-color-active');
 
             if (this._settings.get_boolean('indicator-dominant-color-active')) {
                 activeColorButton.hide();
@@ -186,7 +172,7 @@ var CustomizePage = GObject.registerClass(
                 activeColorButton.show();
             });
 
-            const inactiveColorButton = this.createColorButton('Inactive color', 'indicator-color-inactive');
+            const inactiveColorButton = this.createColorButton('Inactive Color', 'indicator-color-inactive');
 
             if (this._settings.get_boolean('indicator-dominant-color-inactive')) {
                 inactiveColorButton.hide();
@@ -201,9 +187,9 @@ var CustomizePage = GObject.registerClass(
             });
 
             return this.addGroup('Indicators', [
-                this.createSwitch('Active Dominant color', 'indicator-dominant-color-active'),
+                this.createSwitch('Active Dominant Color', 'indicator-dominant-color-active'),
                 activeColorButton,
-                this.createSwitch('Inactive Dominant color', 'indicator-dominant-color-inactive'),
+                this.createSwitch('Inactive Dominant Color', 'indicator-dominant-color-inactive'),
                 inactiveColorButton,
                 this.createPicklist(
                     'Position', 'indicator-position',
@@ -230,6 +216,8 @@ var CustomizePage = GObject.registerClass(
             ];
 
             return this.addGroup('Notification Badges', [
+                this.createColorButton('Color', 'notification-badge-color'),
+                this.createColorButton('Border Color', 'notification-badge-border-color'),
                 this.createPicklist(
                     'Position', 'notification-badge-position',
                     positionOptions
@@ -252,6 +240,15 @@ var CustomizePage = GObject.registerClass(
                     { min: 100, max: 2000, step: 100 }
                 )
             ]);
+        }
+
+        _validatePageVisibility() {
+
+            // const visibleOptions = this._options.filter(option => option.visible);
+
+            // if (visibleOptions.length) {
+
+            // }
         }
 
     }

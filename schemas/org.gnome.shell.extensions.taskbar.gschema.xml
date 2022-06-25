@@ -94,6 +94,14 @@
             <default>3</default>
             <summary>Max number of indicators to display for running apps</summary>
         </key>
+        <key type="s" name="notification-badge-color">
+            <default>'rgb(255, 0, 0)'</default>
+            <summary>Notification Badge color</summary>
+        </key>
+        <key type="s" name="notification-badge-border-color">
+            <default>'rgb(70, 70, 70)'</default>
+            <summary>Notification Badge border color</summary>
+        </key>
         <key type="s" name="notification-badge-position">
             <default>'bottom_right'</default>
             <summary>Notification Badge position</summary>
