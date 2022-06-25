@@ -15,6 +15,12 @@ var CustomizePage = GObject.registerClass(
                 settings: settings
             });
 
+            this._options = [];
+
+            this._emptyMessage = this.createMessage('No customizations available');
+            this._emptyMessage.hide();
+            this.add(this._emptyMessage);
+
             this._populateOptions();
         }
 
@@ -33,6 +39,8 @@ var CustomizePage = GObject.registerClass(
                 notificationBadgeOptions,
                 tooltipOptions
             ];
+
+            this._options = this._options.concat(taskbarRelatedOptions);
 
             // handle settings changes in order to hide some options
 
@@ -58,6 +66,8 @@ var CustomizePage = GObject.registerClass(
                     }
 
                 }
+
+                this._toggleEmptyMessage();
             };
 
             toggleTaskbarRelatedOptions();
@@ -242,13 +252,15 @@ var CustomizePage = GObject.registerClass(
             ]);
         }
 
-        _validatePageVisibility() {
+        _toggleEmptyMessage() {
+            const visibleOptions = this._options.filter(option => option.visible);
 
-            // const visibleOptions = this._options.filter(option => option.visible);
+            if (visibleOptions.length) {
+                this._emptyMessage.hide();
+                return;
+            }
 
-            // if (visibleOptions.length) {
-
-            // }
+            this._emptyMessage.show();
         }
 
     }

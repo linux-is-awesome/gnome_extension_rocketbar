@@ -211,5 +211,19 @@ var SettingsPageTemplate = GObject.registerClass(
             return colorButtonRow;
         }
 
+        createMessage(text) {
+
+            const result = new Adw.PreferencesGroup();
+
+            result.add(new Gtk.Label({
+                label: `<span size="larger"><b>${_(text)}</b></span>`,
+                use_markup: true,
+                vexpand: true,
+                valign: Gtk.Align.FILL
+            }))
+
+            return result;
+        }
+
     }
 );
