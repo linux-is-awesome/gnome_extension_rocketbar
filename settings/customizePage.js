@@ -25,23 +25,44 @@ var CustomizePage = GObject.registerClass(
 
             this.addGroup('Indicators');
             this.addGroup('Notification Badges');
-            this.addGroup('Tooltips');
+            
+            const tooltipOptions = this._addTooltipOptions();
 
             // handle settings changes in order to hide some options
 
             if (!this._settings.get_boolean('taskbar-enabled')) {
                 taskbarOptions.hide();
                 appButtonOptions.hide();
+                tooltipOptions.hide();
+            }
+
+            if (!this._settings.get_boolean('appbutton-enable-tooltips')) {
+                tooltipOptions.hide();
             }
 
             this._settings.connect('changed::taskbar-enabled', () => {
+
                 if (!this._settings.get_boolean('taskbar-enabled')) {
                     taskbarOptions.hide();
                     appButtonOptions.hide();
+                    tooltipOptions.hide();
                     return;
                 }
+
                 taskbarOptions.show();
                 appButtonOptions.show();
+
+                if (this._settings.get_boolean('appbutton-enable-tooltips')) {
+                    tooltipOptions.show();
+                }
+            });
+
+            this._settings.connect('changed::appbutton-enable-tooltips', () => {
+                if (!this._settings.get_boolean('appbutton-enable-tooltips')) {
+                    tooltipOptions.hide();
+                    return;
+                }
+                tooltipOptions.show();
             });
         }
 
@@ -103,6 +124,15 @@ var CustomizePage = GObject.registerClass(
                 this.createSlider(
                     'Spacing', 'appbutton-spacing',
                     { min: 0, max: 10 }
+                )
+            ]);
+        }
+
+        _addTooltipOptions() {
+            return this.addGroup('Tooltips', [
+                this.createSpinButton(
+                    'Show Delay', 'tooltip-show-delay',
+                    { min: 100, max: 2000, step: 100 }
                 )
             ]);
         }

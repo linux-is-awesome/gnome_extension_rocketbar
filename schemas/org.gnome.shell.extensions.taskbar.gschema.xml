@@ -66,6 +66,10 @@
             <default>2</default>
             <summary>App Buttons backlight intensity</summary>
         </key>
+        <key type="i" name="tooltip-show-delay">
+            <default>500</default>
+            <summary>Tooltips show delay</summary>
+        </key>
         <!-- /customize page -->
 
         <!-- behavior page -->

@@ -7,7 +7,7 @@ var AppButtonTooltip = class AppButtonTooltip {
 
     constructor(appButton, settings) {
 
-        this._showDelay = 1000; // TODO: settings
+        this._showDelay = settings.get_int('tooltip-show-delay');
 
         this._appButton = appButton;
 
