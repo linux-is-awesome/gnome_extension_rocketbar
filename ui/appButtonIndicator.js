@@ -48,6 +48,12 @@ var AppButtonIndicator = class AppButtonIndicator {
                 oldConfig.size !== this._config.size) {
             this._updateIndicatorsStyle();
         }
+
+        if (oldConfig.notificationBadgePosition !== this._config.notificationBadgePosition ||
+                oldConfig.notificationBadgeSize !== this._config.notificationBadgeSize ||
+                oldConfig.notificationBadgeMargin !== this._config.notificationBadgeMargin) {
+            this._updateNotificationBadgeStyle();
+        }
     }
 
     rerender() {
@@ -67,18 +73,19 @@ var AppButtonIndicator = class AppButtonIndicator {
         this._config = {
             enableIndicators: this._settings.get_boolean('appbutton-enable-indicators'),
             enableNotificationBadges: this._settings.get_boolean('appbutton-enable-notification-badges'),
-            position: this._settings.get_string('indicator-position'),
             color: 'rgb(255, 255, 255)',
             activeColor: 'rgb(53, 132, 228)',
+            position: this._settings.get_string('indicator-position'),
             dominantColor: this._settings.get_boolean('indicator-dominant-color-inactive'),
             activeDominantColor: this._settings.get_boolean('indicator-dominant-color-active'),
             size: this._settings.get_int('indicator-size'),
             maxIndicators: this._settings.get_int('indicator-display-limit'),
             // notification badge
-            notificationBadgeSize: 5,
-            notificationBadgeMargin: 7,
             notificationBadgeColor: 'rgb(255, 0, 0)',
-            notificationBadgeBorderColor: 'rgb(70, 70, 70)'
+            notificationBadgeBorderColor: 'rgb(70, 70, 70)',
+            notificationBadgePosition: this._settings.get_string('notification-badge-position'),
+            notificationBadgeSize: this._settings.get_int('notification-badge-size'),
+            notificationBadgeMargin: this._settings.get_int('notification-badge-margin')
         };
     }
 
@@ -351,10 +358,37 @@ var AppButtonIndicator = class AppButtonIndicator {
             `width: ${this._config.notificationBadgeSize}px;` +
             `height: ${this._config.notificationBadgeSize}px;` +
             `border-radius: ${this._config.notificationBadgeSize}px;` +
-            `border: 1px solid ${this._config.notificationBadgeBorderColor};` +
-            `margin-right: ${this._config.notificationBadgeMargin}px;` +
-            `margin-bottom: ${this._config.notificationBadgeMargin}px;`
+            `border: 1px solid ${this._config.notificationBadgeBorderColor};`
         );
+
+        // set position
+
+        this._notificationBadge.style += (
+            this._config.notificationBadgePosition === 'top_left' ||
+                this._config.notificationBadgePosition === 'top_right' ?
+            `margin-top: ${this._config.notificationBadgeMargin}px;` :
+            `margin-bottom: ${this._config.notificationBadgeMargin}px;`
+        ) + (
+            this._config.notificationBadgePosition === 'top_left' ||
+                this._config.notificationBadgePosition === 'bottom_left' ?
+            `margin-left: ${this._config.notificationBadgeMargin}px;` :
+            `margin-right: ${this._config.notificationBadgeMargin}px;`
+        );
+
+        this._notificationBadge.y_align = (
+            this._config.notificationBadgePosition === 'top_left' ||
+                this._config.notificationBadgePosition === 'top_right' ?
+            Clutter.ActorAlign.START :
+            Clutter.ActorAlign.END
+        );
+
+        this._notificationBadge.x_align = (
+            this._config.notificationBadgePosition === 'top_left' ||
+                this._config.notificationBadgePosition === 'bottom_left' ?
+            Clutter.ActorAlign.START :
+            Clutter.ActorAlign.END
+        );
+
     }
 
     //#endregion private methods

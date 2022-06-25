@@ -191,8 +191,27 @@ var CustomizePage = GObject.registerClass(
         }
 
         _addNotificationBadgeOptions() {
-            return this.addGroup('Notification Badges', [
 
+            const positionOptions = [
+                { label: 'Top Left', value: 'top_left' },
+                { label: 'Top Right', value: 'top_right' },
+                { label: 'Bottom Left', value: 'bottom_left' },
+                { label: 'Bottom Right', value: 'bottom_right' }
+            ];
+
+            return this.addGroup('Notification Badges', [
+                this.createPicklist(
+                    'Position', 'notification-badge-position',
+                    positionOptions
+                ),
+                this.createSlider(
+                    'Size', 'notification-badge-size',
+                    { min: 2, max: 10 }
+                ),
+                this.createSlider(
+                    'Margin', 'notification-badge-margin',
+                    { min: 0, max: 15 }
+                )
             ]);
         }
 
