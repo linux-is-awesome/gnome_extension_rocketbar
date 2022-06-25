@@ -326,21 +326,25 @@ var AppButton = GObject.registerClass(
 
             dragIndex = Math.min(Math.max(dragIndex, 0), parent.get_n_children() - 1);
 
-            // makes dragging less aggressive
-            if (dragPosition < dragIndex * this.width) {
-                return DND.DragMotionResult.CONTINUE;
-            }
-
             const actorAtIndex = parent.get_child_at_index(dragIndex);
 
             // works only for app buttons
-            if (!(actorAtIndex instanceof AppButton) || actorAtIndex === this) {
+            if (!(actorAtIndex instanceof AppButton)) {
                 return DND.DragMotionResult.CONTINUE;
             }
 
             // don't allow to drop favorites over running apps and vice versa
             if (this.isFavorite !== actorAtIndex.isFavorite) {
                 return DND.DragMotionResult.CONTINUE;
+            }
+
+            // makes dragging less aggressive
+            if (dragPosition < dragIndex * this.width) {
+                return DND.DragMotionResult.MOVE_DROP;
+            }
+
+            if (actorAtIndex === this) {
+                return DND.DragMotionResult.MOVE_DROP;
             }
 
             // drop the app button at the new index
@@ -362,7 +366,7 @@ var AppButton = GObject.registerClass(
                 })
             });
 
-            return DND.DragMotionResult.CONTINUE;
+            return DND.DragMotionResult.MOVE_DROP;
         }
 
         _dragEnd() {
