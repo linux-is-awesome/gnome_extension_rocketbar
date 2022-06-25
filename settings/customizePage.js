@@ -172,9 +172,39 @@ var CustomizePage = GObject.registerClass(
                 { label: 'Bottom', value: 'bottom' }
             ];
 
+            const activeColorButton = this.createColorButton('Active color', 'indicator-color-active');
+
+            if (this._settings.get_boolean('indicator-dominant-color-active')) {
+                activeColorButton.hide();
+            }
+
+            this._settings.connect('changed::indicator-dominant-color-active', () => {
+                if (this._settings.get_boolean('indicator-dominant-color-active')) {
+                    activeColorButton.hide();
+                    return;
+                }
+                activeColorButton.show();
+            });
+
+            const inactiveColorButton = this.createColorButton('Inactive color', 'indicator-color-inactive');
+
+            if (this._settings.get_boolean('indicator-dominant-color-inactive')) {
+                inactiveColorButton.hide();
+            }
+
+            this._settings.connect('changed::indicator-dominant-color-inactive', () => {
+                if (this._settings.get_boolean('indicator-dominant-color-inactive')) {
+                    inactiveColorButton.hide();
+                    return;
+                }
+                inactiveColorButton.show();
+            });
+
             return this.addGroup('Indicators', [
-                this.createSwitch('Active dominant color', 'indicator-dominant-color-active'),
-                this.createSwitch('Inactive dominant color', 'indicator-dominant-color-inactive'),
+                this.createSwitch('Active Dominant color', 'indicator-dominant-color-active'),
+                activeColorButton,
+                this.createSwitch('Inactive Dominant color', 'indicator-dominant-color-inactive'),
+                inactiveColorButton,
                 this.createPicklist(
                     'Position', 'indicator-position',
                     positionOptions

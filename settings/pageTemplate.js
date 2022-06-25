@@ -1,4 +1,4 @@
-const { Adw, Gio, GLib, GObject, Gtk } = imports.gi;
+const { Adw, Gio, GLib, GObject, Gtk, Gdk } = imports.gi;
 
 // TODO
 const _ = (text) => {
@@ -183,6 +183,32 @@ var SettingsPageTemplate = GObject.registerClass(
             sliderRow.add_suffix(slider);
 
             return sliderRow;
+        }
+
+        createColorButton(title, settingsKey, subtitle) {
+
+            const color = new Gdk.RGBA();
+            color.parse(this._settings.get_string(settingsKey));
+
+            const colorButton = new Gtk.ColorButton({
+                rgba: color,
+                use_alpha: true,
+                valign: Gtk.Align.CENTER
+            });
+    
+            colorButton.connect('color-set', (widget) => {
+                this._settings.set_string(settingsKey, widget.get_rgba().to_string());
+            });
+    
+            const colorButtonRow = new Adw.ActionRow({
+                title: _(title),
+                subtitle: subtitle ? _(subtitle) : null,
+                activatable_widget: colorButton
+            });
+
+            colorButtonRow.add_suffix(colorButton);
+
+            return colorButtonRow;
         }
 
     }

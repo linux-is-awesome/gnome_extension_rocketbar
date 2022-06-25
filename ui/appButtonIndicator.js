@@ -44,6 +44,8 @@ var AppButtonIndicator = class AppButtonIndicator {
         
         if (oldConfig.dominantColor !== this._config.dominantColor ||
                 oldConfig.activeDominantColor !== this._config.activeDominantColor ||
+                oldConfig.color !== this._config.color ||
+                oldConfig.activeColor !== this._config.activeColor ||
                 oldConfig.position !== this._config.position ||
                 oldConfig.size !== this._config.size) {
             this._updateIndicatorsStyle();
@@ -73,8 +75,8 @@ var AppButtonIndicator = class AppButtonIndicator {
         this._config = {
             enableIndicators: this._settings.get_boolean('appbutton-enable-indicators'),
             enableNotificationBadges: this._settings.get_boolean('appbutton-enable-notification-badges'),
-            color: 'rgb(255, 255, 255)',
-            activeColor: 'rgb(53, 132, 228)',
+            color: this._settings.get_string('indicator-color-inactive'),
+            activeColor: this._settings.get_string('indicator-color-active'),
             position: this._settings.get_string('indicator-position'),
             dominantColor: this._settings.get_boolean('indicator-dominant-color-inactive'),
             activeDominantColor: this._settings.get_boolean('indicator-dominant-color-active'),
