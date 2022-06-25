@@ -9,6 +9,7 @@ const { ShellTweaks } = Me.imports.shell.tweaks;
 //#endregion imports
 
 //#region variables
+
 let connections = null;
 let settings = null;
 let taskbar = null;

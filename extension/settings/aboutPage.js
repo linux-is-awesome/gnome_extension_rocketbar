@@ -20,6 +20,10 @@ var AboutPage = GObject.registerClass(
 
             const metadata = Me.metadata;
 
+            this.addGroup(null, [
+                this.createLabel(Me.metadata.name + ' Version',  Me.metadata.version + '.0')
+            ]);
+
             this.addGroup('Useful Links', [
                 this.createLink('Report bugs', metadata.url + '/issues'),
                 this.createLink('Share your ideas', metadata.url + '/discussions/categories/ideas')

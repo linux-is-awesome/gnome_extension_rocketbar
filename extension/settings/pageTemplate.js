@@ -228,6 +228,21 @@ var SettingsPageTemplate = GObject.registerClass(
             return linkRow;
         }
 
+        createLabel(title, text) {
+
+            const label = new Gtk.Label({
+                label: _(text)
+            });
+
+            const labelRow = new Adw.ActionRow({
+                title: _(title)
+            });
+
+            labelRow.add_suffix(label);
+
+            return labelRow;
+        }
+
         createMessage(text) {
             return new Gtk.Label({
                 label: `<span size="larger"><b>${_(text)}</b></span>`,

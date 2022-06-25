@@ -183,7 +183,6 @@ var Taskbar = GObject.registerClass(
                 isolateWorkspaces: this._settings.get_boolean('taskbar-isolate-workspaces'),
                 // position to display the taskbar in the panel
                 // left box by default
-                // possible options: left, center, right
                 position: this._settings.get_string('taskbar-position'),
                 // index to display the taskbar in the panel
                 // display after Activities button by default
