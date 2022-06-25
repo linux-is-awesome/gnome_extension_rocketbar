@@ -28,6 +28,10 @@ var Favorites = class Favorites {
         return this._apps;
     }
 
+    addApp(appId) {
+        this._appFavorites.addFavorite(appId);
+    }
+
     moveAppToPosition(appId, position) {
 
         // in this case we can't relay on this._apps

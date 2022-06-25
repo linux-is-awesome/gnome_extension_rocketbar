@@ -2,6 +2,7 @@
 
 const { Clutter, GLib, GObject, Shell, St, Meta } = imports.gi;
 const Main = imports.ui.main;
+const DND = imports.ui.dnd;
 
 // custom modules import
 const ExtensionUtils = imports.misc.extensionUtils;
@@ -45,6 +46,38 @@ var Taskbar = GObject.registerClass(
             this._setScrollLock(appButton, locked);
         }
 
+        handleDragOver(source) {
+
+            if (!source || !source.app || (source instanceof AppButton)) {
+                return DND.DragMotionResult.CONTINUE;
+            }
+
+            if (!(source.app instanceof Shell.App)) {
+                return DND.DragMotionResult.CONTINUE;
+            }
+
+            return DND.DragMotionResult.COPY_DROP;
+        }
+
+        acceptDrop(source) {
+        
+            if (!source || !source.app || !(source.app instanceof Shell.App)) {
+                return false;
+            }
+
+            if (source instanceof AppButton) {
+                return true;
+            }
+
+            if (this._favorites) {
+                this._favorites.addApp(source.app.id);
+            } else {
+                source.app.activate();
+            }
+
+            return true;
+        }
+
         //#endregion public methods
     
         //#region private methods
@@ -67,6 +100,7 @@ var Taskbar = GObject.registerClass(
             this.isDestroying = false;
 
             // set private properties
+            this._delegate = this;
             this._settings = settings;
             this._isRendered = false; // for the first render execution
             this._currentWorkspace = null;
