@@ -311,6 +311,11 @@ var AppButton = GObject.registerClass(
             Main.overview.beginItemDrag(this);
         }
 
+        /*
+         * DND has an issue that prevents me to return other results besides CONTINUE
+         * _updateDragHover method creates tons of handleTargetActorDestroyClosure connections
+         * and after destroying the button it throws tons of exceptions for no reason
+         */
         _dragMotion(event) {
 
             const isOverview = Main.overview._shown;
@@ -331,7 +336,16 @@ var AppButton = GObject.registerClass(
 
             dragIndex = Math.min(Math.max(dragIndex, 0), parent.get_n_children() - 1);
 
+            // makes dragging less aggressive
+            if (dragPosition < dragIndex * this.width) {
+                return DND.DragMotionResult.CONTINUE;
+            }
+
             const actorAtIndex = parent.get_child_at_index(dragIndex);
+
+            if (actorAtIndex === this) {
+                return DND.DragMotionResult.CONTINUE;
+            }
 
             // works only for app buttons
             if (!(actorAtIndex instanceof AppButton)) {
@@ -341,15 +355,6 @@ var AppButton = GObject.registerClass(
             // don't allow to drop favorites over running apps and vice versa
             if (this.isFavorite !== actorAtIndex.isFavorite) {
                 return DND.DragMotionResult.CONTINUE;
-            }
-
-            // makes dragging less aggressive
-            if (dragPosition < dragIndex * this.width) {
-                return DND.DragMotionResult.MOVE_DROP;
-            }
-
-            if (actorAtIndex === this) {
-                return DND.DragMotionResult.MOVE_DROP;
             }
 
             // drop the app button at the new index
@@ -371,7 +376,7 @@ var AppButton = GObject.registerClass(
                 })
             });
 
-            return DND.DragMotionResult.MOVE_DROP;
+            return DND.DragMotionResult.CONTINUE;
         }
 
         _dragEnd() {
