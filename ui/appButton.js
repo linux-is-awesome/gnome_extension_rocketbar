@@ -169,6 +169,7 @@ var AppButton = GObject.registerClass(
             this._connections.add(this._settings, 'changed::appbutton-backlight-intensity', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::indicator-dominant-color-active', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::indicator-dominant-color-inactive', () => this._handleSettings());
+            this._connections.add(this._settings, 'changed::indicator-position', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::indicator-size', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::indicator-display-limit', () => this._handleSettings());
         }

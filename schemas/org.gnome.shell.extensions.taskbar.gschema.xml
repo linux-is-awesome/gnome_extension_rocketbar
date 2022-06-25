@@ -74,6 +74,10 @@
             <default>true</default>
             <summary>Use dominant color for inactive indicators</summary>
         </key>
+        <key type="s" name="indicator-position">
+            <default>'top'</default>
+            <summary>Indicators position</summary>
+        </key>
         <key type="i" name="indicator-size">
             <default>4</default>
             <summary>Indicators size</summary>

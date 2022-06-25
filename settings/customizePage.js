@@ -166,15 +166,25 @@ var CustomizePage = GObject.registerClass(
         }
 
         _addIndicatorOptions() {
+
+            const positionOptions = [
+                { label: 'Top', value: 'top' },
+                { label: 'Bottom', value: 'bottom' }
+            ];
+
             return this.addGroup('Indicators', [
                 this.createSwitch('Active dominant color', 'indicator-dominant-color-active'),
                 this.createSwitch('Inactive dominant color', 'indicator-dominant-color-inactive'),
+                this.createPicklist(
+                    'Position', 'indicator-position',
+                    positionOptions
+                ),
                 this.createSlider(
                     'Size', 'indicator-size',
                     { min: 2, max: 10 }
                 ),
                 this.createSlider(
-                    'Max indicators to display', 'indicator-display-limit',
+                    'Idicators to display limit', 'indicator-display-limit',
                     { min: 1, max: 5 }
                 )
             ]);

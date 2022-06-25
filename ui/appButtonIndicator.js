@@ -44,6 +44,7 @@ var AppButtonIndicator = class AppButtonIndicator {
         
         if (oldConfig.dominantColor !== this._config.dominantColor ||
                 oldConfig.activeDominantColor !== this._config.activeDominantColor ||
+                oldConfig.position !== this._config.position ||
                 oldConfig.size !== this._config.size) {
             this._updateIndicatorsStyle();
         }
@@ -66,6 +67,7 @@ var AppButtonIndicator = class AppButtonIndicator {
         this._config = {
             enableIndicators: this._settings.get_boolean('appbutton-enable-indicators'),
             enableNotificationBadges: this._settings.get_boolean('appbutton-enable-notification-badges'),
+            position: this._settings.get_string('indicator-position'),
             color: 'rgb(255, 255, 255)',
             activeColor: 'rgb(53, 132, 228)',
             dominantColor: this._settings.get_boolean('indicator-dominant-color-inactive'),
@@ -178,8 +180,15 @@ var AppButtonIndicator = class AppButtonIndicator {
             null
         );
 
+        const position = (
+            this._config.position === 'top' ?
+            Clutter.ActorAlign.START :
+            Clutter.ActorAlign.END
+        );
+
         for (let i = 0, l = this._indicators.length; i < l; ++i) {
             this._indicators[i].style = this._getIndicatorStyle(i);
+            this._indicators[i].y_align = position;
         }   
     }
 
