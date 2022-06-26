@@ -21,6 +21,9 @@ const { Connections } = Me.imports.utils.connections;
 var AppButton = GObject.registerClass(
     class AppButton extends St.Button {
 
+        // appId => {...}
+        static CONFIG_OVERRIDE = null;
+
         //#region public methods
 
         setParent(parent, position, animation) {
@@ -73,6 +76,37 @@ var AppButton = GObject.registerClass(
 
         getDragActorSource() {
             return this;
+        }
+
+        getConfigOverride() {
+            return {
+                iconSize: this._config.iconTextureSize
+            };
+        }
+
+        setConfigOverride(configOverride) {
+
+            if (!configOverride) {
+                return;
+            }
+
+            if (!AppButton.CONFIG_OVERRIDE) {
+                AppButton.CONFIG_OVERRIDE = {};
+            }
+
+            AppButton.CONFIG_OVERRIDE[this.appId] = {
+                iconSizeOffset: (
+                    configOverride.iconSize ?
+                    configOverride.iconSize - this._config.iconSize :
+                    0
+                )
+            };
+
+            // store customizations as a JSON string
+            this._settings.set_string('appbutton-config-override', JSON.stringify(AppButton.CONFIG_OVERRIDE));
+
+            // apply changes
+            this._handleSettings();
         }
 
         //#endregion public methods
@@ -187,7 +221,7 @@ var AppButton = GObject.registerClass(
             this._setConfig();
 
             // set icon size
-            if (this._config.iconSize !== oldConfig.iconSize) {
+            if (this._config.iconTextureSize !== oldConfig.iconTextureSize) {
                 this._updateIcon();
             }
 
@@ -245,6 +279,40 @@ var AppButton = GObject.registerClass(
         }
 
         _setConfig() {
+
+            // create config override
+            if (!AppButton.CONFIG_OVERRIDE) {
+
+                const configOverride = this._settings.get_string('appbutton-config-override');
+
+                // parse config override
+                AppButton.CONFIG_OVERRIDE = (
+                    configOverride && configOverride.length ?
+                    JSON.parse(configOverride) :
+                    {}
+                );
+
+                log('AppButton.CONFIG_OVERRIDE init ' + AppButton.CONFIG_OVERRIDE);
+            }
+
+            // get override
+            const configOverride = AppButton.CONFIG_OVERRIDE[this.appId];
+
+            const iconSize = this._settings.get_int('appbutton-icon-size');
+
+            // calculate icon texture size based on offset from the override
+            // result size can be > or < then the icon size
+            let iconTextureSize = (
+                configOverride && configOverride.iconSizeOffset ?
+                iconSize + configOverride.iconSizeOffset :
+                iconSize
+            );
+
+            // size should not be < 16 and > 64
+            iconTextureSize = Math.max(iconTextureSize, 16);
+            iconTextureSize = Math.min(iconTextureSize, 64);
+
+            // set config
             this._config = {
                 isolateWorkspaces: this._settings.get_boolean('taskbar-isolate-workspaces'),
                 enableTooltips: this._settings.get_boolean('appbutton-enable-tooltips'),
@@ -254,8 +322,8 @@ var AppButton = GObject.registerClass(
                 enableScrollHandler: this._settings.get_boolean('appbutton-enable-scroll'),
                 activateRunningBehavior: this._settings.get_string('appbutton-running-app-activate-behavior'),
                 // visual customization settings
-                iconSize: this._settings.get_int('appbutton-icon-size'),
-                iconTextureSize: this._settings.get_int('appbutton-icon-size'),
+                iconSize: iconSize,
+                iconTextureSize: iconTextureSize,
                 iconPadding: this._settings.get_int('appbutton-icon-padding'),
                 verticalMargin: this._settings.get_int('appbutton-vertical-margin'),
                 roundness: this._settings.get_int('appbutton-roundness'),
@@ -301,6 +369,12 @@ var AppButton = GObject.registerClass(
             // destroy notification handler
             this._notificationHandler?.destroy();
             this._notificationHandler = null;
+
+            // destroy config override when taskbar is destroying
+            if (!this._getTaskbar() && AppButton.CONFIG_OVERRIDE) {
+                AppButton.CONFIG_OVERRIDE = null;
+                log('AppButton.CONFIG_OVERRIDE ' + AppButton.CONFIG_OVERRIDE);
+            }
         }
 
         //#region drag & drop
@@ -604,9 +678,10 @@ var AppButton = GObject.registerClass(
 
                 this._contextMenuManager = new PopupMenuManager(this);
                 this._contextMenuManager.addMenu(this._menu);
-            }
 
-            this._menu.updateConfig();
+            } else {
+                this._menu.updateConfig();
+            }
 
             this._menu.open(true);
 
@@ -691,9 +766,10 @@ var AppButton = GObject.registerClass(
             this.style = `margin-left: ${spacing}px; margin-right: ${spacing}px;`;
 
             this._appIcon.style = (
-                `width: ${this._config.iconSize}px;` +
+                //set width as sum of icon size and paddings to give extra space for the icon inside
+                // we need the space to allow tuning of the icon size for each application
+                `width: ${this._config.iconSize + this._config.iconPadding * 2}px;` +
                 `height: ${this._config.iconSize}px;` +
-                `padding: 0 ${this._config.iconPadding}px;` +
                 `margin: ${this._config.verticalMargin}px 0;` +
                 `border-radius: ${this._config.roundness}px;` +
                 // currently I have no idea how to completely remove the border
