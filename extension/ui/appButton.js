@@ -137,6 +137,7 @@ var AppButton = GObject.registerClass(
             // set private properties
             this._settings = settings;
             this._delegate = this;
+            this._firstUpdateIconGeometry = true;
 
             // create layout
             this._createLayout();
@@ -373,7 +374,6 @@ var AppButton = GObject.registerClass(
             // destroy config override when taskbar is destroying
             if (!this._getTaskbar() && AppButton.CONFIG_OVERRIDE) {
                 AppButton.CONFIG_OVERRIDE = null;
-                log('AppButton.CONFIG_OVERRIDE ' + AppButton.CONFIG_OVERRIDE);
             }
         }
 
@@ -703,6 +703,8 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
+            const oldWIndows = this.windows;
+
             // store current active window 
             this.activeWindow = windows.length ? windows[0] : null;
             // store current windows count
@@ -724,6 +726,11 @@ var AppButton = GObject.registerClass(
             if (this.isActive) {
                 this._getTaskbar()?.setActiveAppButton(this);
                 this._scrollToAppButton();
+            }
+
+            // the first window has been created for the app
+            if (this.windows && !oldWIndows) {
+                this._queueUpdateIconGeometry();
             }
         }
 
@@ -820,17 +827,15 @@ var AppButton = GObject.registerClass(
 
         _queueUpdateIconGeometry() {
 
-            if (!this._isValid() || !this.windows) {
+            if (!this.windows) {
                 this._firstUpdateIconGeometry = true;
                 return;
             }
 
             // for the first opened window update icon geometry without a delay
             // with the delay it happens that on double click window could be minimized with wrong icon geometry 
-            if (this._firstUpdateIconGeometry) {
-                this._firstUpdateIconGeometry = false;
+            if (this._isValid() && this._firstUpdateIconGeometry) {
                 this._updateIconGeometry();
-                return;
             }
 
             if (this._updateIconGeometryTimeout) {
@@ -857,20 +862,35 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
+            const [width, height] = this.get_transformed_size();
+
+            // button is not allocated at this moment
+            if (!height) {
+                return;
+            }
+
             const windows = this._getAppWindows();
 
             if (!windows.length) {
                 return;
             }
-
-            let rect = new Meta.Rectangle();
+            
+            const rect = new Meta.Rectangle();
 
             [rect.x, rect.y] = this.get_transformed_position();
-            [rect.width, rect.height] = this.get_transformed_size();
+
+            rect.x += width / 2;
+
+            // when buttons on the top
+            if (rect.y < 1) {
+                rect.y += height;
+            }
 
             for (let i = 0, l = windows.length; i < l; ++i) {
                 windows[i].set_icon_geometry(rect);
             }
+
+            this._firstUpdateIconGeometry = false;
         }
 
         _getAppWindows() {
