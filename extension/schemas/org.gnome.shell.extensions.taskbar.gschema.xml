@@ -167,5 +167,12 @@
         </key>
         <!-- /behavior page -->
 
+        <!-- app button config override -->
+        <key type="s" name="appbutton-config-override">
+            <default>''</default>
+            <summary>AppButton config override</summary>
+        </key>
+        <!-- /app button config override -->
+
     </schema>
 </schemalist>
