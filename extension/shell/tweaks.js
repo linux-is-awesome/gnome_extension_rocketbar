@@ -45,6 +45,8 @@ var ShellTweaks = class ShellTweaks {
 
         this._removePanelScrollHandler();
 
+        this._removePanelMiddleButtonHandler();
+
         this._disableFullscreenHotCorner();
 
         this._disableActivitiesClickOverride();
