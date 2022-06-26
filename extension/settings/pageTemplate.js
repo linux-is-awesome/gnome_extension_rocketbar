@@ -150,7 +150,11 @@ var SettingsPageTemplate = GObject.registerClass(
                 digits: 0,
                 hexpand: true,
                 draw_value: true,
-                value_pos: Gtk.PositionType.BOTTOM,
+                value_pos: (
+                    params.marks && params.marks.length ?
+                    Gtk.PositionType.BOTTOM :
+                    Gtk.PositionType.RIGHT
+                ),
                 valign: Gtk.Align.CENTER
             });
 
