@@ -80,7 +80,8 @@ var AppButton = GObject.registerClass(
 
         getConfigOverride() {
             return {
-                iconSize: this._config.iconTextureSize
+                iconSize: this._config.iconTextureSize,
+                activateRunningBehavior: this._config.activateRunningBehavior
             };
         }
 
@@ -99,14 +100,23 @@ var AppButton = GObject.registerClass(
                     configOverride.iconSize ?
                     configOverride.iconSize - this._config.iconSize :
                     0
-                )
+                ),
+                activateRunningBehavior: configOverride.activateRunningBehavior
             };
 
-            // store customizations as a JSON string
-            this._settings.set_string('appbutton-config-override', JSON.stringify(AppButton.CONFIG_OVERRIDE));
+            this._saveConfigOverride();
+        }
 
-            // apply changes
-            this._handleSettings();
+        resetConfigOverride() {
+            
+            // if nothing to reset
+            if (!AppButton.CONFIG_OVERRIDE || !AppButton.CONFIG_OVERRIDE.hasOwnProperty(this.appId)) {
+                return;
+            }
+
+            delete AppButton.CONFIG_OVERRIDE[this.appId];
+
+            this._saveConfigOverride();
         }
 
         //#endregion public methods
@@ -216,6 +226,15 @@ var AppButton = GObject.registerClass(
             this._connections.add(this._settings, 'changed::notification-badge-margin', () => this._handleSettings());
         }
 
+        _saveConfigOverride() {
+
+            // store customizations as a JSON string
+            this._settings.set_string('appbutton-config-override', JSON.stringify(AppButton.CONFIG_OVERRIDE));
+
+            // apply changes
+            this._handleSettings()
+        }
+
         _handleSettings() {
             const oldConfig = this._config || {};
 
@@ -292,8 +311,6 @@ var AppButton = GObject.registerClass(
                     JSON.parse(configOverride) :
                     {}
                 );
-
-                log('AppButton.CONFIG_OVERRIDE init ' + AppButton.CONFIG_OVERRIDE);
             }
 
             // get override
@@ -321,7 +338,11 @@ var AppButton = GObject.registerClass(
                 enableNotificationBadges: this._settings.get_boolean('appbutton-enable-notification-badges'),
                 enableDragAndDrop: this._settings.get_boolean('appbutton-enable-drag-and-drop'),
                 enableScrollHandler: this._settings.get_boolean('appbutton-enable-scroll'),
-                activateRunningBehavior: this._settings.get_string('appbutton-running-app-activate-behavior'),
+                activateRunningBehavior: (
+                    configOverride && configOverride.activateRunningBehavior ?
+                    configOverride.activateRunningBehavior :
+                    this._settings.get_string('appbutton-running-app-activate-behavior')
+                ),
                 // visual customization settings
                 iconSize: iconSize,
                 iconTextureSize: iconTextureSize,

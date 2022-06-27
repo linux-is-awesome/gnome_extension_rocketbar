@@ -1,6 +1,6 @@
 const { Clutter, St, GLib } = imports.gi;
 const { AppMenu } = imports.ui.appMenu;
-const { PopupSeparatorMenuItem, PopupSubMenuMenuItem, PopupMenuItem } = imports.ui.popupMenu;
+const { PopupSeparatorMenuItem, PopupSubMenuMenuItem, PopupBaseMenuItem, Ornament } = imports.ui.popupMenu;
 const { Slider } = imports.ui.slider;
 const Main = imports.ui.main;
 
@@ -17,6 +17,8 @@ var AppButtonMenu = class AppButtonMenu extends AppMenu {
 
         this.actor.remove_style_class_name('app-menu');
         this.actor.add_style_class_name('panel-menu aggregate-menu');
+
+        this._fixMenuSeparatorFontSize(this._openWindowsHeader);
 
         this._appButton = appButton;
         this._settings = settings;
@@ -106,8 +108,39 @@ var AppButtonMenu = class AppButtonMenu extends AppMenu {
 
         const customizeSubMenu = new PopupSubMenuMenuItem(_('Customize'));
 
+        const separatorStyle = 'margin-top: 10px;';
+
+        // Add Activate Running Behavior items
+        
+        const activateBehaviorTitle = new PopupSeparatorMenuItem(_('Activation Behavior'));
+        this._fixMenuSeparatorFontSize(activateBehaviorTitle);
+        activateBehaviorTitle.style += separatorStyle;
+
+        customizeSubMenu.menu.addMenuItem(activateBehaviorTitle);
+
+        this._activateBehaviorNewWindowItem = customizeSubMenu.menu.addAction(
+            _('New window'),
+            () => this._setActivationBehaviorValue('new_window')
+        );
+        this._activateBehaviorMoveWindowsItem = customizeSubMenu.menu.addAction(
+            _('Move windows'),
+            () => this._setActivationBehaviorValue('move_windows')
+        );
+
+        this._setActivationBehaviorValue();
+        
         // add Icon Size customization item
+
+        const iconSizeTitle = new PopupSeparatorMenuItem(_('Icon Size'));
+        this._fixMenuSeparatorFontSize(iconSizeTitle);
+        iconSizeTitle.style += separatorStyle;
+
+        customizeSubMenu.menu.addMenuItem(iconSizeTitle);
         customizeSubMenu.menu.addMenuItem(this._createIconSizeSliderMenuItem());
+
+        // add Reset item
+        customizeSubMenu.menu.addMenuItem(new PopupSeparatorMenuItem());
+        customizeSubMenu.menu.addAction(_('Reset to default'), () => this._appButton.resetConfigOverride());
 
         // add Customize sub menu to the app menu
         this.addMenuItem(customizeSubMenu);
@@ -117,13 +150,51 @@ var AppButtonMenu = class AppButtonMenu extends AppMenu {
         this.moveMenuItem(this._quitItem, this.numMenuItems);
     }
 
+    _fixMenuSeparatorFontSize(separator) {
+        separator.style = 'font-size: 0.8em;';
+    }
+
     _updateCustomizeSection() {
         this._setIconSizeSliderValue();
+        this._setActivationBehaviorValue();
+    }
+
+    _setActivationBehaviorValue(value) {
+
+        if (value) {
+            this._config.configOverride.activateRunningBehavior = value;
+        }
+
+        const menuItems = [
+            this._activateBehaviorNewWindowItem,
+            this._activateBehaviorMoveWindowsItem
+        ];
+
+        let selectedMenuItem = null;
+
+        switch (this._config.configOverride.activateRunningBehavior) {
+            case 'new_window':
+                selectedMenuItem = this._activateBehaviorNewWindowItem;
+                break;
+            case 'move_windows':
+                selectedMenuItem = this._activateBehaviorMoveWindowsItem;
+                break
+        }
+
+        menuItems.forEach(item => {
+            if (item === selectedMenuItem) {
+                item.setOrnament(Ornament.DOT);
+                return;
+            }
+            item.setOrnament(Ornament.NONE);
+        });
+
+        this._applyConfigOverride();
     }
 
     _createIconSizeSliderMenuItem() {
 
-        const menuItem = new PopupMenuItem(_('Icon Size'), {
+        const menuItem = new PopupBaseMenuItem({
             activate: false
         });
 
@@ -184,7 +255,11 @@ var AppButtonMenu = class AppButtonMenu extends AppMenu {
 
     _applyConfigOverride() {
         
-        if (this._config.configOverride.iconSize === this._appButton.getConfigOverride().iconSize) {
+        const oldConfigOverride = this._appButton.getConfigOverride();
+
+        // no need to update the config override
+        if (this._config.configOverride.iconSize === oldConfigOverride.iconSize &&
+                this._config.configOverride.activateRunningBehavior === oldConfigOverride.activateRunningBehavior) {
             return;
         }
 
