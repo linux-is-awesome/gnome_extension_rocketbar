@@ -285,18 +285,17 @@ var ShellTweaks = class {
 
         this._activitiesClickHandler = activitiesButton.connect('captured_event', (actor, event) => {
 
-            const eventButton = (
-                event.type() === Clutter.EventType.BUTTON_RELEASE ?
-                event.get_button() : null
-            );
+            if (!event || event.type() !== Clutter.EventType.BUTTON_RELEASE) {
+                return Clutter.EVENT_PROPAGATE;
+            }
+
+            const eventButton = event.get_button();
 
             const buttonMapping = {
                 'left_button': Clutter.BUTTON_PRIMARY,
                 'right_button': Clutter.BUTTON_SECONDARY,
                 'middle_button': Clutter.BUTTON_MIDDLE
             };
-
-            log('click ' + eventButton + ' ' + this._config.activitiesShowAppsButton);
 
             if (!eventButton || !this._config.activitiesShowAppsButton ||
                     buttonMapping[this._config.activitiesShowAppsButton] !== eventButton) {
