@@ -359,10 +359,7 @@ var AppButton = GObject.registerClass(
 
             this.remove_all_transitions();
 
-            if (this._updateIconGeometryTimeout) {
-                GLib.source_remove(this._updateIconGeometryTimeout);
-                this._updateIconGeometryTimeout = null;
-            }
+            this._stopUpdateIconGeometryQueue();
 
             // remove connections
             this._connections.destroy();
@@ -859,15 +856,20 @@ var AppButton = GObject.registerClass(
                 this._updateIconGeometry();
             }
 
-            if (this._updateIconGeometryTimeout) {
-                GLib.source_remove(this._updateIconGeometryTimeout);
-            }
+            this._stopUpdateIconGeometryQueue();
 
             this._updateIconGeometryTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
                 this._updateIconGeometryTimeout = null;
                 this._updateIconGeometry();
                 return GLib.SOURCE_REMOVE;
             });
+        }
+
+        _stopUpdateIconGeometryQueue() {
+            if (this._updateIconGeometryTimeout) {
+                GLib.source_remove(this._updateIconGeometryTimeout);
+                this._updateIconGeometryTimeout = null;
+            }
         }
 
         /**
