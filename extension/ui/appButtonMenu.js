@@ -58,6 +58,7 @@ var AppButtonMenu = class extends AppMenu {
         this._config = {
             showFavorites: this._settings.get_boolean('taskbar-show-favorites'),
             isolateWorkspaces: this._settings.get_boolean('taskbar-isolate-workspaces'),
+            defaultIconSize: this._settings.get_int('appbutton-icon-size'),
             configOverride: this._appButton.getConfigOverride()
         };
     }
@@ -200,6 +201,10 @@ var AppButtonMenu = class extends AppMenu {
 
         this._iconSizeSlider = new Slider(0);
 
+        menuItem.connect('key-press-event', (actor, event) => {
+            return this._iconSizeSlider.emit('key-press-event', event);
+        });
+
         const valueLabel = new St.Label({
             text: '0',
             y_expand: true,
@@ -219,9 +224,7 @@ var AppButtonMenu = class extends AppMenu {
 
         this._setIconSizeSliderValue();
 
-        menuItem.connect('key-press-event', (actor, event) => {
-            return this._iconSizeSlider.emit('key-press-event', event);
-        });
+        this._setIconSizeSliderOverdrive();
 
         menuItem.add_child(this._iconSizeSlider);
         menuItem.add_child(valueLabel);
@@ -234,7 +237,13 @@ var AppButtonMenu = class extends AppMenu {
         const [sliderMaxValue, sliderValueOffset] = this._getIconSizeSliderBounds();
 
         this._iconSizeSlider.value = (this._config.configOverride.iconSize - sliderValueOffset) / sliderMaxValue;
-        this._iconSizeSlider.overdriveStart = this._iconSizeSlider.value;
+    }
+
+    _setIconSizeSliderOverdrive() {
+
+        const [sliderMaxValue, sliderValueOffset] = this._getIconSizeSliderBounds();
+
+        this._iconSizeSlider.overdriveStart = (this._config.defaultIconSize - sliderValueOffset) / sliderMaxValue;
     }
 
     _getIconSizeSliderValue() {
