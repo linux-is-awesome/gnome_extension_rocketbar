@@ -14,7 +14,7 @@ const { Favorites } = Me.imports.utils.favorites;
 //#endregion imports
 
 var Taskbar = GObject.registerClass(
-    class Taskbar extends St.ScrollView {
+    class Rocketbar__Taskbar extends St.ScrollView {
 
         //#region static
 

@@ -1,7 +1,7 @@
 const { Clutter, GLib, GObject, Meta, St } = imports.gi;
 const Main = imports.ui.main;
 
-var AppButtonTooltip = class AppButtonTooltip {
+var AppButtonTooltip = class {
 
     //#region public methods
 

@@ -4,7 +4,7 @@ const Me = ExtensionUtils.getCurrentExtension();
 const { SettingsPageTemplate } = Me.imports.settings.pageTemplate;
 
 var BehaviorPage = GObject.registerClass(
-    class BehaviorPage extends SettingsPageTemplate {
+    class Rocketbar__BehaviorPage extends SettingsPageTemplate {
 
         _init(settings) {
 

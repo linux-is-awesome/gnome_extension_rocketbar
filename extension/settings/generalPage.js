@@ -4,7 +4,7 @@ const Me = ExtensionUtils.getCurrentExtension();
 const { SettingsPageTemplate } = Me.imports.settings.pageTemplate;
 
 var GeneralPage = GObject.registerClass(
-    class GeneralPage extends SettingsPageTemplate {
+    class Rocketbar__GeneralPage extends SettingsPageTemplate {
 
         _init(settings) {
 

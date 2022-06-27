@@ -14,7 +14,7 @@ const { Connections } = Me.imports.utils.connections;
 
 //#endregion imports
 
-var ShellTweaks = class ShellTweaks {
+var ShellTweaks = class {
 
     constructor(settings) {
 

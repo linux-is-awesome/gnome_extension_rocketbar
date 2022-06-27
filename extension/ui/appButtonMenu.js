@@ -4,7 +4,7 @@ const { PopupSeparatorMenuItem, PopupSubMenuMenuItem, PopupBaseMenuItem, Ornamen
 const { Slider } = imports.ui.slider;
 const Main = imports.ui.main;
 
-var AppButtonMenu = class AppButtonMenu extends AppMenu {
+var AppButtonMenu = class extends AppMenu {
 
     //#region public methods
 

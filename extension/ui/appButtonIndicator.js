@@ -1,7 +1,7 @@
 const { Clutter, St } = imports.gi;
 const IconGrid = imports.ui.iconGrid;
 
-var AppButtonIndicator = class AppButtonIndicator {
+var AppButtonIndicator = class {
 
     constructor(appButton, layout, settings) {
 

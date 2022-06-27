@@ -1,9 +1,9 @@
 {
-    "name": "Taskbar",
-    "description": "A simple but powerful replacement of the default Dash with additional tweaks for the GNOME Shell.",
-    "uuid": "taskbar@chepkun.github.com",
-    "settings-schema": "org.gnome.shell.extensions.taskbar",
-    "url": "https://github.com/linux-is-awesome/gnome_extension_taskbar",
+    "name": "Rocketbar",
+    "description": "Taskbar and misc additions for the GNOME Shell.",
+    "uuid": "rocketbar@chepkun.github.com",
+    "settings-schema": "org.gnome.shell.extensions.rocketbar",
+    "url": "https://github.com/linux-is-awesome/gnome_extension_rocketbar",
     "version": 1,
     "shell-version": [
         "42"

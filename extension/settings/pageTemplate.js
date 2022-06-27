@@ -6,7 +6,7 @@ const _ = (text) => {
 };
 
 var SettingsPageTemplate = GObject.registerClass(
-    class SettingsPageTemplate extends Adw.PreferencesPage {
+    class Rocketbar__SettingsPageTemplate extends Adw.PreferencesPage {
 
         _init(params) {
             super._init({

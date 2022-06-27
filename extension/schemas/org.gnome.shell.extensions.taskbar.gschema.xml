@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-    <schema id="org.gnome.shell.extensions.taskbar" path="/org/gnome/shell/extensions/taskbar/">
+    <schema id="org.gnome.shell.extensions.rocketbar" path="/org/gnome/shell/extensions/rocketbar/">
 
         <!-- general page -->
         <key type="b" name="taskbar-enabled">

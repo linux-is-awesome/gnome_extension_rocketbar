@@ -19,7 +19,7 @@ const { Connections } = Me.imports.utils.connections;
 //#endregion imports
 
 var AppButton = GObject.registerClass(
-    class AppButton extends St.Button {
+    class Rocketbar__AppButton extends St.Button {
 
         // appId => {...}
         static CONFIG_OVERRIDE = null;
