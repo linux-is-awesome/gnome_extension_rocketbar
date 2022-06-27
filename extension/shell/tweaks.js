@@ -49,7 +49,7 @@ var ShellTweaks = class {
 
         this._disableFullscreenHotCorner();
 
-        this._disableActivitiesClickOverride();
+        this._disableActivitiesClickHandler();
 
         this._removeOverviewClickHandler();
 
@@ -62,7 +62,7 @@ var ShellTweaks = class {
         this._connections.add(this._settings, 'changed::panel-enable-scroll', () => this._handleSettings());
         this._connections.add(this._settings, 'changed::panel-enable-middle-button', () => this._handleSettings());
         this._connections.add(this._settings, 'changed::hotcorner-enable-in-fullscreen', () => this._handleSettings());
-        this._connections.add(this._settings, 'changed::activities-enable-click-override', () => this._handleSettings());
+        this._connections.add(this._settings, 'changed::activities-show-apps-button', () => this._handleSettings());
         this._connections.add(this._settings, 'changed::overview-enable-empty-space-clicks', () => this._handleSettings());
         this._connections.add(this._settings, 'changed::panel-scroll-volume-change-speed', () => this._setConfig());
         this._connections.add(this._settings, 'changed::panel-scroll-volume-change-speed-ctrl', () => this._setConfig());
@@ -102,10 +102,11 @@ var ShellTweaks = class {
             this._disableFullscreenHotCorner();
         }
 
-        if (this._config.enableActivitiesClickOverride) {
-            this._enableActivitiesClickOverride();
+        if (this._config.activitiesShowAppsButton &&
+                this._config.activitiesShowAppsButton !== 'none') {
+            this._enableActivitiesClickHandler();
         } else {
-            this._disableActivitiesClickOverride();
+            this._disableActivitiesClickHandler();
         }
 
         if (this._config.enableOverviewClickHandler) {
@@ -120,8 +121,8 @@ var ShellTweaks = class {
             enablePanelScrollHandler: this._settings.get_boolean('panel-enable-scroll'),
             enablePanelMiddleButtonHandler: this._settings.get_boolean('panel-enable-middle-button'),
             enableFullscreenHotCorner: this._settings.get_boolean('hotcorner-enable-in-fullscreen'),
-            enableActivitiesClickOverride: this._settings.get_boolean('activities-enable-click-override'),
             enableOverviewClickHandler: this._settings.get_boolean('overview-enable-empty-space-clicks'),
+            activitiesShowAppsButton: this._settings.get_string('activities-show-apps-button'),
             soundVolumeStep: this._settings.get_int('panel-scroll-volume-change-speed'),
             soundVolumeStepCtrl: this._settings.get_int('panel-scroll-volume-change-speed-ctrl')
         };
@@ -274,7 +275,7 @@ var ShellTweaks = class {
 
     //#region activities button tweaks
 
-    _enableActivitiesClickOverride() {
+    _enableActivitiesClickHandler() {
 
         if (this._activitiesClickHandler) {
             return;
@@ -284,25 +285,37 @@ var ShellTweaks = class {
 
         this._activitiesClickHandler = activitiesButton.connect('captured_event', (actor, event) => {
 
-            if (event.type() !== Clutter.EventType.BUTTON_RELEASE ||
-                    event.get_button() !== Clutter.BUTTON_SECONDARY) {
+            const eventButton = (
+                event.type() === Clutter.EventType.BUTTON_RELEASE ?
+                event.get_button() : null
+            );
+
+            const buttonMapping = {
+                'left_button': Clutter.BUTTON_PRIMARY,
+                'right_button': Clutter.BUTTON_SECONDARY,
+                'middle_button': Clutter.BUTTON_MIDDLE
+            };
+
+            log('click ' + eventButton + ' ' + this._config.activitiesShowAppsButton);
+
+            if (!eventButton || !this._config.activitiesShowAppsButton ||
+                    buttonMapping[this._config.activitiesShowAppsButton] !== eventButton) {
                 return Clutter.EVENT_PROPAGATE;
             }
 
-            if (Main.overview.visible &&
-                    Main.overview._overview._controls.dash.showAppsButton.checked) {
-                return Clutter.EVENT_PROPAGATE;
-            }
+            if (Main.overview.shouldToggleByCornerOrButton() &&
+                    !(Main.overview.visible && Main.overview._overview._controls.dash.showAppsButton.checked)) {
 
-            if (Main.overview.shouldToggleByCornerOrButton()) {
                 Main.overview._overview._controls._toggleAppsPage();
+
+                return Clutter.EVENT_STOP;
             }
 
-            return Clutter.EVENT_STOP;
+            return Clutter.EVENT_PROPAGATE;
         });
     }
 
-    _disableActivitiesClickOverride() {
+    _disableActivitiesClickHandler() {
 
         if (!this._activitiesClickHandler) {
             return;

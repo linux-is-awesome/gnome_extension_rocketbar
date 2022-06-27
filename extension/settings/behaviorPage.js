@@ -27,13 +27,12 @@ var BehaviorPage = GObject.registerClass(
             this._addPanelOptions();
 
             // Activities
-            this.addGroup('Activities', [
-                this.createSwitch('Right click to open Apps', 'activities-enable-click-override')
-            ]);
+            this._addActivitiesOptions();
 
             // Overview
             this.addGroup('Overview', [
-                this.createSwitch('Click Overview empty space to close it or open Apps', 'overview-enable-empty-space-clicks')
+                this.createSwitch('Enable empty space clicks in Overview', 'overview-enable-empty-space-clicks',
+                                  'Left button click to close the Overview, Right button click to show Apps screen')
             ]);
 
             // Hot Corner
@@ -129,10 +128,27 @@ var BehaviorPage = GObject.registerClass(
     
             this.addGroup('Panel', [
                 this.createSwitch('Middle click to mute/unmute sound', 'panel-enable-middle-button',
-                    'Press middle button on empty space of the panel to mute or unmute sound'),
+                                  'Press middle button on empty space of the panel to mute or unmute sound'),
                 scrollSwitch,
                 volumeSpeedPicklist,
                 volumeSpeedCtrlPicklist
+            ]);
+        }
+
+        _addActivitiesOptions() {
+
+            const clickOptions = [
+                { label: 'None', value: 'none' },
+                { label: 'Left Button', value: 'left_button' },
+                { label: 'Right Button', value: 'right_button' },
+                { label: 'Middle Button', value: 'middle_button' }
+            ];
+
+            this.addGroup('Activities', [
+                this.createPicklist(
+                    'Click Activities to show Apps screen', 'activities-show-apps-button',
+                    clickOptions
+                )
             ]);
         }
 

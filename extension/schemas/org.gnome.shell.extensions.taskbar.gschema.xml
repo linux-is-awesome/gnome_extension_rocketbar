@@ -157,13 +157,13 @@
             <default>true</default>
             <summary>Enable Hot Corner in fullscreen mode</summary>
         </key>
-        <key type="b" name="activities-enable-click-override">
-            <default>true</default>
-            <summary>Activities right button click to show apps screen</summary>
+        <key type="s" name="activities-show-apps-button">
+            <default>'right_button'</default>
+            <summary>Click Activities to show Apps screen</summary>
         </key>
         <key type="b" name="overview-enable-empty-space-clicks">
             <default>true</default>
-            <summary>Click Overview empty space to close it or show apps screen</summary>
+            <summary>Enable empty space clicks in Overview</summary>
         </key>
         <!-- /behavior page -->
 
