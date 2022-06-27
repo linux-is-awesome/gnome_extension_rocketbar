@@ -1,7 +1,11 @@
 const { Clutter, St, GLib } = imports.gi;
 const { AppMenu } = imports.ui.appMenu;
-const { PopupSeparatorMenuItem, PopupSubMenuMenuItem, PopupBaseMenuItem, Ornament } = imports.ui.popupMenu;
 const { Slider } = imports.ui.slider;
+const { PopupMenuSection,
+        PopupSeparatorMenuItem,
+        PopupSubMenuMenuItem,
+        PopupBaseMenuItem,
+        Ornament } = imports.ui.popupMenu;
 const Main = imports.ui.main;
 
 var AppButtonMenu = class extends AppMenu {
@@ -113,22 +117,28 @@ var AppButtonMenu = class extends AppMenu {
 
         // Add Activate Running Behavior items
         
+        this._activateBehaviorSection = new PopupMenuSection();
+
+        this._activateBehaviorSection.box.visible = this._config.isolateWorkspaces;
+
         const activateBehaviorTitle = new PopupSeparatorMenuItem(_('Activation Behavior'));
         this._fixMenuSeparatorFontSize(activateBehaviorTitle);
         activateBehaviorTitle.style += separatorStyle;
 
-        customizeSubMenu.menu.addMenuItem(activateBehaviorTitle);
+        this._activateBehaviorSection.addMenuItem(activateBehaviorTitle);
 
-        this._activateBehaviorNewWindowItem = customizeSubMenu.menu.addAction(
+        this._activateBehaviorNewWindowItem = this._activateBehaviorSection.addAction(
             _('New window'),
             () => this._setActivationBehaviorValue('new_window')
         );
-        this._activateBehaviorMoveWindowsItem = customizeSubMenu.menu.addAction(
+        this._activateBehaviorMoveWindowsItem = this._activateBehaviorSection.addAction(
             _('Move windows'),
             () => this._setActivationBehaviorValue('move_windows')
         );
 
         this._setActivationBehaviorValue();
+
+        customizeSubMenu.menu.addMenuItem(this._activateBehaviorSection);
         
         // add Icon Size customization item
 
@@ -156,11 +166,19 @@ var AppButtonMenu = class extends AppMenu {
     }
 
     _updateCustomizeSection() {
+
         this._setIconSizeSliderValue();
+
+        this._activateBehaviorSection.box.visible = this._config.isolateWorkspaces;
+
         this._setActivationBehaviorValue();
     }
 
     _setActivationBehaviorValue(value) {
+
+        if (!this._activateBehaviorSection.box.visible) {
+            return;
+        }
 
         if (value) {
             this._config.configOverride.activateRunningBehavior = value;
