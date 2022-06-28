@@ -407,6 +407,9 @@ var ShellTweaks = class {
             callback: () => {}
         }
 
+        // leave a small gap below the Workspace Thumbnail
+        Main.overview.dash.height = 20;
+
         Main.overview.dash.hide();
 
         // remove all app icons from the dash
@@ -420,6 +423,10 @@ var ShellTweaks = class {
         if (!this._dashDeferredWorkBackup || !Main.overview.dash._workId) {
             return;
         }
+
+        // restore size of the dash
+        Main.overview.dash.height = -1;
+        Main.overview.dash.setMaxSize(-1, -1);
 
         Main.overview.dash.show();
 
