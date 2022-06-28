@@ -21,6 +21,14 @@ var GeneralPage = GObject.registerClass(
         _populateOptions() {
 
             // Taskbar
+            this._addTaskbarOptions();
+
+            // Overview
+            this._addOverviewOptions();
+
+        }
+
+        _addTaskbarOptions() {
 
             const taskbarEnabledSwitch = this.createSwitch('Enabled', 'taskbar-enabled');
 
@@ -54,6 +62,13 @@ var GeneralPage = GObject.registerClass(
             updateTaskbarGroup();
 
             this.addGroup('Taskbar', taskbarGroup);
+        }
+
+        _addOverviewOptions() {
+            this.addGroup('Overview', [
+                this.createSwitch('Kill the Dash', 'overview-kill-dash',
+                                  'Hide the Dash in Overview and prevent it from rerendering behind the scene')
+            ]);
         }
 
     }

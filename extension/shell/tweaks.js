@@ -53,12 +53,15 @@ var ShellTweaks = class {
 
         this._removeOverviewClickHandler();
 
+        this._restoreOverviewDash();
+
         this._soundVolumeControl?.destroy();
         this._soundVolumeControl = null;
     }
 
     _createConnections() {
         this._connections = new Connections();
+        this._connections.add(this._settings, 'changed::overview-kill-dash', () => this._handleSettings());
         this._connections.add(this._settings, 'changed::panel-enable-scroll', () => this._handleSettings());
         this._connections.add(this._settings, 'changed::panel-enable-middle-button', () => this._handleSettings());
         this._connections.add(this._settings, 'changed::hotcorner-enable-in-fullscreen', () => this._handleSettings());
@@ -71,6 +74,12 @@ var ShellTweaks = class {
     _handleSettings() {
 
         this._setConfig();
+
+        if (this._config.overviewKillDash) {
+            this._killOverviewDash();
+        } else {
+            this._restoreOverviewDash();
+        }
 
         if (this._config.enablePanelScrollHandler ||
                 this._config.enablePanelMiddleButtonHandler) {
@@ -118,6 +127,7 @@ var ShellTweaks = class {
 
     _setConfig() {
         this._config = {
+            overviewKillDash: this._settings.get_boolean('overview-kill-dash'),
             enablePanelScrollHandler: this._settings.get_boolean('panel-enable-scroll'),
             enablePanelMiddleButtonHandler: this._settings.get_boolean('panel-enable-middle-button'),
             enableFullscreenHotCorner: this._settings.get_boolean('hotcorner-enable-in-fullscreen'),
@@ -377,6 +387,53 @@ var ShellTweaks = class {
         // remove custom click action from the overview
         Main.overview._overview._controls.remove_action(this._overviewClickHandler);
         this._overviewClickHandler = null;
+    }
+
+    _killOverviewDash() {
+
+        if (!Main.overview.dash._workId || this._dashDeferredWorkBackup ) {
+            return;
+        }
+
+        if (!Main._deferredWorkData[Main.overview.dash._workId]) {
+            return;
+        }
+
+        this._dashDeferredWorkBackup = Main._deferredWorkData[Main.overview.dash._workId];
+
+         // prevent deferred work from running dash redisplay
+        Main._deferredWorkData[Main.overview.dash._workId] = {
+            actor: this._dashDeferredWorkBackup.actor,
+            callback: () => {}
+        }
+
+        // leave a small gap below the Workspace Thumbnail
+        Main.overview.dash.height = 20;
+
+        Main.overview.dash.hide();
+
+        // remove all app icons from the dash
+        Main.overview.dash._box.get_children().forEach(appIcon => appIcon.destroy());
+
+        Main.overview.dash._separator = null;
+    }
+
+    _restoreOverviewDash() {
+
+        if (!this._dashDeferredWorkBackup || !Main.overview.dash._workId) {
+            return;
+        }
+
+        // restore size of the dash
+        Main.overview.dash.height = -1;
+        Main.overview.dash.setMaxSize(-1, -1);
+
+        Main.overview.dash.show();
+
+        // restore deferred work
+        Main._deferredWorkData[Main.overview.dash._workId] = this._dashDeferredWorkBackup;
+
+        this._dashDeferredWorkBackup = null;
     }
 
     //#endregion overview tweaks
