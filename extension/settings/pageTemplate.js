@@ -162,6 +162,8 @@ var SettingsPageTemplate = GObject.registerClass(
                 params.marks.forEach(mark => slider.add_mark(mark, Gtk.PositionType.TOP, mark.toString()));
             }
 
+            slider.width_request = 200;
+
             slider.set_value(this._settings.get_int(settingsKey));
 
             slider.connect('value-changed', (widget) => {

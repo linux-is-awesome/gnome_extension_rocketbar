@@ -150,7 +150,8 @@ var CustomizePage = GObject.registerClass(
                 backlightIntensitySlider,
                 this.createSlider(
                     'Icon Size', 'appbutton-icon-size',
-                    { min: 16, max: 64, marks: [16, 24, 32, 48, 64] }
+                    { min: 16, max: 64, marks: [16, 24, 32, 48, 64] },
+                    'Can be configured separately for each app through an app context menu'
                 ),
                 this.createSlider(
                     'Icon Padding', 'appbutton-icon-padding',
@@ -220,8 +221,9 @@ var CustomizePage = GObject.registerClass(
                     { min: 2, max: 10 }
                 ),
                 this.createSlider(
-                    'Idicators to display limit', 'indicator-display-limit',
-                    { min: 1, max: 5 }
+                    'Limit', 'indicator-display-limit',
+                    { min: 1, max: 5 },
+                    'The maximum number of indicators to display on the app button'
                 )
             ]);
         }

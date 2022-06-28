@@ -51,7 +51,8 @@ var BehaviorPage = GObject.registerClass(
             const activateBehaviorPicklist = this.createPicklist(
                 'Running apps activation behavior', 'appbutton-running-app-activate-behavior',
                 activateBehaviorOptions,
-                'Controls the behavior when an app is running but has not windows on the active workspace, applicable for isolated workspaces only'
+                'Controls the behavior when an app is running but has no windows on the active workspace, supports isolated workspaces only, ' +
+                'can be configured separately for each app through an app context menu'
             );
 
             const taskbarGroup = this.addGroup('Taskbar', [
@@ -128,7 +129,7 @@ var BehaviorPage = GObject.registerClass(
     
             this.addGroup('Panel', [
                 this.createSwitch('Middle click to mute/unmute sound', 'panel-enable-middle-button',
-                                  'Press middle button on empty space of the panel to mute or unmute sound'),
+                                  'Press middle button on empty space of the panel to toggle mute'),
                 scrollSwitch,
                 volumeSpeedPicklist,
                 volumeSpeedCtrlPicklist
