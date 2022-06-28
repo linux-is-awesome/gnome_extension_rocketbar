@@ -407,8 +407,8 @@ var ShellTweaks = class {
             callback: () => {}
         }
 
-        // leave a small gap below the Workspace Thumbnail
-        Main.overview.dash.height = 20;
+        // leave a gap below the Workspace Thumbnail
+        Main.overview.dash.height = 50;
 
         Main.overview.dash.hide();
 
