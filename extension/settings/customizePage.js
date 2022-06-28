@@ -57,14 +57,20 @@ var CustomizePage = GObject.registerClass(
 
                     if (!this._settings.get_boolean('appbutton-enable-indicators')) {
                         indicatorOptions.hide();
+                    } else {
+                        indicatorOptions.show();
                     }
 
                     if (!this._settings.get_boolean('appbutton-enable-notification-badges')) {
                         notificationBadgeOptions.hide();
+                    } else {
+                        notificationBadgeOptions.show();
                     }
 
                     if (!this._settings.get_boolean('appbutton-enable-tooltips')) {
                         tooltipOptions.hide();
+                    } else {
+                        tooltipOptions.show();
                     }
 
                 }
