@@ -147,6 +147,9 @@ var Taskbar = GObject.registerClass(
             this._connections = new Connections();
             this._connections.add(Main.layoutManager, 'startup-complete', () => this._initRender());
 
+            // prevent default appMenu from displaying on the panel
+            this._connections.add(Main.panel.statusArea.appMenu.container, 'notify::visible', appMenu => appMenu.hide());
+
             // handle settings
             this._connections.add(this._settings, 'changed::taskbar-show-favorites', () => this._handleSettings());
             this._connections.add(this._settings, 'changed::taskbar-isolate-workspaces', () => this._handleSettings());
