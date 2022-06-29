@@ -31,6 +31,9 @@ var AppButtonMenu = class extends AppMenu {
 
         this.blockSourceEvents = true;
 
+        // set correct position 
+        this._setPosition();
+
         this._setConfig();
 
         this.setApp(appButton.app);
@@ -59,6 +62,18 @@ var AppButtonMenu = class extends AppMenu {
     //#endregion public methods
 
     //#region private methods
+
+    _setPosition() {
+
+        const [x, y] = this._appButton.get_transformed_position();
+
+        // set position based on location of app button
+        this.actor._arrowSide = (
+            y > 1 ?
+            St.Side.BOTTOM :
+            St.Side.TOP
+        );
+    }
 
     _setConfig() {
         this._config = {
