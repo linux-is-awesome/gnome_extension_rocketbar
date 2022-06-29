@@ -1,0 +1,46 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-06-29 20:33+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ui/appButtonMenu.js:87
+msgid "Pin"
+msgstr ""
+
+#: ui/appButtonMenu.js:117
+msgid "Customize"
+msgstr ""
+
+#: ui/appButtonMenu.js:127
+msgid "Activation Behavior"
+msgstr ""
+
+#: ui/appButtonMenu.js:134
+msgid "New window"
+msgstr ""
+
+#: ui/appButtonMenu.js:138
+msgid "Move windows"
+msgstr ""
+
+#: ui/appButtonMenu.js:148
+msgid "Icon Size"
+msgstr ""
+
+#: ui/appButtonMenu.js:157
+msgid "Reset to default"
+msgstr ""
