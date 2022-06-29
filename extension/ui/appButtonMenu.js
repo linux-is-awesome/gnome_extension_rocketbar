@@ -57,6 +57,8 @@ var AppButtonMenu = class extends AppMenu {
         }
 
         this._updateCustomizeSection();
+
+        this._setPosition();
     }
 
     //#endregion public methods
