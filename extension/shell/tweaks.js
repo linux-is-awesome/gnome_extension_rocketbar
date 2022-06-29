@@ -408,9 +408,10 @@ var ShellTweaks = class {
         }
 
         // leave a gap below the Workspace Thumbnail
-        Main.overview.dash.height = 50;
+        Main.overview.dash.height = 40;
 
-        Main.overview.dash.hide();
+        Main.overview.dash.showAppsButton.hide();
+        Main.overview.dash._background.hide();
 
         // remove all app icons from the dash
         Main.overview.dash._box.get_children().forEach(appIcon => appIcon.destroy());
@@ -424,11 +425,12 @@ var ShellTweaks = class {
             return;
         }
 
+        Main.overview.dash.showAppsButton.show();
+        Main.overview.dash._background.show();
+
         // restore size of the dash
         Main.overview.dash.height = -1;
         Main.overview.dash.setMaxSize(-1, -1);
-
-        Main.overview.dash.show();
 
         // restore deferred work
         Main._deferredWorkData[Main.overview.dash._workId] = this._dashDeferredWorkBackup;
