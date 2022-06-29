@@ -71,9 +71,9 @@ var AppButtonMenu = class extends AppMenu {
 
         // set position based on location of app button
         this.actor._arrowSide = (
-            y > 1 ?
-            St.Side.BOTTOM :
-            St.Side.TOP
+            y < 1 ?
+            St.Side.TOP :
+            St.Side.BOTTOM
         );
     }
 

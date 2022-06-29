@@ -201,37 +201,25 @@ var AppButtonTooltip = class {
             return;
         }
 
-        let [stageX, stageY] = this._appButton.get_transformed_position();
+        let [x, y] = this._appButton.get_transformed_position();
 
-        const itemWidth = this._appButton.allocation.get_width();
-        const itemHeight = this._appButton.allocation.get_height();
+        const [appButtonWidth, appButtonHeight] = this._appButton.get_size();
 
-        const labelWidth = this._tooltip.get_width();
-        const labelHeight = this._tooltip.get_height();
+        const [tooltipWidth, tooltipHeight] = this._tooltip.get_size();
 
-        const xOffset = Math.floor((itemWidth - labelWidth) / 2);
-        const yOffset = 2;
+        const xOffset = Math.floor((appButtonWidth - tooltipWidth) / 2);
+        
+        // define a static vertical offset
+        const yOffset = 3;
 
-        const x = Math.clamp(stageX + xOffset, 0, global.stage.width - labelWidth);
-
-        // check if should place tooltip above or below app button
-        // needed in case user has moved the panel to bottom of screen
-        let labelBelowIconRect = new Meta.Rectangle({
-            x,
-            y: stageY + itemHeight + yOffset,
-            width: labelWidth,
-            height: labelHeight
-        });
-
-        let monitorIndex = Main.layoutManager.findIndexForActor(this._appButton);
-        let workArea = Main.layoutManager.getWorkAreaForMonitor(monitorIndex);
-        let y = 0;
-
-        if (workArea.contains_rect(labelBelowIconRect)) {
-            y = labelBelowIconRect.y;
+        // if app button is on top of the screen
+        if (y < 1) {
+            y = y + appButtonHeight + yOffset;
         } else {
-            y = stageY - labelHeight - yOffset;
+            y = y - tooltipHeight - yOffset;
         }
+
+        x = Math.clamp(x + xOffset, 0, global.stage.width - tooltipWidth);
 
         this._tooltip.set_position(x, y);
     }
