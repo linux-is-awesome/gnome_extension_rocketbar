@@ -20,7 +20,7 @@ let shellTweaks = null;
 //#region main
 
 function init() {
-    //TODO: ExtensionUtils.initTranslations();
+    ExtensionUtils.initTranslations();
 }
 
 function enable() {
