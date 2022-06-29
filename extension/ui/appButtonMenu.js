@@ -1,3 +1,4 @@
+const Main = imports.ui.main;
 const { Clutter, St, GLib } = imports.gi;
 const { AppMenu } = imports.ui.appMenu;
 const { Slider } = imports.ui.slider;
@@ -6,7 +7,8 @@ const { PopupMenuSection,
         PopupSubMenuMenuItem,
         PopupBaseMenuItem,
         Ornament } = imports.ui.popupMenu;
-const Main = imports.ui.main;
+
+const _ = imports.misc.extensionUtils.gettext;
 
 var AppButtonMenu = class extends AppMenu {
 
@@ -74,14 +76,15 @@ var AppButtonMenu = class extends AppMenu {
             return;
         }
 
+        if (!this._config.showFavorites) {
+            this._toggleFavoriteItem.hide();
+            return;
+        }
+
         const isFavorite = this._appFavorites.isFavorite(this._app.id);
 
         if (this._config.showFavorites && !isFavorite) {
             this._toggleFavoriteItem.label.text = _('Pin');
-        }
-
-        if (!this._config.showFavorites && isFavorite) {
-            this._toggleFavoriteItem.label.text = _('Unpin from Dash');
         }
     }
 
