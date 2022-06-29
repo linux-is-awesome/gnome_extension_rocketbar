@@ -281,8 +281,6 @@ var Taskbar = GObject.registerClass(
 
             let highPriority = false;
 
-            log('DEBUG rerender event ' + event + ' param ' + param);
-
             // check current workspace
             // this should be executed on every render due to shell issues
             this._connectWorkspace();
@@ -360,8 +358,6 @@ var Taskbar = GObject.registerClass(
             if (!this._workId) {
                 return;
             }
-
-            log('DEBUG render');
 
             const taskbarAppsById = (
                 // check if we have cache
