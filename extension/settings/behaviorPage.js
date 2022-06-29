@@ -3,13 +3,15 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { SettingsPageTemplate } = Me.imports.settings.pageTemplate;
 
+const _ = imports.misc.extensionUtils.gettext;
+
 var BehaviorPage = GObject.registerClass(
     class Rocketbar__BehaviorPage extends SettingsPageTemplate {
 
         _init(settings) {
 
             super._init({
-                title: 'Behavior',
+                title: _('Behavior'),
                 name: 'BehaviorPage',
                 icon: 'applications-engineering-symbolic',
                 settings: settings
@@ -30,35 +32,35 @@ var BehaviorPage = GObject.registerClass(
             this._addActivitiesOptions();
 
             // Overview
-            this.addGroup('Overview', [
-                this.createSwitch('Enable empty space clicks in Overview', 'overview-enable-empty-space-clicks',
-                                  'Left button click to close the Overview, Right button click to show Apps screen')
+            this.addGroup(_('Overview'), [
+                this.createSwitch(_('Enable empty space clicks in Overview'), 'overview-enable-empty-space-clicks',
+                                  _('Left button click to close the Overview, Right button click to show Apps screen'))
             ]);
 
             // Hot Corner
-            this.addGroup('Hot Corner', [
-                this.createSwitch('Enable Fullscreen Hot Corner', 'hotcorner-enable-in-fullscreen')
+            this.addGroup(_('Hot Corner'), [
+                this.createSwitch(_('Enable Fullscreen Hot Corner'), 'hotcorner-enable-in-fullscreen')
             ]);
         }
 
         _addTaskbarOptions() {
 
             const activateBehaviorOptions = [
-                { label: 'New window', value: 'new_window' },
-                { label: 'Move windows', value: 'move_windows' }, 
+                { label: _('New window'), value: 'new_window' },
+                { label: _('Move windows'), value: 'move_windows' }, 
             ];
 
             const activateBehaviorPicklist = this.createPicklist(
-                'Running apps activation behavior', 'appbutton-running-app-activate-behavior',
+                _('Running apps activation behavior'), 'appbutton-running-app-activate-behavior',
                 activateBehaviorOptions,
-                'Controls the behavior when an app is running but has no windows on the active workspace, supports isolated workspaces only, ' +
-                'can be configured separately for each app through an app context menu'
+                _('Controls the behavior when an app is running but has no windows on the active workspace, supports isolated workspaces only, ' +
+                'can be configured separately for each app through an app context menu')
             );
 
-            const taskbarGroup = this.addGroup('Taskbar', [
-                this.createSwitch('Allow Drag and Drop', 'appbutton-enable-drag-and-drop',
-                                  'Reorder apps in the taskbar using Drag and Drop'),
-                this.createSwitch('Scroll to cycle app windows', 'appbutton-enable-scroll'),
+            const taskbarGroup = this.addGroup(_('Taskbar'), [
+                this.createSwitch(_('Allow Drag and Drop'), 'appbutton-enable-drag-and-drop',
+                                  _('Reorder apps in the taskbar using Drag and Drop')),
+                this.createSwitch(_('Scroll to cycle app windows'), 'appbutton-enable-scroll'),
                 activateBehaviorPicklist
             ]);
 
@@ -90,25 +92,25 @@ var BehaviorPage = GObject.registerClass(
         _addPanelOptions() {
 
             const volumeChangeSpeedOptions = [
-                { label: 'Slowest', value: 1 },
-                { label: 'Slow', value: 2 }, 
-                { label: 'Normal', value: 4 },
-                { label: 'Fast', value: 6 },
-                { label: 'Faster', value: 8 },
-                { label: 'Turbo', value: 10 }
+                { label: _('Slowest'), value: 1 },
+                { label: _('Slow'), value: 2 }, 
+                { label: _('Normal'), value: 4 },
+                { label: _('Fast'), value: 6 },
+                { label: _('Faster'), value: 8 },
+                { label: _('Turbo'), value: 10 }
             ];
 
             const volumeSpeedPicklist = this.createPicklist(
-                'Volume change speed', 'panel-scroll-volume-change-speed',
+                _('Volume change speed'), 'panel-scroll-volume-change-speed',
                 volumeChangeSpeedOptions
             );
 
             const volumeSpeedCtrlPicklist = this.createPicklist(
-                'Volume change speed when Ctrl pressed', 'panel-scroll-volume-change-speed-ctrl',
+                _('Volume change speed when Ctrl pressed'), 'panel-scroll-volume-change-speed-ctrl',
                 volumeChangeSpeedOptions
             );
 
-            const scrollSwitch = this.createSwitch('Scroll to change sound volume', 'panel-enable-scroll');
+            const scrollSwitch = this.createSwitch(_('Scroll to change sound volume'), 'panel-enable-scroll');
 
             scrollSwitch.activatable_widget.connect('notify::active', (widget) => {
 
@@ -127,9 +129,9 @@ var BehaviorPage = GObject.registerClass(
                 volumeSpeedCtrlPicklist.hide();
             }
     
-            this.addGroup('Panel', [
-                this.createSwitch('Middle click to mute/unmute sound', 'panel-enable-middle-button',
-                                  'Press middle button on empty space of the panel to toggle mute'),
+            this.addGroup(_('Panel'), [
+                this.createSwitch(_('Middle click to mute/unmute sound'), 'panel-enable-middle-button',
+                                  _('Press middle button on empty space of the panel to toggle mute')),
                 scrollSwitch,
                 volumeSpeedPicklist,
                 volumeSpeedCtrlPicklist
@@ -139,15 +141,15 @@ var BehaviorPage = GObject.registerClass(
         _addActivitiesOptions() {
 
             const clickOptions = [
-                { label: 'None', value: 'none' },
-                { label: 'Left Button', value: 'left_button' },
-                { label: 'Right Button', value: 'right_button' },
-                { label: 'Middle Button', value: 'middle_button' }
+                { label: _('None'), value: 'none' },
+                { label: _('Left Button'), value: 'left_button' },
+                { label: _('Right Button'), value: 'right_button' },
+                { label: _('Middle Button'), value: 'middle_button' }
             ];
 
-            this.addGroup('Activities', [
+            this.addGroup(_('Activities'), [
                 this.createPicklist(
-                    'Click Activities to show Apps screen', 'activities-show-apps-button',
+                    _('Click Activities to show Apps screen'), 'activities-show-apps-button',
                     clickOptions
                 )
             ]);

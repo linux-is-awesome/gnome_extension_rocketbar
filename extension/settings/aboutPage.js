@@ -3,12 +3,14 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { SettingsPageTemplate } = Me.imports.settings.pageTemplate;
 
+const _ = imports.misc.extensionUtils.gettext;
+
 var AboutPage = GObject.registerClass(
     class Rocketbar__AboutPage extends SettingsPageTemplate {
 
         _init() {
             super._init({
-                title: 'About',
+                title: _('About'),
                 name: 'AboutPage',
                 icon: 'help-about-symbolic'
             });
@@ -21,15 +23,15 @@ var AboutPage = GObject.registerClass(
             const metadata = Me.metadata;
 
             this.addGroup(null, [
-                this.createLabel(Me.metadata.name + ' Version',  Me.metadata.version + '.0')
+                this.createLabel(Me.metadata.name + _(' Version'),  Me.metadata.version + '.0')
             ]);
 
-            this.addGroup('Useful Links', [
-                this.createLink('Report bugs', metadata.url + '/issues'),
-                this.createLink('Share your ideas', metadata.url + '/discussions/categories/ideas')
+            this.addGroup(_('Useful Links'), [
+                this.createLink(_('Report bugs'), metadata.url + '/issues'),
+                this.createLink(_('Share your ideas'), metadata.url + '/discussions/categories/ideas')
             ]);
 
-            this.addGroup('Credits', [
+            this.addGroup(_('Credits'), [
                 this.createLink('App Icons Taskbar', 'https://gitlab.com/AndrewZaech/aztaskbar'),
                 this.createLink('Dash to Dock', 'https://github.com/micheleg/dash-to-dock'),
                 this.createLink('Overview Clicking', 'https://github.com/mechtifs/overview-clicking'),

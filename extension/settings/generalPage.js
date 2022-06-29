@@ -3,13 +3,15 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { SettingsPageTemplate } = Me.imports.settings.pageTemplate;
 
+const _ = imports.misc.extensionUtils.gettext;
+
 var GeneralPage = GObject.registerClass(
     class Rocketbar__GeneralPage extends SettingsPageTemplate {
 
         _init(settings) {
 
             super._init({
-                title: 'General',
+                title: _('General'),
                 name: 'GeneralPage',
                 icon: 'preferences-system-symbolic',
                 settings: settings
@@ -30,15 +32,15 @@ var GeneralPage = GObject.registerClass(
 
         _addTaskbarOptions() {
 
-            const taskbarEnabledSwitch = this.createSwitch('Enabled', 'taskbar-enabled');
+            const taskbarEnabledSwitch = this.createSwitch(_('Enabled'), 'taskbar-enabled');
 
             const taskbarGroup = [
                 taskbarEnabledSwitch,
-                this.createSwitch('Show Favorites', 'taskbar-show-favorites'),
-                this.createSwitch('Isolate Workspaces', 'taskbar-isolate-workspaces'),
-                this.createSwitch('Enable Tooltips', 'appbutton-enable-tooltips'),
-                this.createSwitch('Enable Indicators', 'appbutton-enable-indicators'),
-                this.createSwitch('Enable Notification Badges', 'appbutton-enable-notification-badges')
+                this.createSwitch(_('Show Favorites'), 'taskbar-show-favorites'),
+                this.createSwitch(_('Isolate Workspaces'), 'taskbar-isolate-workspaces'),
+                this.createSwitch(_('Enable Tooltips'), 'appbutton-enable-tooltips'),
+                this.createSwitch(_('Enable Indicators'), 'appbutton-enable-indicators'),
+                this.createSwitch(_('Enable Notification Badges'), 'appbutton-enable-notification-badges')
             ];
 
             const updateTaskbarGroup = () => {
@@ -61,13 +63,13 @@ var GeneralPage = GObject.registerClass(
 
             updateTaskbarGroup();
 
-            this.addGroup('Taskbar', taskbarGroup);
+            this.addGroup(_('Taskbar'), taskbarGroup);
         }
 
         _addOverviewOptions() {
-            this.addGroup('Overview', [
-                this.createSwitch('Kill the Dash', 'overview-kill-dash',
-                                  'Hide the Dash in Overview and prevent it from rerendering behind the scene')
+            this.addGroup(_('Overview'), [
+                this.createSwitch(_('Kill the Dash'), 'overview-kill-dash',
+                                  _('Hide the Dash in Overview and prevent it from rerendering behind the scene'))
             ]);
         }
 

@@ -1,16 +1,11 @@
 const { Adw, Gio, GLib, GObject, Gtk, Gdk } = imports.gi;
 
-// TODO
-const _ = (text) => {
-    return text;
-};
-
 var SettingsPageTemplate = GObject.registerClass(
     class Rocketbar__SettingsPageTemplate extends Adw.PreferencesPage {
 
         _init(params) {
             super._init({
-                title: _(params.title),
+                title: params.title,
                 name: params.name,
                 icon_name: params.icon
             });
@@ -20,7 +15,7 @@ var SettingsPageTemplate = GObject.registerClass(
         addGroup(title, options) {
 
             const newGroup = new Adw.PreferencesGroup({
-                title: _(title)
+                title: title
             });
 
             this.add(newGroup);
@@ -43,8 +38,8 @@ var SettingsPageTemplate = GObject.registerClass(
             });
 
             const switchRow = new Adw.ActionRow({
-                title: _(title),
-                subtitle: subtitle ? _(subtitle) : null,
+                title: title,
+                subtitle: subtitle ? subtitle : null,
                 activatable_widget: newSwitch
             });
 
@@ -67,7 +62,7 @@ var SettingsPageTemplate = GObject.registerClass(
 
                 values.push(option.value);
 
-                picklistOptions.append(_(option.label))
+                picklistOptions.append(option.label)
             });
 
             const selectedIndex = values.indexOf(
@@ -77,8 +72,8 @@ var SettingsPageTemplate = GObject.registerClass(
             );
 
             const picklistRow = new Adw.ComboRow({
-                title: _(title),
-                subtitle: subtitle ? _(subtitle) : null,
+                title: title,
+                subtitle: subtitle ? subtitle : null,
                 model: picklistOptions,
                 selected: selectedIndex >= 0 ? selectedIndex : 0
             });
@@ -129,8 +124,8 @@ var SettingsPageTemplate = GObject.registerClass(
             });
 
             const spinButtonRow = new Adw.ActionRow({
-                title: _(title),
-                subtitle: subtitle ? _(subtitle) : null,
+                title: title,
+                subtitle: subtitle ? subtitle : null,
                 activatable_widget: spinButton
             });
 
@@ -181,8 +176,8 @@ var SettingsPageTemplate = GObject.registerClass(
             });
 
             const sliderRow = new Adw.ActionRow({
-                title: _(title),
-                subtitle: subtitle ? _(subtitle) : null,
+                title: title,
+                subtitle: subtitle ? subtitle : null,
                 activatable_widget: slider
             });
 
@@ -207,8 +202,8 @@ var SettingsPageTemplate = GObject.registerClass(
             });
     
             const colorButtonRow = new Adw.ActionRow({
-                title: _(title),
-                subtitle: subtitle ? _(subtitle) : null,
+                title: title,
+                subtitle: subtitle ? subtitle : null,
                 activatable_widget: colorButton
             });
 
@@ -225,7 +220,7 @@ var SettingsPageTemplate = GObject.registerClass(
             });
 
             const linkRow = new Adw.ActionRow({
-                title: _(title),
+                title: title,
                 activatable_widget: link
             });
 
@@ -237,11 +232,11 @@ var SettingsPageTemplate = GObject.registerClass(
         createLabel(title, text) {
 
             const label = new Gtk.Label({
-                label: _(text)
+                label: text
             });
 
             const labelRow = new Adw.ActionRow({
-                title: _(title)
+                title: title
             });
 
             labelRow.add_suffix(label);
@@ -251,7 +246,7 @@ var SettingsPageTemplate = GObject.registerClass(
 
         createMessage(text) {
             return new Gtk.Label({
-                label: `<span size="larger"><b>${_(text)}</b></span>`,
+                label: `<span size="larger"><b>${text}</b></span>`,
                 use_markup: true,
                 vexpand: true,
                 valign: Gtk.Align.FILL

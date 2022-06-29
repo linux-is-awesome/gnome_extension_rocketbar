@@ -3,13 +3,15 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { SettingsPageTemplate } = Me.imports.settings.pageTemplate;
 
+const _ = imports.misc.extensionUtils.gettext;
+
 var CustomizePage = GObject.registerClass(
     class Rocketbar__CustomizePage extends SettingsPageTemplate {
 
         _init(settings) {
 
             super._init({
-                title: 'Customize',
+                title: _('Customize'),
                 name: 'CustomizePage',
                 icon: 'applications-utilities-symbolic',
                 settings: settings
@@ -18,7 +20,7 @@ var CustomizePage = GObject.registerClass(
             this._options = [];
 
             this._emptyMessage = this.addGroup(null, [
-                this.createMessage('No customizations available')
+                this.createMessage(_('No customizations available'))
             ]);
 
             this._emptyMessage.hide();
@@ -110,30 +112,30 @@ var CustomizePage = GObject.registerClass(
         _addTaskbarOptions() {
 
             const positionOptions = [
-                { label: 'Left', value: 'left' },
-                { label: 'Center', value: 'center' },
-                { label: 'Right', value: 'right' }
+                { label: _('Left'), value: 'left' },
+                { label: _('Center'), value: 'center' },
+                { label: _('Right'), value: 'right' }
             ];
 
-            return this.addGroup('Taskbar', [
+            return this.addGroup(_('Taskbar'), [
                 this.createPicklist(
-                    'Position', 'taskbar-position',
+                    _('Position'), 'taskbar-position',
                     positionOptions
                 ),
                 this.createSpinButton(
-                    'Position Offset', 'taskbar-position-offset',
+                    _('Position Offset'), 'taskbar-position-offset',
                     { min: 0, max: 15 }
                 ),
-                this.createSwitch('Preserve Position', 'taskbar-preserve-position',
-                                  'Prevent position changes caused by other extensions in the panel')
+                this.createSwitch(_('Preserve Position'), 'taskbar-preserve-position',
+                                  _('Prevent position changes caused by other extensions in the panel'))
             ]);
         }
 
         _addAppButtonOptions() {
 
-            const backlightSwitch = this.createSwitch('Dominant Color Backlight', 'appbutton-backlight');
+            const backlightSwitch = this.createSwitch(_('Dominant Color Backlight'), 'appbutton-backlight');
 
-            const backlightIntensitySlider = this.createSlider('Backlight Intensity', 'appbutton-backlight-intensity', {
+            const backlightIntensitySlider = this.createSlider(_('Backlight Intensity'), 'appbutton-backlight-intensity', {
                 min: 1, max: 9
             });
 
@@ -145,28 +147,28 @@ var CustomizePage = GObject.registerClass(
                 backlightIntensitySlider.hide();
             });
 
-            return this.addGroup('App Buttons', [
+            return this.addGroup(_('App Buttons'), [
                 backlightSwitch,
                 backlightIntensitySlider,
                 this.createSlider(
-                    'Icon Size', 'appbutton-icon-size',
+                    _('Icon Size'), 'appbutton-icon-size',
                     { min: 16, max: 64, marks: [16, 24, 32, 48, 64] },
-                    'Can be configured separately for each app through an app context menu'
+                    _('Can be configured separately for each app through an app context menu')
                 ),
                 this.createSlider(
-                    'Icon Padding', 'appbutton-icon-padding',
+                    _('Icon Padding'), 'appbutton-icon-padding',
                     { min: 0, max: 20 }
                 ),
                 this.createSlider(
-                    'Vertical Margin', 'appbutton-vertical-margin',
+                    _('Vertical Margin'), 'appbutton-vertical-margin',
                     { min: 0, max: 10 }
                 ),
                 this.createSlider(
-                    'Roundness', 'appbutton-roundness',
+                    _('Roundness'), 'appbutton-roundness',
                     { min: 0, max: 100 }
                 ),
                 this.createSlider(
-                    'Spacing', 'appbutton-spacing',
+                    _('Spacing'), 'appbutton-spacing',
                     { min: 0, max: 10 }
                 )
             ]);
@@ -175,11 +177,11 @@ var CustomizePage = GObject.registerClass(
         _addIndicatorOptions() {
 
             const positionOptions = [
-                { label: 'Top', value: 'top' },
-                { label: 'Bottom', value: 'bottom' }
+                { label: _('Top'), value: 'top' },
+                { label: _('Bottom'), value: 'bottom' }
             ];
 
-            const activeColorButton = this.createColorButton('Active Color', 'indicator-color-active');
+            const activeColorButton = this.createColorButton(_('Active Color'), 'indicator-color-active');
 
             if (this._settings.get_boolean('indicator-dominant-color-active')) {
                 activeColorButton.hide();
@@ -193,7 +195,7 @@ var CustomizePage = GObject.registerClass(
                 activeColorButton.show();
             });
 
-            const inactiveColorButton = this.createColorButton('Inactive Color', 'indicator-color-inactive');
+            const inactiveColorButton = this.createColorButton(_('Inactive Color'), 'indicator-color-inactive');
 
             if (this._settings.get_boolean('indicator-dominant-color-inactive')) {
                 inactiveColorButton.hide();
@@ -207,23 +209,23 @@ var CustomizePage = GObject.registerClass(
                 inactiveColorButton.show();
             });
 
-            return this.addGroup('Indicators', [
-                this.createSwitch('Active Dominant Color', 'indicator-dominant-color-active'),
+            return this.addGroup(_('Indicators'), [
+                this.createSwitch(_('Active Dominant Color'), 'indicator-dominant-color-active'),
                 activeColorButton,
-                this.createSwitch('Inactive Dominant Color', 'indicator-dominant-color-inactive'),
+                this.createSwitch(_('Inactive Dominant Color'), 'indicator-dominant-color-inactive'),
                 inactiveColorButton,
                 this.createPicklist(
-                    'Position', 'indicator-position',
+                    _('Position'), 'indicator-position',
                     positionOptions
                 ),
                 this.createSlider(
-                    'Size', 'indicator-size',
+                    _('Size'), 'indicator-size',
                     { min: 2, max: 10 }
                 ),
                 this.createSlider(
-                    'Limit', 'indicator-display-limit',
+                    _('Limit'), 'indicator-display-limit',
                     { min: 1, max: 5 },
-                    'The maximum number of indicators to display on the app button'
+                    _('The maximum number of indicators to display on the app button')
                 )
             ]);
         }
@@ -231,34 +233,34 @@ var CustomizePage = GObject.registerClass(
         _addNotificationBadgeOptions() {
 
             const positionOptions = [
-                { label: 'Top Left', value: 'top_left' },
-                { label: 'Top Right', value: 'top_right' },
-                { label: 'Bottom Left', value: 'bottom_left' },
-                { label: 'Bottom Right', value: 'bottom_right' }
+                { label: _('Top Left'), value: 'top_left' },
+                { label: _('Top Right'), value: 'top_right' },
+                { label: _('Bottom Left'), value: 'bottom_left' },
+                { label: _('Bottom Right'), value: 'bottom_right' }
             ];
 
-            return this.addGroup('Notification Badges', [
-                this.createColorButton('Color', 'notification-badge-color'),
-                this.createColorButton('Border Color', 'notification-badge-border-color'),
+            return this.addGroup(_('Notification Badges'), [
+                this.createColorButton(_('Color'), 'notification-badge-color'),
+                this.createColorButton(_('Border Color'), 'notification-badge-border-color'),
                 this.createPicklist(
-                    'Position', 'notification-badge-position',
+                    _('Position'), 'notification-badge-position',
                     positionOptions
                 ),
                 this.createSlider(
-                    'Size', 'notification-badge-size',
+                    _('Size'), 'notification-badge-size',
                     { min: 2, max: 10 }
                 ),
                 this.createSlider(
-                    'Margin', 'notification-badge-margin',
+                    _('Margin'), 'notification-badge-margin',
                     { min: 0, max: 15 }
                 )
             ]);
         }
 
         _addTooltipOptions() {
-            return this.addGroup('Tooltips', [
+            return this.addGroup(_('Tooltips'), [
                 this.createSpinButton(
-                    'Show Delay', 'tooltip-show-delay',
+                    _('Show Delay'), 'tooltip-show-delay',
                     { min: 100, max: 2000, step: 100 }
                 )
             ]);

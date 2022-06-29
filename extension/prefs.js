@@ -6,7 +6,7 @@ const { BehaviorPage } = Me.imports.settings.behaviorPage;
 const { AboutPage } = Me.imports.settings.aboutPage;
 
 function init() {
-    //TODO: ExtensionUtils.initTranslations();
+    ExtensionUtils.initTranslations();
 }
 
 function fillPreferencesWindow(window) {
