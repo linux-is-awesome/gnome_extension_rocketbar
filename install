@@ -1,16 +1,7 @@
 #!/bin/bash
 
-Path=~/.local/share/gnome-shell/extensions/`cat ./extension/metadata.json | grep -oP '(?<="uuid": ")[^"]*'`
+./build
 
-mkdir -p $Path
+gnome-extensions install --force *.shell-extension.zip
 
-cd ./extension
-
-glib-compile-schemas ./schemas/
-
-\cp extension.js prefs.js metadata.json $Path
-\cp -r ./ui $Path
-\cp -r ./shell $Path
-\cp -r ./utils $Path
-\cp -r ./settings $Path
-\cp -r ./schemas $Path
+rm *.shell-extension.zip

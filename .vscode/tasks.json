@@ -7,6 +7,17 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "build",
+            "type": "shell",
+            "command": "./build",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "install",
             "type": "shell",
             "command": "./install",
@@ -32,6 +43,17 @@
             "label": "debug",
             "type": "shell",
             "command": "journalctl -f -o cat /usr/bin/gnome-shell",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "update-pot",
+            "type": "shell",
+            "command": "./update-pot",
             "group": "build",
             "presentation": {
                 "reveal": "always",

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+ExtensionName=`cat ./extension/metadata.json | grep -oP '(?<="name": ")[^"]*'`
+
+cd ./extension
+
+xgettext --output=./locale/${ExtensionName,,}.pot ./*/*.js

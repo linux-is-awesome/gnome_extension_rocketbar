@@ -1,0 +1,7 @@
+#!/bin/bash
+
+ExtensionName=`cat ./extension/metadata.json | grep -oP '(?<="name": ")[^"]*'`
+
+cd ./extension/locale
+
+msginit --locale $1
