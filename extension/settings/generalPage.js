@@ -69,7 +69,7 @@ var GeneralPage = GObject.registerClass(
         _addOverviewOptions() {
             this.addGroup(_('Overview'), [
                 this.createSwitch(_('Kill the Dash'), 'overview-kill-dash',
-                                  _('Hide the Dash in Overview and prevent it from rerendering behind the scene'))
+                                  _('Hide the Dash from Overview and prevent it from rerendering behind the scene'))
             ]);
         }
 

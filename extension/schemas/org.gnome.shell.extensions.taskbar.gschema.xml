@@ -29,7 +29,7 @@
         </key>
         <key type="b" name="overview-kill-dash">
             <default>false</default>
-            <summary>Hide the Dash in Overview and prevent it from rerendering behind the scene</summary>
+            <summary>Hide the Dash from Overview and prevent it from rerendering behind the scene</summary>
         </key>
         <!-- /general page -->
 
