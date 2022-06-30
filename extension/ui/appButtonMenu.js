@@ -61,6 +61,12 @@ var AppButtonMenu = class extends AppMenu {
         this._setPosition();
     }
 
+    destroy() {
+        super.destroy();
+        this._stopApplyConfigOverride();
+    }
+
+
     //#endregion public methods
 
     //#region private methods
@@ -310,9 +316,7 @@ var AppButtonMenu = class extends AppMenu {
             return;
         }
 
-        if (this._applyConfigOverrideTimeout) {
-            GLib.source_remove(this._applyConfigOverrideTimeout);
-        }
+        this._stopApplyConfigOverride();
 
         this._applyConfigOverrideTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
 
@@ -322,6 +326,13 @@ var AppButtonMenu = class extends AppMenu {
 
             return GLib.SOURCE_REMOVE;
         });
+    }
+
+    _stopApplyConfigOverride() {
+        if (this._applyConfigOverrideTimeout) {
+            GLib.source_remove(this._applyConfigOverrideTimeout);
+            this._applyConfigOverrideTimeout = null;
+        }
     }
 
     //#endregion private methods

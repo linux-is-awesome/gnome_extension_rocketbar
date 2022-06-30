@@ -19,6 +19,11 @@ var SoundVolumeControl = class SoundVolumeControl {
     }
 
     destroy() {
+
+        if (this._notifyVolumeChangeTimeout) {
+            GLib.source_remove(this._notifyVolumeChangeTimeout);
+        }
+
         this._mixerControl.disconnect(this._mixerStreamHandler);
     }
 

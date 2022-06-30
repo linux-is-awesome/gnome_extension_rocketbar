@@ -361,6 +361,10 @@ var AppButton = GObject.registerClass(
 
             this._stopUpdateIconGeometryQueue();
 
+            if (this._handleScrollTimeout) {
+                GLib.source_remove(this._handleScrollTimeout);
+            }
+
             // remove connections
             this._connections.destroy();
 
