@@ -21,29 +21,50 @@ var AppButtonMenu = class extends AppMenu {
             showSingleWindows: true,
         });
 
-        this.actor.remove_style_class_name('app-menu');
-        this.actor.add_style_class_name('panel-menu aggregate-menu');
-
-        this._fixMenuSeparatorFontSize(this._openWindowsHeader);
-
         this._appButton = appButton;
         this._settings = settings;
 
         this.blockSourceEvents = true;
 
-        // set correct position 
-        this._setPosition();
+        this.actor.remove_style_class_name('app-menu');
+        this.actor.add_style_class_name('panel-menu aggregate-menu');
 
-        this._setConfig();
-
-        this.setApp(appButton.app);
-
-        this._addCustomizeSection();
-
-        Main.uiGroup.add_actor(this.actor);       
+        this._fixMenuSeparatorFontSize(this._openWindowsHeader);
     }
 
-    updateConfig() {
+    open(animate) {
+
+        if (!this._config) {
+
+            this._setConfig();
+
+            this.setApp(this._appButton.app);
+
+            this._addCustomizeSection();
+
+            Main.uiGroup.add_actor(this.actor);
+
+        } else {
+            this._handleSettings();
+        }
+
+        // set correct position 
+        this._setPosition();
+        
+        super.open(animate);
+    }
+
+    destroy() {
+        super.destroy();
+        this._stopApplyConfigOverride();
+    }
+
+
+    //#endregion public methods
+
+    //#region private methods
+
+    _handleSettings() {
         const oldConfig = this._config || {};
 
         this._setConfig();
@@ -57,19 +78,16 @@ var AppButtonMenu = class extends AppMenu {
         }
 
         this._updateCustomizeSection();
-
-        this._setPosition();
     }
 
-    destroy() {
-        super.destroy();
-        this._stopApplyConfigOverride();
+    _setConfig() {
+        this._config = {
+            showFavorites: this._settings.get_boolean('taskbar-show-favorites'),
+            isolateWorkspaces: this._settings.get_boolean('taskbar-isolate-workspaces'),
+            defaultIconSize: this._settings.get_int('appbutton-icon-size'),
+            configOverride: this._appButton.getConfigOverride()
+        };
     }
-
-
-    //#endregion public methods
-
-    //#region private methods
 
     _setPosition() {
 
@@ -81,15 +99,6 @@ var AppButtonMenu = class extends AppMenu {
             St.Side.TOP :
             St.Side.BOTTOM
         );
-    }
-
-    _setConfig() {
-        this._config = {
-            showFavorites: this._settings.get_boolean('taskbar-show-favorites'),
-            isolateWorkspaces: this._settings.get_boolean('taskbar-isolate-workspaces'),
-            defaultIconSize: this._settings.get_int('appbutton-icon-size'),
-            configOverride: this._appButton.getConfigOverride()
-        };
     }
 
     _updateFavoriteItem() {
@@ -333,6 +342,18 @@ var AppButtonMenu = class extends AppMenu {
             GLib.source_remove(this._applyConfigOverrideTimeout);
             this._applyConfigOverrideTimeout = null;
         }
+    }
+
+    _onKeyPress(actor, event) {
+
+        let key = event?.get_key_symbol();
+
+        // Space and Return keys are reserved for the app button
+        if (key === Clutter.KEY_space || key === Clutter.KEY_Return) {
+            return Clutter.EVENT_PROPAGATE;
+        }
+
+        super._onKeyPress(actor, event);
     }
 
     //#endregion private methods
