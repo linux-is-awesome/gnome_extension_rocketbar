@@ -32,7 +32,7 @@ var AppButtonMenu = class extends AppMenu {
         this._fixMenuSeparatorFontSize(this._openWindowsHeader);
     }
 
-    open(animate) {
+    open() {
 
         if (!this._config) {
 
@@ -51,7 +51,8 @@ var AppButtonMenu = class extends AppMenu {
         // set correct position 
         this._setPosition();
         
-        super.open(animate);
+        // animate open by default
+        super.open(true);
     }
 
     destroy() {

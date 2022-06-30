@@ -21,8 +21,12 @@ const { Connections } = Me.imports.utils.connections;
 var AppButton = GObject.registerClass(
     class Rocketbar__AppButton extends St.Button {
 
+        //#region static
+
         // appId => {...}
-        static CONFIG_OVERRIDE = null;
+        static _configOverride = null;
+
+        //#endregion static
 
         //#region public methods
 
@@ -91,11 +95,11 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
-            if (!AppButton.CONFIG_OVERRIDE) {
-                AppButton.CONFIG_OVERRIDE = {};
+            if (!AppButton._configOverride) {
+                AppButton._configOverride = {};
             }
 
-            AppButton.CONFIG_OVERRIDE[this.appId] = {
+            AppButton._configOverride[this.appId] = {
                 iconSizeOffset: (
                     configOverride.iconSize ?
                     configOverride.iconSize - this._config.iconSize :
@@ -110,11 +114,11 @@ var AppButton = GObject.registerClass(
         resetConfigOverride() {
             
             // if nothing to reset
-            if (!AppButton.CONFIG_OVERRIDE || !AppButton.CONFIG_OVERRIDE.hasOwnProperty(this.appId)) {
+            if (!AppButton._configOverride || !AppButton._configOverride.hasOwnProperty(this.appId)) {
                 return;
             }
 
-            delete AppButton.CONFIG_OVERRIDE[this.appId];
+            delete AppButton._configOverride[this.appId];
 
             this._saveConfigOverride();
         }
@@ -151,6 +155,7 @@ var AppButton = GObject.registerClass(
 
             // create layout
             this._createLayout();
+            this._createMenu();
             this._handleSettings();
 
             // create connections
@@ -184,6 +189,13 @@ var AppButton = GObject.registerClass(
             this.set_child(this._layout);
         }
 
+        _createMenu() {
+            this._menu = new AppButtonMenu(this, this._settings);
+
+            this._contextMenuManager = new PopupMenuManager();
+            this._contextMenuManager.addMenu(this._menu);
+        }
+
         _createConnections() {
             // internal connections
             this.connect('clicked', () => this._activate());
@@ -194,6 +206,7 @@ var AppButton = GObject.registerClass(
             this.connect('scroll-event', (actor, event) => this._handleScroll(event));
             // external connections
             this._connections = new Connections();
+            this._connections.add(this._menu, 'open-state-changed', () => this._focus());
             this._connections.add(global.display, 'notify::focus-window', () => this._handleAppState());
             this._connections.add(global.display, 'window-demands-attention', (display, window) => this._handleUrgentWindow(window));
             this._connections.add(St.Settings.get(), 'notify::gtk-icon-theme', () => this._handleIconTheme());
@@ -229,7 +242,7 @@ var AppButton = GObject.registerClass(
         _saveConfigOverride() {
 
             // store customizations as a JSON string
-            this._settings.set_string('appbutton-config-override', JSON.stringify(AppButton.CONFIG_OVERRIDE));
+            this._settings.set_string('appbutton-config-override', JSON.stringify(AppButton._configOverride));
 
             // apply changes
             this._handleSettings()
@@ -301,12 +314,12 @@ var AppButton = GObject.registerClass(
         _setConfig() {
 
             // create config override
-            if (!AppButton.CONFIG_OVERRIDE) {
+            if (!AppButton._configOverride) {
 
                 const configOverride = this._settings.get_string('appbutton-config-override');
 
                 // parse config override
-                AppButton.CONFIG_OVERRIDE = (
+                AppButton._configOverride = (
                     configOverride && configOverride.length ?
                     JSON.parse(configOverride) :
                     {}
@@ -314,7 +327,7 @@ var AppButton = GObject.registerClass(
             }
 
             // get override
-            const configOverride = AppButton.CONFIG_OVERRIDE[this.appId];
+            const configOverride = AppButton._configOverride[this.appId];
 
             const iconSize = this._settings.get_int('appbutton-icon-size');
 
@@ -394,8 +407,8 @@ var AppButton = GObject.registerClass(
             this._notificationHandler = null;
 
             // destroy config override when taskbar is destroying
-            if (!this._getTaskbar() && AppButton.CONFIG_OVERRIDE) {
-                AppButton.CONFIG_OVERRIDE = null;
+            if (!this._getTaskbar() && AppButton._configOverride) {
+                AppButton._configOverride = null;
             }
         }
 
@@ -691,22 +704,7 @@ var AppButton = GObject.registerClass(
         }
 
         _openMenu() {
-
-            if (!this._menu) {
-
-                this._menu = new AppButtonMenu(this, this._settings);
-
-                this._connections.add(this._menu, 'open-state-changed', () => this._focus());
-
-                this._contextMenuManager = new PopupMenuManager(this);
-                this._contextMenuManager.addMenu(this._menu);
-
-            } else {
-                this._menu.updateConfig();
-            }
-
-            this._menu.open(true);
-
+            this._menu.open();
             this._contextMenuManager.ignoreRelease();
         }
 
