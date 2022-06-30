@@ -205,6 +205,8 @@ var AppButtonMenu = class extends AppMenu {
 
         this._setIconSizeSliderValue();
 
+        this._setIconSizeSliderOverdrive();
+
         this._activateBehaviorSection.box.visible = this._config.isolateWorkspaces;
 
         this._setActivationBehaviorValue();
