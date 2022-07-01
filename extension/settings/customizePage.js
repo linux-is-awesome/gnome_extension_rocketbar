@@ -135,42 +135,43 @@ var CustomizePage = GObject.registerClass(
 
             const backlightSwitch = this.createSwitch(_('Dominant Color Backlight'), 'appbutton-backlight');
 
-            const backlightIntensitySlider = this.createSlider(_('Backlight Intensity'), 'appbutton-backlight-intensity', {
-                min: 1, max: 9
-            });
+            const backlightIntensitySpin = this.createSpinButton(
+                _('Backlight Intensity'), 'appbutton-backlight-intensity',
+                { min: 1, max: 9 }
+            );
 
             backlightSwitch.activatable_widget.connect('notify::active', widget => {
                 if (widget.get_active()) {
-                    backlightIntensitySlider.show();
+                    backlightIntensitySpin.show();
                     return;
                 }
-                backlightIntensitySlider.hide();
+                backlightIntensitySpin.hide();
             });
 
             return this.addGroup(_('App Buttons'), [
-                backlightSwitch,
-                backlightIntensitySlider,
                 this.createSlider(
                     _('Icon Size'), 'appbutton-icon-size',
                     { min: 16, max: 64, marks: [16, 24, 32, 48, 64] },
-                    _('Can be configured separately for each app through an app context menu')
+                    _('Can be configured separately for each app via an app menu')
                 ),
-                this.createSlider(
+                this.createSpinButton(
                     _('Icon Padding'), 'appbutton-icon-padding',
                     { min: 0, max: 20 }
                 ),
-                this.createSlider(
+                this.createSpinButton(
                     _('Vertical Margin'), 'appbutton-vertical-margin',
                     { min: 0, max: 10 }
                 ),
-                this.createSlider(
+                this.createSpinButton(
                     _('Roundness'), 'appbutton-roundness',
                     { min: 0, max: 100 }
                 ),
-                this.createSlider(
+                this.createSpinButton(
                     _('Spacing'), 'appbutton-spacing',
                     { min: 0, max: 10 }
-                )
+                ),
+                backlightSwitch,
+                backlightIntensitySpin,
             ]);
         }
 
@@ -218,11 +219,11 @@ var CustomizePage = GObject.registerClass(
                     _('Position'), 'indicator-position',
                     positionOptions
                 ),
-                this.createSlider(
+                this.createSpinButton(
                     _('Size'), 'indicator-size',
                     { min: 2, max: 10 }
                 ),
-                this.createSlider(
+                this.createSpinButton(
                     _('Limit'), 'indicator-display-limit',
                     { min: 1, max: 5 },
                     _('The maximum number of indicators to display on the app button')
@@ -246,11 +247,11 @@ var CustomizePage = GObject.registerClass(
                     _('Position'), 'notification-badge-position',
                     positionOptions
                 ),
-                this.createSlider(
+                this.createSpinButton(
                     _('Size'), 'notification-badge-size',
                     { min: 2, max: 10 }
                 ),
-                this.createSlider(
+                this.createSpinButton(
                     _('Margin'), 'notification-badge-margin',
                     { min: 0, max: 15 }
                 )

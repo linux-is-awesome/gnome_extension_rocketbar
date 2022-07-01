@@ -104,7 +104,7 @@ var SettingsPageTemplate = GObject.registerClass(
                 climb_rate: 1,
                 digits: 0,
                 numeric: true,
-                valign: Gtk.Align.CENTER,
+                valign: Gtk.Align.CENTER
             });
 
             spinButton.set_value(this._settings.get_int(settingsKey));

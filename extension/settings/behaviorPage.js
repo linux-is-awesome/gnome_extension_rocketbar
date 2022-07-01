@@ -54,7 +54,7 @@ var BehaviorPage = GObject.registerClass(
                 _('Running apps activation behavior'), 'appbutton-running-app-activate-behavior',
                 activateBehaviorOptions,
                 _('Controls the behavior when an app is running but has no windows on the active workspace, supports isolated workspaces only, ' +
-                'can be configured separately for each app through an app context menu')
+                'can be configured separately for each app via an app menu')
             );
 
             const taskbarGroup = this.addGroup(_('Taskbar'), [
