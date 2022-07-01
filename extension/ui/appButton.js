@@ -200,8 +200,8 @@ var AppButton = GObject.registerClass(
             // internal connections
             this.connect('clicked', () => this._activate());
             this.connect('destroy', () => this._destroy());
-            this.connect('key-focus-in', () => this._focus(true));
-            this.connect('key-focus-out', () => this._focus(false));
+            this.connect('key-focus-in', () => this._focus());
+            this.connect('key-focus-out', () => this._focus());
             this.connect('notify::hover', () => this._hover());
             this.connect('scroll-event', (actor, event) => this._handleScroll(event));
             // external connections
@@ -971,11 +971,12 @@ var AppButton = GObject.registerClass(
             Main.activateWindow(window);
         }
 
-        _focus(isFocused = false) {
+        _focus() {
 
-            if (this._menu?.isOpen) {
-                isFocused = true;
-            }
+            let isFocused = (
+                this.has_key_focus() ||
+                this._menu?.isOpen
+            );
 
             // show tooltip when focused and menu is not open
             this._toggleTooltip(isFocused && !this._menu?.isOpen);
