@@ -1,4 +1,5 @@
-### Rocketbar
+# Rocketbar
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/linux-is-awesome/gnome_extension_rocketbar/blob/master/LICENSE)
 
 ![](/media/taskbar.jpg)
 
@@ -18,12 +19,14 @@
     - Displaying of notification badges on app buttons
     - Tooltips with additional information such as windows count and notification count
 
- - Shell Tweaks
+- Shell Tweaks
     - Dash killing feature to hide the Dash and prevent it from rendering behind the scene
     - Scroll the Main panel to change sound volume and middle click to toggle mute
     - Activities button click behavior override
     - Overview empty space clicks support
     - Fullscreen Hot Corner
+    
+Note: to get additional customization options for the GNOME Shell I would suggest to use [Just Perfection](https://extensions.gnome.org/extension/3843/just-perfection) extension.
 
 ### Compatibility
 
@@ -78,6 +81,8 @@ OPTIONAL: to get the latest UNSTABLE version type: git checkout develop
 - push Alt + F2 and type 'r'
 - go to Extensions and enable Rocketbar there
 
+-----
+
 ### Translations
 
 No translations as of now, but you can help!
@@ -96,3 +101,13 @@ git checkout <name of the translation branch>
 - Go to the file, translate text strings
 - Commit your changes and publish the branch
 - Create a pull request to the 'develop' branch
+
+-----
+
+### Credits
+
+[App Icons Taskbar](https://gitlab.com/AndrewZaech/aztaskbar) |
+[Dash to Dock](https://github.com/micheleg/dash-to-dock) |
+[Overview Clicking](https://github.com/mechtifs/overview-clicking) |
+[Volume Scroller](https://github.com/trflynn89/gnome-shell-volume-scroller) |
+[Fullscreen Hot Corner](https://github.com/soal/gnome-shell-fullscreen-hot-corner)
