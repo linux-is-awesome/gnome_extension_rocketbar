@@ -26,8 +26,12 @@ var AppButtonMenu = class extends AppMenu {
 
         this.blockSourceEvents = true;
 
+        // override styles
         this.actor.remove_style_class_name('app-menu');
         this.actor.add_style_class_name('panel-menu aggregate-menu');
+
+        // shrink menu width as much as possible
+        this.actor.style='max-width: 0';
 
         this._fixMenuSeparatorFontSize(this._openWindowsHeader);
     }
