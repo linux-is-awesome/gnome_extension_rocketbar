@@ -85,7 +85,8 @@ var AppButtonTooltip = class {
         // create tooltip text
 
         this._tooltipText = new St.Label({
-            name: 'appButton-tooltip-text'
+            name: 'appButton-tooltip-text',
+            style: 'max-width: 500px;'
         });
 
         this._tooltip.add_actor(this._tooltipText);
