@@ -268,6 +268,7 @@ var Taskbar = GObject.registerClass(
                 this._workId = Main.initializeDeferredWork(this, () => this._render());
 
                 // connect rendering events
+                this._connectWorkspace();
                 this._connectRender(Shell.AppSystem.get_default(), 'app-state-changed');
                 this._connectRender(global.window_manager, 'switch-workspace');
 
@@ -283,10 +284,6 @@ var Taskbar = GObject.registerClass(
             }
 
             let highPriority = false;
-
-            // check current workspace
-            // this should be executed on every render due to shell issues
-            this._connectWorkspace();
 
             // configure rendering based on the handled event
             switch (event) {
@@ -319,6 +316,10 @@ var Taskbar = GObject.registerClass(
             }
 
             this._stopRerender();
+
+            // check current workspace
+            // this should be executed on every render due to shell issues
+            this._connectWorkspace();
 
             if (highPriority) {
                 Main.queueDeferredWork(this._workId);
