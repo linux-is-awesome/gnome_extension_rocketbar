@@ -61,6 +61,7 @@ var BehaviorPage = GObject.registerClass(
                 this.createSwitch(_('Allow Drag and Drop'), 'appbutton-enable-drag-and-drop',
                                   _('Reorder apps in the taskbar using Drag and Drop')),
                 this.createSwitch(_('Scroll to cycle app windows'), 'appbutton-enable-scroll'),
+                this.createSwitch(_('Require click to open context menus for apps in the taskbar'), 'appbutton-menu-require-click'),
                 activateBehaviorPicklist
             ]);
 
@@ -130,6 +131,7 @@ var BehaviorPage = GObject.registerClass(
             }
     
             this.addGroup(_('Panel'), [
+                this.createSwitch(_('Require click to activate the panel menu buttons'), 'panel-menu-require-click'),
                 this.createSwitch(_('Middle click to mute/unmute sound'), 'panel-enable-middle-button',
                                   _('Press middle button on empty space of the panel to toggle mute')),
                 scrollSwitch,

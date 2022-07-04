@@ -137,9 +137,17 @@
             <default>true</default>
             <summary>Scroll to cycle app windows</summary>
         </key>
+        <key type="b" name="appbutton-menu-require-click">
+            <default>false</default>
+            <summary>Require click to open context menus for apps in the taskbar</summary>
+        </key>
         <key type="s" name="appbutton-running-app-activate-behavior">
             <default>'new_window'</default>
             <summary>Running apps activation behavior</summary>
+        </key>
+        <key type="b" name="panel-menu-require-click">
+            <default>false</default>
+            <summary>Require click to activate the panel menu buttons</summary>
         </key>
         <key type="b" name="panel-enable-middle-button">
             <default>true</default>

@@ -9,6 +9,7 @@ const HotCorner = imports.ui.layout.HotCorner;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { AppButton } = Me.imports.ui.appButton;
+const { AppButtonMenu } = Me.imports.ui.appButtonMenu;
 const { SoundVolumeControl } = Me.imports.utils.soundVolumeControl;
 const { Connections } = Me.imports.utils.connections;
 
@@ -55,6 +56,8 @@ var ShellTweaks = class {
 
         this._restoreOverviewDash();
 
+        this._restorePanelMenuManagerBehavior();
+
         this._soundVolumeControl?.destroy();
         this._soundVolumeControl = null;
     }
@@ -67,6 +70,8 @@ var ShellTweaks = class {
         this._connections.add(this._settings, 'changed::hotcorner-enable-in-fullscreen', () => this._handleSettings());
         this._connections.add(this._settings, 'changed::activities-show-apps-button', () => this._handleSettings());
         this._connections.add(this._settings, 'changed::overview-enable-empty-space-clicks', () => this._handleSettings());
+        this._connections.add(this._settings, 'changed::appbutton-menu-require-click', () => this._handleSettings());
+        this._connections.add(this._settings, 'changed::panel-menu-require-click', () => this._handleSettings());
         this._connections.add(this._settings, 'changed::panel-scroll-volume-change-speed', () => this._setConfig());
         this._connections.add(this._settings, 'changed::panel-scroll-volume-change-speed-ctrl', () => this._setConfig());
     }
@@ -123,6 +128,13 @@ var ShellTweaks = class {
         } else {
             this._removeOverviewClickHandler();
         }
+
+        if (this._config.appButtonMenuRequireClick ||
+                this._config.panelMenuRequireClick) {
+            this._overridePanelMenuManagerBehavior();
+        } else {
+            this._restorePanelMenuManagerBehavior();
+        }
     }
 
     _setConfig() {
@@ -134,7 +146,9 @@ var ShellTweaks = class {
             enableOverviewClickHandler: this._settings.get_boolean('overview-enable-empty-space-clicks'),
             activitiesShowAppsButton: this._settings.get_string('activities-show-apps-button'),
             soundVolumeStep: this._settings.get_int('panel-scroll-volume-change-speed'),
-            soundVolumeStepCtrl: this._settings.get_int('panel-scroll-volume-change-speed-ctrl')
+            soundVolumeStepCtrl: this._settings.get_int('panel-scroll-volume-change-speed-ctrl'),
+            appButtonMenuRequireClick: this._settings.get_boolean('appbutton-menu-require-click'),
+            panelMenuRequireClick: this._settings.get_boolean('panel-menu-require-click')
         };
     }
 
@@ -440,4 +454,54 @@ var ShellTweaks = class {
 
     //#endregion overview tweaks
 
+    //#region panel menu manager tweaks
+
+    _overridePanelMenuManagerBehavior() {
+
+        if (this._panelMenuManagerChangeMenu) {
+            return;
+        }
+
+        this._panelMenuManagerChangeMenu = Main.panel.menuManager._changeMenu;
+
+        Main.panel.menuManager._changeMenu = newMenu => {
+
+            const isNewAppButtonMenu = (newMenu && newMenu instanceof AppButtonMenu);
+
+            const isActiveAppButtonMenu = (
+                Main.panel.menuManager.activeMenu &&
+                Main.panel.menuManager.activeMenu instanceof AppButtonMenu
+            );
+
+            if (this._config.panelMenuRequireClick && !isActiveAppButtonMenu) {
+                return;
+            }
+
+            if (this._config.appButtonMenuRequireClick &&
+                    (isActiveAppButtonMenu || isNewAppButtonMenu)) {
+                return;
+            }
+
+            if (!this._config.appButtonMenuRequireClick &&
+                    this._config.panelMenuRequireClick && !isNewAppButtonMenu) {
+                return;
+            }
+
+            this._panelMenuManagerChangeMenu(newMenu);
+
+        };
+    }
+
+    _restorePanelMenuManagerBehavior() {
+    
+        if (!this._panelMenuManagerChangeMenu) {
+            return;
+        }
+
+        Main.panel.menuManager._changeMenu = this._panelMenuManagerChangeMenu;
+
+        this._panelMenuManagerChangeMenu = null;
+    }
+
+    //#endregion panel menu manager tweaks
 }

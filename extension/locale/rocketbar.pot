@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-07-04 00:30+0300\n"
+"POT-Creation-Date: 2022-07-04 13:44+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -67,11 +67,11 @@ msgstr ""
 msgid "Enable Fullscreen Hot Corner"
 msgstr ""
 
-#: settings/behaviorPage.js:49 ui/appButtonMenu.js:171
+#: settings/behaviorPage.js:49 ui/appButtonMenu.js:172
 msgid "New window"
 msgstr ""
 
-#: settings/behaviorPage.js:50 ui/appButtonMenu.js:175
+#: settings/behaviorPage.js:50 ui/appButtonMenu.js:176
 msgid "Move windows"
 msgstr ""
 
@@ -103,79 +103,87 @@ msgstr ""
 msgid "Scroll to cycle app windows"
 msgstr ""
 
-#: settings/behaviorPage.js:95
-msgid "Slowest"
+#: settings/behaviorPage.js:64
+msgid "Require click to open context menus for apps in the taskbar"
 msgstr ""
 
 #: settings/behaviorPage.js:96
-msgid "Slow"
+msgid "Slowest"
 msgstr ""
 
 #: settings/behaviorPage.js:97
-msgid "Normal"
+msgid "Slow"
 msgstr ""
 
 #: settings/behaviorPage.js:98
-msgid "Fast"
+msgid "Normal"
 msgstr ""
 
 #: settings/behaviorPage.js:99
-msgid "Faster"
+msgid "Fast"
 msgstr ""
 
 #: settings/behaviorPage.js:100
+msgid "Faster"
+msgstr ""
+
+#: settings/behaviorPage.js:101
 msgid "Turbo"
 msgstr ""
 
-#: settings/behaviorPage.js:104
+#: settings/behaviorPage.js:105
 msgid "Volume change speed"
 msgstr ""
 
-#: settings/behaviorPage.js:109
+#: settings/behaviorPage.js:110
 msgid "Volume change speed when Ctrl pressed"
 msgstr ""
 
-#: settings/behaviorPage.js:113
+#: settings/behaviorPage.js:114
 msgid "Scroll to change sound volume"
 msgstr ""
 
-#: settings/behaviorPage.js:132
+#: settings/behaviorPage.js:133
 msgid "Panel"
 msgstr ""
 
-#: settings/behaviorPage.js:133
+#: settings/behaviorPage.js:134
+msgid "Require click to activate the panel menu buttons"
+msgstr ""
+
+#: settings/behaviorPage.js:135
 msgid "Middle click to mute/unmute sound"
 msgstr ""
 
-#: settings/behaviorPage.js:134
+#: settings/behaviorPage.js:136
 msgid "Press middle button on empty space of the panel to toggle mute"
 msgstr ""
 
-#: settings/behaviorPage.js:144
+#: settings/behaviorPage.js:146
 msgid "None"
 msgstr ""
 
-#: settings/behaviorPage.js:145
+#: settings/behaviorPage.js:147
 msgid "Left Button"
 msgstr ""
 
-#: settings/behaviorPage.js:146
+#: settings/behaviorPage.js:148
 msgid "Right Button"
 msgstr ""
 
-#: settings/behaviorPage.js:147
+#: settings/behaviorPage.js:149
 msgid "Middle Button"
 msgstr ""
 
-#: settings/behaviorPage.js:150
+#: settings/behaviorPage.js:152
 msgid "Activities"
 msgstr ""
 
-#: settings/behaviorPage.js:152
+#: settings/behaviorPage.js:154
 msgid "Click Activities to show Apps screen"
 msgstr ""
 
-#: settings/customizePage.js:14 ui/appButtonMenu.js:154
+#: settings/customizePage.js:14 ui/appButtonMenu.js:155
 msgid "Customize"
 msgstr ""
 
@@ -224,7 +232,7 @@ msgstr ""
 msgid "App Buttons"
 msgstr ""
 
-#: settings/customizePage.js:153 ui/appButtonMenu.js:185
+#: settings/customizePage.js:153 ui/appButtonMenu.js:186
 msgid "Icon Size"
 msgstr ""
 
@@ -365,14 +373,14 @@ msgid ""
 "Hide the Dash from Overview and prevent it from rerendering behind the scene"
 msgstr ""
 
-#: ui/appButtonMenu.js:124
+#: ui/appButtonMenu.js:125
 msgid "Pin"
 msgstr ""
 
-#: ui/appButtonMenu.js:164
+#: ui/appButtonMenu.js:165
 msgid "Activation Behavior"
 msgstr ""
 
-#: ui/appButtonMenu.js:194
+#: ui/appButtonMenu.js:195
 msgid "Reset to default"
 msgstr ""
