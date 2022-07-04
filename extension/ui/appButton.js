@@ -192,8 +192,7 @@ var AppButton = GObject.registerClass(
         _createMenu() {
             this._menu = new AppButtonMenu(this, this._settings);
 
-            this._contextMenuManager = new PopupMenuManager();
-            this._contextMenuManager.addMenu(this._menu);
+            Main.panel.menuManager.addMenu(this._menu);
         }
 
         _createConnections() {
@@ -386,9 +385,9 @@ var AppButton = GObject.registerClass(
             this.appId = null;
 
             // destroy context menu
+            Main.panel.menuManager.removeMenu(this._menu);
             this._menu?.close(false);
             this._menu = null;
-            this._contextMenuManager = null;
 
             // destroy indicator
             this._indicator?.destroy();
@@ -406,8 +405,8 @@ var AppButton = GObject.registerClass(
             this._notificationHandler?.destroy();
             this._notificationHandler = null;
 
-            // destroy config override when taskbar is destroying
-            if (!this._getTaskbar() && AppButton._configOverride) {
+            // destroy static variables when taskbar is destroying
+            if (!this._getTaskbar()) {
                 AppButton._configOverride = null;
             }
         }
@@ -539,7 +538,7 @@ var AppButton = GObject.registerClass(
 
             // handle secondary button clicks to show the context menu
             if (button === Clutter.BUTTON_SECONDARY) {
-                this._openMenu();
+                this._menu?.open();
                 return;
             }
 
@@ -701,11 +700,6 @@ var AppButton = GObject.registerClass(
             if (windowIndex != nextWindowIndex) {
                 Main.activateWindow(windows[nextWindowIndex]);
             }
-        }
-
-        _openMenu() {
-            this._menu.open();
-            this._contextMenuManager.ignoreRelease();
         }
 
         _handleAppState() {

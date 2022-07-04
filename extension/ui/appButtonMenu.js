@@ -1,4 +1,5 @@
 const Main = imports.ui.main;
+const BoxPointer = imports.ui.boxpointer;
 const { Clutter, St, GLib } = imports.gi;
 const { AppMenu } = imports.ui.appMenu;
 const { Slider } = imports.ui.slider;
@@ -31,7 +32,7 @@ var AppButtonMenu = class extends AppMenu {
         this.actor.add_style_class_name('panel-menu aggregate-menu');
 
         // shrink menu width as much as possible
-        this.actor.style='max-width: 0';
+        this.actor.style = 'max-width: 0';
 
         this._fixMenuSeparatorFontSize(this._openWindowsHeader);
     }
@@ -56,7 +57,7 @@ var AppButtonMenu = class extends AppMenu {
         this._setPosition();
         
         // animate open by default
-        super.open(true);
+        super.open(BoxPointer.PopupAnimation.FULL);
     }
 
     destroy() {
