@@ -5,7 +5,7 @@
     "settings-schema": "org.gnome.shell.extensions.rocketbar",
     "gettext-domain": "rocketbar",
     "url": "https://github.com/linux-is-awesome/gnome_extension_rocketbar",
-    "version": 2,
+    "version": 3,
     "shell-version": [
         "42"
     ]
