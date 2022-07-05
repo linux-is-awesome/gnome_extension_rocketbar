@@ -7,6 +7,7 @@ const DND = imports.ui.dnd;
 // custom modules import
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
+const { PositionProvider } = Me.imports.utils.positionProvider;
 const { AppButton } = Me.imports.ui.appButton;
 const { Connections } = Me.imports.utils.connections;
 const { Favorites } = Me.imports.utils.favorites;
@@ -135,13 +136,14 @@ var Taskbar = GObject.registerClass(
             });
 
             this.add_actor(this._layout);
+
+            this._positionProvider = new PositionProvider(this);
         }
 
         _createConnections() {
             
             // internal connections
             this.connect('destroy', () => this._destroy());
-            this.connect('notify::position', () => this._handlePosition());
             
             // create external connections
             this._connections = new Connections();
@@ -166,7 +168,11 @@ var Taskbar = GObject.registerClass(
             if (oldConfig.position !== this._config.position ||
                     oldConfig.positionOffset !== this._config.positionOffset ||
                         (this._config.preservePosition && !oldConfig.preservePosition)) {
-                this._addToPanel();
+                this._setParent();
+            }
+
+            if (this._config.preservePosition !== oldConfig.preservePosition) {
+                this._positionProvider.togglePositionLock(this._config.preservePosition, () => this._rerender());
             }
 
             if (this._config.showFavorites && !this._favorites) {
@@ -197,58 +203,11 @@ var Taskbar = GObject.registerClass(
             };
         }
 
-        _handlePosition() {
-
-            if (!this._config.preservePosition) {
-                return;
-            }
-
-            const parent = this.mapped ? this.get_parent() : null;
-
-            if (!parent || parent.get_child_at_index(this._config.positionOffset) === this) {
-                return;
-            }
-
-            this._addToPanel();
-
-            this._rerender();
-        }
-
-        _addToPanel() {
+        _setParent() {
 
             this._stopRerender();
 
-            const parent = this.mapped ? this.get_parent() : null;
-            let targetParent = null;
-
-            switch (this._config.position) {
-                case 'left':
-                    targetParent = Main.panel._leftBox;
-                    break;
-                case 'center':
-                    targetParent = Main.panel._centerBox;
-                    break;
-                case 'right':
-                    targetParent = Main.panel._rightBox;
-                    break;
-            }
-
-            if (!targetParent) {
-                return;
-            }
-
-            if (parent && parent === targetParent) {
-                if (targetParent.get_n_children() > this._config.positionOffset) {
-                    targetParent.set_child_at_index(this, this._config.positionOffset);
-                }
-                return;
-            }
-
-            if (parent) {
-                parent.remove_actor(this);
-            }
-
-            targetParent.insert_child_at_index(this, this._config.positionOffset);
+            this._positionProvider.setPosition(this._config.position, this._config.positionOffset);
         }
 
         //#region taskbar render
@@ -603,6 +562,9 @@ var Taskbar = GObject.registerClass(
             // destroy favorites
             this._favorites?.destroy();
 
+            // destroy position provider
+            this._positionProvider.destroy();
+    
             // remove connections
             this._connections.destroy();
 
