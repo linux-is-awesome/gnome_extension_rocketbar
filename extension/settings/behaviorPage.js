@@ -132,8 +132,8 @@ var BehaviorPage = GObject.registerClass(
     
             this.addGroup(_('Panel'), [
                 this.createSwitch(_('Require click to activate the panel menu buttons'), 'panel-menu-require-click'),
-                this.createSwitch(_('Middle click to mute/unmute sound'), 'panel-enable-middle-button',
-                                  _('Press middle button on empty space of the panel to toggle mute')),
+                this.createSwitch(_('Middle click to toggle sound mute'), 'panel-enable-middle-button',
+                                  _('Press middle button on an empty space of the panel')),
                 scrollSwitch,
                 volumeSpeedPicklist,
                 volumeSpeedCtrlPicklist
