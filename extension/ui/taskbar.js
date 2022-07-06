@@ -517,7 +517,11 @@ var Taskbar = GObject.registerClass(
                 global.workspace_manager.get_active_workspace().list_windows() :
                 // get all windows
                 global.get_window_actors()
-            );            
+            );
+
+            if (!windows.length) {
+                return result;
+            }
 
             for (let i = 0, l = windows.length; i < l; ++i) {
 

@@ -926,6 +926,10 @@ var AppButton = GObject.registerClass(
             const workspaceIndex = global.workspace_manager.get_active_workspace_index();
             const appWindows = this.app.get_windows();
 
+            if (!appWindows.length) {
+                return result;
+            }
+
             for (let i = 0, l = appWindows.length; i < l; ++i) {
 
                 const appWindow = appWindows[i];
