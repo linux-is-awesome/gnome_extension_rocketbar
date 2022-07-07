@@ -111,5 +111,5 @@ git checkout <name of the translation branch>
 [Dash to Dock](https://github.com/micheleg/dash-to-dock) |
 [Overview Clicking](https://github.com/mechtifs/overview-clicking) |
 [Volume Scroller](https://github.com/trflynn89/gnome-shell-volume-scroller) |
-[Fullscreen Hot Corner](https://github.com/soal/gnome-shell-fullscreen-hot-corner)
+[Fullscreen Hot Corner](https://github.com/soal/gnome-shell-fullscreen-hot-corner) |
 [Just Perfection](https://gitlab.gnome.org/jrahmatzadeh/just-perfection)
