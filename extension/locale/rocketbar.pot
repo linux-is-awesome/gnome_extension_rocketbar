@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-07-05 10:38+0300\n"
+"POT-Creation-Date: 2022-07-08 02:13+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -67,11 +67,11 @@ msgstr ""
 msgid "Enable Fullscreen Hot Corner"
 msgstr ""
 
-#: settings/behaviorPage.js:49 ui/appButtonMenu.js:172
+#: settings/behaviorPage.js:49 ui/appButtonMenu.js:217
 msgid "New window"
 msgstr ""
 
-#: settings/behaviorPage.js:50 ui/appButtonMenu.js:176
+#: settings/behaviorPage.js:50 ui/appButtonMenu.js:221
 msgid "Move windows"
 msgstr ""
 
@@ -183,7 +183,7 @@ msgstr ""
 msgid "Click Activities to show Apps screen"
 msgstr ""
 
-#: settings/customizePage.js:14 ui/appButtonMenu.js:155
+#: settings/customizePage.js:14 ui/appButtonMenu.js:48
 msgid "Customize"
 msgstr ""
 
@@ -232,7 +232,7 @@ msgstr ""
 msgid "App Buttons"
 msgstr ""
 
-#: settings/customizePage.js:153 ui/appButtonMenu.js:186
+#: settings/customizePage.js:153 ui/appButtonMenu.js:261
 msgid "Icon Size"
 msgstr ""
 
@@ -373,14 +373,26 @@ msgid ""
 "Hide the Dash from Overview and prevent it from rerendering behind the scene"
 msgstr ""
 
-#: ui/appButtonMenu.js:125
+#: ui/appButtonMenu.js:164
 msgid "Pin"
 msgstr ""
 
-#: ui/appButtonMenu.js:165
+#: ui/appButtonMenu.js:210
 msgid "Activation Behavior"
 msgstr ""
 
-#: ui/appButtonMenu.js:195
+#: ui/appButtonMenu.js:233
+msgid "Icon"
+msgstr ""
+
+#: ui/appButtonMenu.js:240
+msgid "Import"
+msgstr ""
+
+#: ui/appButtonMenu.js:251
 msgid "Reset to default"
+msgstr ""
+
+#: ui/appButtonMenu.js:271
+msgid "Reset all to default"
 msgstr ""

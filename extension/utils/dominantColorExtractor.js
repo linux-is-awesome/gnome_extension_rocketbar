@@ -8,8 +8,8 @@ const DOMINANT_COLOR_ICON_SIZE = 64;
 */
 var DominantColorExtractor = class DominantColorExtractor {
 
-    constructor(app) {
-        this._app = app;
+    constructor(icon) {
+        this._icon = icon;
     }
 
     /**
@@ -103,14 +103,13 @@ var DominantColorExtractor = class DominantColorExtractor {
      * Try to get the pixel buffer for the current icon, if not fail gracefully
      */
     _getIconPixBuf() {
-        let iconTexture = this._app.create_icon_texture(16);
 
         // Unable to load the icon texture, use fallback
-        if (iconTexture instanceof St.Icon === false) {
+        if (!this._icon || this._icon instanceof St.Icon === false) {
             return null;
         }
 
-        iconTexture = iconTexture.get_gicon();
+        const iconTexture = this._icon.get_gicon();
 
         // Unable to load the icon texture, use fallback
         if (iconTexture === null) {

@@ -1,6 +1,6 @@
 const Main = imports.ui.main;
 const BoxPointer = imports.ui.boxpointer;
-const { Clutter, St, GLib } = imports.gi;
+const { Clutter, St, GLib, Meta } = imports.gi;
 const { AppMenu } = imports.ui.appMenu;
 const { Slider } = imports.ui.slider;
 const { PopupMenuSection,
@@ -35,6 +35,22 @@ var AppButtonMenu = class extends AppMenu {
         this.actor.style = 'max-width: 0';
 
         this._fixMenuSeparatorFontSize(this._openWindowsHeader);
+
+        // Don't allow customizations for app buttons without valid app Id
+        // For example: OnlyOffice creates a separete window called DesktopEditors
+        //              This window always has some random app Id
+        //              and there is no simple way to workaround that weird behavior
+        if (!this._isCustomizeSectionVisible()) {
+            return;
+        }
+
+        // add Customize section to the app menu
+        this._customizeSection = new PopupSubMenuMenuItem(_('Customize'));
+        this.addMenuItem(this._customizeSection);
+        this.addMenuItem(new PopupSeparatorMenuItem());
+
+        // move Quit item to the end of the app menu
+        this.moveMenuItem(this._quitItem, this.numMenuItems);
     }
 
     open() {
@@ -45,9 +61,15 @@ var AppButtonMenu = class extends AppMenu {
 
             this.setApp(this._appButton.app);
 
-            this._addCustomizeSection();
-
             Main.uiGroup.add_actor(this.actor);
+
+            // populate Customize section with a delay
+            if (this._customizeSection) {
+                this._populateCustomizeSectionLaterId = Meta.later_add(Meta.LaterType.BEFORE_REDRAW, () => {
+                    this._populateCustomizeSection();
+                    return GLib.SOURCE_REMOVE;
+                });
+            }
 
         } else {
             this._handleSettings();
@@ -62,6 +84,11 @@ var AppButtonMenu = class extends AppMenu {
 
     destroy() {
         super.destroy();
+
+        if (this._populateCustomizeSectionLaterId) {
+            Meta.later_remove(this._populateCustomizeSectionLaterId);
+        }
+
         this._stopApplyConfigOverride();
     }
 
@@ -107,6 +134,18 @@ var AppButtonMenu = class extends AppMenu {
         );
     }
 
+    _onKeyPress(actor, event) {
+
+        let key = event?.get_key_symbol();
+
+        // Space and Return keys are reserved for the app button
+        if (key === Clutter.KEY_space || key === Clutter.KEY_Return) {
+            return Clutter.EVENT_PROPAGATE;
+        }
+
+        super._onKeyPress(actor, event);
+    }
+
     _updateFavoriteItem() {
         super._updateFavoriteItem();
 
@@ -150,9 +189,15 @@ var AppButtonMenu = class extends AppMenu {
         this._app = originalApp;
     }
 
-    _addCustomizeSection() {
+    _isCustomizeSectionVisible() {
+        return this._appSystem.lookup_app(this._appButton.appId) !== null;
+    }
 
-        const customizeSubMenu = new PopupSubMenuMenuItem(_('Customize'));
+    _populateCustomizeSection() {
+
+        if (!this._customizeSection) {
+            return;
+        }
 
         const separatorStyle = 'margin-top: 10px;';
 
@@ -177,29 +222,58 @@ var AppButtonMenu = class extends AppMenu {
             () => this._setActivationBehaviorValue('move_windows')
         );
 
-        this._setActivationBehaviorValue();
+        this._customizeSection.menu.addMenuItem(this._activateBehaviorSection);
 
-        customizeSubMenu.menu.addMenuItem(this._activateBehaviorSection);
+        this._setActivationBehaviorValue();
         
+        // add Icon customization section
+
+        this._customIconSection = new PopupMenuSection();
+
+        const customIconTitle = new PopupSeparatorMenuItem(_('Icon'));
+        this._fixMenuSeparatorFontSize(customIconTitle);
+        customIconTitle.style += separatorStyle;
+
+        this._customIconSection.addMenuItem(customIconTitle);
+
+        this._customIconSetItem = this._customIconSection.addAction(
+            _('Import'),
+            () => this._importIconFromClipboard().then(iconPath => {
+            
+                if (!iconPath) {
+                    return;
+                }
+
+                this._setCustomIcon(iconPath);
+            })
+        );
+        this._customIconResetItem = this._customIconSection.addAction(
+            _('Reset to default'),
+            () => this._setCustomIcon(null)
+        );
+
+        this._customizeSection.menu.addMenuItem(this._customIconSection);
+
+        this._updateCustomIconSection();
+
         // add Icon Size customization item
 
         const iconSizeTitle = new PopupSeparatorMenuItem(_('Icon Size'));
         this._fixMenuSeparatorFontSize(iconSizeTitle);
         iconSizeTitle.style += separatorStyle;
 
-        customizeSubMenu.menu.addMenuItem(iconSizeTitle);
-        customizeSubMenu.menu.addMenuItem(this._createIconSizeSliderMenuItem());
+        this._customizeSection.menu.addMenuItem(iconSizeTitle);
+        this._customizeSection.menu.addMenuItem(this._createIconSizeSliderMenuItem());
 
         // add Reset item
-        customizeSubMenu.menu.addMenuItem(new PopupSeparatorMenuItem());
-        customizeSubMenu.menu.addAction(_('Reset to default'), () => this._appButton.resetConfigOverride());
+        this._customizeSection.menu.addMenuItem(new PopupSeparatorMenuItem());
+        this._customizeSection.menu.addAction(
+            _('Reset all to default'),
+            () => this._appButton.resetConfigOverride()
+        );
 
-        // add Customize sub menu to the app menu
-        this.addMenuItem(customizeSubMenu);
-        this.addMenuItem(new PopupSeparatorMenuItem());
-
-        // move Quit item to the end of the app menu
-        this.moveMenuItem(this._quitItem, this.numMenuItems);
+        // remove later id
+        this._populateCustomizeSectionLaterId = null;
     }
 
     _fixMenuSeparatorFontSize(separator) {
@@ -208,6 +282,10 @@ var AppButtonMenu = class extends AppMenu {
 
     _updateCustomizeSection() {
 
+        if (!this._customizeSection || this._populateCustomizeSectionLaterId) {
+            return;
+        }
+
         this._setIconSizeSliderValue();
 
         this._setIconSizeSliderOverdrive();
@@ -215,6 +293,8 @@ var AppButtonMenu = class extends AppMenu {
         this._activateBehaviorSection.box.visible = this._config.isolateWorkspaces;
 
         this._setActivationBehaviorValue();
+
+        this._updateCustomIconSection();
     }
 
     _setActivationBehaviorValue(value) {
@@ -323,13 +403,61 @@ var AppButtonMenu = class extends AppMenu {
         return [sliderMaxValue, iconSizeMin];
     }
 
+    _updateCustomIconSection() {
+
+        // hide this section by default if no custom icon selected
+        this._customIconSection.box.visible = !!this._config.configOverride.customIconPath;
+        this._customIconResetItem.visible = this._customIconSection.box.visible;
+
+        this._customIconSetItem.hide();
+
+        // check if there is a valid icon in the clipboard
+        this._importIconFromClipboard().then(iconPath => {
+
+            if (!this.isOpen || !iconPath ||
+                    // no reason to import the same icon twice
+                    iconPath === this._config.configOverride.customIconPath) {
+                return;
+            }
+
+            this._customIconSection.box.show();
+            this._customIconSetItem.show();
+
+            // replace label of the menu item
+
+            if (this._customIconSetItem.label.text.includes(':')) {
+                this._customIconSetItem.label.text = this._customIconSetItem.label.text.split(':')[0];
+            }
+
+            const iconPathParts = iconPath.split('/');
+
+            this._customIconSetItem.label.text += ': ' + iconPathParts[iconPathParts.length - 1];
+
+        });
+    }
+
+    _importIconFromClipboard() {
+        return new Promise(resolve => St.Clipboard.get_default().get_text(
+            St.ClipboardType.CLIPBOARD,
+            (clipboard, iconPath) => resolve(this._appButton.isValidCustomIcon(iconPath) ? iconPath : null)
+        ));
+    }
+
+    _setCustomIcon(iconPath) {
+
+        this._config.configOverride.customIconPath = iconPath;
+
+        this._applyConfigOverride();
+    }
+
     _applyConfigOverride() {
         
         const oldConfigOverride = this._appButton.getConfigOverride();
 
         // no need to update the config override
         if (this._config.configOverride.iconSize === oldConfigOverride.iconSize &&
-                this._config.configOverride.activateRunningBehavior === oldConfigOverride.activateRunningBehavior) {
+                this._config.configOverride.activateRunningBehavior === oldConfigOverride.activateRunningBehavior &&
+                this._config.configOverride.customIconPath === oldConfigOverride.customIconPath) {
             return;
         }
 
@@ -350,18 +478,6 @@ var AppButtonMenu = class extends AppMenu {
             GLib.source_remove(this._applyConfigOverrideTimeout);
             this._applyConfigOverrideTimeout = null;
         }
-    }
-
-    _onKeyPress(actor, event) {
-
-        let key = event?.get_key_symbol();
-
-        // Space and Return keys are reserved for the app button
-        if (key === Clutter.KEY_space || key === Clutter.KEY_Return) {
-            return Clutter.EVENT_PROPAGATE;
-        }
-
-        super._onKeyPress(actor, event);
     }
 
     //#endregion private methods

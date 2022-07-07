@@ -1,6 +1,6 @@
 //#region imports
 
-const { Clutter, GLib, GObject, Meta, Shell, St } = imports.gi;
+const { Clutter, GLib, Gio, GObject, Meta, Shell, St } = imports.gi;
 const { PopupMenuManager } = imports.ui.popupMenu;
 const Main = imports.ui.main;
 const DND = imports.ui.dnd;
@@ -85,7 +85,8 @@ var AppButton = GObject.registerClass(
         getConfigOverride() {
             return {
                 iconSize: this._config.iconTextureSize,
-                activateRunningBehavior: this._config.activateRunningBehavior
+                activateRunningBehavior: this._config.activateRunningBehavior,
+                customIconPath: this._config.customIconPath
             };
         }
 
@@ -105,7 +106,8 @@ var AppButton = GObject.registerClass(
                     configOverride.iconSize - this._config.iconSize :
                     0
                 ),
-                activateRunningBehavior: configOverride.activateRunningBehavior
+                activateRunningBehavior: configOverride.activateRunningBehavior,
+                customIconPath: configOverride.customIconPath
             };
 
             this._saveConfigOverride();
@@ -121,6 +123,10 @@ var AppButton = GObject.registerClass(
             delete AppButton._configOverride[this.appId];
 
             this._saveConfigOverride();
+        }
+
+        isValidCustomIcon(iconPath) {
+            return this._loadCustomIcon(iconPath) != null;
         }
 
         //#endregion public methods
@@ -252,8 +258,10 @@ var AppButton = GObject.registerClass(
 
             this._setConfig();
 
-            // set icon size
-            if (this._config.iconTextureSize !== oldConfig.iconTextureSize) {
+            // set icon
+            if (this._config.customIconPath !== oldConfig.customIconPath) {
+                this._handleIconTheme();
+            } else if (this._config.iconTextureSize !== oldConfig.iconTextureSize) {
                 this._updateIcon();
             }
 
@@ -358,6 +366,11 @@ var AppButton = GObject.registerClass(
                 // visual customization settings
                 iconSize: iconSize,
                 iconTextureSize: iconTextureSize,
+                customIconPath: (
+                    configOverride && configOverride.customIconPath ?
+                    configOverride.customIconPath :
+                    null
+                ),
                 iconPadding: this._settings.get_int('appbutton-icon-padding'),
                 verticalMargin: this._settings.get_int('appbutton-vertical-margin'),
                 roundness: this._settings.get_int('appbutton-roundness'),
@@ -757,6 +770,13 @@ var AppButton = GObject.registerClass(
 
         _updateIcon() {
 
+            const oldIcon = this._appIcon.get_child();
+            
+            // make sure that the child is destroyed
+            if (oldIcon) {
+                oldIcon.destroy();
+            }
+
             this._appIcon.set_child(this._createAppIconTexture());
 
             this._updateDominantColor();
@@ -768,7 +788,7 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
-            this.dominantColor = new DominantColorExtractor(this.app).getColor();
+            this.dominantColor = new DominantColorExtractor(this._appIcon.get_child()).getColor();
 
             this._updateStyle();
 
@@ -776,6 +796,25 @@ var AppButton = GObject.registerClass(
         }
 
         _createAppIconTexture(scale) {
+
+            const customIcon = this._loadCustomIcon(this._config.customIconPath); 
+
+            if (customIcon) {
+
+                const result = new St.Icon({
+                    icon_size: this._config.iconTextureSize * (scale || 1)
+                });
+
+                result.set_gicon(customIcon);
+
+                return result;
+            } else if (this._config.customIconPath) {
+    
+                // avoid loading the broken icon again
+                this._config.customIconPath = null;
+    
+            }
+
             return this.app.create_icon_texture(this._config.iconTextureSize * (scale || 1))
         }
 
@@ -1052,6 +1091,33 @@ var AppButton = GObject.registerClass(
             const taskbar = this.get_parent()?.get_parent();
 
             return taskbar && !taskbar.isDestroying ? taskbar  : null;
+        }
+
+        _loadCustomIcon(iconPath) {
+
+            if (!iconPath || !iconPath.length) {
+                return null;
+            }
+
+            // a simple validation to check that the iconPath looks like a real path
+            // NOTE: it's not the safest way to validate the icon, but it's fast
+            if (!iconPath.startsWith('/') || !(
+                // only .png and .svg files supported for now
+                iconPath.endsWith('.png') ||
+                iconPath.endsWith('.svg')
+            )) {
+                return null;
+            }
+
+            // check that the path exists
+            const iconFile = Gio.File.new_for_path(iconPath);
+
+            if (!iconFile.query_exists(null)) {
+                return null;
+            }
+
+            // create GIcon if everything looks fine
+            return Gio.Icon.new_for_string(iconFile.get_path());
         }
 
         //#endregion private methods
