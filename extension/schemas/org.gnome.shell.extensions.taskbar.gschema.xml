@@ -138,7 +138,7 @@
             <summary>Scroll to cycle app windows</summary>
         </key>
         <key type="b" name="appbutton-menu-require-click">
-            <default>false</default>
+            <default>true</default>
             <summary>Require click to open context menus for apps in the taskbar</summary>
         </key>
         <key type="s" name="appbutton-running-app-activate-behavior">
