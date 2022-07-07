@@ -112,3 +112,4 @@ git checkout <name of the translation branch>
 [Overview Clicking](https://github.com/mechtifs/overview-clicking) |
 [Volume Scroller](https://github.com/trflynn89/gnome-shell-volume-scroller) |
 [Fullscreen Hot Corner](https://github.com/soal/gnome-shell-fullscreen-hot-corner)
+[Just Perfection](https://gitlab.gnome.org/jrahmatzadeh/just-perfection)

@@ -37,6 +37,7 @@ var AboutPage = GObject.registerClass(
                 this.createLink('Overview Clicking', 'https://github.com/mechtifs/overview-clicking'),
                 this.createLink('Volume Scroller', 'https://github.com/trflynn89/gnome-shell-volume-scroller'),
                 this.createLink('Fullscreen Hot Corner', 'https://github.com/soal/gnome-shell-fullscreen-hot-corner'),
+                this.createLink('Just Perfection', 'https://gitlab.gnome.org/jrahmatzadeh/just-perfection')
             ]);
         }
 
