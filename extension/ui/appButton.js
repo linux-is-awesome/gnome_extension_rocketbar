@@ -940,7 +940,7 @@ var AppButton = GObject.registerClass(
             rect.x += width / 2;
 
             // when buttons on the top
-            if (rect.y < 1) {
+            if (rect.y < 100) {
                 rect.y += height;
             }
 

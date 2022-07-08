@@ -214,7 +214,7 @@ var AppButtonTooltip = class {
         const yOffset = 3;
 
         // if app button is on top of the screen
-        if (y < 1) {
+        if (y < 100) {
             y = y + appButtonHeight + yOffset;
         } else {
             y = y - tooltipHeight - yOffset;
