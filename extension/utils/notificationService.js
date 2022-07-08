@@ -184,7 +184,7 @@ class NotificationService {
     }
 }
 
-var NotificationHandler = class NotificationHandler {
+var NotificationHandler = class {
 
     // static instance of NotificationService
     static _service = null;

@@ -6,7 +6,7 @@ const DOMINANT_COLOR_ICON_SIZE = 64;
 * Credit: Dash to Dock
 * https://github.com/micheleg/dash-to-dock
 */
-var DominantColorExtractor = class DominantColorExtractor {
+var DominantColorExtractor = class {
 
     constructor(icon) {
         this._icon = icon;

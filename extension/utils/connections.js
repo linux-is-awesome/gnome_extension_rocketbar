@@ -1,4 +1,4 @@
-var Connections = class Connections {
+var Connections = class {
 
     constructor() {
         this._connections = new Map();

@@ -4,7 +4,7 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { Connections } = Me.imports.utils.connections;
 
-var Favorites = class Favorites {
+var Favorites = class {
 
     constructor(callback) {
         this._callback = callback;
