@@ -51,6 +51,8 @@ var AppButtonMenu = class extends AppMenu {
 
         // move Quit item to the end of the app menu
         this.moveMenuItem(this._quitItem, this.numMenuItems);
+
+        this._updateDetailsVisibility();
     }
 
     open() {
@@ -187,6 +189,18 @@ var AppButtonMenu = class extends AppMenu {
         super._updateWindowsSection();
 
         this._app = originalApp;
+    }
+
+    _updateDetailsVisibility() {
+
+        // hide the item for apps without valid app Id
+        // For example: OpenOffice DesktopEditors
+        if (!this._customizeSection) {
+            this._detailsItem.visible = false;
+            return;
+        }
+
+        super._updateDetailsVisibility();
     }
 
     _isCustomizeSectionVisible() {
