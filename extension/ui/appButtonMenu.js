@@ -40,7 +40,10 @@ class SubMenu {
 
         this._laterId = Meta.later_add(Meta.LaterType.BEFORE_REDRAW, () => {
 
-            callback();
+            // edge case validation
+            if (this._laterId) {
+                callback();
+            }
 
             this._laterId = null;
 
@@ -51,6 +54,7 @@ class SubMenu {
     destroy() {
         if (this._laterId) {
             Meta.later_remove(this._laterId);
+            this._laterId = null;
         }
     }
 
@@ -105,6 +109,8 @@ var AppButtonMenu = class extends AppMenu {
             this._handleSettings();
         }
 
+        this._updateSountControlSection();
+
         // set correct position 
         this._setPosition();
         
@@ -114,6 +120,8 @@ var AppButtonMenu = class extends AppMenu {
 
     destroy() {
         super.destroy();
+
+        this._soundControlSection.destroy();
 
         this._customizeSection?.destroy();
 
@@ -133,10 +141,6 @@ var AppButtonMenu = class extends AppMenu {
 
         this._soundControlSection.addMenuItem(this._soundOutputSliderItem);
         this._soundControlSection.addMenuItem(this._soundInputSliderItem);
-
-        this._soundOutputSliderItem.hide();
-        this._soundInputSliderItem.hide();
-        this._soundControlSection.actor.hide();
     }
 
     _addCustomizeSection() {
@@ -282,6 +286,45 @@ var AppButtonMenu = class extends AppMenu {
         menuItem.add_child(slider);
 
         return [menuItem, slider];
+    }
+
+    _updateSountControlSection() {
+
+        this._soundControlSection.actor.hide();
+
+        if (!this._appButton.soundVolumeControl) {            
+            return;
+        }
+
+        if (this._appButton.soundVolumeControl.hasOutput()) {
+            this._soundControlSection.actor.show();
+            this._soundOutputSliderItem.show();
+        } else {
+            this._soundOutputSliderItem.hide();
+        }
+
+        if (this._appButton.soundVolumeControl.hasInput()) {
+            this._soundControlSection.actor.show();
+            this._soundInputSliderItem.show();
+        } else {
+            this._soundInputSliderItem.hide();
+        }
+
+        if (!this._soundControlSection.actor.visible) {
+            return;
+        }
+
+        this._soundControlSection.addLater(() => {
+
+            if (this._soundOutputSliderItem.visible) {
+                this._soundOutputSlider.value = this._appButton.soundVolumeControl.getOutputVolume();
+            }
+
+            if (this._soundInputSliderItem.visible) {
+                this._soundInputSlider.value = this._appButton.soundVolumeControl.getInputVolume();
+            }
+
+        });
     }
 
     _populateCustomizeSection() {
