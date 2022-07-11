@@ -1,12 +1,17 @@
 const { Gio, Gvc, GLib } = imports.gi;
 const Main = imports.ui.main;
 const Volume = imports.ui.status.volume;
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
+const { Connections } = Me.imports.utils.connections;
 
 class SoundStream {
 
     constructor(stream) {
 
         this._stream = stream;
+
+        this.id = this._stream?.id;
 
         this._volumeMax = this._stream?.get_base_volume();
     }
@@ -97,7 +102,11 @@ class SoundStream {
     }
 
     getName() {
-        return this._stream?.get_port()?.human_port;
+        return (
+            this._stream?.get_port() ?
+            this._stream?.get_port()?.human_port :
+            this._stream?.get_name()
+        );
     }
 
 }
@@ -156,7 +165,7 @@ class SoundVolumeControlBase {
         }
     }
 
-    _showOSD(stream, isMuted) {
+    _showOSD(stream, isMuted, name) {
 
         if (!stream) {
             return;
@@ -165,7 +174,7 @@ class SoundVolumeControlBase {
         const [volumeLevel, volumeIcon] = stream.getVolumeWithIcon(isMuted);
 
         // pass -1 as monitor index to show on all monitors
-        Main.osdWindowManager.show(-1, volumeIcon, stream.getName(), volumeLevel);
+        Main.osdWindowManager.show(-1, volumeIcon, name || stream.getName(), volumeLevel);
     }
 
     _notifyVolumeChange(stream) {
@@ -204,23 +213,23 @@ var SoundVolumeControl = class extends SoundVolumeControlBase {
     constructor() {
         super();
 
-        this._mixerControl = Volume.getMixerControl();
-
         this._stream = null;
 
-        this._handleMixerStream();
+        this._connections = new Connections();
 
-        this._mixerStreamHandler = this._mixerControl.connect(
-            'default-sink-changed',
-            (mixer, streamId) => this._handleMixerStream(streamId)
+        this._connections.add(
+            Volume.getMixerControl(), 'default-sink-changed',
+            (mixerControl, streamId) => this._handleActiveStream(mixerControl, streamId)
         );
+
+        this._handleActiveStream(Volume.getMixerControl());
     }
 
     destroy() {
 
         super.destroy();
 
-        this._mixerControl.disconnect(this._mixerStreamHandler);
+        this._connections.destroy();
     }
 
     addVolume(volume) {
@@ -231,22 +240,324 @@ var SoundVolumeControl = class extends SoundVolumeControlBase {
         this._toggleMute(this._stream, true);
     }
 
-    _handleMixerStream(streamId) {
+    _handleActiveStream(mixerControl, streamId) {
         this._stream = new SoundStream(
             streamId ?
-            this._mixerControl.lookup_stream_id(streamId) :
-            this._mixerControl.get_default_sink()
+            mixerControl.lookup_stream_id(streamId) :
+            mixerControl.get_default_sink()
         );
     }
 
 }
 
-class AppSoundVolumeService {
+class AppSoundStream extends SoundStream {
 
+    static isValidStream(stream) {
+        return stream && stream.id && !stream.is_event_stream && (
+            stream instanceof Gvc.MixerSinkInput ||
+            stream instanceof Gvc.MixerSourceOutput
+        );
+    }
+
+    constructor(stream) {
+        super(stream);
+
+        this.name = this._stream?.name;
+
+        this._listeners = []; // [AppSoundVolumeControl...]
+    }
+
+    addListener(listener) {
+
+        if (!this._listeners || (
+                this._listeners.length &&
+                this._listeners.indexOf(listener) >= 0
+        )) {
+            return;
+        }
+
+        this._listeners.push(listener);
+    }
+
+    removeListener(listener) {
+
+        if (!this._listeners || !this._listeners.length) {
+            return;
+        }
+
+        const index = this._listeners.indexOf(listener);
+
+        if (index < 0) {
+            return;
+        }
+
+        this._listeners.splice(index, 1);
+
+    }
+
+    isInputStream() {
+        return (
+            this._stream &&
+            this._stream instanceof Gvc.MixerSourceOutput
+        );
+    }
+
+    destroy() {
+
+        this._stream = null;
+
+        if (this._listeners.length) {
+            for (let listener of this._listeners) {
+                listener.removeStream(this);
+            }
+        }
+
+        this._listeners = null;
+    }
 }
 
-var AppSoundVolumeControl = class {
+class AppSoundVolumeService {
+
+    constructor() {
+        
+        this._controls = [];
+
+        const mixerControl = Volume.getMixerControl();
+        
+        this._createStreams(mixerControl);
+
+        this._connections = new Connections();
+
+        this._connections.add(
+            mixerControl, 'stream-added',
+            (mixerControl, streamId) => this._addStream(mixerControl, streamId)
+        );
+
+        this._connections.add(
+            mixerControl, 'stream-removed',
+            (mixerControl, streamId) => this._addStream(streamId)
+        );
+    }
+
+    destroy() {
+
+        this._streams = null;
+
+        this._connections.destroy();
+    }
+
+    addControl(control) {
+
+        if (!control || this._controls.indexOf(control) >= 0) {
+            return;
+        }
+
+        this._controls.push(control);
+    }
+
+    removeControl(control) {
+
+        if (!control) {
+            return;
+        }
+
+        const controlIndex = this._controls.indexOf(control);
+
+        if (controlIndex >= 0) {
+            this._controls.splice(controlIndex, 1);
+        }
+    }
+
+    _createStreams(mixerControl) {
+
+        this._streams = new Map(); // id => AppSoundStream
+
+        for (let stream of mixerControl.get_streams()) {
+
+            if (!AppSoundStream.isValidStream(stream)) {
+                continue;
+            }
+
+            const appStream = new AppSoundStream(stream);
+
+            if (!appStream.id) {
+                continue;
+            }
+
+            this._streams.set(appStream.id, appStream);
+        }
+    }
+
+    _addStream(mixerControl, streamId) {
+
+        if (!mixerControl || !streamId || !this._streams) {
+            return;
+        }
+
+        if (this._streams.has(streamId)) {
+            return;
+        }
+
+        const stream = mixerControl.lookup_stream_id(streamId);
+
+        if (AppSoundStream.isValidStream(stream)) {
+            this._streams.set(streamId, new AppSoundStream(stream));
+        }
+    }
+
+    _removeStream(streamId) {
+
+        if (!streamId || !this._streams) {
+            return;
+        }
+
+        const appStream = this._streams.get(streamId);
+
+        if (appStream) {
+            appStream.destroy();
+            this._streams.delete(streamId);
+        }
+    }
+}
+
+var AppSoundVolumeControl = class extends SoundVolumeControlBase {
 
     static _service = null;
+
+    constructor(app) {
+        super();
+
+        this._appName = this._getAppName(app);
+
+        this._inputStreams = [];
+
+        this._outputStreams = [];
+    
+        if (!AppSoundVolumeControl._service) {
+            AppSoundVolumeControl._service = new AppSoundVolumeService();
+        }
+
+        AppSoundVolumeControl._service.addControl(this);
+    }
+
+    addStream(appStream) {
+
+        if (!this._inputStreams || !this._outputStreams ||
+                !this._canAcceptStream(appStream)) {
+            return;
+        }
+
+        const streams = (
+            appStream.isInputStream() ?
+            this._inputStreams :
+            this._outputStreams
+        );
+
+        if (streams.length && streams.indexOf(appStream) >= 0) {
+            return;
+        }
+
+        streams.push(appStream);
+
+        appStream.addListener(this);
+    }
+
+    removeStream(appStream) {
+
+        if (!appStream || !this._inputStreams || !this._outputStreams) {
+            return;
+        }
+
+        const streams = (
+            appStream.isInputStream() ?
+            this._inputStreams :
+            this._outputStreams
+        );
+
+        const streamIndex = (
+            streams.length ?
+            streams.indexOf(appStream) :
+            -1
+        );
+
+        if (streamIndex < 0) {
+            return;
+        }
+
+        streams.splice(streamIndex, 1);
+
+        // no need to call appStream.removeListener because this method
+        // will be called by the appStream itself when it gets removed
+    }
+
+    destroy() {
+
+        super.destroy();
+
+        if (this._inputStreams) {
+            for (let appStream of this._inputStreams) {
+                appStream.removeListener(this);
+            }
+            this._inputStreams = null;
+        }
+
+        if (this._outputStreams) {
+            for (let appStream of this._outputStreams) {
+                appStream.removeListener(this);
+            }
+            this._outputStreams = null;
+        }
+
+        if (!AppSoundVolumeControl._service) {
+            return;
+        }
+
+        AppSoundVolumeControl._service.removeControl(this);
+
+        if (AppSoundVolumeControl._service.isEmpty()) {
+            AppSoundVolumeControl._service.destroy();
+            AppSoundVolumeControl._service = null;
+        }
+    }
+
+    _getAppName(app) {
+
+        if (!app) {
+            return null;
+        }
+
+        let result = app.get_name();
+
+        // A workaround to handle Chrome Apps and probably something else
+        // Chrome Apps shares Google Chrome's sound streams
+        // To identify proper streams for such apps we need to get name of the parent app
+        // So this class should be create for RUNNING apps only to function as expected
+
+        const appPids = app.get_pids();
+
+        if (!appPids || !appPids.length) {
+            return result;
+        }
+
+        const appByPid = Shell.WindowTracker.get_default().get_app_from_pid(appPids[0]);
+
+        if (appByPid) {
+            result = appByPid.get_name();
+        }
+
+        return result;
+    }
+
+    _canAcceptStream(stream) {
+
+        if (!stream || !stream.name || !this._appName) {
+            return false;
+        }
+
+        // Sometimes name of the app stream is not equal to the name of the app
+        // But it contains name of the app
+        // For ex: Google Chrome create input streams called 'Google Chrome input'
+        return stream.name.includes(this._appName);
+    }
 
 }
