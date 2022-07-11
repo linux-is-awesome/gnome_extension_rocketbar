@@ -280,6 +280,17 @@ var AppButtonMenu = class extends AppMenu {
         }));
 
         const slider = this._createSlider(menuItem, () => {
+            
+            if (!this._appButton.soundVolumeControl ||
+                    this._soundControlSection._isUpdating) {
+                return;
+            }
+
+            if (isInput) {
+                this._appButton.soundVolumeControl.setInputVolume(slider.value);
+            } else {
+                this._appButton.soundVolumeControl.setOutputVolume(slider.value);
+            }
 
         });
 
@@ -316,6 +327,12 @@ var AppButtonMenu = class extends AppMenu {
 
         this._soundControlSection.addLater(() => {
 
+            if (!this._appButton.soundVolumeControl) {
+                return;
+            }
+
+            this._soundControlSection._isUpdating = true;
+
             if (this._soundOutputSliderItem.visible) {
                 this._soundOutputSlider.value = this._appButton.soundVolumeControl.getOutputVolume();
             }
@@ -323,6 +340,8 @@ var AppButtonMenu = class extends AppMenu {
             if (this._soundInputSliderItem.visible) {
                 this._soundInputSlider.value = this._appButton.soundVolumeControl.getInputVolume();
             }
+
+            this._soundControlSection._isUpdating = false;
 
         });
     }

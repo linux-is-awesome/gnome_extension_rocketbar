@@ -23,7 +23,12 @@ class SoundStream {
 
         this.id = this._stream?.id;
 
-        this._volumeMax = this._stream?.get_base_volume();
+        this._volumeMax = (
+            this._stream?.get_base_volume() ||
+            // for app streams get_base_volume returns 0
+            // so we need this fallback
+            Volume.getMixerControl().get_vol_max_norm()
+        );
     }
 
     /*
@@ -232,12 +237,14 @@ var SoundVolumeControl = class extends SoundVolumeControlBase {
 
         this._connections = new Connections();
 
+        const mixerControl = Volume.getMixerControl();
+
         this._connections.add(
-            Volume.getMixerControl(), 'default-sink-changed',
+            mixerControl, 'default-sink-changed',
             (mixerControl, streamId) => this._handleActiveStream(mixerControl, streamId)
         );
 
-        this._handleActiveStream(Volume.getMixerControl());
+        this._handleActiveStream(mixerControl);
     }
 
     destroy() {
@@ -623,22 +630,22 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
     }
 
     getInputVolume() {
-        return 0;
+        return this._getVolume(this._inputStreams);
     }
 
     getOutputVolume() {
-        return 0;
+        return this._getVolume(this._outputStreams);
     }
 
-    setInputVolume() {
-
+    setInputVolume(volume) {
+        this._setVolume(this._inputStreams, volume);
     }
 
-    setOutputVolume() {
-
+    setOutputVolume(volume) {
+        this._setVolume(this._outputStreams, volume);
     }
 
-    addOutputVolume() {
+    addOutputVolume(volume) {
 
     }
 
@@ -705,6 +712,37 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
         }
 
         this._appName = !appName ? this._app.get_name() : appName;
+    }
+
+    _getVolume(streams) {
+
+        if (!streams || !streams.length) {
+            return 0;
+        }
+
+        let result = 1;
+
+        for (let appStream of streams) {
+            result = Math.min(appStream.getVolume(), result);
+        }
+
+        return result;
+    }
+
+    _setVolume(streams, volume) {
+
+        if (!streams || !streams.length) {
+            return;
+        }
+
+        for (let appStream of streams) {
+
+            if (appStream.isMuted()) {
+                appStream.toggleMute();
+            }
+
+            appStream.setVolume(volume);
+        }
     }
 
 }
