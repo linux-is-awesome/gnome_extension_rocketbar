@@ -1,4 +1,4 @@
-const { Gio, Gvc, GLib } = imports.gi;
+const { Gio, Gvc, GLib, Shell } = imports.gi;
 const Main = imports.ui.main;
 const Volume = imports.ui.status.volume;
 const ExtensionUtils = imports.misc.extensionUtils;
@@ -102,11 +102,11 @@ class SoundStream {
     }
 
     getName() {
-        return (
-            this._stream?.get_port() ?
-            this._stream?.get_port()?.human_port :
-            this._stream?.get_name()
-        );
+        return this._stream ? (
+            this._stream.get_port() ?
+            this._stream.get_port().human_port :
+            this._stream.get_name()
+        ) : null;
     }
 
 }
@@ -324,7 +324,7 @@ class AppSoundVolumeService {
 
         const mixerControl = Volume.getMixerControl();
         
-        this._createStreams(mixerControl);
+        this._setStreams(mixerControl);
 
         this._connections = new Connections();
 
@@ -335,15 +335,22 @@ class AppSoundVolumeService {
 
         this._connections.add(
             mixerControl, 'stream-removed',
-            (mixerControl, streamId) => this._addStream(streamId)
+            (mixerControl, streamId) => this._removeStream(streamId)
         );
     }
 
     destroy() {
 
+        this._controls = null;
         this._streams = null;
 
+        this._stopUpdateControls();
+
         this._connections.destroy();
+    }
+
+    isEmpty() {
+        return !this._controls?.length;
     }
 
     addControl(control) {
@@ -353,6 +360,8 @@ class AppSoundVolumeService {
         }
 
         this._controls.push(control);
+
+        this._queueUpdateControls();
     }
 
     removeControl(control) {
@@ -368,7 +377,7 @@ class AppSoundVolumeService {
         }
     }
 
-    _createStreams(mixerControl) {
+    _setStreams(mixerControl) {
 
         this._streams = new Map(); // id => AppSoundStream
 
@@ -383,6 +392,8 @@ class AppSoundVolumeService {
             if (!appStream.id) {
                 continue;
             }
+
+            log('SERVICE Add streams ' + appStream.name);
 
             this._streams.set(appStream.id, appStream);
         }
@@ -402,7 +413,11 @@ class AppSoundVolumeService {
 
         if (AppSoundStream.isValidStream(stream)) {
             this._streams.set(streamId, new AppSoundStream(stream));
+
+            log('SERVICE Add stream ' + stream.name);
         }
+
+        this._queueUpdateControls();
     }
 
     _removeStream(streamId) {
@@ -417,7 +432,49 @@ class AppSoundVolumeService {
             appStream.destroy();
             this._streams.delete(streamId);
         }
+
+        log('SERVICE Remove stream ' + streamId);
     }
+
+    _queueUpdateControls() {
+        this._stopUpdateControls();
+
+        this._updateControlsTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 500, () => {
+
+            this._updateControlsTimeout = null;
+
+            this._updateControls();
+
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    _stopUpdateControls() {
+        if (this._updateControlsTimeout) {
+            GLib.source_remove(this._updateControlsTimeout);
+            this._updateControlsTimeout = null;
+        }
+    }
+
+    _updateControls() {
+
+        if (!this._controls?.length || !this._streams?.size) {
+            return;
+        }
+
+        const streams = [...this._streams.values()];
+
+        for (let i = 0, l = this._controls.length; i < l; ++i) {
+
+            const appControl = this._controls[i];
+
+            for (let i = 0, l = streams.length; i < l; ++i) {
+                // let the app control to validate the stream
+                appControl.addStream(streams[i]);
+            }
+        }
+    }
+
 }
 
 var AppSoundVolumeControl = class extends SoundVolumeControlBase {
@@ -427,7 +484,9 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
     constructor(app) {
         super();
 
-        this._appName = this._getAppName(app);
+        this._app = app;//this._getAppName(app);
+
+        this._appName = null; // will be set later
 
         this._inputStreams = [];
 
@@ -459,6 +518,8 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
 
         streams.push(appStream);
 
+        log('App Sound Control add stream ' + this._appName + ' ' + streams.length);
+
         appStream.addListener(this);
     }
 
@@ -485,6 +546,8 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
         }
 
         streams.splice(streamIndex, 1);
+
+        log('App Sound Control remove stream' + this._appName + ' ' + streams.length);
 
         // no need to call appStream.removeListener because this method
         // will be called by the appStream itself when it gets removed
@@ -520,44 +583,63 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
         }
     }
 
-    _getAppName(app) {
-
-        if (!app) {
-            return null;
-        }
-
-        let result = app.get_name();
-
-        // A workaround to handle Chrome Apps and probably something else
-        // Chrome Apps shares Google Chrome's sound streams
-        // To identify proper streams for such apps we need to get name of the parent app
-        // So this class should be create for RUNNING apps only to function as expected
-
-        const appPids = app.get_pids();
-
-        if (!appPids || !appPids.length) {
-            return result;
-        }
-
-        const appByPid = Shell.WindowTracker.get_default().get_app_from_pid(appPids[0]);
-
-        if (appByPid) {
-            result = appByPid.get_name();
-        }
-
-        return result;
-    }
-
     _canAcceptStream(stream) {
 
-        if (!stream || !stream.name || !this._appName) {
+        if (!stream || !stream.name) {
             return false;
+        }
+
+        if (this._appName === null) {
+            this._setAppName();
         }
 
         // Sometimes name of the app stream is not equal to the name of the app
         // But it contains name of the app
         // For ex: Google Chrome create input streams called 'Google Chrome input'
         return stream.name.includes(this._appName);
+    }
+
+    _setAppName() {
+
+        if (!this._app) {
+            // set dummy name avoid calling this method twice
+            this._appName = '';
+        }
+
+        let appName = null;
+
+        // A workaround to handle Chrome Apps and probably something else
+        // Chrome Apps share Google Chrome's sound streams
+        // To identify proper streams for such apps we need to get name of the parent app
+        // So this class should be create for RUNNING apps only to function as expected
+
+        const appWindows = this._app.get_windows();
+
+        if (appWindows && appWindows.length &&
+                appWindows[0].wm_class) {
+            
+            let searchResult = Shell.AppSystem.search(appWindows[0].wm_class);
+
+            // it's an array of arrays [[],[],[]]
+            if (searchResult?.length && searchResult[0]?.length) {
+
+                for (let appId of searchResult[0]) {
+
+                    let app = Shell.AppSystem.get_default().lookup_app(appId);
+
+                    if (!app || !app.get_windows()?.length) {
+                        continue;
+                    }
+
+                    appName = app.get_name();
+
+                    break;
+                }
+                
+            }
+        }
+
+        this._appName = !appName ? this._app.get_name() : appName;
     }
 
 }

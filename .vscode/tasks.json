@@ -1,9 +1,4 @@
 {
-    /*
-     * You need to install these extensions:
-     * - Memento Inputs
-     * - Task Explorer - if you wish
-     */
     "version": "2.0.0",
     "tasks": [
         {
