@@ -1,6 +1,53 @@
 const { Clutter, GLib, GObject, Meta, St } = imports.gi;
 const Main = imports.ui.main;
 
+class TooltipCounter {
+
+    constructor(iconName) {
+
+        // define default styling params
+
+        const style = 'margin-left: 8px;'
+        const textStyle = 'margin-left: 5px;'
+        const iconSize = 15;
+
+        // create layout
+
+        this.actor = new St.BoxLayout({
+            name: 'appButton-tooltip-counter',
+            style: style
+        });
+
+        this.actor.add_actor(new St.Icon({
+            name: 'appButton-tooltip-counter-icon',
+            icon_name: iconName,
+            style_class: 'system-status-icon',
+            width: iconSize,
+            height: iconSize,
+            opacity: 200
+        }));
+
+        this._label = new St.Label({
+            name: 'appButton-tooltip-counter-text',
+            style: textStyle
+        });
+
+        this.actor.add_actor(this._label);
+    }
+
+    setCount(count) {
+
+        this._label.text = (count || 0).toString();
+
+        if (count && count > 1) {
+            this.actor.show();
+            return;
+        }
+
+        this.actor.hide();
+    }
+}
+
 var AppButtonTooltip = class {
 
     //#region public methods
@@ -91,60 +138,17 @@ var AppButtonTooltip = class {
 
         this._tooltip.add_actor(this._tooltipText);
 
-        // create common styles for counters
-        const counterStyle = 'margin-left: 8px;'
-        const counterTextStyle = 'margin-left: 5px;'
-        const counterIconSize = 15;
-
         // create windows counter
 
-        this._windowsCounter = new St.BoxLayout({
-            name: 'appButton-tooltip-windows-counter',
-            style: counterStyle
-        });
-        
-        this._windowsCounter.add_actor(new St.Icon({
-            name: 'appButton-tooltip-windows-counter-icon',
-            icon_name: 'window-symbolic',
-            style_class: 'system-status-icon',
-            width: counterIconSize,
-            height: counterIconSize,
-            opacity: 200
-        }));
+        this._windowsCounter = new TooltipCounter('window-symbolic');
 
-        this._windowsCounterText = new St.Label({
-            name: 'appButton-tooltip-windows-counter-text',
-            style: counterTextStyle
-        });
-
-        this._windowsCounter.add_actor(this._windowsCounterText);
-
-        this._tooltip.add_actor(this._windowsCounter);
+        this._tooltip.add_actor(this._windowsCounter.actor);
 
         // create notifications counter
 
-        this._notificationsCounter = new St.BoxLayout({
-            name: 'appButton-tooltip-notifications-counter',
-            style: counterStyle
-        });
+        this._notificationsCounter = new TooltipCounter('notifications-symbolic');
 
-        this._notificationsCounter.add_actor(new St.Icon({
-            name: 'appButton-tooltip-windows-notifications-icon',
-            icon_name: 'notifications-symbolic',
-            style_class: 'system-status-icon',
-            width: counterIconSize,
-            height: counterIconSize,
-            opacity: 200
-        }));
-
-        this._notificationsCounterText = new St.Label({
-            name: 'appButton-tooltip-windows-notifications-text',
-            style: counterTextStyle
-        });
-
-        this._notificationsCounter.add_actor(this._notificationsCounterText);
-
-        this._tooltip.add_actor(this._notificationsCounter);
+        this._tooltip.add_actor(this._notificationsCounter.actor);
 
         // all ui elements created!
 
@@ -173,27 +177,11 @@ var AppButtonTooltip = class {
     }
 
     _updateWindowsCount() {
-
-        this._windowsCounterText.text = this._appButton.windows.toString();
-
-        if (this._appButton.windows > 1) {
-            this._windowsCounter.show();
-            return;
-        }
-
-        this._windowsCounter.hide();
+        this._windowsCounter.setCount(this._appButton.windows);
     }
 
     _updateNotificationsCount() {
-
-        this._notificationsCounterText.text = this._appButton.notifications.toString();
-
-        if (this._appButton.notifications) {
-            this._notificationsCounter.show();
-            return;
-        }
-
-        this._notificationsCounter.hide();
+        this._notificationsCounter.setCount(this._appButton.notifications);
     }
 
     _setPosition() {
