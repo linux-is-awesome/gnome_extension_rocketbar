@@ -14,6 +14,7 @@ const { AppButtonMenu } = Me.imports.ui.appButtonMenu;
 const { AppButtonTooltip } = Me.imports.ui.appButtonTooltip;
 const { DominantColorExtractor } = Me.imports.utils.dominantColorExtractor;
 const { NotificationHandler } = Me.imports.utils.notificationService;
+const { AppSoundVolumeControl } = Me.imports.utils.soundVolumeControl;
 const { Connections } = Me.imports.utils.connections;
 
 //#endregion imports
@@ -418,6 +419,10 @@ var AppButton = GObject.registerClass(
             this._notificationHandler?.destroy();
             this._notificationHandler = null;
 
+            // destroy sound control
+            this._soundVolumeControl?.destroy();
+            this._soundVolumeControl = null;
+
             // destroy static variables when taskbar is destroying
             if (!this._getTaskbar()) {
                 AppButton._configOverride = null;
@@ -759,6 +764,17 @@ var AppButton = GObject.registerClass(
             if (this.windows && !oldWIndows) {
                 this._queueUpdateIconGeometry();
             }
+
+            this._toggleSoundVolumeControl();
+        }
+
+        _toggleSoundVolumeControl() {
+
+            if (this.app.state === Shell.AppState.RUNNING && !this._soundVolumeControl) {
+                this._soundVolumeControl = new AppSoundVolumeControl(this.app);
+            }
+
+            //TODO: remove when it gets disabled in settings
         }
 
         _handleIconTheme() {
