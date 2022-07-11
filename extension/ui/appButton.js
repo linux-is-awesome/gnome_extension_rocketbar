@@ -763,9 +763,11 @@ var AppButton = GObject.registerClass(
 
             // the first window has been created for the app
             if (this.windows && !oldWIndows) {
-                this._queueUpdateIconGeometry();
-            }
 
+                this._queueUpdateIconGeometry();
+
+                this.soundVolumeControl?.handleAppState();
+            }
         }
 
         _handleIconTheme() {

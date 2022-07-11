@@ -405,6 +405,10 @@ class AppSoundVolumeService {
         log('SERVICE Remove control');
     }
 
+    forceUpdate() {
+        this._queueUpdateControls();
+    }
+
     _setStreams(mixerControl) {
 
         this._streams = new Map(); // id => AppSoundStream
@@ -522,6 +526,7 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
 
         this._app = app;
 
+        this._originalAppName = this._app.get_name();
         this._appName = null; // will be set later
 
         this._inputStreams = [];
@@ -621,6 +626,23 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
 
     //#region functions to be called outside this module
 
+    handleAppState() {
+
+        // no need to set the name twice
+        if (this._appName !== null) {
+            return;
+        }
+
+        // try to set the app name
+        this._setAppName();
+
+        // if the name has changed and is not equal to the original name
+        // force the service to update app controls
+        if (this._appName && this._appName !== this._originalAppName) {
+            AppSoundVolumeControl._service?.forceUpdate();
+        }
+    }
+
     hasInput() {
         return this._inputStreams?.length > 0;
     }
@@ -668,17 +690,15 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
         // Sometimes name of the app stream is not equal to the name of the app
         // But it contains name of the app
         // For ex: Google Chrome create input streams called 'Google Chrome input'
-        return stream.name.includes(this._appName);
+        return stream.name.includes(this._appName || this._originalAppName);
     }
 
     _setAppName() {
 
         if (!this._app) {
-            // set dummy name avoid calling this method twice
+            // just in case set dummy name to avoid calling this method twice
             this._appName = '';
         }
-
-        let appName = null;
 
         // A workaround to handle Chrome Apps and probably something else
         // Chrome Apps share Google Chrome's sound streams
@@ -687,8 +707,13 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
 
         const appWindows = this._app.get_windows();
 
-        if (appWindows && appWindows.length &&
-                appWindows[0].wm_class) {
+        if (!appWindows || !appWindows.length) {
+            return;
+        }
+
+        let appName = null;
+
+        if (appWindows[0].wm_class) {
             
             let searchResult = Shell.AppSystem.search(appWindows[0].wm_class);
 
@@ -711,7 +736,7 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
             }
         }
 
-        this._appName = !appName ? this._app.get_name() : appName;
+        this._appName = appName || this._originalAppName;
     }
 
     _getVolume(streams) {
