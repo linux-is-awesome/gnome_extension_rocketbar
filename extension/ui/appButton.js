@@ -154,6 +154,7 @@ var AppButton = GObject.registerClass(
             this.windows = 0;
             this.notifications = 0;
             this.dominantColor = null;
+            this.soundVolumeControl = new AppSoundVolumeControl(this.app);
 
             // set private properties
             this._settings = settings;
@@ -420,8 +421,8 @@ var AppButton = GObject.registerClass(
             this._notificationHandler = null;
 
             // destroy sound control
-            this._soundVolumeControl?.destroy();
-            this._soundVolumeControl = null;
+            this.soundVolumeControl?.destroy();
+            this.soundVolumeControl = null;
 
             // destroy static variables when taskbar is destroying
             if (!this._getTaskbar()) {
@@ -765,16 +766,6 @@ var AppButton = GObject.registerClass(
                 this._queueUpdateIconGeometry();
             }
 
-            this._toggleSoundVolumeControl();
-        }
-
-        _toggleSoundVolumeControl() {
-
-            if (this.app.state === Shell.AppState.RUNNING && !this._soundVolumeControl) {
-                this._soundVolumeControl = new AppSoundVolumeControl(this.app);
-            }
-
-            //TODO: remove when it gets disabled in settings
         }
 
         _handleIconTheme() {
