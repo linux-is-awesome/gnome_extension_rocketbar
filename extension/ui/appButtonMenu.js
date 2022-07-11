@@ -414,6 +414,8 @@ var AppButtonMenu = class extends AppMenu {
             return;
         }
 
+        this._customizeSection._isUpdating = true;
+
         this._setIconSizeSliderValue();
 
         this._setIconSizeSliderOverdrive();
@@ -423,6 +425,8 @@ var AppButtonMenu = class extends AppMenu {
         this._setActivationBehaviorValue();
 
         this._updateCustomIconSection();
+
+        this._customizeSection._isUpdating = false;
     }
 
     _setActivationBehaviorValue(value) {
@@ -582,6 +586,10 @@ var AppButtonMenu = class extends AppMenu {
     }
 
     _applyConfigOverride() {
+
+        if (this._customizeSection?._isUpdating) {
+            return;
+        }
         
         const oldConfigOverride = this._appButton.getConfigOverride();
 
