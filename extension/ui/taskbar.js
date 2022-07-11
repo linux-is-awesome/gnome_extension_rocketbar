@@ -219,7 +219,7 @@ var Taskbar = GObject.registerClass(
                 return;
             }
 
-            this._initRenderTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
+            this._initRenderTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 500, () => {
 
                 this._initRenderTimeout = null;
 
