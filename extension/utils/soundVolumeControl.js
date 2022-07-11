@@ -1,9 +1,19 @@
+// This class exports: SoundVolumeControl, AppSoundVolumeControl
+
+//#region imports
+
 const { Gio, Gvc, GLib, Shell } = imports.gi;
 const Main = imports.ui.main;
 const Volume = imports.ui.status.volume;
+
+// custom modules import
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { Connections } = Me.imports.utils.connections;
+
+//#endregion imports
+
+//#region base classes
 
 class SoundStream {
 
@@ -208,6 +218,11 @@ class SoundVolumeControlBase {
 
 }
 
+//#endregion base classes
+
+
+//#region system wide control
+
 var SoundVolumeControl = class extends SoundVolumeControlBase {
 
     constructor() {
@@ -250,6 +265,10 @@ var SoundVolumeControl = class extends SoundVolumeControlBase {
 
 }
 
+//#endregion system wide control
+
+//#region app sound volume control
+
 class AppSoundStream extends SoundStream {
 
     static isValidStream(stream) {
@@ -263,6 +282,11 @@ class AppSoundStream extends SoundStream {
         super(stream);
 
         this.name = this._stream?.name;
+
+        this.isInput = (
+            this._stream &&
+            this._stream instanceof Gvc.MixerSourceOutput
+        );
 
         this._listeners = []; // [AppSoundVolumeControl...]
     }
@@ -293,13 +317,6 @@ class AppSoundStream extends SoundStream {
 
         this._listeners.splice(index, 1);
 
-    }
-
-    isInputStream() {
-        return (
-            this._stream &&
-            this._stream instanceof Gvc.MixerSourceOutput
-        );
     }
 
     destroy() {
@@ -355,6 +372,8 @@ class AppSoundVolumeService {
 
     addControl(control) {
 
+        log('SERVICE Add control');
+
         if (!control || this._controls.indexOf(control) >= 0) {
             return;
         }
@@ -375,6 +394,8 @@ class AppSoundVolumeService {
         if (controlIndex >= 0) {
             this._controls.splice(controlIndex, 1);
         }
+
+        log('SERVICE Remove control');
     }
 
     _setStreams(mixerControl) {
@@ -439,6 +460,10 @@ class AppSoundVolumeService {
     _queueUpdateControls() {
         this._stopUpdateControls();
 
+        if (this._skipUpdateControls()) {
+            return;
+        }
+
         this._updateControlsTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 500, () => {
 
             this._updateControlsTimeout = null;
@@ -458,7 +483,7 @@ class AppSoundVolumeService {
 
     _updateControls() {
 
-        if (!this._controls?.length || !this._streams?.size) {
+        if (this._skipUpdateControls()) {
             return;
         }
 
@@ -475,6 +500,10 @@ class AppSoundVolumeService {
         }
     }
 
+    _skipUpdateControls() {
+        return !this._controls?.length || !this._streams?.size;
+    }
+
 }
 
 var AppSoundVolumeControl = class extends SoundVolumeControlBase {
@@ -484,7 +513,7 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
     constructor(app) {
         super();
 
-        this._app = app;//this._getAppName(app);
+        this._app = app;
 
         this._appName = null; // will be set later
 
@@ -497,60 +526,6 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
         }
 
         AppSoundVolumeControl._service.addControl(this);
-    }
-
-    addStream(appStream) {
-
-        if (!this._inputStreams || !this._outputStreams ||
-                !this._canAcceptStream(appStream)) {
-            return;
-        }
-
-        const streams = (
-            appStream.isInputStream() ?
-            this._inputStreams :
-            this._outputStreams
-        );
-
-        if (streams.length && streams.indexOf(appStream) >= 0) {
-            return;
-        }
-
-        streams.push(appStream);
-
-        log('App Sound Control add stream ' + this._appName + ' ' + streams.length);
-
-        appStream.addListener(this);
-    }
-
-    removeStream(appStream) {
-
-        if (!appStream || !this._inputStreams || !this._outputStreams) {
-            return;
-        }
-
-        const streams = (
-            appStream.isInputStream() ?
-            this._inputStreams :
-            this._outputStreams
-        );
-
-        const streamIndex = (
-            streams.length ?
-            streams.indexOf(appStream) :
-            -1
-        );
-
-        if (streamIndex < 0) {
-            return;
-        }
-
-        streams.splice(streamIndex, 1);
-
-        log('App Sound Control remove stream' + this._appName + ' ' + streams.length);
-
-        // no need to call appStream.removeListener because this method
-        // will be called by the appStream itself when it gets removed
     }
 
     destroy() {
@@ -582,6 +557,96 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
             AppSoundVolumeControl._service = null;
         }
     }
+
+    addStream(appStream) {
+
+        if (!this._inputStreams || !this._outputStreams ||
+                !this._canAcceptStream(appStream)) {
+            return;
+        }
+
+        const streams = (
+            appStream.isInput ?
+            this._inputStreams :
+            this._outputStreams
+        );
+
+        if (streams.length && streams.indexOf(appStream) >= 0) {
+            return;
+        }
+
+        streams.push(appStream);
+
+        log('App Sound Control add stream ' + this._appName + ' ' + streams.length);
+
+        appStream.addListener(this);
+    }
+
+    removeStream(appStream) {
+
+        if (!appStream || !this._inputStreams || !this._outputStreams) {
+            return;
+        }
+
+        const streams = (
+            appStream.isInput ?
+            this._inputStreams :
+            this._outputStreams
+        );
+
+        const streamIndex = (
+            streams.length ?
+            streams.indexOf(appStream) :
+            -1
+        );
+
+        if (streamIndex < 0) {
+            return;
+        }
+
+        streams.splice(streamIndex, 1);
+
+        log('App Sound Control remove stream ' + this._appName + ' ' + appStream.isInput);
+
+        // no need to call appStream.removeListener because this method
+        // will be called by the appStream itself when it gets removed
+    }
+
+    //#region functions to be called outside this module
+
+    hasInput() {
+        return this._inputStreams?.length > 0;
+    }
+
+    hasOutput() {
+        return this._outputStreams?.length > 0;
+    }
+
+    getInputVolume() {
+        return 0;
+    }
+
+    getOutputVolume() {
+        return 0;
+    }
+
+    setInputVolume() {
+
+    }
+
+    setOutputVolume() {
+
+    }
+
+    addOutputVolume() {
+
+    }
+
+    toggleOutputMute() {
+
+    }
+
+    //#endregion functions to be called outside this module
 
     _canAcceptStream(stream) {
 
@@ -643,3 +708,5 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
     }
 
 }
+
+//#endregion app sound volume control
