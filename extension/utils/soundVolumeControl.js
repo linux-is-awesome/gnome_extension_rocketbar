@@ -32,18 +32,6 @@ class SoundStream {
     }
 
     /*
-     * volume: negative or positive integer -100..-1, 1..100
-     */
-    addVolume(volume) {
-
-        if (!volume || !this._stream) {
-            return false;
-        }
-
-        return this.setVolume(this.getVolume() + (volume / 100));
-    }
-
-    /*
      * volume: positive double 0..0.1...0.8..0.9..1
      */
     setVolume(volume) {
@@ -140,46 +128,6 @@ class SoundVolumeControlBase {
 
     }
 
-    _addVolume(stream, volume, notify) {
-
-        if (!stream) {
-            return;
-        }
-
-        if (stream.isMuted()) {
-            this._toggleMute(stream, notify);
-            return;
-        }
-
-        if (!stream.addVolume(volume) || !notify) {
-            return;
-        }
-
-        this._showOSD(stream);
-
-        this._notifyVolumeChange(stream);
-    }
-
-    _toggleMute(stream, notify) {
-
-        if (!stream) {
-            return;
-        }
-
-        const isMuted = this._stream.isMuted();
-
-        if (!this._stream.toggleMute() || !notify) {
-            return;
-        }
-
-        this._showOSD(stream, !isMuted);
-
-        // play sound when stream gets unmuted
-        if (isMuted) {
-            this._notifyVolumeChange(stream);
-        }
-    }
-
     _showOSD(stream, isMuted, name) {
 
         if (!stream) {
@@ -254,12 +202,47 @@ var SoundVolumeControl = class extends SoundVolumeControlBase {
         this._connections.destroy();
     }
 
+    /*
+     * volume: negative or positive integer -100..-1, 1..100
+     */
     addVolume(volume) {
-        this._addVolume(this._stream, volume, true);
+
+        if (!volume || !this._stream) {
+            return;
+        }
+
+        if (this._stream.isMuted()) {
+            this.toggleMute(this._stream);
+            return;
+        }
+
+        if (!this._stream.setVolume(this._stream.getVolume() + (volume / 100))) {
+            return;
+        }
+
+        this._showOSD(this._stream);
+
+        this._notifyVolumeChange(this._stream);
     }
 
     toggleMute() {
-        this._toggleMute(this._stream, true);
+        
+        if (!this._stream) {
+            return;
+        }
+
+        const isMuted = this._stream.isMuted();
+
+        if (!this._stream.toggleMute()) {
+            return;
+        }
+
+        this._showOSD(this._stream, !isMuted);
+
+        // play sound when stream gets unmuted
+        if (isMuted) {
+            this._notifyVolumeChange(this._stream);
+        }
     }
 
     _handleActiveStream(mixerControl, streamId) {
