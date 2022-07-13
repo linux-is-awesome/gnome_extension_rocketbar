@@ -64,16 +64,18 @@ var ShellTweaks = class {
 
     _createConnections() {
         this._connections = new Connections();
-        this._connections.add(this._settings, 'changed::overview-kill-dash', () => this._handleSettings());
-        this._connections.add(this._settings, 'changed::panel-enable-scroll', () => this._handleSettings());
-        this._connections.add(this._settings, 'changed::panel-enable-middle-button', () => this._handleSettings());
-        this._connections.add(this._settings, 'changed::hotcorner-enable-in-fullscreen', () => this._handleSettings());
-        this._connections.add(this._settings, 'changed::activities-show-apps-button', () => this._handleSettings());
-        this._connections.add(this._settings, 'changed::overview-enable-empty-space-clicks', () => this._handleSettings());
-        this._connections.add(this._settings, 'changed::appbutton-menu-require-click', () => this._handleSettings());
-        this._connections.add(this._settings, 'changed::panel-menu-require-click', () => this._handleSettings());
-        this._connections.add(this._settings, 'changed::panel-scroll-volume-change-speed', () => this._setConfig());
-        this._connections.add(this._settings, 'changed::panel-scroll-volume-change-speed-ctrl', () => this._setConfig());
+        this._connections.addScope(this._settings, [
+            'changed::panel-scroll-volume-change-speed',
+            'changed::panel-scroll-volume-change-speed-ctrl'], () => this._setConfig());
+        this._connections.addScope(this._settings, [
+            'changed::overview-kill-dash',
+            'changed::panel-enable-scroll',
+            'changed::panel-enable-middle-button',
+            'changed::hotcorner-enable-in-fullscreen',
+            'changed::activities-show-apps-button',
+            'changed::overview-enable-empty-space-clicks',
+            'changed::appbutton-menu-require-click',
+            'changed::panel-menu-require-click'], () => this._handleSettings());
     }
 
     _handleSettings() {

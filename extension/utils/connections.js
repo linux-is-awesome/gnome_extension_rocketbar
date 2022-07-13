@@ -11,6 +11,17 @@ var Connections = class {
         this._connections = null;
     }
 
+    addScope(target, scope, callback) {
+
+        if (!target || !scope || !callback) {
+            return;
+        }
+
+        for (let event of scope) {
+            this.add(target, event, callback);
+        }
+    }
+
     add(target, event, callback) {
 
         if (!target || !event || !callback) {

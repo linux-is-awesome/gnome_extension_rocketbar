@@ -117,13 +117,20 @@ var AppButton = GObject.registerClass(
         resetConfigOverride() {
             
             // if nothing to reset
-            if (!AppButton._configOverride || !AppButton._configOverride.hasOwnProperty(this.appId)) {
+            if (!this.hasConfigOverride()) {
                 return;
             }
 
             delete AppButton._configOverride[this.appId];
 
             this._saveConfigOverride();
+        }
+
+        hasConfigOverride() {
+            return (
+                AppButton._configOverride &&
+                AppButton._configOverride.hasOwnProperty(this.appId)
+            );
         }
 
         isValidCustomIcon(iconPath) {
@@ -218,32 +225,34 @@ var AppButton = GObject.registerClass(
             this._connections.add(global.display, 'window-demands-attention', (display, window) => this._handleUrgentWindow(window));
             this._connections.add(St.Settings.get(), 'notify::gtk-icon-theme', () => this._handleIconTheme());
             // handle settings
-            this._connections.add(this._settings, 'changed::taskbar-isolate-workspaces', () => this._setConfig());
-            this._connections.add(this._settings, 'changed::appbutton-enable-tooltips', () => this._setConfig());
-            this._connections.add(this._settings, 'changed::appbutton-enable-scroll', () => this._setConfig());
-            this._connections.add(this._settings, 'changed::appbutton-running-app-activate-behavior', () => this._setConfig());
-            this._connections.add(this._settings, 'changed::appbutton-enable-indicators', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::appbutton-enable-notification-badges', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::appbutton-enable-drag-and-drop', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::appbutton-icon-size', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::appbutton-icon-padding', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::appbutton-vertical-margin', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::appbutton-spacing', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::appbutton-roundness', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::appbutton-backlight', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::appbutton-backlight-intensity', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::indicator-dominant-color-active', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::indicator-dominant-color-inactive', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::indicator-color-active', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::indicator-color-inactive', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::indicator-position', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::indicator-size', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::indicator-display-limit', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::notification-badge-color', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::notification-badge-border-color', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::notification-badge-position', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::notification-badge-size', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::notification-badge-margin', () => this._handleSettings());
+            this._connections.addScope(this._settings, [
+                'changed::taskbar-isolate-workspaces',
+                'changed::appbutton-enable-tooltips',
+                'changed::appbutton-enable-scroll'], () => this._setConfig());
+            this._connections.addScope(this._settings, [
+                'changed::appbutton-running-app-activate-behavior',
+                'changed::appbutton-enable-indicators',
+                'changed::appbutton-enable-notification-badges',
+                'changed::appbutton-enable-drag-and-drop',
+                'changed::appbutton-icon-size',
+                'changed::appbutton-icon-padding',
+                'changed::appbutton-vertical-margin',
+                'changed::appbutton-spacing',
+                'changed::appbutton-roundness',
+                'changed::appbutton-backlight',
+                'changed::appbutton-backlight-intensity',
+                'changed::indicator-dominant-color-active',
+                'changed::indicator-dominant-color-inactive',
+                'changed::indicator-color-active',
+                'changed::indicator-color-inactive',
+                'changed::indicator-position',
+                'changed::indicator-size',
+                'changed::indicator-display-limit',
+                'changed::notification-badge-color',
+                'changed::notification-badge-border-color',
+                'changed::notification-badge-position',
+                'changed::notification-badge-size',
+                'changed::notification-badge-margin'], () => this._handleSettings());
         }
 
         _saveConfigOverride() {

@@ -153,11 +153,12 @@ var Taskbar = GObject.registerClass(
             this._connections.add(Main.panel.statusArea.appMenu.container, 'notify::visible', appMenu => appMenu.hide());
 
             // handle settings
-            this._connections.add(this._settings, 'changed::taskbar-show-favorites', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::taskbar-isolate-workspaces', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::taskbar-position', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::taskbar-position-offset', () => this._handleSettings());
-            this._connections.add(this._settings, 'changed::taskbar-preserve-position', () => this._handleSettings());
+            this._connections.addScope(this._settings, [
+                'changed::taskbar-show-favorites',
+                'changed::taskbar-isolate-workspaces',
+                'changed::taskbar-position',
+                'changed::taskbar-position-offset',
+                'changed::taskbar-preserve-position'], () => this._handleSettings());
         }
 
         _handleSettings() {
