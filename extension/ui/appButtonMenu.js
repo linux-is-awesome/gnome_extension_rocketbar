@@ -12,16 +12,16 @@ const { PopupMenuSection,
 const _ = imports.misc.extensionUtils.gettext;
 
 
-class SubMenu {
+class SubMenuItem {
 
-    constructor(title, parent) {
+    constructor(title, parentMenu) {
+
+        this._laterId = null;
 
         this.actor = new PopupSubMenuMenuItem(title);
 
-        parent.addMenuItem(this.actor);
-        parent.addMenuItem(new PopupSeparatorMenuItem());
-
-        this._laterId = null;
+        parentMenu.addMenuItem(this.actor);
+        parentMenu.addMenuItem(new PopupSeparatorMenuItem());
     }
 
     addMenuItem(menuItem) {
@@ -60,9 +60,7 @@ class SubMenu {
 
 }
 
-var AppButtonMenu = class extends AppMenu {
-
-    //#region public methods
+class AppButtonMenuBase extends AppMenu {
 
     constructor(appButton, settings) {
 
@@ -74,6 +72,8 @@ var AppButtonMenu = class extends AppMenu {
         this._appButton = appButton;
         this._settings = settings;
 
+        this._hasValidAppId = this._appSystem.lookup_app(this._appButton.appId) !== null;
+
         this.blockSourceEvents = true;
 
         // override styles
@@ -81,16 +81,11 @@ var AppButtonMenu = class extends AppMenu {
         this.actor.add_style_class_name('panel-menu aggregate-menu');
 
         // shrink menu width as much as possible
-        this.actor.style = 'max-width: 0';
+        this.actor.style = 'max-width: 0;';
 
         this._fixMenuSeparatorFontSize(this._openWindowsHeader);
 
-        this._addSoundControlSection();
-
-        this._addCustomizeSection();
-
-        // move Quit item to the end of the app menu
-        this.moveMenuItem(this._quitItem, this.numMenuItems);
+        this._updateDetailsVisibility();
     }
 
     open() {
@@ -101,15 +96,11 @@ var AppButtonMenu = class extends AppMenu {
 
             this.setApp(this._appButton.app);
 
-            this._customizeSection?.addLater(() => this._populateCustomizeSection());
-
             Main.uiGroup.add_actor(this.actor);
 
         } else {
             this._handleSettings();
         }
-
-        this._updateSountControlSection();
 
         // set correct position 
         this._setPosition();
@@ -118,46 +109,6 @@ var AppButtonMenu = class extends AppMenu {
         super.open(BoxPointer.PopupAnimation.FULL);
     }
 
-    destroy() {
-        super.destroy();
-
-        this._soundControlSection.destroy();
-
-        this._customizeSection?.destroy();
-
-        this._stopApplyConfigOverride();
-    }
-
-
-    //#endregion public methods
-
-    //#region private methods
-
-    _addSoundControlSection() {
-        this._soundControlSection = new SubMenu(_('Sound Volume Control'), this);
-
-        [this._soundOutputSliderItem, this._soundOutputSlider] = this._createSoundSliderMenuItem();
-        [this._soundInputSliderItem, this._soundInputSlider] = this._createSoundSliderMenuItem(true);
-
-        this._soundControlSection.addMenuItem(this._soundOutputSliderItem);
-        this._soundControlSection.addMenuItem(this._soundInputSliderItem);
-    }
-
-    _addCustomizeSection() {
-
-        // Don't allow customizations for app buttons without valid app Id
-        // For example: OnlyOffice creates a separete window called DesktopEditors
-        //              This window always has some random app Id
-        //              and there is no simple way to workaround that weird behavior
-        if (this._appSystem.lookup_app(this._appButton.appId) === null) {
-            return;
-        }
-
-        // add Customize section to the app menu
-        this._customizeSection = new SubMenu(_('Customize'), this);
-
-        this._updateDetailsVisibility();
-    }
 
     _handleSettings() {
         const oldConfig = this._config || {};
@@ -171,16 +122,12 @@ var AppButtonMenu = class extends AppMenu {
         if (oldConfig.showFavorites !== this._config.showFavorites) {
             this._updateFavoriteItem();
         }
-
-        this._customizeSection?.addLater(() => this._updateCustomizeSection());
     }
 
     _setConfig() {
         this._config = {
             showFavorites: this._settings.get_boolean('taskbar-show-favorites'),
-            isolateWorkspaces: this._settings.get_boolean('taskbar-isolate-workspaces'),
-            defaultIconSize: this._settings.get_int('appbutton-icon-size'),
-            configOverride: this._appButton.getConfigOverride()
+            isolateWorkspaces: this._settings.get_boolean('taskbar-isolate-workspaces')
         };
     }
 
@@ -195,6 +142,12 @@ var AppButtonMenu = class extends AppMenu {
             St.Side.BOTTOM
         );
     }
+
+    _fixMenuSeparatorFontSize(separator) {
+        separator.style = 'font-size: 0.8em;';
+    }
+
+    //#region default methods override
 
     _onKeyPress(actor, event) {
 
@@ -255,12 +208,95 @@ var AppButtonMenu = class extends AppMenu {
 
         // hide the item for apps without valid app Id
         // For example: OpenOffice DesktopEditors
-        if (!this._customizeSection) {
+        if (!this._hasValidAppId) {
             this._detailsItem.visible = false;
             return;
         }
 
         super._updateDetailsVisibility();
+    }
+
+    //#endregion default methods override
+
+}
+
+var AppButtonMenu = class extends AppButtonMenuBase {
+
+    //#region public methods
+
+    constructor(appButton, settings) {
+        super(appButton, settings);
+
+        this._addSoundControlSection();
+
+        this._addCustomizeSection();
+
+        // move Quit item to the end of the app menu
+        this.moveMenuItem(this._quitItem, this.numMenuItems);
+    }
+
+    destroy() {
+        super.destroy();
+
+        this._soundControlSection.destroy();
+
+        this._customizeSection?.destroy();
+
+        this._stopApplyConfigOverride();
+    }
+
+    open() {
+        this._updateSountControlSection();
+
+        super.open();
+    }
+
+
+    setApp(app) {
+        super.setApp(app);
+
+        this._customizeSection?.addLater(() => this._populateCustomizeSection());
+    }
+
+    //#endregion public methods
+
+    //#region private methods
+
+    _handleSettings() {
+        super._handleSettings();
+
+        this._customizeSection?.addLater(() => this._updateCustomizeSection());
+    }
+
+    _setConfig() {
+        super._setConfig();
+
+        this._config.defaultIconSize = this._settings.get_int('appbutton-icon-size');
+        this._config.configOverride = this._appButton.getConfigOverride();
+    }
+
+    _addSoundControlSection() {
+        this._soundControlSection = new SubMenuItem(_('Sound Volume Control'), this);
+
+        [this._soundOutputSliderItem, this._soundOutputSlider] = this._createSoundSliderMenuItem();
+        [this._soundInputSliderItem, this._soundInputSlider] = this._createSoundSliderMenuItem(true);
+
+        this._soundControlSection.addMenuItem(this._soundOutputSliderItem);
+        this._soundControlSection.addMenuItem(this._soundInputSliderItem);
+    }
+
+    _addCustomizeSection() {
+
+        // Don't allow customizations for app buttons without valid app Id
+        // For example: OnlyOffice creates a separete window called DesktopEditors
+        //              This window always has some random app Id
+        //              and there is no simple way to workaround that weird behavior
+        if (!this._hasValidAppId) {
+            return;
+        }
+
+        // add Customize section to the app menu
+        this._customizeSection = new SubMenuItem(_('Customize'), this);
     }
 
     _createSoundSliderMenuItem(isInput) {
@@ -398,9 +434,9 @@ var AppButtonMenu = class extends AppMenu {
         this._customizeSection.addMenuItem(this._createSeparator(_('Icon Size')));
         this._customizeSection.addMenuItem(this._createIconSizeSliderMenuItem());
 
-        // add Reset item
-        this._customizeSection.addMenuItem(new PopupSeparatorMenuItem());
-        this._customizeSection.addAction(
+        // add Reset All item
+        this._customizeSection.addMenuItem(this._createSeparator());
+        this._resetAllItem = this._customizeSection.addAction(
             _('Reset all to default'),
             () => this._appButton.resetConfigOverride()
         );
@@ -420,18 +456,20 @@ var AppButtonMenu = class extends AppMenu {
 
         this._setIconSizeSliderOverdrive();
 
-        this._activateBehaviorSection.box.visible = this._config.isolateWorkspaces;
+        this._activateBehaviorSection.actor.visible = this._config.isolateWorkspaces;
 
         this._setActivationBehaviorValue();
 
         this._updateCustomIconSection();
+
+        this._resetAllItem.actor.reactive = this._appButton.hasConfigOverride();
 
         this._customizeSection._isUpdating = false;
     }
 
     _setActivationBehaviorValue(value) {
 
-        if (!this._activateBehaviorSection.box.visible) {
+        if (!this._activateBehaviorSection.actor.visible) {
             return;
         }
 
@@ -508,6 +546,20 @@ var AppButtonMenu = class extends AppMenu {
         return result;
     }
 
+    _createSeparator(title) {
+        const separator = new PopupSeparatorMenuItem(title);
+
+        if (!title) {
+            return separator;
+        }
+
+        this._fixMenuSeparatorFontSize(separator);
+
+        separator.style += 'margin-top: 10px;';
+
+        return separator;
+    }
+
     _setIconSizeSliderValue() {
 
         const [sliderMaxValue, sliderValueOffset] = this._getIconSizeSliderBounds();
@@ -541,8 +593,8 @@ var AppButtonMenu = class extends AppMenu {
     _updateCustomIconSection() {
 
         // hide this section by default if no custom icon selected
-        this._customIconSection.box.visible = !!this._config.configOverride.customIconPath;
-        this._customIconResetItem.visible = this._customIconSection.box.visible;
+        this._customIconSection.actor.visible = !!this._config.configOverride.customIconPath;
+        this._customIconResetItem.visible = this._customIconSection.actor.visible;
 
         this._customIconSetItem.hide();
 
@@ -555,7 +607,7 @@ var AppButtonMenu = class extends AppMenu {
                 return;
             }
 
-            this._customIconSection.box.show();
+            this._customIconSection.actor.show();
             this._customIconSetItem.show();
 
             // replace label of the menu item
@@ -587,16 +639,9 @@ var AppButtonMenu = class extends AppMenu {
 
     _applyConfigOverride() {
 
-        if (this._customizeSection?._isUpdating) {
-            return;
-        }
-        
-        const oldConfigOverride = this._appButton.getConfigOverride();
-
-        // no need to update the config override
-        if (this._config.configOverride.iconSize === oldConfigOverride.iconSize &&
-                this._config.configOverride.activateRunningBehavior === oldConfigOverride.activateRunningBehavior &&
-                this._config.configOverride.customIconPath === oldConfigOverride.customIconPath) {
+        // no need to apply the config override
+        if (this._customizeSection?._isUpdating ||
+                !this._isConfigOverrideChanged()) {
             return;
         }
 
@@ -608,8 +653,20 @@ var AppButtonMenu = class extends AppMenu {
 
             this._appButton.setConfigOverride(this._config.configOverride);
 
+            this._resetAllItem.actor.reactive = true;
+
             return GLib.SOURCE_REMOVE;
         });
+    }
+
+    _isConfigOverrideChanged() {
+        const oldConfigOverride = this._appButton.getConfigOverride();
+
+        return !(
+            this._config.configOverride.iconSize === oldConfigOverride.iconSize &&
+            this._config.configOverride.activateRunningBehavior === oldConfigOverride.activateRunningBehavior &&
+            this._config.configOverride.customIconPath === oldConfigOverride.customIconPath
+        );
     }
 
     _stopApplyConfigOverride() {
@@ -617,24 +674,6 @@ var AppButtonMenu = class extends AppMenu {
             GLib.source_remove(this._applyConfigOverrideTimeout);
             this._applyConfigOverrideTimeout = null;
         }
-    }
-
-    _createSeparator(title) {
-        const separator = new PopupSeparatorMenuItem(title);
-
-        if (!title) {
-            return separator;
-        }
-
-        this._fixMenuSeparatorFontSize(separator);
-
-        separator.style += 'margin-top: 10px;';
-
-        return separator;
-    }
-
-    _fixMenuSeparatorFontSize(separator) {
-        separator.style = 'font-size: 0.8em;';
     }
 
     //#endregion private methods
