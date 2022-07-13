@@ -1,7 +1,7 @@
 const { Clutter, GLib, GObject, Meta, St } = imports.gi;
 const Main = imports.ui.main;
 
-class TooltipCounter {
+class TooltipIndicator {
 
     constructor(iconName) {
 
@@ -35,9 +35,17 @@ class TooltipCounter {
         this.actor.add_actor(this._label);
     }
 
+    setText(text) {
+        this._label.text = text + '';
+    }
+
+}
+
+class TooltipCounter extends TooltipIndicator {
+
     setCount(count) {
 
-        this._label.text = (count || 0).toString();
+        this.setText(count || 0);
 
         if (count && count > 1) {
             this.actor.show();
@@ -150,6 +158,14 @@ var AppButtonTooltip = class {
 
         this._tooltip.add_actor(this._notificationsCounter.actor);
 
+        // create sound icons
+
+        this._soundOutputVolume = new TooltipIndicator('audio-speakers-symbolic');
+        this._soundInputVolume = new TooltipIndicator('audio-input-microphone-symbolic');
+
+        this._tooltip.add_actor(this._soundOutputVolume.actor);
+        this._tooltip.add_actor(this._soundInputVolume.actor);
+
         // all ui elements created!
 
         Main.layoutManager.addChrome(this._tooltip);
@@ -164,6 +180,7 @@ var AppButtonTooltip = class {
         this._updateAppTitle();
         this._updateWindowsCount();
         this._updateNotificationsCount();
+        this._updateSoundVolumeIndicators();
 
         this._setPosition();
     }
@@ -182,6 +199,28 @@ var AppButtonTooltip = class {
 
     _updateNotificationsCount() {
         this._notificationsCounter.setCount(this._appButton.notifications);
+    }
+
+    _updateSoundVolumeIndicators() {
+
+        if (this._appButton?.soundVolumeControl?.hasOutput()) {
+            this._soundOutputVolume.setText(
+                Math.round(this._appButton.soundVolumeControl.getOutputVolume() * 100)
+            );
+            this._soundOutputVolume.actor.show();
+        } else {
+            this._soundOutputVolume.actor.hide();
+        }
+
+        if (this._appButton?.soundVolumeControl?.hasInput()) {
+            this._soundInputVolume.setText(
+                Math.round(this._appButton.soundVolumeControl.getInputVolume() * 100)
+            );
+            this._soundInputVolume.actor.show();
+        } else {
+            this._soundInputVolume.actor.hide();
+        }
+
     }
 
     _setPosition() {
