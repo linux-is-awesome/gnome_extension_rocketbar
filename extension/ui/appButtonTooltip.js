@@ -1,9 +1,11 @@
 const { Clutter, GLib, GObject, Meta, St } = imports.gi;
 const Main = imports.ui.main;
 
-class TooltipIndicator {
+class TooltipCounter {
 
-    constructor(iconName) {
+    constructor(iconName, minCount) {
+
+        this._minCount = minCount || 0;
 
         // define default styling params
 
@@ -35,24 +37,18 @@ class TooltipIndicator {
         this.actor.add_actor(this._label);
     }
 
-    setText(text) {
-        this._label.text = text + '';
-    }
-
-}
-
-class TooltipCounter extends TooltipIndicator {
-
     setCount(count) {
 
-        this.setText(count || 0);
+        count = count || 0;
 
-        if (count && count > 1) {
-            this.actor.show();
+        this._label.text = count.toString();
+
+        if (count < this._minCount) {
+            this.actor.hide();
             return;
         }
 
-        this.actor.hide();
+        this.actor.show();
     }
 }
 
@@ -116,8 +112,6 @@ var AppButtonTooltip = class {
 
         this._update();
 
-        this._setPosition();
-
         this._tooltip.ease({
             opacity: 255,
             duration: 300,
@@ -148,20 +142,20 @@ var AppButtonTooltip = class {
 
         // create windows counter
 
-        this._windowsCounter = new TooltipCounter('window-symbolic');
+        this._windowsCounter = new TooltipCounter('window-symbolic', 2);
 
         this._tooltip.add_actor(this._windowsCounter.actor);
 
         // create notifications counter
 
-        this._notificationsCounter = new TooltipCounter('notifications-symbolic');
+        this._notificationsCounter = new TooltipCounter('notifications-symbolic', 1);
 
         this._tooltip.add_actor(this._notificationsCounter.actor);
 
         // create sound icons
 
-        this._soundOutputVolume = new TooltipIndicator('audio-speakers-symbolic');
-        this._soundInputVolume = new TooltipIndicator('audio-input-microphone-symbolic');
+        this._soundOutputVolume = new TooltipCounter('audio-speakers-symbolic');
+        this._soundInputVolume = new TooltipCounter('audio-input-microphone-symbolic');
 
         this._tooltip.add_actor(this._soundOutputVolume.actor);
         this._tooltip.add_actor(this._soundInputVolume.actor);
@@ -204,7 +198,7 @@ var AppButtonTooltip = class {
     _updateSoundVolumeIndicators() {
 
         if (this._appButton?.soundVolumeControl?.hasOutput()) {
-            this._soundOutputVolume.setText(
+            this._soundOutputVolume.setCount(
                 Math.round(this._appButton.soundVolumeControl.getOutputVolume() * 100)
             );
             this._soundOutputVolume.actor.show();
@@ -213,7 +207,7 @@ var AppButtonTooltip = class {
         }
 
         if (this._appButton?.soundVolumeControl?.hasInput()) {
-            this._soundInputVolume.setText(
+            this._soundInputVolume.setCount(
                 Math.round(this._appButton.soundVolumeControl.getInputVolume() * 100)
             );
             this._soundInputVolume.actor.show();
@@ -231,7 +225,10 @@ var AppButtonTooltip = class {
 
         let [x, y] = this._appButton.get_transformed_position();
 
-        const [appButtonWidth, appButtonHeight] = this._appButton.get_size();
+        const [appButtonWidth, appButtonHeight] = [
+            this._appButton.allocation.get_width(),
+            this._appButton.allocation.get_height()
+        ];
 
         const [tooltipWidth, tooltipHeight] = this._tooltip.get_size();
 
