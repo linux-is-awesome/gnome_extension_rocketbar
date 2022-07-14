@@ -64,31 +64,6 @@ class SoundStream {
 
     // change_is_muted changes state of the stream with a delay
     // so we may need to pass the actual state manually
-    getVolumeWithIcon(isMuted) {
-
-        const volumeIcons = [
-            'audio-volume-muted-symbolic',
-            'audio-volume-low-symbolic',
-            'audio-volume-medium-symbolic',
-            'audio-volume-high-symbolic'
-        ];
-
-        const volumeLevel = this.getVolume(isMuted);
-
-        let iconIndex = 0;
-
-        if (volumeLevel > 0) {
-
-            const iconIndexMax = volumeIcons.length - 1;
-
-            iconIndex = parseInt(iconIndexMax * volumeLevel + 1);
-            iconIndex = Math.max(1, iconIndex);
-            iconIndex = Math.min(iconIndexMax, iconIndex);
-        }
-
-        return [volumeLevel, Gio.Icon.new_for_string(volumeIcons[iconIndex])];
-    }
-
     getVolume(isMuted = this.isMuted()) {
         return (
             !this._stream || isMuted ? 0 :
@@ -134,10 +109,35 @@ class SoundVolumeControlBase {
             return;
         }
 
-        const [volumeLevel, volumeIcon] = stream.getVolumeWithIcon(isMuted);
+        const volumeLevel = stream.getVolume(isMuted);
+
+        const volumeIcon = this._getVolumeIcon(volumeLevel);
 
         // pass -1 as monitor index to show on all monitors
         Main.osdWindowManager.show(-1, volumeIcon, name || stream.getName(), volumeLevel);
+    }
+
+    _getVolumeIcon(volumeLevel = 0) {
+
+        const volumeIcons = [
+            'audio-volume-muted-symbolic',
+            'audio-volume-low-symbolic',
+            'audio-volume-medium-symbolic',
+            'audio-volume-high-symbolic'
+        ];
+
+        let iconIndex = 0;
+
+        if (volumeLevel > 0) {
+
+            const iconIndexMax = volumeIcons.length - 1;
+
+            iconIndex = parseInt(iconIndexMax * volumeLevel + 1);
+            iconIndex = Math.max(1, iconIndex);
+            iconIndex = Math.min(iconIndexMax, iconIndex);
+        }
+
+        return Gio.Icon.new_for_string(volumeIcons[iconIndex]);
     }
 
     _notifyVolumeChange(stream) {
