@@ -626,14 +626,6 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
         }
     }
 
-    hasInput() {
-        return this._inputStreams?.length > 0;
-    }
-
-    hasOutput() {
-        return this._outputStreams?.length > 0;
-    }
-
     getInputVolume() {
         return this._getVolume(this._inputStreams);
     }
@@ -650,12 +642,41 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
         this._setVolume(this._outputStreams, volume);
     }
 
+    /*
+     * volume: negative or positive integer -100..-1, 1..100
+     */
     addOutputVolume(volume) {
 
+        if (!volume || !this.hasOutput()) {
+            return;
+        }
+
+        volume = this._getVolume(this._outputStreams, false) + (volume / 100);
+
+        this._setVolume(this._outputStreams, volume);
+
+        this._showOSD(this._outputStreams[0], false);
     }
 
     toggleOutputMute() {
 
+        if (!this.hasOutput()) {
+            return;
+        }
+
+        const isMuted = this._isMuted(this._outputStreams);
+
+        this._toggleMute(this._outputStreams, isMuted);
+
+        this._showOSD(this._outputStreams[0], !isMuted);
+    }
+
+    hasInput() {
+        return this._inputStreams?.length > 0;
+    }
+
+    hasOutput() {
+        return this._outputStreams?.length > 0;
     }
 
     //#endregion functions to be called outside this module
@@ -722,7 +743,7 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
         this._appName = appName || this._originalAppName;
     }
 
-    _getVolume(streams) {
+    _getVolume(streams, isMuted) {
 
         if (!streams || !streams.length) {
             return 0;
@@ -731,7 +752,7 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
         let result = 1;
 
         for (let appStream of streams) {
-            result = Math.min(appStream.getVolume(), result);
+            result = Math.min(appStream.getVolume(isMuted), result);
         }
 
         return result;
@@ -751,6 +772,38 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
 
             appStream.setVolume(volume);
         }
+    }
+
+    _toggleMute(streams, isMuted) {
+
+        if (!streams || !streams.length) {
+            return;
+        }
+
+        for (let appStream of streams) {
+            if (appStream.isMuted() === isMuted) {
+                appStream.toggleMute();
+            }
+        }
+    }
+
+    _isMuted(streams) {
+
+        if (!streams || !streams.length) {
+            return false;
+        }
+
+        for (let appStream of streams) {
+            if (appStream.isMuted()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    _showOSD(stream, isMuted) {
+        super._showOSD(stream, isMuted, this._originalAppName);
     }
 
 }
