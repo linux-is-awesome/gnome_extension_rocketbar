@@ -369,6 +369,9 @@ var AppButton = GObject.registerClass(
                 enableNotificationBadges: this._settings.get_boolean('appbutton-enable-notification-badges'),
                 enableDragAndDrop: this._settings.get_boolean('appbutton-enable-drag-and-drop'),
                 enableScrollHandler: this._settings.get_boolean('appbutton-enable-scroll'),
+                enableMinimizeAction: true,
+                scrollToChangeSoundVolume: false,
+                middleButtonToggleMute: false,
                 activateRunningBehavior: (
                     configOverride && configOverride.activateRunningBehavior ?
                     configOverride.activateRunningBehavior :
@@ -570,9 +573,17 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
+            const isMiddleButton = button === Clutter.BUTTON_MIDDLE;
+
+            // check if toggle sound mute action is required and possible
+            if (isMiddleButton &&
+                    this._config.middleButtonToggleMute && this.soundVolumeControl) {
+                this.soundVolumeControl.toggleOutputMute();
+                return;
+            }
+
             const isOverview = Main.overview._shown;
             const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) != 0;
-            const isMiddleButton = button === Clutter.BUTTON_MIDDLE;
 
             // close opened windows
             if (isCtrlPressed && isMiddleButton) {
@@ -616,14 +627,21 @@ var AppButton = GObject.registerClass(
                     // move all app windows to the current workspace
                     case 'move_windows':
 
+                        const appWindows = this.app.get_windows();
+
+                        // if something goes wrong with the app
+                        if (!appWindows?.length) {
+                            return;
+                        }
+
                         const workspaceIndex = global.workspace_manager.get_active_workspace();
-                        
-                        this.app.get_windows().forEach(window => {
+
+                        appWindows.forEach(window => {
                             window.change_workspace(workspaceIndex);
                         });
 
                         // now we have windows on the workpace to activate the first one
-                        this._activate();
+                        Main.activateWindow(appWindows[0]);
 
                         break;
 
@@ -648,7 +666,11 @@ var AppButton = GObject.registerClass(
                 }
 
                 // minimize the window if it's active and has focus
-                window.minimize();
+                // and when minimize action is not disabled
+                if (this._config.enableMinimizeAction) {
+                    window.minimize();
+                }
+
                 return;
 
             }
@@ -678,6 +700,20 @@ var AppButton = GObject.registerClass(
             if (scrollDirection !== Clutter.ScrollDirection.UP &&
                     scrollDirection !== Clutter.ScrollDirection.DOWN) {
                 return Clutter.EVENT_PROPAGATE;
+            }
+
+            // change sound volume if it's required and possible
+            if (this._config.scrollToChangeSoundVolume && this.soundVolumeControl) {
+
+                this.soundVolumeControl.addOutputVolume(
+                    scrollDirection === Clutter.ScrollDirection.UP ?
+                    2 : -2
+                );
+
+                // update tooltip if it's shown
+                this._tooltip?.rerender();
+
+                return Clutter.EVENT_STOP;
             }
 
             // when app is not running
