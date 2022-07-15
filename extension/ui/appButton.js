@@ -621,34 +621,32 @@ var AppButton = GObject.registerClass(
                     return;
                 }
 
-                // a favorited app is running, but no windows on the current workspace
-                switch (this._config.activateRunningBehavior) {
+                // when a favorited app is running, but no windows on the current workspace
+
+                if (!this._config.isolateWorkspaces ||
+                        this._config.activateRunningBehavior !== 'move_windows') {
+
+                    this.app.open_new_window(-1);
+
+                } else {
 
                     // move all app windows to the current workspace
-                    case 'move_windows':
+    
+                    const appWindows = this.app.get_windows();
 
-                        const appWindows = this.app.get_windows();
+                    // if something goes wrong with the app
+                    if (!appWindows?.length) {
+                        return;
+                    }
 
-                        // if something goes wrong with the app
-                        if (!appWindows?.length) {
-                            return;
-                        }
+                    const workspaceIndex = global.workspace_manager.get_active_workspace();
 
-                        const workspaceIndex = global.workspace_manager.get_active_workspace();
+                    appWindows.forEach(window => {
+                        window.change_workspace(workspaceIndex);
+                    });
 
-                        appWindows.forEach(window => {
-                            window.change_workspace(workspaceIndex);
-                        });
-
-                        // now we have windows on the workpace to activate the first one
-                        Main.activateWindow(appWindows[0]);
-
-                        break;
-
-                    // just open a new window
-                    default:
-                        this.app.open_new_window(-1);
-
+                    // now we have windows on the workpace to activate the first one
+                    Main.activateWindow(appWindows[0]);
                 }
 
                 return;
