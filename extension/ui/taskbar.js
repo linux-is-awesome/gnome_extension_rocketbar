@@ -105,6 +105,7 @@ var Taskbar = GObject.registerClass(
             this._settings = settings;
             this._isRendered = false; // for the first render execution
             this._currentWorkspace = null;
+            this._activeAppButton = null;
             this._workId = null;
 
             // caches
@@ -148,6 +149,10 @@ var Taskbar = GObject.registerClass(
             // create external connections
             this._connections = new Connections();
             this._connections.add(Main.layoutManager, 'startup-complete', () => this._initRender());
+            this._connections.add(
+                global.display, 'window-demands-attention',
+                (display, window) => this._activeAppButton?.handleUrgentWindow(window)
+            );
 
             // prevent default appMenu from displaying on the panel
             this._connections.add(Main.panel.statusArea.appMenu.container, 'notify::visible', appMenu => appMenu.hide());

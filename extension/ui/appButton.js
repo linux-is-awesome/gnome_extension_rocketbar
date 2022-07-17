@@ -75,6 +75,10 @@ var AppButton = GObject.registerClass(
             this._handleAppState();
         }
 
+        handleUrgentWindow(window) {
+            this._handleUrgentWindow(window);
+        }
+
         getDragActor() {
             return this._createAppIconTexture(1.5);
         }
@@ -167,6 +171,7 @@ var AppButton = GObject.registerClass(
             this._settings = settings;
             this._delegate = this;
             this._firstUpdateIconGeometry = true;
+            this._lastFocusedWindow = null;
 
             // create layout
             this._createLayout();
@@ -221,8 +226,7 @@ var AppButton = GObject.registerClass(
             // external connections
             this._connections = new Connections();
             this._connections.add(this._menu, 'open-state-changed', () => this._focus());
-            this._connections.add(global.display, 'notify::focus-window', () => this._handleAppState());
-            this._connections.add(global.display, 'window-demands-attention', (display, window) => this._handleUrgentWindow(window));
+            this._connections.add(global.display, 'notify::focus-window', () => this._handleFocusedWindow());
             this._connections.add(St.Settings.get(), 'notify::gtk-icon-theme', () => this._handleIconTheme());
             // handle settings
             this._connections.addScope(this._settings, [
@@ -768,6 +772,22 @@ var AppButton = GObject.registerClass(
             }
         }
 
+        _handleFocusedWindow() {
+
+            // avoid unnesessary executions
+            if (!this.isActive && !global.display.focus_window) {
+                return;
+            }
+
+            if (this._lastFocusedWindow === global.display.focus_window) {
+                return;
+            }
+
+            this._lastFocusedWindow = global.display.focus_window;
+
+            this._handleAppState();
+        }
+
         _handleAppState() {
 
             if (!this._isValid()) {
@@ -815,6 +835,7 @@ var AppButton = GObject.registerClass(
 
                 this.soundVolumeControl?.handleAppState();
             }
+
         }
 
         _handleIconTheme() {
@@ -911,27 +932,27 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
-            if (!this._appIcon.style) {
-                this._appIcon.style = '';
-            }
+            let appIconStyle = this._appIcon.style || '';
 
-            this._appIcon.style += 'background-gradient-direction: vertical;';
+            appIconStyle += 'background-gradient-direction: vertical;';
 
             const startIntensity = this._config.backlightIntensity - 1;
 
-            this._appIcon.style += (`background-gradient-start: rgba(
+            appIconStyle += (`background-gradient-start: rgba(
                 ${this.dominantColor.r},
                 ${this.dominantColor.g},
                 ${this.dominantColor.b},
                 ${startIntensity >= 0 ? '0.' + startIntensity : 0}
             );`);
 
-            this._appIcon.style += (`background-gradient-end: rgba(
+            appIconStyle += (`background-gradient-end: rgba(
                 ${this.dominantColor.r},
                 ${this.dominantColor.g},
                 ${this.dominantColor.b},
                 ${'0.' + this._config.backlightIntensity}
             );`);
+
+            this._appIcon.style = appIconStyle;
         }
 
         _queueUpdateIconGeometry() {
@@ -1049,7 +1070,7 @@ var AppButton = GObject.registerClass(
         _handleUrgentWindow(window) {
 
             // make only active apps handle urgent windows
-            if (!window || !this.isActive || window.has_focus()) {
+            if (!window || window.has_focus() || !this.isActive) {
                 return;
             }
 
