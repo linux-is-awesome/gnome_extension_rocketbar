@@ -331,6 +331,34 @@ var AppButton = GObject.registerClass(
 
         _setConfig() {
 
+            this._config = {
+                isolateWorkspaces: this._settings.get_boolean('taskbar-isolate-workspaces'),
+                enableTooltips: this._settings.get_boolean('appbutton-enable-tooltips'),
+                enableIndicators: this._settings.get_boolean('appbutton-enable-indicators'),
+                enableNotificationBadges: this._settings.get_boolean('appbutton-enable-notification-badges'),
+                enableDragAndDrop: this._settings.get_boolean('appbutton-enable-drag-and-drop'),
+                enableScrollHandler: this._settings.get_boolean('appbutton-enable-scroll'),
+                enableMinimizeAction: true,
+                scrollToChangeSoundVolume: false,
+                middleButtonToggleMute: false,
+                activateRunningBehavior: this._settings.get_string('appbutton-running-app-activate-behavior'),
+                // visual customization settings
+                iconSize: this._settings.get_int('appbutton-icon-size'),
+                iconTextureSize: this._settings.get_int('appbutton-icon-size'),
+                iconPadding: this._settings.get_int('appbutton-icon-padding'),
+                verticalMargin: this._settings.get_int('appbutton-vertical-margin'),
+                roundness: this._settings.get_int('appbutton-roundness'),
+                spacing: this._settings.get_int('appbutton-spacing'),
+                backlight: this._settings.get_boolean('appbutton-backlight'),
+                backlightIntensity: this._settings.get_int('appbutton-backlight-intensity'),
+                customIconPath: null
+            };
+
+            this._applyConfigOverride();
+        }
+
+        _applyConfigOverride() {
+
             // create config override
             if (!AppButton._configOverride) {
 
@@ -347,51 +375,27 @@ var AppButton = GObject.registerClass(
             // get override
             const configOverride = AppButton._configOverride[this.appId];
 
-            const iconSize = this._settings.get_int('appbutton-icon-size');
-
             // calculate icon texture size based on offset from the override
             // result size can be > or < then the icon size
-            let iconTextureSize = (
-                configOverride && configOverride.iconSizeOffset ?
-                iconSize + configOverride.iconSizeOffset :
-                iconSize
-            );
+            if (configOverride?.iconSizeOffset) {
+                
+                let iconTextureSize = this._config.iconTextureSize + configOverride.iconSizeOffset;
 
-            // size should not be < 16 and > 64
-            iconTextureSize = Math.max(iconTextureSize, 16);
-            iconTextureSize = Math.min(iconTextureSize, 64);
+                // size should not be < 16 and > 64
+                iconTextureSize = Math.max(iconTextureSize, 16);
+                iconTextureSize = Math.min(iconTextureSize, 64);
 
-            // set config
-            this._config = {
-                isolateWorkspaces: this._settings.get_boolean('taskbar-isolate-workspaces'),
-                enableTooltips: this._settings.get_boolean('appbutton-enable-tooltips'),
-                enableIndicators: this._settings.get_boolean('appbutton-enable-indicators'),
-                enableNotificationBadges: this._settings.get_boolean('appbutton-enable-notification-badges'),
-                enableDragAndDrop: this._settings.get_boolean('appbutton-enable-drag-and-drop'),
-                enableScrollHandler: this._settings.get_boolean('appbutton-enable-scroll'),
-                enableMinimizeAction: true,
-                scrollToChangeSoundVolume: false,
-                middleButtonToggleMute: false,
-                activateRunningBehavior: (
-                    configOverride && configOverride.activateRunningBehavior ?
-                    configOverride.activateRunningBehavior :
-                    this._settings.get_string('appbutton-running-app-activate-behavior')
-                ),
-                // visual customization settings
-                iconSize: iconSize,
-                iconTextureSize: iconTextureSize,
-                customIconPath: (
-                    configOverride && configOverride.customIconPath ?
-                    configOverride.customIconPath :
-                    null
-                ),
-                iconPadding: this._settings.get_int('appbutton-icon-padding'),
-                verticalMargin: this._settings.get_int('appbutton-vertical-margin'),
-                roundness: this._settings.get_int('appbutton-roundness'),
-                spacing: this._settings.get_int('appbutton-spacing'),
-                backlight: this._settings.get_boolean('appbutton-backlight'),
-                backlightIntensity: this._settings.get_int('appbutton-backlight-intensity'),
-            };
+                this._config.iconTextureSize = iconTextureSize;
+            }
+
+            if (configOverride?.customIconPath) {
+                this._config.customIconPath = configOverride.customIconPath;
+            }
+
+            if (configOverride?.activateRunningBehavior) {
+                this._config.activateRunningBehavior = configOverride.activateRunningBehavior;
+            }
+
         }
 
         _destroy() {
