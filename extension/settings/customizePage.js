@@ -23,9 +23,9 @@ var CustomizePage = GObject.registerClass(
                 this.createMessage(_('No customizations available'))
             ]);
 
-            this._emptyMessage.hide();
-
             this._populateOptions();
+
+            this._toggleEmptyMessage();
         }
 
         _populateOptions() {
@@ -36,77 +36,41 @@ var CustomizePage = GObject.registerClass(
             const notificationBadgeOptions = this._addNotificationBadgeOptions();
             const tooltipOptions = this._addTooltipOptions();
 
-            const taskbarRelatedOptions = [
+            this._options = [...this._options, ...this.addVisibilityControl([
                 taskbarOptions,
                 appButtonOptions,
                 indicatorOptions,
                 notificationBadgeOptions,
                 tooltipOptions
-            ];
+            ], {
+                'taskbar-enabled': value => value,
+                'appbutton-enable-indicators': null,
+                'appbutton-enable-notification-badges': null,
+                'appbutton-enable-tooltips': null
+            }, option => {
 
-            this._options = this._options.concat(taskbarRelatedOptions);
-
-            // handle settings changes in order to hide some options
-
-            const toggleTaskbarRelatedOptions = () => {
-
-                if (!this._settings.get_boolean('taskbar-enabled')) {
-                    taskbarRelatedOptions.forEach(options => options.hide());
-                } else {
-
-                    taskbarOptions.show();
-                    appButtonOptions.show();
-
-                    if (!this._settings.get_boolean('appbutton-enable-indicators')) {
-                        indicatorOptions.hide();
-                    } else {
-                        indicatorOptions.show();
-                    }
-
-                    if (!this._settings.get_boolean('appbutton-enable-notification-badges')) {
-                        notificationBadgeOptions.hide();
-                    } else {
-                        notificationBadgeOptions.show();
-                    }
-
-                    if (!this._settings.get_boolean('appbutton-enable-tooltips')) {
-                        tooltipOptions.hide();
-                    } else {
-                        tooltipOptions.show();
-                    }
-
-                }
-
-                this._toggleEmptyMessage();
-            };
-
-            toggleTaskbarRelatedOptions();
-
-            this._settings.connect('changed::taskbar-enabled', () => toggleTaskbarRelatedOptions());
-
-            this._settings.connect('changed::appbutton-enable-indicators', () => {
-                if (!this._settings.get_boolean('appbutton-enable-indicators')) {
-                    indicatorOptions.hide();
+                if (!option) {
+                    this._toggleEmptyMessage();
                     return;
                 }
-                indicatorOptions.show();
-            });
 
-            this._settings.connect('changed::appbutton-enable-notification-badges', () => {
-                if (!this._settings.get_boolean('appbutton-enable-notification-badges')) {
-                    notificationBadgeOptions.hide();
+                if (!option.visible) {
                     return;
                 }
-                notificationBadgeOptions.show();
-            });
 
-            this._settings.connect('changed::appbutton-enable-tooltips', () => {
-                if (!this._settings.get_boolean('appbutton-enable-tooltips')) {
-                    tooltipOptions.hide();
-                    return;
-                }
-                tooltipOptions.show();
-            });
+                let settingsKey = null;
+                
+                if (option === indicatorOptions) {
+                    settingsKey = 'appbutton-enable-indicators';
+                } else if (option === notificationBadgeOptions) {
+                    settingsKey = 'appbutton-enable-notification-badges';
+                } else if (option === tooltipOptions) {
+                    settingsKey = 'appbutton-enable-tooltips';
+                } else return;
+
+                option.visible = this._settings.get_boolean(settingsKey);
+
+            })];
         }
 
         _addTaskbarOptions() {
@@ -132,22 +96,6 @@ var CustomizePage = GObject.registerClass(
         }
 
         _addAppButtonOptions() {
-
-            const backlightSwitch = this.createSwitch(_('Dominant Color Backlight'), 'appbutton-backlight');
-
-            const backlightIntensitySpin = this.createSpinButton(
-                _('Backlight Intensity'), 'appbutton-backlight-intensity',
-                { min: 1, max: 9 }
-            );
-
-            backlightSwitch.activatable_widget.connect('notify::active', widget => {
-                if (widget.get_active()) {
-                    backlightIntensitySpin.show();
-                    return;
-                }
-                backlightIntensitySpin.hide();
-            });
-
             return this.addGroup(_('App Buttons'), [
                 this.createSlider(
                     _('Icon Size'), 'appbutton-icon-size',
@@ -170,8 +118,13 @@ var CustomizePage = GObject.registerClass(
                     _('Spacing'), 'appbutton-spacing',
                     { min: 0, max: 10 }
                 ),
-                backlightSwitch,
-                backlightIntensitySpin,
+                this.createSwitch(_('Dominant Color Backlight'), 'appbutton-backlight'),
+                ...this.addVisibilityControl([
+                    this.createSpinButton(
+                        _('Backlight Intensity'), 'appbutton-backlight-intensity',
+                        { min: 1, max: 9 }
+                    )
+                ], { 'appbutton-backlight': value => value })
             ]);
         }
 
@@ -182,39 +135,15 @@ var CustomizePage = GObject.registerClass(
                 { label: _('Bottom'), value: 'bottom' }
             ];
 
-            const activeColorButton = this.createColorButton(_('Active Color'), 'indicator-color-active');
-
-            if (this._settings.get_boolean('indicator-dominant-color-active')) {
-                activeColorButton.hide();
-            }
-
-            this._settings.connect('changed::indicator-dominant-color-active', () => {
-                if (this._settings.get_boolean('indicator-dominant-color-active')) {
-                    activeColorButton.hide();
-                    return;
-                }
-                activeColorButton.show();
-            });
-
-            const inactiveColorButton = this.createColorButton(_('Inactive Color'), 'indicator-color-inactive');
-
-            if (this._settings.get_boolean('indicator-dominant-color-inactive')) {
-                inactiveColorButton.hide();
-            }
-
-            this._settings.connect('changed::indicator-dominant-color-inactive', () => {
-                if (this._settings.get_boolean('indicator-dominant-color-inactive')) {
-                    inactiveColorButton.hide();
-                    return;
-                }
-                inactiveColorButton.show();
-            });
-
             return this.addGroup(_('Indicators'), [
                 this.createSwitch(_('Active Dominant Color'), 'indicator-dominant-color-active'),
-                activeColorButton,
+                ...this.addVisibilityControl([
+                    this.createColorButton(_('Active Color'), 'indicator-color-active')
+                ], { 'indicator-dominant-color-active': value => !value }),
                 this.createSwitch(_('Inactive Dominant Color'), 'indicator-dominant-color-inactive'),
-                inactiveColorButton,
+                ...this.addVisibilityControl([
+                    this.createColorButton(_('Inactive Color'), 'indicator-color-inactive')
+                ], { 'indicator-dominant-color-inactive': value => !value }),
                 this.createPicklist(
                     _('Position'), 'indicator-position',
                     positionOptions
@@ -268,6 +197,11 @@ var CustomizePage = GObject.registerClass(
         }
 
         _toggleEmptyMessage() {
+
+            if (!this._options.length) {
+                return;
+            }
+
             const visibleOptions = this._options.filter(option => option.visible);
 
             if (visibleOptions.length) {

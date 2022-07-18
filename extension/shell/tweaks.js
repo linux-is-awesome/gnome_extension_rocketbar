@@ -65,8 +65,8 @@ var ShellTweaks = class {
     _createConnections() {
         this._connections = new Connections();
         this._connections.addScope(this._settings, [
-            'changed::panel-scroll-volume-change-speed',
-            'changed::panel-scroll-volume-change-speed-ctrl'], () => this._setConfig());
+            'changed::sound-volume-control-change-speed',
+            'changed::sound-volume-control-change-speed-ctrl'], () => this._setConfig());
         this._connections.addScope(this._settings, [
             'changed::overview-kill-dash',
             'changed::panel-enable-scroll',
@@ -147,8 +147,8 @@ var ShellTweaks = class {
             enableFullscreenHotCorner: this._settings.get_boolean('hotcorner-enable-in-fullscreen'),
             enableOverviewClickHandler: this._settings.get_boolean('overview-enable-empty-space-clicks'),
             activitiesShowAppsButton: this._settings.get_string('activities-show-apps-button'),
-            soundVolumeStep: this._settings.get_int('panel-scroll-volume-change-speed'),
-            soundVolumeStepCtrl: this._settings.get_int('panel-scroll-volume-change-speed-ctrl'),
+            soundVolumeStep: this._settings.get_int('sound-volume-control-change-speed'),
+            soundVolumeStepCtrl: this._settings.get_int('sound-volume-control-change-speed-ctrl'),
             appButtonMenuRequireClick: this._settings.get_boolean('appbutton-menu-require-click'),
             panelMenuRequireClick: this._settings.get_boolean('panel-menu-require-click')
         };

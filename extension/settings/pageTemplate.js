@@ -253,5 +253,53 @@ var SettingsPageTemplate = GObject.registerClass(
             });
         }
 
+        addVisibilityControl(widgets = [], settingsKeys = {}, callback) {
+
+            if (!settingsKeys || !widgets.length) {
+                return widgets;
+            }
+
+            const updateVisibility = () => {
+
+                let visibilityState = false;
+
+                for (let settingsKey in settingsKeys) {
+
+                    const keyHandler = settingsKeys[settingsKey];
+
+                    if (!keyHandler) {
+                        continue;
+                    }
+
+                    if (keyHandler(this._settings.get_boolean(settingsKey))) {
+                        visibilityState = true;
+                        break;
+                    }
+                }
+
+                widgets.forEach(widget => {
+
+                    widget.visible = visibilityState
+
+                    if (callback) {
+                        callback(widget);
+                    }
+
+                });
+
+                if (callback) {
+                    callback();
+                }
+            };
+
+            updateVisibility();
+
+            for (let settingsKey in settingsKeys) {
+                this._settings.connect(`changed::${settingsKey}`, updateVisibility);
+            }
+
+            return widgets;
+        }
+
     }
 );

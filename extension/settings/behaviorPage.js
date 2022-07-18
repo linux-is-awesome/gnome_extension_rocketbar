@@ -28,6 +28,9 @@ var BehaviorPage = GObject.registerClass(
             // Panel
             this._addPanelOptions();
 
+            // Sound Volume Control
+            this._addSoundControlOptions();
+
             // Activities
             this._addActivitiesOptions();
 
@@ -50,94 +53,73 @@ var BehaviorPage = GObject.registerClass(
                 { label: _('Move windows'), value: 'move_windows' }, 
             ];
 
-            const activateBehaviorPicklist = this.createPicklist(
-                _('Running apps activation behavior'), 'appbutton-running-app-activate-behavior',
-                activateBehaviorOptions,
-                _('Controls the behavior when an app is running but has no windows on the active workspace, supports isolated workspaces only, ' +
-                'can be configured separately for each app via an app menu')
-            );
-
-            const taskbarGroup = this.addGroup(_('Taskbar'), [
-                this.createSwitch(_('Allow Drag and Drop'), 'appbutton-enable-drag-and-drop',
+            this.addVisibilityControl([this.addGroup(_('Taskbar'), [
+                this.createSwitch(_('Enable Drag and Drop'), 'appbutton-enable-drag-and-drop',
                                   _('Reorder apps in the taskbar using Drag and Drop')),
-                this.createSwitch(_('Scroll to cycle app windows'), 'appbutton-enable-scroll'),
-                this.createSwitch(_('Require click to open context menus for apps in the taskbar'), 'appbutton-menu-require-click'),
-                activateBehaviorPicklist
-            ]);
-
-            if (!this._settings.get_boolean('taskbar-enabled')) {
-                taskbarGroup.hide();
-            }
-
-            if (!this._settings.get_boolean('taskbar-isolate-workspaces')) {
-                activateBehaviorPicklist.hide();
-            }
-
-            this._settings.connect('changed::taskbar-enabled', () => {
-                if (!this._settings.get_boolean('taskbar-enabled')) {
-                    taskbarGroup.hide();
-                    return;
-                }
-                taskbarGroup.show();
-            });
-
-            this._settings.connect('changed::taskbar-isolate-workspaces', () => {
-                if (!this._settings.get_boolean('taskbar-isolate-workspaces')) {
-                    activateBehaviorPicklist.hide();
-                    return;
-                }
-                activateBehaviorPicklist.show();
-            });
+                this.createSwitch(_('Enable Minimize action'), 'appbutton-enable-minimize-action',
+                                  _('Allows to minimize single app windows by clicking apps in the taskbar')),
+                this.createSwitch(_('Require click to open context menus'), 'appbutton-menu-require-click'),
+                ...this.addVisibilityControl([
+                    this.createSwitch(_('Middle click to toggle app sound mute'), 'appbutton-middle-button-sound-mute',
+                                      _('By default Middle click is used to open new app windows and to close the first app window when Ctrl is pressed')),
+                    this.createSwitch(_('Scroll to change app sound volume'), 'appbutton-scroll-change-sound-volume')
+                ], { 'appbutton-enable-sound-control': value => value }),
+                ...this.addVisibilityControl(
+                    [this.createSwitch(_('Scroll to cycle app windows'), 'appbutton-enable-scroll')], {
+                    'appbutton-enable-sound-control': null,
+                    'appbutton-scroll-change-sound-volume': value => (
+                        this._settings.get_boolean('appbutton-enable-sound-control') ?
+                        !value : true
+                    )
+                }),
+                ...this.addVisibilityControl([this.createPicklist(
+                    _('Running apps activation behavior'), 'appbutton-running-app-activate-behavior',
+                    activateBehaviorOptions,
+                    _('Controls the behavior when an app is running but has no windows on the active workspace, supports isolated workspaces only, ' +
+                    'can be configured separately for each app via an app menu')
+                )], { 'taskbar-isolate-workspaces': value => value })
+            ])], { 'taskbar-enabled': value => value });
         }
 
         _addPanelOptions() {
+            this.addGroup(_('Panel'), [
+                this.createSwitch(_('Require click to activate the panel menu buttons'), 'panel-menu-require-click'),
+                this.createSwitch(_('Middle click to toggle sound mute'), 'panel-enable-middle-button',
+                                  _('Press middle button on an empty space of the panel')),
+                this.createSwitch(_('Scroll to change sound volume'), 'panel-enable-scroll')
+            ]);
+        }
+
+        _addSoundControlOptions() {
 
             const volumeChangeSpeedOptions = [
                 { label: _('Slowest'), value: 1 },
-                { label: _('Slow'), value: 2 }, 
+                { label: _('Slow'), value: 2 },
                 { label: _('Normal'), value: 4 },
                 { label: _('Fast'), value: 6 },
                 { label: _('Faster'), value: 8 },
                 { label: _('Turbo'), value: 10 }
             ];
 
-            const volumeSpeedPicklist = this.createPicklist(
-                _('Volume change speed'), 'panel-scroll-volume-change-speed',
-                volumeChangeSpeedOptions
-            );
-
-            const volumeSpeedCtrlPicklist = this.createPicklist(
-                _('Volume change speed when Ctrl pressed'), 'panel-scroll-volume-change-speed-ctrl',
-                volumeChangeSpeedOptions
-            );
-
-            const scrollSwitch = this.createSwitch(_('Scroll to change sound volume'), 'panel-enable-scroll');
-
-            scrollSwitch.activatable_widget.connect('notify::active', (widget) => {
-
-                if (widget.get_active()) {
-                    volumeSpeedPicklist.show();
-                    volumeSpeedCtrlPicklist.show();
-                    return;
-                }
-
-                volumeSpeedPicklist.hide();
-                volumeSpeedCtrlPicklist.hide();
+            this.addVisibilityControl([this.addGroup(_('Sound Volume Control'), [
+                this.createPicklist(
+                    _('Volume change speed'), 'sound-volume-control-change-speed',
+                    volumeChangeSpeedOptions
+                ),
+                this.createPicklist(
+                    _('Volume change speed when Ctrl pressed'), 'sound-volume-control-change-speed-ctrl',
+                    volumeChangeSpeedOptions
+                )
+            ])], {
+                'taskbar-enabled': null,
+                'appbutton-enable-sound-control': null,
+                'appbutton-scroll-change-sound-volume': value => (
+                    this._settings.get_boolean('taskbar-enabled') &&
+                        this._settings.get_boolean('appbutton-enable-sound-control') ?
+                    value : false
+                ),
+                'panel-enable-scroll': value => value
             });
-
-            if (!scrollSwitch.activatable_widget.get_active()) {
-                volumeSpeedPicklist.hide();
-                volumeSpeedCtrlPicklist.hide();
-            }
-    
-            this.addGroup(_('Panel'), [
-                this.createSwitch(_('Require click to activate the panel menu buttons'), 'panel-menu-require-click'),
-                this.createSwitch(_('Middle click to toggle sound mute'), 'panel-enable-middle-button',
-                                  _('Press middle button on an empty space of the panel')),
-                scrollSwitch,
-                volumeSpeedPicklist,
-                volumeSpeedCtrlPicklist
-            ]);
         }
 
         _addActivitiesOptions() {

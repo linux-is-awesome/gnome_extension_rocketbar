@@ -31,39 +31,18 @@ var GeneralPage = GObject.registerClass(
         }
 
         _addTaskbarOptions() {
-
-            const taskbarEnabledSwitch = this.createSwitch(_('Enabled'), 'taskbar-enabled');
-
-            const taskbarGroup = [
-                taskbarEnabledSwitch,
-                this.createSwitch(_('Show Favorites'), 'taskbar-show-favorites'),
-                this.createSwitch(_('Isolate Workspaces'), 'taskbar-isolate-workspaces'),
-                this.createSwitch(_('Enable Tooltips'), 'appbutton-enable-tooltips'),
-                this.createSwitch(_('Enable Indicators'), 'appbutton-enable-indicators'),
-                this.createSwitch(_('Enable Notification Badges'), 'appbutton-enable-notification-badges')
-            ];
-
-            const updateTaskbarGroup = () => {
-                taskbarGroup.forEach(control => {
-
-                    if (control === taskbarEnabledSwitch) {
-                        return;
-                    }
-
-                    if (taskbarEnabledSwitch.activatable_widget.get_active()) {
-                        control.show();
-                    } else {
-                        control.hide();
-                    }
-
-                });
-            };
-
-            taskbarEnabledSwitch.activatable_widget.connect('notify::active', updateTaskbarGroup);
-
-            updateTaskbarGroup();
-
-            this.addGroup(_('Taskbar'), taskbarGroup);
+            this.addGroup(_('Taskbar'), [
+                this.createSwitch(_('Enabled'), 'taskbar-enabled'),
+                ...this.addVisibilityControl([
+                    this.createSwitch(_('Show Favorites'), 'taskbar-show-favorites'),
+                    this.createSwitch(_('Isolate Workspaces'), 'taskbar-isolate-workspaces'),
+                    this.createSwitch(_('Enable Indicators'), 'appbutton-enable-indicators'),
+                    this.createSwitch(_('Enable Notification Badges'), 'appbutton-enable-notification-badges'),
+                    this.createSwitch(_('Enable Tooltips'), 'appbutton-enable-tooltips'),
+                    this.createSwitch(_('Enable Sound Volume Control'), 'appbutton-enable-sound-control',
+                                      _('Experimental feature'))
+                ], { 'taskbar-enabled': value => value })
+            ]);
         }
 
         _addOverviewOptions() {

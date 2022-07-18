@@ -147,7 +147,7 @@
         </key>
         <key type="b" name="appbutton-enable-minimize-action">
             <default>true</default>
-            <summary>Enable Minimize single window action</summary>
+            <summary>Enable Minimize action</summary>
         </key>
         <key type="b" name="appbutton-scroll-change-sound-volume">
             <default>false</default>
@@ -173,11 +173,11 @@
             <default>true</default>
             <summary>Scroll panel to changes sound volume</summary>
         </key>
-        <key type="i" name="panel-scroll-volume-change-speed">
+        <key type="i" name="sound-volume-control-change-speed">
             <default>2</default>
             <summary>Sound volume change speed</summary>
         </key>
-        <key type="i" name="panel-scroll-volume-change-speed-ctrl">
+        <key type="i" name="sound-volume-control-change-speed-ctrl">
             <default>10</default>
             <summary>Sound volume change speed when Ctrl pressed</summary>
         </key>
