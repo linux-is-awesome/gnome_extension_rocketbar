@@ -27,6 +27,10 @@
             <default>true</default>
             <summary>Enable Notification Badges</summary>
         </key>
+        <key type="b" name="appbutton-enable-sound-control">
+            <default>false</default>
+            <summary>Enable Sound Volume Control</summary>
+        </key>
         <key type="b" name="overview-kill-dash">
             <default>false</default>
             <summary>Hide the Dash from Overview and prevent it from rerendering behind the scene</summary>
@@ -133,10 +137,6 @@
             <default>true</default>
             <summary>Allow Drag and Drop</summary>
         </key>
-        <key type="b" name="appbutton-enable-scroll">
-            <default>true</default>
-            <summary>Scroll to cycle app windows</summary>
-        </key>
         <key type="b" name="appbutton-menu-require-click">
             <default>true</default>
             <summary>Require click to open context menus for apps in the taskbar</summary>
@@ -145,13 +145,29 @@
             <default>'new_window'</default>
             <summary>Running apps activation behavior</summary>
         </key>
+        <key type="b" name="appbutton-enable-minimize-action">
+            <default>true</default>
+            <summary>Enable Minimize single window action</summary>
+        </key>
+        <key type="b" name="appbutton-scroll-change-sound-volume">
+            <default>false</default>
+            <summary>Scroll to change application sound volume</summary>
+        </key>
+        <key type="b" name="appbutton-enable-scroll">
+            <default>true</default>
+            <summary>Scroll to cycle app windows</summary>
+        </key>
+        <key type="b" name="appbutton-middle-button-sound-mute">
+            <default>false</default>
+            <summary>Middle click to toggle application sound mute</summary>
+        </key>
         <key type="b" name="panel-menu-require-click">
             <default>false</default>
             <summary>Require click to activate the panel menu buttons</summary>
         </key>
         <key type="b" name="panel-enable-middle-button">
             <default>true</default>
-            <summary>Middle click on panel empty space to mute/unmute sound volume</summary>
+            <summary>Middle click on panel empty space to toggle sound mute</summary>
         </key>
         <key type="b" name="panel-enable-scroll">
             <default>true</default>

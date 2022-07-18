@@ -165,7 +165,7 @@ var AppButton = GObject.registerClass(
             this.windows = 0;
             this.notifications = 0;
             this.dominantColor = null;
-            this.soundVolumeControl = new AppSoundVolumeControl(this.app);
+            this.soundVolumeControl = null;
 
             // set private properties
             this._settings = settings;
@@ -331,6 +331,14 @@ var AppButton = GObject.registerClass(
                 );
 
             }
+
+            if (!this._config.enableSoundControl) {
+                this.soundVolumeControl?.destroy();
+                this.soundVolumeControl = null;
+            } else if (!this.soundVolumeControl) {
+                this.soundVolumeControl = new AppSoundVolumeControl(this.app);
+            }
+
         }
 
         _setConfig() {
@@ -342,9 +350,10 @@ var AppButton = GObject.registerClass(
                 enableNotificationBadges: this._settings.get_boolean('appbutton-enable-notification-badges'),
                 enableDragAndDrop: this._settings.get_boolean('appbutton-enable-drag-and-drop'),
                 enableScrollHandler: this._settings.get_boolean('appbutton-enable-scroll'),
-                enableMinimizeAction: true,
-                scrollToChangeSoundVolume: false,
-                middleButtonToggleMute: false,
+                enableMinimizeAction: this._settings.get_boolean('appbutton-enable-minimize-action'),
+                enableSoundControl: this._settings.get_boolean('appbutton-enable-sound-control'),
+                scrollToChangeSoundVolume: this._settings.get_boolean('appbutton-scroll-change-sound-volume'),
+                middleButtonToggleMute: this._settings.get_boolean('appbutton-middle-button-sound-mute'),
                 activateRunningBehavior: this._settings.get_string('appbutton-running-app-activate-behavior'),
                 // visual customization settings
                 iconSize: this._settings.get_int('appbutton-icon-size'),
@@ -776,6 +785,7 @@ var AppButton = GObject.registerClass(
 
             // avoid unnesessary executions
             if (!this.isActive && !global.display.focus_window) {
+                this._lastFocusedWindow = null;
                 return;
             }
 
