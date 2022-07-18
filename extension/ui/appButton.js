@@ -481,7 +481,7 @@ var AppButton = GObject.registerClass(
          */
         _dragMotion(event) {
 
-            const isOverview = Main.overview._shown;
+            const isOverview = Main.overview.visible;
 
             const parent = this.get_parent();
 
@@ -599,7 +599,7 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
-            const isOverview = Main.overview._shown;
+            const isOverview = Main.overview.visible;
             const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) != 0;
 
             // close opened windows
