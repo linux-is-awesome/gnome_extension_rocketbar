@@ -57,7 +57,7 @@ var BehaviorPage = GObject.registerClass(
                 this.createSwitch(_('Enable Drag and Drop'), 'appbutton-enable-drag-and-drop',
                                   _('Reorder apps in the taskbar using Drag and Drop')),
                 this.createSwitch(_('Enable Minimize action'), 'appbutton-enable-minimize-action',
-                                  _('Allows to minimize single app windows by clicking apps in the taskbar')),
+                                  _('Allow to minimize single app windows by clicking apps in the taskbar')),
                 this.createSwitch(_('Require click to open context menus'), 'appbutton-menu-require-click'),
                 ...this.addVisibilityControl([
                     this.createSwitch(_('Middle click to toggle app sound mute'), 'appbutton-middle-button-sound-mute',

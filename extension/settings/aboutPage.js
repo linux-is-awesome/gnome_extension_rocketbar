@@ -27,7 +27,7 @@ var AboutPage = GObject.registerClass(
             ]);
 
             this.addGroup(_('Useful Links'), [
-                this.createLink(_('Report bugs'), metadata.url + '/issues'),
+                this.createLink(_('Report an issue'), metadata.url + '/issues'),
                 this.createLink(_('Share your ideas'), metadata.url + '/discussions/categories/ideas')
             ]);
 
