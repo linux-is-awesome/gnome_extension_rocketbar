@@ -22,9 +22,21 @@ var Connections = class {
         }
     }
 
+    removeScope(scope) {
+
+        if (!scope) {
+            return;
+        }
+
+        for (let event of scope) {
+            this.remove(event);
+        }
+    }
+
     add(target, event, callback) {
 
-        if (!target || !event || !callback) {
+        if (!target || !event || !callback ||
+                this._connections.has(event)) {
             return;
         }
 

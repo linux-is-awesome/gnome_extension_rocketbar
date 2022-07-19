@@ -155,7 +155,10 @@ var Taskbar = GObject.registerClass(
             );
 
             // prevent default appMenu from displaying on the panel
-            this._connections.add(Main.panel.statusArea.appMenu.container, 'notify::visible', appMenu => appMenu.hide());
+            this._connections.add(
+                Main.panel.statusArea.appMenu.container, 'notify::visible',
+                appMenu => appMenu.hide()
+            );
 
             // handle settings
             this._connections.addScope(this._settings, [

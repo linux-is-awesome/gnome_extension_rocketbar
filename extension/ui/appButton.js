@@ -232,11 +232,15 @@ var AppButton = GObject.registerClass(
             this._connections.addScope(this._settings, [
                 'changed::taskbar-isolate-workspaces',
                 'changed::appbutton-enable-tooltips',
-                'changed::appbutton-enable-scroll'], () => this._setConfig());
+                'changed::appbutton-enable-scroll',
+                'changed::appbutton-enable-minimize-action',
+                'changed::appbutton-scroll-change-sound-volume',
+                'changed::appbutton-middle-button-sound-mute'], () => this._setConfig());
             this._connections.addScope(this._settings, [
                 'changed::appbutton-running-app-activate-behavior',
                 'changed::appbutton-enable-indicators',
                 'changed::appbutton-enable-notification-badges',
+                'changed::appbutton-enable-sound-control',
                 'changed::appbutton-enable-drag-and-drop',
                 'changed::appbutton-icon-size',
                 'changed::appbutton-icon-padding',
@@ -602,14 +606,16 @@ var AppButton = GObject.registerClass(
             const isOverview = Main.overview.visible;
             const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) != 0;
 
+            // hide gnome shell overview
+            if (!isCtrlPressed && !isMiddleButton) {
+                Main.overview.hide();
+            }
+
             // close opened windows
             if (isCtrlPressed && isMiddleButton) {
                 this._closeFirstAppWindow();
                 return;
             }
-
-            // hide gnome shell overview
-            Main.overview.hide();
 
             const openNewWindow = (
                 this.app.can_open_new_window() &&
@@ -926,14 +932,28 @@ var AppButton = GObject.registerClass(
 
             if (this.isActive) {
 
-                this._appIcon.add_style_pseudo_class('active');
+                this._connections?.add(Main.overview, 'showing', () => {
+                    this._appIcon.remove_style_pseudo_class('active');
+                    this._updateStyle();
+                });
 
-                this._applyDominantColor();
+                this._connections?.add(Main.overview, 'hiding', () => this._updateStyle());
+
+                // don't highlight app buttons when Overview is shown
+                // this prevents ugly flickering when selecting windows and changing workspaces
+                if (!Main.overview._shown) {
+
+                    this._appIcon.add_style_pseudo_class('active');
+
+                    this._applyDominantColor();
+                }
 
                 return;
             }
 
             this._appIcon.remove_style_pseudo_class('active');
+
+            this._connections?.removeScope(['showing','hiding']);
         }
 
         _applyDominantColor() {
