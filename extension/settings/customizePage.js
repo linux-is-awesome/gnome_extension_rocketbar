@@ -155,7 +155,7 @@ var CustomizePage = GObject.registerClass(
                 this.createSpinButton(
                     _('Limit'), 'indicator-display-limit',
                     { min: 1, max: 5 },
-                    _('The maximum number of indicators to display on the app button')
+                    _('The maximum number of indicators to display on top of app buttons')
                 )
             ]);
         }

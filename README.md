@@ -16,7 +16,7 @@
     - Supports both top and bottom positions of the Main panel
     - Per app customization feature
     - Drag and Drop support to reorder existing and pin new apps in the taskbar
-    - Displaying of notification badges on app buttons
+    - Displaying of notification badges on top of app buttons
     - Tooltips with additional information such as windows count and notification count
     - Set focus on urgent windows of an active application automatically (Fixes 'Open Folder' dialog in VS Code and so on)
 
