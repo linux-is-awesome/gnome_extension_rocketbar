@@ -37,7 +37,7 @@ var BehaviorPage = GObject.registerClass(
             // Overview
             this.addGroup(_('Overview'), [
                 this.createSwitch(_('Enable empty space clicks in Overview'), 'overview-enable-empty-space-clicks',
-                                  _('Left button click to close the Overview, Right button click to show Apps screen'))
+                                  _('Left button click to close the Overview, Right button click to show the App Grid'))
             ]);
 
             // Hot Corner
