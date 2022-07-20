@@ -187,7 +187,7 @@
         </key>
         <key type="s" name="activities-show-apps-button">
             <default>'right_button'</default>
-            <summary>Click Activities to show Apps screen</summary>
+            <summary>Click Activities to show the App Grid</summary>
         </key>
         <key type="b" name="overview-enable-empty-space-clicks">
             <default>true</default>
