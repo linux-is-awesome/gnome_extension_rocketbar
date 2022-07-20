@@ -16,6 +16,7 @@ const { DominantColorExtractor } = Me.imports.utils.dominantColorExtractor;
 const { NotificationHandler } = Me.imports.utils.notificationService;
 const { AppSoundVolumeControl } = Me.imports.utils.soundVolumeControl;
 const { Connections } = Me.imports.utils.connections;
+const { ScrollHandler } = Me.imports.utils.scrollHandler;
 
 //#endregion imports
 
@@ -222,7 +223,6 @@ var AppButton = GObject.registerClass(
             this.connect('key-focus-in', () => this._focus());
             this.connect('key-focus-out', () => this._focus());
             this.connect('notify::hover', () => this._hover());
-            this.connect('scroll-event', (actor, event) => this._handleScroll(event));
             // external connections
             this._connections = new Connections();
             this._connections.add(this._menu, 'open-state-changed', () => this._focus());
@@ -232,16 +232,18 @@ var AppButton = GObject.registerClass(
             this._connections.addScope(this._settings, [
                 'changed::taskbar-isolate-workspaces',
                 'changed::appbutton-enable-tooltips',
-                'changed::appbutton-enable-scroll',
                 'changed::appbutton-enable-minimize-action',
-                'changed::appbutton-scroll-change-sound-volume',
-                'changed::appbutton-middle-button-sound-mute'], () => this._setConfig());
+                'changed::appbutton-middle-button-sound-mute',
+                'changed::sound-volume-control-change-speed',
+                'changed::sound-volume-control-change-speed-ctrl'], () => this._setConfig());
             this._connections.addScope(this._settings, [
                 'changed::appbutton-running-app-activate-behavior',
                 'changed::appbutton-enable-indicators',
                 'changed::appbutton-enable-notification-badges',
                 'changed::appbutton-enable-sound-control',
                 'changed::appbutton-enable-drag-and-drop',
+                'changed::appbutton-enable-scroll',
+                'changed::appbutton-scroll-change-sound-volume',
                 'changed::appbutton-icon-size',
                 'changed::appbutton-icon-padding',
                 'changed::appbutton-vertical-margin',
@@ -336,11 +338,22 @@ var AppButton = GObject.registerClass(
 
             }
 
+            // toggle sound volume control
             if (!this._config.enableSoundControl) {
                 this.soundVolumeControl?.destroy();
                 this.soundVolumeControl = null;
+                // force this off
+                this._config.scrollToChangeSoundVolume = false;
             } else if (!this.soundVolumeControl) {
                 this.soundVolumeControl = new AppSoundVolumeControl(this.app);
+            }
+
+            // toggle scroll handler
+            if (!this._config.enableScrollHandler && !this._config.scrollToChangeSoundVolume) {
+                this._scrollHandler?.destroy();
+                this._scrollHandler = null;
+            } else if (!this._scrollHandler) {
+                this._scrollHandler = new ScrollHandler(this, (params) => this._handleScroll(params))
             }
 
         }
@@ -359,6 +372,8 @@ var AppButton = GObject.registerClass(
                 scrollToChangeSoundVolume: this._settings.get_boolean('appbutton-scroll-change-sound-volume'),
                 middleButtonToggleMute: this._settings.get_boolean('appbutton-middle-button-sound-mute'),
                 activateRunningBehavior: this._settings.get_string('appbutton-running-app-activate-behavior'),
+                soundVolumeStep: this._settings.get_int('sound-volume-control-change-speed'),
+                soundVolumeStepCtrl: this._settings.get_int('sound-volume-control-change-speed-ctrl'),
                 // visual customization settings
                 iconSize: this._settings.get_int('appbutton-icon-size'),
                 iconTextureSize: this._settings.get_int('appbutton-icon-size'),
@@ -456,6 +471,10 @@ var AppButton = GObject.registerClass(
             // destroy sound control
             this.soundVolumeControl?.destroy();
             this.soundVolumeControl = null;
+
+            // destroy scroll handler
+            this._scrollHandler?.destroy();
+            this._scrollHandler = null;
 
             // destroy static variables when taskbar is destroying
             if (!this._getTaskbar()) {
@@ -709,26 +728,23 @@ var AppButton = GObject.registerClass(
             windows[0].delete(global.get_current_time());
         }
 
-        _handleScroll(event) {
+        _handleScroll(params) {
 
-            if (!this._config.enableScrollHandler) {
-                return Clutter.EVENT_PROPAGATE;
-            }
-
-            const scrollDirection = event?.get_scroll_direction();
-
-            // handle only 2 directions: UP and DOWN
-            if (scrollDirection !== Clutter.ScrollDirection.UP &&
-                    scrollDirection !== Clutter.ScrollDirection.DOWN) {
-                return Clutter.EVENT_PROPAGATE;
-            }
+            const [scrollDirection, isCtrlPressed] = params;
 
             // change sound volume if it's required and possible
             if (this._config.scrollToChangeSoundVolume && this.soundVolumeControl) {
 
+                const soundVolumeStep = (
+                    isCtrlPressed ?
+                    this._config.soundVolumeStepCtrl :
+                    this._config.soundVolumeStep
+                );
+
                 this.soundVolumeControl.addOutputVolume(
                     scrollDirection === Clutter.ScrollDirection.UP ?
-                    2 : -2
+                    soundVolumeStep :
+                    -soundVolumeStep
                 );
 
                 // update tooltip if it's shown

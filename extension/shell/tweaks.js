@@ -12,6 +12,7 @@ const { AppButton } = Me.imports.ui.appButton;
 const { AppButtonMenu } = Me.imports.ui.appButtonMenu;
 const { SoundVolumeControl } = Me.imports.utils.soundVolumeControl;
 const { Connections } = Me.imports.utils.connections;
+const { ScrollHandler } = Me.imports.utils.scrollHandler;
 
 //#endregion imports
 
@@ -162,9 +163,9 @@ var ShellTweaks = class {
             return;
         }
 
-        this._panelScrollHandler = Main.panel.connect(
-            'scroll-event',
-            (actor, event) => this._handlePanelScroll(event)
+        this._panelScrollHandler = new ScrollHandler(
+            Main.panel,
+            (params) => this._handlePanelScroll(params)
         );
     }
 
@@ -174,28 +175,20 @@ var ShellTweaks = class {
             return;
         }
 
-        Main.panel.disconnect(this._panelScrollHandler);
-
+        this._panelScrollHandler.destroy();
         this._panelScrollHandler = null;
     }
 
-    _handlePanelScroll(event) {
+    _handlePanelScroll(params) {
         
-        const scrollDirection = event?.get_scroll_direction();
-
-        // handle only 2 directions: UP and DOWN
-        if (scrollDirection !== Clutter.ScrollDirection.UP &&
-                scrollDirection !== Clutter.ScrollDirection.DOWN) {
-            return Clutter.EVENT_PROPAGATE;
-        }
-
-        // change sound volume
-
         if (!this._soundVolumeControl) {
             return Clutter.EVENT_PROPAGATE;
         }
 
-        const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) != 0;
+        const [scrollDirection, isCtrlPressed] = params;
+
+        // change sound volume
+
         const soundVolumeStep = (
             isCtrlPressed ?
             this._config.soundVolumeStepCtrl :

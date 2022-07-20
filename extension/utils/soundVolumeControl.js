@@ -707,7 +707,6 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
         // A workaround to handle Chrome Apps and probably something else
         // Chrome Apps share Google Chrome's sound streams
         // To identify proper streams for such apps we need to get name of the parent app
-        // So this class should be create for RUNNING apps only to function as expected
 
         const appWindows = this._app.get_windows();
 
