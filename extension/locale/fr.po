@@ -1,0 +1,440 @@
+# French translations for PACKAGE package.
+# Copyright (C) 2022 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Céleri <celestin.bouchet@gmail.com>, 2022.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-07-21 01:39+0300\n"
+"PO-Revision-Date: 2022-07-21 02:42+0200\n"
+"Last-Translator: Celeri <celestin.bouchet@gmail.com>\n"
+"Language-Team: French\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: settings/aboutPage.js:13
+msgid "About"
+msgstr "À propos"
+
+#: settings/aboutPage.js:26
+msgid " Version"
+msgstr " Version"
+
+#: settings/aboutPage.js:29
+msgid "Useful Links"
+msgstr "Liens Utiles"
+
+#: settings/aboutPage.js:30
+msgid "Report an issue"
+msgstr "Signaler un problème"
+
+#: settings/aboutPage.js:31
+msgid "Share your ideas"
+msgstr "Proposer une idée"
+
+#: settings/aboutPage.js:34
+msgid "Credits"
+msgstr "Crédits"
+
+#: settings/behaviorPage.js:14
+msgid "Behavior"
+msgstr "Comportement"
+
+#: settings/behaviorPage.js:38 settings/generalPage.js:49
+msgid "Overview"
+msgstr "Aperçu"
+
+#: settings/behaviorPage.js:39
+msgid "Enable empty space clicks in Overview"
+msgstr "Activer les clics sur le vide dans l'Aperçu"
+
+#: settings/behaviorPage.js:40
+msgid ""
+"Left button click to close the Overview, Right button click to show the App "
+"Grid"
+msgstr ""
+"Clic Gauche pour fermer l'Aperçu, clic Droit pour ouvrir la grille "
+"d'Applications"
+
+#: settings/behaviorPage.js:44
+msgid "Hot Corner"
+msgstr "Coin actif"
+
+#: settings/behaviorPage.js:45
+msgid "Enable Fullscreen Hot Corner"
+msgstr "Activer le Coin Actif en Plein Écran"
+
+#: settings/behaviorPage.js:52 ui/appButtonMenu.js:398
+msgid "New window"
+msgstr "Nouvelle fenêtre"
+
+#: settings/behaviorPage.js:53 ui/appButtonMenu.js:402
+msgid "Move windows"
+msgstr "Déplacer la fenêtre"
+
+#: settings/behaviorPage.js:56 settings/customizePage.js:84
+#: settings/generalPage.js:34
+msgid "Taskbar"
+msgstr "Barre des Tâches"
+
+#: settings/behaviorPage.js:57
+msgid "Enable Drag and Drop"
+msgstr "Activer le Glisser-Déposer"
+
+#: settings/behaviorPage.js:58
+msgid "Reorder apps in the taskbar using Drag and Drop"
+msgstr "Réorganiser les applications dans la barre des tâches "
+"avec le Glisser-Déposer"
+
+#: settings/behaviorPage.js:59
+msgid "Enable Minimize action"
+msgstr "Activer l'action de Réduction"
+
+#: settings/behaviorPage.js:60
+msgid "Allow to minimize single app windows by clicking apps in the taskbar"
+msgstr "Permet de réduire individuellement les fenêtres des applications "
+"en cliquant sur leurs icônes dans la barre des tâches"
+
+#: settings/behaviorPage.js:61
+msgid "Require click to open context menus"
+msgstr "Nécessiter le clic pour ouvrir le menu contextuel"
+
+#: settings/behaviorPage.js:63
+msgid "Middle click to toggle app sound mute"
+msgstr "Clic Molette pour activer/désactiver le son de l'application"
+
+#: settings/behaviorPage.js:64
+msgid ""
+"By default Middle click is used to open new app windows and to close the "
+"first app window when Ctrl is pressed"
+msgstr "Par défaut, le clic Molette est utilisé pour ouvrir une nouvelle "
+"fenêtre de l'application et pour fermer la première fenêtre quand Ctrl est maintenu"
+
+#: settings/behaviorPage.js:65
+msgid "Scroll to change app sound volume"
+msgstr "Faire rouler la molette pour changer le volume de l'application"
+
+#: settings/behaviorPage.js:68
+msgid "Scroll to cycle app windows"
+msgstr "Utiliser la molette pour défiler entre les fenêtres d'applications"
+
+#: settings/behaviorPage.js:76
+msgid "Running apps activation behavior"
+msgstr "Comportement d'activation pour les applications en fonctionnement"
+
+#: settings/behaviorPage.js:78
+msgid ""
+"Controls the behavior when an app is running but has no windows on the "
+"active workspace, supports isolated workspaces only, can be configured "
+"separately for each app via an app menu"
+msgstr "Contrôle le comportement quand une application est active mais n'a pas "
+"de fenêtre sur l'espace de travail actuel, ne fonctionne qu'avec les espaces "
+"de travail isolés, peut être configuré séparément pour chaque application"
+
+#: settings/behaviorPage.js:85
+msgid "Panel"
+msgstr "Panneau"
+
+#: settings/behaviorPage.js:86
+msgid "Require click to activate the panel menu buttons"
+msgstr "Nécessiter un clic pour activer les boutons de menu du panneau"
+
+#: settings/behaviorPage.js:87
+msgid "Middle click to toggle sound mute"
+msgstr "Clic Molette pour activer/désactiver le son"
+
+#: settings/behaviorPage.js:88
+msgid "Press middle button on an empty space of the panel"
+msgstr "Cliquer sur la molette à un endroit vide du panneau"
+
+#: settings/behaviorPage.js:89
+msgid "Scroll to change sound volume"
+msgstr "Faire rouler la molette pour changer le volume"
+
+#: settings/behaviorPage.js:96
+msgid "Slowest"
+msgstr "Très Lent"
+
+#: settings/behaviorPage.js:97
+msgid "Slow"
+msgstr "Lent"
+
+#: settings/behaviorPage.js:98
+msgid "Normal"
+msgstr "Normal"
+
+#: settings/behaviorPage.js:99
+msgid "Fast"
+msgstr "Rapide"
+
+#: settings/behaviorPage.js:100
+msgid "Faster"
+msgstr "Très Rapide"
+
+#: settings/behaviorPage.js:101
+msgid "Turbo"
+msgstr "Turbo"
+
+#: settings/behaviorPage.js:104 ui/appButtonMenu.js:279
+msgid "Sound Volume Control"
+msgstr "Contrôle du volume sonore"
+
+#: settings/behaviorPage.js:106
+msgid "Volume change speed"
+msgstr "Vitesse de changement du volume"
+
+#: settings/behaviorPage.js:110
+msgid "Volume change speed when Ctrl pressed"
+msgstr "Vitesse de changement du volume quand Ctrl est maintenu"
+
+#: settings/behaviorPage.js:128
+msgid "None"
+msgstr "Aucun"
+
+#: settings/behaviorPage.js:129
+msgid "Left Button"
+msgstr "Clic Gauche"
+
+#: settings/behaviorPage.js:130
+msgid "Right Button"
+msgstr "Clic Droit"
+
+#: settings/behaviorPage.js:131
+msgid "Middle Button"
+msgstr "Clic Molette"
+
+#: settings/behaviorPage.js:134
+msgid "Activities"
+msgstr "Activités"
+
+#: settings/behaviorPage.js:136
+msgid "Click Activities to show tha App Grid"
+msgstr "Cliquer sur Activités pour ouvrir la grille des Applications"
+
+#: settings/customizePage.js:14 ui/appButtonMenu.js:299
+msgid "Customize"
+msgstr "Personnaliser"
+
+#: settings/customizePage.js:23
+msgid "No customizations available"
+msgstr "Pas de personnalisation disponible"
+
+#: settings/customizePage.js:79
+msgid "Left"
+msgstr "Gauche"
+
+#: settings/customizePage.js:80
+msgid "Center"
+msgstr "Centre"
+
+#: settings/customizePage.js:81
+msgid "Right"
+msgstr "Droite"
+
+#: settings/customizePage.js:86 settings/customizePage.js:148
+#: settings/customizePage.js:176
+msgid "Position"
+msgstr "Position"
+
+#: settings/customizePage.js:90
+msgid "Position Offset"
+msgstr "Décalage de la Position"
+
+#: settings/customizePage.js:93
+msgid "Preserve Position"
+msgstr "Conserver la Position"
+
+#: settings/customizePage.js:94
+msgid "Prevent position changes caused by other extensions in the panel"
+msgstr "Empecher les autres extensions de changer la position dans le panneau"
+
+#: settings/customizePage.js:99
+msgid "App Buttons"
+msgstr "Boutons des Applications"
+
+#: settings/customizePage.js:101 ui/appButtonMenu.js:434
+msgid "Icon Size"
+msgstr "Taille des Icônes"
+
+#: settings/customizePage.js:103
+msgid "Can be configured separately for each app via an app menu"
+msgstr "Peut être configuré individuellement pour chaque "
+"application via un menu d'application"
+
+#: settings/customizePage.js:106
+msgid "Icon Padding"
+msgstr "Marge Intérieure des Icônes"
+
+#: settings/customizePage.js:110
+msgid "Vertical Margin"
+msgstr "Marge Extérieure Verticale"
+
+#: settings/customizePage.js:114
+msgid "Roundness"
+msgstr "Rondeur"
+
+#: settings/customizePage.js:118
+msgid "Spacing"
+msgstr "Espacement"
+
+#: settings/customizePage.js:121
+msgid "Dominant Color Backlight"
+msgstr "Rétroéclairage avec la Couleur Dominante"
+
+#: settings/customizePage.js:124
+msgid "Backlight Intensity"
+msgstr "Intensité du Rétroéclairage"
+
+#: settings/customizePage.js:134
+msgid "Top"
+msgstr "En Haut"
+
+#: settings/customizePage.js:135
+msgid "Bottom"
+msgstr "En Bas"
+
+#: settings/customizePage.js:138
+msgid "Indicators"
+msgstr "Indicateurs"
+
+#: settings/customizePage.js:139
+msgid "Active Dominant Color"
+msgstr "Couleur Dominante Active"
+
+#: settings/customizePage.js:141
+msgid "Active Color"
+msgstr "Couleur Active"
+
+#: settings/customizePage.js:143
+msgid "Inactive Dominant Color"
+msgstr "Couleur Dominante Inactive"
+
+#: settings/customizePage.js:145
+msgid "Inactive Color"
+msgstr "Couleur Inactive"
+
+#: settings/customizePage.js:152 settings/customizePage.js:180
+msgid "Size"
+msgstr "Taille"
+
+#: settings/customizePage.js:156
+msgid "Limit"
+msgstr "Limite"
+
+#: settings/customizePage.js:158
+msgid "The maximum number of indicators to display on top of app buttons"
+msgstr "Nombre maximum d'indicateurs à afficher sur un bouton d'application"
+
+#: settings/customizePage.js:166
+msgid "Top Left"
+msgstr "En Haut à Gauche"
+
+#: settings/customizePage.js:167
+msgid "Top Right"
+msgstr "En Haut à Droite"
+
+#: settings/customizePage.js:168
+msgid "Bottom Left"
+msgstr "En Bas à Gauche"
+
+#: settings/customizePage.js:169
+msgid "Bottom Right"
+msgstr "En Bas à Droite"
+
+#: settings/customizePage.js:172
+msgid "Notification Badges"
+msgstr "Badges de Notification"
+
+#: settings/customizePage.js:173
+msgid "Color"
+msgstr "Couleur"
+
+#: settings/customizePage.js:174
+msgid "Border Color"
+msgstr "Couleur de la Bordure"
+
+#: settings/customizePage.js:184
+msgid "Margin"
+msgstr "Marge"
+
+#: settings/customizePage.js:191
+msgid "Tooltips"
+msgstr "Info-bulles"
+
+#: settings/customizePage.js:193
+msgid "Show Delay"
+msgstr "Délai d'Affichage"
+
+#: settings/generalPage.js:14
+msgid "General"
+msgstr "Général"
+
+#: settings/generalPage.js:35
+msgid "Enabled"
+msgstr "Activé"
+
+#: settings/generalPage.js:37
+msgid "Show Favorites"
+msgstr "Afficher les Favoris"
+
+#: settings/generalPage.js:38
+msgid "Isolate Workspaces"
+msgstr "Isoler les Espaces de Travail"
+
+#: settings/generalPage.js:39
+msgid "Enable Indicators"
+msgstr "Activer les Indicateurs"
+
+#: settings/generalPage.js:40
+msgid "Enable Notification Badges"
+msgstr "Activer les Badges de Notification"
+
+#: settings/generalPage.js:41
+msgid "Enable Tooltips"
+msgstr "Activer les Info-bulles"
+
+#: settings/generalPage.js:42
+msgid "Enable Sound Volume Control"
+msgstr "Activer le Contrôle du Volume Sonore"
+
+#: settings/generalPage.js:43
+msgid "Experimental feature"
+msgstr "Fonctionnalités expérimentales"
+
+#: settings/generalPage.js:50
+msgid "Kill the Dash"
+msgstr "Tuer le Dash"
+
+#: settings/generalPage.js:51
+msgid ""
+"Hide the Dash from Overview and prevent it from rerendering behind the scene"
+msgstr "Cache le Dash de l'Aperçu et l'empêche de faire son rendu en arrière-plan"
+
+#: ui/appButtonMenu.js:179
+msgid "Pin"
+msgstr "Épingler au Dash"
+
+#: ui/appButtonMenu.js:395
+msgid "Activation Behavior"
+msgstr "Comportement d'Activation"
+
+#: ui/appButtonMenu.js:412
+msgid "Icon"
+msgstr "Icône"
+
+#: ui/appButtonMenu.js:415
+msgid "Import"
+msgstr "Importer"
+
+#: ui/appButtonMenu.js:426
+msgid "Reset to default"
+msgstr "Réinitialiser"
+
+#: ui/appButtonMenu.js:440
+msgid "Reset all to default"
+msgstr "Tout Réinitialiser"
