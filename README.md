@@ -86,9 +86,9 @@ OPTIONAL: to get the latest UNSTABLE version type: git checkout develop
 
 ### Translations
 
-No translations as of now, but you can help!
+French by [@celestomm](https://github.com/celestomm)
 
-To do so:
+To create a new translation:
 
 - open Terminal and run the following commands:
 ```
