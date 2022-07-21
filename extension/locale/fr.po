@@ -413,7 +413,7 @@ msgstr "Tuer le Dash"
 #: settings/generalPage.js:51
 msgid ""
 "Hide the Dash from Overview and prevent it from rerendering behind the scene"
-msgstr "Cache le Dash et l'empêche de faire son rendu en arrière-plan"
+msgstr "Cache le Dash de l'Aperçu et l'empêche de faire son rendu en arrière-plan"
 
 #: ui/appButtonMenu.js:179
 msgid "Pin"
