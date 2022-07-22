@@ -1,6 +1,8 @@
+/* exported DominantColorExtractor */
+
 const { Gio, St, Gtk, GdkPixbuf } = imports.gi;
 
-const DOMINANT_COLOR_ICON_SIZE = 64;
+const DOMINANT_COLOR_ICON_SIZE = 16;
 
 /**
 * Credit: Dash to Dock
