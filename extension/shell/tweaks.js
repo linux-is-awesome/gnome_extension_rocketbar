@@ -25,7 +25,7 @@ var ShellTweaks = class {
         this._settings = settings;
 
         // enable tweaks with a small delay
-        this._initTimeout = Timeout.idle(300).run(() => {
+        this._initTimeout = Timeout.idle().run(() => {
 
             this._initTimeout = null;
 
