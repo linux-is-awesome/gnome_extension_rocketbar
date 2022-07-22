@@ -265,6 +265,8 @@ var AppButton = GObject.registerClass(
                 'changed::indicator-position',
                 'changed::indicator-size',
                 'changed::indicator-display-limit',
+                'changed::indicator-dominant-color-inactive',
+                'changed::indicator-dominant-color-active',
                 'changed::notification-badge-color',
                 'changed::notification-badge-border-color',
                 'changed::notification-badge-position',
@@ -291,6 +293,8 @@ var AppButton = GObject.registerClass(
                 this._handleIconTheme();
             } else if (this._config.iconTextureSize !== oldConfig.iconTextureSize) {
                 this._updateIcon();
+            } else {
+                this._updateDominantColor();
             }
 
             // set style
@@ -390,6 +394,10 @@ var AppButton = GObject.registerClass(
                 spacing: this._settings.get_int('appbutton-spacing'),
                 backlight: this._settings.get_boolean('appbutton-backlight'),
                 backlightIntensity: this._settings.get_int('appbutton-backlight-intensity'),
+                indicatorDominantColor: (
+                    this._settings.get_boolean('indicator-dominant-color-inactive') ||
+                    this._settings.get_boolean('indicator-dominant-color-active')
+                ),
                 customIconPath: null
             };
 
@@ -897,7 +905,10 @@ var AppButton = GObject.registerClass(
 
         _updateDominantColor() {
 
-            if (this.dominantColor) {
+            if (this.dominantColor || (
+                !this._config.backlight &&
+                !this._config.indicatorDominantColor
+            )) {
                 return;
             }
             
