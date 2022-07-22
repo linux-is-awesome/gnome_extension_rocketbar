@@ -1,3 +1,5 @@
+/* exported Favorites */
+
 const { Shell } = imports.gi;
 const AppFavorites = imports.ui.appFavorites;
 const ExtensionUtils = imports.misc.extensionUtils;

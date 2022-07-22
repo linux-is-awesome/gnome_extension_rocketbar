@@ -1,3 +1,5 @@
+/* exported PositionProvider */
+
 const Main = imports.ui.main;
 
 var PositionProvider = class {

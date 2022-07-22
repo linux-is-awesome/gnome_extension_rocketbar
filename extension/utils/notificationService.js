@@ -1,7 +1,17 @@
+/* exported NotificationHandler */
+
+//#region imports
+
 const Main = imports.ui.main;
-const { GLib } = imports.gi;
 const { FdoNotificationDaemonSource, GtkNotificationDaemonAppSource } = imports.ui.notificationDaemon;
 const { WindowAttentionSource } = imports.ui.windowAttentionHandler;
+
+// custom modules import
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
+const { Timeout } = Me.imports.utils.timeout;
+
+//#endregion imports
 
 class NotificationService {
 
@@ -100,21 +110,15 @@ class NotificationService {
 
         // slow down it a bit
         // I believe we can wait for 500 ms to get notifications
-        this._updateCountTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 500, () => {
-            
+        this._updateCountTimeout = Timeout.idle(500).run(() => {
             this._updateCountTimeout = null;
-            
             this._updateCount();
-
-            return GLib.SOURCE_REMOVE;
         });
     }
 
     _stopUpdateCountQueue() {
-        if (this._updateCountTimeout) {
-            GLib.source_remove(this._updateCountTimeout);
-            this._updateCountTimeout = null;
-        }
+        this._updateCountTimeout?.destroy();
+        this._updateCountTimeout = null;
     }
 
     _updateCount() {

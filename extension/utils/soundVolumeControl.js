@@ -1,8 +1,8 @@
-// This class exports: SoundVolumeControl, AppSoundVolumeControl
+/* exported SoundVolumeControl, AppSoundVolumeControl */
 
 //#region imports
 
-const { Gio, Gvc, GLib, Shell } = imports.gi;
+const { Gio, Gvc, Shell } = imports.gi;
 const Main = imports.ui.main;
 const Volume = imports.ui.status.volume;
 
@@ -10,6 +10,7 @@ const Volume = imports.ui.status.volume;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { Connections } = Me.imports.utils.connections;
+const { Timeout } = Me.imports.utils.timeout;
 
 //#endregion imports
 
@@ -96,11 +97,7 @@ class SoundVolumeControlBase {
     }
 
     destroy() {
-
-        if (this._notifyVolumeChangeTimeout) {
-            GLib.source_remove(this._notifyVolumeChangeTimeout);
-        }
-
+        this._notifyVolumeChangeTimeout?.destroy();
     }
 
     _showOSD(stream, isMuted, name) {
@@ -147,9 +144,8 @@ class SoundVolumeControlBase {
         }
 
         // slow down notifications a bit
-        this._notifyVolumeChangeTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50, () => {
+        this._notifyVolumeChangeTimeout = Timeout.default(50).run(() => {
             this._notifyVolumeChangeTimeout = null;
-            return GLib.SOURCE_REMOVE;
         });
 
         if (this._volumeCancellable) {
@@ -458,21 +454,15 @@ class AppSoundVolumeService {
             return;
         }
 
-        this._updateControlsTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 500, () => {
-
+        this._updateControlsTimeout = Timeout.idle(500).run(() => {
             this._updateControlsTimeout = null;
-
             this._updateControls();
-
-            return GLib.SOURCE_REMOVE;
         });
     }
 
     _stopUpdateControls() {
-        if (this._updateControlsTimeout) {
-            GLib.source_remove(this._updateControlsTimeout);
-            this._updateControlsTimeout = null;
-        }
+        this._updateControlsTimeout?.destroy();
+        this._updateControlsTimeout = null;
     }
 
     _updateControls() {

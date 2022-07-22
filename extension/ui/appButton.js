@@ -1,6 +1,8 @@
+/* exported AppButton */
+
 //#region imports
 
-const { Clutter, GLib, Gio, GObject, Meta, Shell, St } = imports.gi;
+const { Clutter, Gio, GObject, Meta, Shell, St } = imports.gi;
 const { PopupMenuManager } = imports.ui.popupMenu;
 const Main = imports.ui.main;
 const DND = imports.ui.dnd;
@@ -17,6 +19,7 @@ const { NotificationHandler } = Me.imports.utils.notificationService;
 const { AppSoundVolumeControl } = Me.imports.utils.soundVolumeControl;
 const { Connections } = Me.imports.utils.connections;
 const { ScrollHandler } = Me.imports.utils.scrollHandler;
+const { Timeout } = Me.imports.utils.timeout;
 
 //#endregion imports
 
@@ -146,7 +149,7 @@ var AppButton = GObject.registerClass(
 
         //#region private methods
 
-        _init(app, isFavorite, settings) {
+        _init(params = {}) {
 
             // init the button
             super._init({
@@ -156,6 +159,8 @@ var AppButton = GObject.registerClass(
                 track_hover: true,
                 button_mask: St.ButtonMask.ONE | St.ButtonMask.TWO | St.ButtonMask.THREE
             });
+
+            const [ app, isFavorite, settings ] = params;
 
             // set public properties
             this.app = app;
@@ -434,11 +439,9 @@ var AppButton = GObject.registerClass(
 
             this.remove_all_transitions();
 
+            // remove timeouts
             this._stopUpdateIconGeometryQueue();
-
-            if (this._handleScrollTimeout) {
-                GLib.source_remove(this._handleScrollTimeout);
-            }
+            this._handleScrollTimeout?.destroy();
 
             // remove connections
             this._connections.destroy();
@@ -759,9 +762,8 @@ var AppButton = GObject.registerClass(
             }
 
             // make scrolling less aggressive
-            this._handleScrollTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
+            this._handleScrollTimeout = Timeout.default(300).run(() => {
                 this._handleScrollTimeout = null;
-                return GLib.SOURCE_REMOVE;
             });
 
             this._cycleAppWindows(this._getAppWindows(), scrollDirection === Clutter.ScrollDirection.UP);
@@ -1016,18 +1018,15 @@ var AppButton = GObject.registerClass(
 
             this._stopUpdateIconGeometryQueue();
 
-            this._updateIconGeometryTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+            this._updateIconGeometryTimeout = Timeout.idle(100).run(() => {
                 this._updateIconGeometryTimeout = null;
                 this._updateIconGeometry();
-                return GLib.SOURCE_REMOVE;
             });
         }
 
         _stopUpdateIconGeometryQueue() {
-            if (this._updateIconGeometryTimeout) {
-                GLib.source_remove(this._updateIconGeometryTimeout);
-                this._updateIconGeometryTimeout = null;
-            }
+            this._updateIconGeometryTimeout?.destroy();
+            this._updateIconGeometryTimeout = null;
         }
 
         /**
@@ -1213,7 +1212,7 @@ var AppButton = GObject.registerClass(
 
             const taskbar = this.get_parent()?.get_parent();
 
-            return taskbar && !taskbar.isDestroying ? taskbar  : null;
+            return taskbar && !taskbar.isDestroying ? taskbar : null;
         }
 
         _loadCustomIcon(iconPath) {

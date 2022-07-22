@@ -1,6 +1,7 @@
+/* exported ShellTweaks */
+
 //#region imports
 
-const { GLib } = imports.gi;
 const Clutter = imports.gi.Clutter;
 const Main = imports.ui.main;
 const HotCorner = imports.ui.layout.HotCorner;
@@ -13,6 +14,7 @@ const { AppButtonMenu } = Me.imports.ui.appButtonMenu;
 const { SoundVolumeControl } = Me.imports.utils.soundVolumeControl;
 const { Connections } = Me.imports.utils.connections;
 const { ScrollHandler } = Me.imports.utils.scrollHandler;
+const { Timeout } = Me.imports.utils.timeout;
 
 //#endregion imports
 
@@ -23,7 +25,7 @@ var ShellTweaks = class {
         this._settings = settings;
 
         // enable tweaks with a small delay
-        this._initTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
+        this._initTimeout = Timeout.idle(300).run(() => {
 
             this._initTimeout = null;
 
@@ -31,16 +33,13 @@ var ShellTweaks = class {
 
             this._createConnections();
 
-            return GLib.SOURCE_REMOVE;
         });
     }
 
     destroy() {
 
         // clear init timeout if exists
-        if (this._initTimeout) {
-            GLib.source_remove(this._initTimeout);
-        }
+        this._initTimeout?.destroy();
 
         // remove connections
         this._connections?.destroy();

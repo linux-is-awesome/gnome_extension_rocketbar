@@ -1,3 +1,5 @@
+/* exported ScrollHandler */
+
 const { Clutter } = imports.gi;
 
 var ScrollHandler = class {
