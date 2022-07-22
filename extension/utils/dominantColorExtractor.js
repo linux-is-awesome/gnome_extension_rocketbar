@@ -2,7 +2,7 @@
 
 const { Gio, St, Gtk, GdkPixbuf } = imports.gi;
 
-const DOMINANT_COLOR_ICON_SIZE = 16;
+const DOMINANT_COLOR_SAMPLE_SIZE = 16;
 
 /**
 * Credit: Dash to Dock
@@ -45,19 +45,19 @@ var DominantColorExtractor = class {
         // Resampling of large icons
         // We resample icons larger than twice the desired size, as the resampling
         // to a size s
-        // DOMINANT_COLOR_ICON_SIZE < s < 2*DOMINANT_COLOR_ICON_SIZE,
-        // most of the case exactly DOMINANT_COLOR_ICON_SIZE as the icon size is tipycally
+        // DOMINANT_COLOR_SAMPLE_SIZE < s < 2*DOMINANT_COLOR_SAMPLE_SIZE,
+        // most of the case exactly DOMINANT_COLOR_SAMPLE_SIZE as the icon size is tipycally
         // a multiple of it.
         let width = pixBuf.get_width();
         let height = pixBuf.get_height();
 
         // Resample
-        if (height >= 2 * DOMINANT_COLOR_ICON_SIZE) {
-            resample_y = Math.floor(height/DOMINANT_COLOR_ICON_SIZE);
+        if (height >= 2 * DOMINANT_COLOR_SAMPLE_SIZE) {
+            resample_y = Math.floor(height/DOMINANT_COLOR_SAMPLE_SIZE);
         }
 
-        if (width >= 2 * DOMINANT_COLOR_ICON_SIZE) {
-            resample_x = Math.floor(width/DOMINANT_COLOR_ICON_SIZE);
+        if (width >= 2 * DOMINANT_COLOR_SAMPLE_SIZE) {
+            resample_x = Math.floor(width/DOMINANT_COLOR_SAMPLE_SIZE);
         }
 
         if (resample_x !==1 || resample_y !== 1) {
@@ -135,7 +135,7 @@ var DominantColorExtractor = class {
         iconTheme.set_custom_theme(St.Settings.get().gtkIconTheme);
 
         // Get the pixel buffer from the icon theme
-        let icon_info = iconTheme.lookup_icon(iconTexture.get_names()[0], DOMINANT_COLOR_ICON_SIZE, 0);
+        let icon_info = iconTheme.lookup_icon(iconTexture.get_names()[0], DOMINANT_COLOR_SAMPLE_SIZE, 0);
 
         if (icon_info !== null) {
             return icon_info.load_icon();
