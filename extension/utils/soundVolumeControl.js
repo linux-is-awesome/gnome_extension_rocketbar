@@ -358,8 +358,6 @@ class AppSoundVolumeService {
 
     addControl(control) {
 
-        log('SERVICE Add control');
-
         if (!control || this._controls.indexOf(control) >= 0) {
             return;
         }
@@ -381,7 +379,6 @@ class AppSoundVolumeService {
             this._controls.splice(controlIndex, 1);
         }
 
-        log('SERVICE Remove control');
     }
 
     forceUpdate() {
@@ -404,8 +401,6 @@ class AppSoundVolumeService {
                 continue;
             }
 
-            log('SERVICE Add streams ' + appStream.name);
-
             this._streams.set(appStream.id, appStream);
         }
     }
@@ -424,8 +419,6 @@ class AppSoundVolumeService {
 
         if (AppSoundStream.isValidStream(stream)) {
             this._streams.set(streamId, new AppSoundStream(stream));
-
-            log('SERVICE Add stream ' + stream.name);
         }
 
         this._queueUpdateControls();
@@ -444,7 +437,6 @@ class AppSoundVolumeService {
             this._streams.delete(streamId);
         }
 
-        log('SERVICE Remove stream ' + streamId);
     }
 
     _queueUpdateControls() {
@@ -562,8 +554,6 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
 
         streams.push(appStream);
 
-        log('App Sound Control add stream ' + this._appName + ' ' + streams.length);
-
         appStream.addListener(this);
     }
 
@@ -590,8 +580,6 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
         }
 
         streams.splice(streamIndex, 1);
-
-        log('App Sound Control remove stream ' + this._appName + ' ' + appStream.isInput);
 
         // no need to call appStream.removeListener because this method
         // will be called by the appStream itself when it gets removed
