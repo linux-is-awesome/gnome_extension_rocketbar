@@ -9,7 +9,7 @@ var Timeout = class {
     }
 
     static idle(delay = 0) {
-        return new Timeout(GLib.PRIORITY_DEFAULT_IDLE, delay);
+        return new Timeout(delay ? GLib.PRIORITY_DEFAULT_IDLE : Meta.LaterType.IDLE, delay);
     }
 
     static redraw() {
@@ -37,9 +37,10 @@ var Timeout = class {
 
         this._id = (
 
-            this._priority === Meta.LaterType.BEFORE_REDRAW ?
+            this._priority === Meta.LaterType.BEFORE_REDRAW ||
+                this._priority === Meta.LaterType.IDLE ?
 
-            Meta.later_add(Meta.LaterType.BEFORE_REDRAW, handler) :
+            Meta.later_add(this._priority, handler) :
 
             GLib.timeout_add(this._priority, this._delay, handler)
         );
@@ -53,8 +54,11 @@ var Timeout = class {
             return;
         }
 
-        if (this._priority === Meta.LaterType.BEFORE_REDRAW) {
+        if (this._priority === Meta.LaterType.BEFORE_REDRAW ||
+                this._priority === Meta.LaterType.IDLE) {
+
             Meta.later_remove(this._id);
+
             return;
         }
 

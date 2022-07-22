@@ -149,7 +149,7 @@ var AppButton = GObject.registerClass(
 
         //#region private methods
 
-        _init(params = {}) {
+        _init(params = []) {
 
             // init the button
             super._init({
@@ -179,15 +179,15 @@ var AppButton = GObject.registerClass(
             this._firstUpdateIconGeometry = true;
             this._lastFocusedWindow = null;
 
-            // create layout
             this._createLayout();
-            this._createMenu();
+
             this._handleSettings();
 
-            // create connections
             this._createConnections();
 
-            // add notifications for the button
+            this._createMenu();
+
+            // init notification handler
             this._notificationHandler = new NotificationHandler(count => this._setNotifications(count), this.appId);
         }
 
@@ -216,9 +216,12 @@ var AppButton = GObject.registerClass(
         }
 
         _createMenu() {
-            this._menu = new AppButtonMenu(this, this._settings);
+            this._createMenuTimeout = Timeout.idle().run(() => {
 
-            Main.panel.menuManager.addMenu(this._menu);
+                this._menu = new AppButtonMenu(this, this._settings);
+
+                this._connections.add(this._menu, 'open-state-changed', () => this._focus());
+            });
         }
 
         _createConnections() {
@@ -230,7 +233,6 @@ var AppButton = GObject.registerClass(
             this.connect('notify::hover', () => this._hover());
             // external connections
             this._connections = new Connections();
-            this._connections.add(this._menu, 'open-state-changed', () => this._focus());
             this._connections.add(global.display, 'notify::focus-window', () => this._handleFocusedWindow());
             this._connections.add(St.Settings.get(), 'notify::gtk-icon-theme', () => this._handleIconTheme());
             // handle settings
@@ -442,6 +444,7 @@ var AppButton = GObject.registerClass(
             // remove timeouts
             this._stopUpdateIconGeometryQueue();
             this._handleScrollTimeout?.destroy();
+            this._createMenuTimeout?.destroy();
 
             // remove connections
             this._connections.destroy();
@@ -451,8 +454,7 @@ var AppButton = GObject.registerClass(
             this.appId = null;
 
             // destroy context menu
-            Main.panel.menuManager.removeMenu(this._menu);
-            this._menu?.close(false);
+            this._menu?.destroy();
             this._menu = null;
 
             // destroy indicator
@@ -898,7 +900,7 @@ var AppButton = GObject.registerClass(
             if (this.dominantColor) {
                 return;
             }
-
+            
             this.dominantColor = new DominantColorExtractor(this._appIcon.get_child()).getColor();
 
             this._updateStyle();
@@ -980,7 +982,7 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
-            let appIconStyle = this._appIcon.style || '';
+            let appIconStyle = /*this._appIcon.style ||*/ '';
 
             appIconStyle += 'background-gradient-direction: vertical;';
 
@@ -1000,7 +1002,7 @@ var AppButton = GObject.registerClass(
                 ${'0.' + this._config.backlightIntensity}
             );`);
 
-            this._appIcon.style = appIconStyle;
+            this._appIcon.style += appIconStyle;
         }
 
         _queueUpdateIconGeometry() {

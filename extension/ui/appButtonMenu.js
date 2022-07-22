@@ -94,6 +94,17 @@ class AppButtonMenuBase extends AppMenu {
         this._fixMenuSeparatorFontSize(this._openWindowsHeader);
 
         this._updateDetailsVisibility();
+
+        Main.panel.menuManager.addMenu(this);
+    }
+
+    destroy() {
+
+        this.close(false);
+
+        this._app = null;
+
+        super.destroy();
     }
 
     open() {
@@ -189,6 +200,10 @@ class AppButtonMenuBase extends AppMenu {
     }
 
     _updateWindowsSection() {
+
+        if (!this._app) {
+            return;
+        }
         
         if (!this._config.isolateWorkspaces) {
             super._updateWindowsSection();
@@ -244,13 +259,14 @@ var AppButtonMenu = class extends AppButtonMenuBase {
     }
 
     destroy() {
-        super.destroy();
 
-        this._soundControlSection.destroy();
+        this._soundControlSection?.destroy();
 
         this._customizeSection?.destroy();
 
         this._stopApplyConfigOverride();
+
+        super.destroy();
     }
 
     open() {
@@ -262,6 +278,10 @@ var AppButtonMenu = class extends AppButtonMenuBase {
 
     setApp(app) {
         super.setApp(app);
+
+        if (!app) {
+            return;
+        }
 
         this._customizeSection?.queueUpdate(() => this._populateCustomizeSection());
     }
