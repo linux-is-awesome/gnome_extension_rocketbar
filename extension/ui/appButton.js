@@ -31,6 +31,9 @@ var AppButton = GObject.registerClass(
         // appId => {...}
         static _configOverride = null;
 
+        // appId => color
+        static _dominantColorCache = {};
+
         //#endregion static
 
         //#region public methods
@@ -289,7 +292,8 @@ var AppButton = GObject.registerClass(
             this._setConfig();
 
             // set icon
-            if (this._config.customIconPath !== oldConfig.customIconPath) {
+            if (oldConfig.hasOwnProperty('customIconPath') &&
+                    this._config.customIconPath !== oldConfig.customIconPath) {
                 this._handleIconTheme();
             } else if (this._config.iconTextureSize !== oldConfig.iconTextureSize) {
                 this._updateIcon();
@@ -886,6 +890,8 @@ var AppButton = GObject.registerClass(
 
             this.dominantColor = null;
 
+            delete AppButton._dominantColorCache[this.appId];
+
             this._updateIcon();
         }
 
@@ -912,7 +918,14 @@ var AppButton = GObject.registerClass(
                 return;
             }
             
-            this.dominantColor = new DominantColorExtractor(this._appIcon.get_child()).getColor();
+            this.dominantColor = AppButton._dominantColorCache[this.appId];
+
+            if (!this.dominantColor) {
+
+                this.dominantColor = new DominantColorExtractor(this._appIcon.get_child()).getColor();
+
+                AppButton._dominantColorCache[this.appId] = this.dominantColor;
+            }
 
             this._updateStyle();
 
