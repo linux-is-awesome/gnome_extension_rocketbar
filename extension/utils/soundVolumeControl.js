@@ -1,8 +1,8 @@
-// This class exports: SoundVolumeControl, AppSoundVolumeControl
+/* exported SoundVolumeControl, AppSoundVolumeControl */
 
 //#region imports
 
-const { Gio, Gvc, GLib, Shell } = imports.gi;
+const { Gio, Gvc, Shell } = imports.gi;
 const Main = imports.ui.main;
 const Volume = imports.ui.status.volume;
 
@@ -10,6 +10,7 @@ const Volume = imports.ui.status.volume;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { Connections } = Me.imports.utils.connections;
+const { Timeout } = Me.imports.utils.timeout;
 
 //#endregion imports
 
@@ -96,11 +97,7 @@ class SoundVolumeControlBase {
     }
 
     destroy() {
-
-        if (this._notifyVolumeChangeTimeout) {
-            GLib.source_remove(this._notifyVolumeChangeTimeout);
-        }
-
+        this._notifyVolumeChangeTimeout?.destroy();
     }
 
     _showOSD(stream, isMuted, name) {
@@ -147,9 +144,8 @@ class SoundVolumeControlBase {
         }
 
         // slow down notifications a bit
-        this._notifyVolumeChangeTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50, () => {
+        this._notifyVolumeChangeTimeout = Timeout.default(50).run(() => {
             this._notifyVolumeChangeTimeout = null;
-            return GLib.SOURCE_REMOVE;
         });
 
         if (this._volumeCancellable) {
@@ -362,8 +358,6 @@ class AppSoundVolumeService {
 
     addControl(control) {
 
-        log('SERVICE Add control');
-
         if (!control || this._controls.indexOf(control) >= 0) {
             return;
         }
@@ -385,7 +379,6 @@ class AppSoundVolumeService {
             this._controls.splice(controlIndex, 1);
         }
 
-        log('SERVICE Remove control');
     }
 
     forceUpdate() {
@@ -408,8 +401,6 @@ class AppSoundVolumeService {
                 continue;
             }
 
-            log('SERVICE Add streams ' + appStream.name);
-
             this._streams.set(appStream.id, appStream);
         }
     }
@@ -428,8 +419,6 @@ class AppSoundVolumeService {
 
         if (AppSoundStream.isValidStream(stream)) {
             this._streams.set(streamId, new AppSoundStream(stream));
-
-            log('SERVICE Add stream ' + stream.name);
         }
 
         this._queueUpdateControls();
@@ -448,7 +437,6 @@ class AppSoundVolumeService {
             this._streams.delete(streamId);
         }
 
-        log('SERVICE Remove stream ' + streamId);
     }
 
     _queueUpdateControls() {
@@ -458,21 +446,15 @@ class AppSoundVolumeService {
             return;
         }
 
-        this._updateControlsTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 500, () => {
-
+        this._updateControlsTimeout = Timeout.idle(500).run(() => {
             this._updateControlsTimeout = null;
-
             this._updateControls();
-
-            return GLib.SOURCE_REMOVE;
         });
     }
 
     _stopUpdateControls() {
-        if (this._updateControlsTimeout) {
-            GLib.source_remove(this._updateControlsTimeout);
-            this._updateControlsTimeout = null;
-        }
+        this._updateControlsTimeout?.destroy();
+        this._updateControlsTimeout = null;
     }
 
     _updateControls() {
@@ -572,8 +554,6 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
 
         streams.push(appStream);
 
-        log('App Sound Control add stream ' + this._appName + ' ' + streams.length);
-
         appStream.addListener(this);
     }
 
@@ -600,8 +580,6 @@ var AppSoundVolumeControl = class extends SoundVolumeControlBase {
         }
 
         streams.splice(streamIndex, 1);
-
-        log('App Sound Control remove stream ' + this._appName + ' ' + appStream.isInput);
 
         // no need to call appStream.removeListener because this method
         // will be called by the appStream itself when it gets removed

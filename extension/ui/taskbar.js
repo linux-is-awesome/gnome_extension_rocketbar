@@ -1,6 +1,8 @@
+/* exported Taskbar */
+
 //#region imports
 
-const { Clutter, GLib, GObject, Shell, St, Meta } = imports.gi;
+const { Clutter, GObject, Shell, St, Meta } = imports.gi;
 const Main = imports.ui.main;
 const DND = imports.ui.dnd;
 
@@ -11,6 +13,7 @@ const { PositionProvider } = Me.imports.utils.positionProvider;
 const { AppButton } = Me.imports.ui.appButton;
 const { Connections } = Me.imports.utils.connections;
 const { Favorites } = Me.imports.utils.favorites;
+const { Timeout } = Me.imports.utils.timeout;
 
 //#endregion imports
 
@@ -228,7 +231,7 @@ var Taskbar = GObject.registerClass(
                 return;
             }
 
-            this._initRenderTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 500, () => {
+            this._initRenderTimeout = Timeout.idle(300).run(() => {
 
                 this._initRenderTimeout = null;
 
@@ -240,7 +243,6 @@ var Taskbar = GObject.registerClass(
                 this._connectRender(Shell.AppSystem.get_default(), 'app-state-changed');
                 this._connectRender(global.window_manager, 'switch-workspace');
 
-                return GLib.SOURCE_REMOVE;
             });
         }
 
@@ -295,14 +297,13 @@ var Taskbar = GObject.registerClass(
             }
 
             // delay to reduce number of rerenders
-            this._rerenderTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+            this._rerenderTimeout = Timeout.default(100).run(() => {
 
                 if (this._workId) {
                     Main.queueDeferredWork(this._workId);
                 }
                 
                 this._rerenderTimeout = null;
-                return GLib.SOURCE_REMOVE;
             });
         }
 
@@ -372,13 +373,13 @@ var Taskbar = GObject.registerClass(
             for (let i = 0, l = taskbarAppIds.length; i < l; ++i) {
                 
                 const appId = taskbarAppIds[i];
-                const {app, isFavorite, isRestored} = taskbarAppsById.get(appId);
+                const { app, isFavorite, isRestored } = taskbarAppsById.get(appId);
 
                 // create new app buttons
                 if (!taskbarAppButtonsByAppId.size || !taskbarAppButtonsByAppId.has(appId)) {
                     const enableAnimation = !this._isRendered || !isRestored;
                     // disable animation for restored app buttons
-                    new AppButton(app, isFavorite, this._settings).setParent(this._layout, i, enableAnimation);
+                    new AppButton([ app, isFavorite, this._settings ]).setParent(this._layout, i, enableAnimation);
                     taskbarAppButtonsPosition.splice(i, 0, appId);
                     continue;
                 }
@@ -560,17 +561,21 @@ var Taskbar = GObject.registerClass(
         }
 
         _destroy() {
-            
-            // clear init render timeout
-            if (this._initRenderTimeout) {
-                GLib.source_remove(this._initRenderTimeout);
-            }
 
             this.isDestroying = true;
+            
+            // clear init render timeout
+            this._initRenderTimeout?.destroy();
+
+            // remove some values to prevent issues
+            this._workId = null;
+            this._activeAppButton = null;
 
             // stop rendering
-            this._workId = null;
             this._stopRerender();
+
+            // stop other timeouts
+            this._stopScrollToActiveButton();
 
             // destroy favorites
             this._favorites?.destroy();
@@ -578,17 +583,8 @@ var Taskbar = GObject.registerClass(
             // destroy position provider
             this._positionProvider.destroy();
     
-            // remove connections
+            // destroy connections
             this._connections.destroy();
-
-            // remove some values that may cause exceptions
-            this._activeAppButton = null;
-
-            // stop other timers
-            this._stopScrollToActiveButton();
-
-            // destroy layout
-            this._layout.get_children().forEach(item => item.destroy());
 
             // restore default app button in the panel
             if (!Main.overview.visible && !Main.sessionMode.isLocked) {
@@ -597,11 +593,8 @@ var Taskbar = GObject.registerClass(
         }
 
         _stopRerender() {
-            // clear rerender timeout if any
-            if (this._rerenderTimeout) {
-                GLib.source_remove(this._rerenderTimeout);
-                this._rerenderTimeout = null;
-            }
+            this._rerenderTimeout?.destroy();
+            this._rerenderTimeout = null;
         }
 
         _handleAppButtonPosition(appButton) {
@@ -710,10 +703,7 @@ var Taskbar = GObject.registerClass(
                 return;
             }
 
-            this._scrollToActiveTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
-                this._scrollToAppButton(this._activeAppButton);
-                return GLib.SOURCE_REMOVE;
-            });
+            this._scrollToActiveTimeout = Timeout.idle(1000).run(() => this._scrollToAppButton(this._activeAppButton));
         }
 
         /**
@@ -736,7 +726,7 @@ var Taskbar = GObject.registerClass(
             let [value, lower_, upper, stepIncrement_, pageIncrement_, pageSize] = adjustment.get_values();
 
             let offset = 0;
-            const hfade = this.get_effect("fade");
+            const hfade = this.get_effect('fade');
             
             if (hfade) {
                 offset = hfade.fade_margins.left;
@@ -767,10 +757,8 @@ var Taskbar = GObject.registerClass(
         }
 
         _stopScrollToActiveButton() {
-            if (this._scrollToActiveTimeout) {
-                GLib.source_remove(this._scrollToActiveTimeout);
-                this._scrollToActiveTimeout = null;
-            }
+            this._scrollToActiveTimeout?.destroy();
+            this._scrollToActiveTimeout = null;
         }
 
         //#endregion scroll view tweaks

@@ -1,3 +1,5 @@
+/* exported Connections */
+
 var Connections = class {
 
     constructor() {

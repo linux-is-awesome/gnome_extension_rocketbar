@@ -1,6 +1,10 @@
+/* exported AppButtonMenu */
+
+//#region imports
+
 const Main = imports.ui.main;
 const BoxPointer = imports.ui.boxpointer;
-const { Clutter, St, GLib, Meta } = imports.gi;
+const { Clutter, St } = imports.gi;
 const { AppMenu } = imports.ui.appMenu;
 const { Slider } = imports.ui.slider;
 const { PopupMenuSection,
@@ -11,12 +15,18 @@ const { PopupMenuSection,
 
 const _ = imports.misc.extensionUtils.gettext;
 
+// custom modules import
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
+const { Timeout } = Me.imports.utils.timeout;
+
+//#endregion imports
 
 class SubMenuItem {
 
     constructor(title, parentMenu) {
 
-        this._laterId = null;
+        this._updateTimeout = null;
 
         this.actor = new PopupSubMenuMenuItem(title);
 
@@ -32,30 +42,28 @@ class SubMenuItem {
         return this.actor.menu.addAction(title, callback);
     }
 
-    addLater(callback) {
+    queueUpdate(callback) {
 
-        if (this._laterId || !callback) {
+        if (this._updateTimeout || !callback) {
             return;
         }
 
-        this._laterId = Meta.later_add(Meta.LaterType.BEFORE_REDRAW, () => {
+        this._updateTimeout = Timeout.redraw().run(() => {
 
-            // edge case validation
-            if (this._laterId) {
-                callback();
+            if (!this._updateTimeout) {
+                return;
             }
 
-            this._laterId = null;
+            this._updateTimeout = null;
 
-            return GLib.SOURCE_REMOVE;
+            callback();
+            
         });
     }
 
     destroy() {
-        if (this._laterId) {
-            Meta.later_remove(this._laterId);
-            this._laterId = null;
-        }
+        this._updateTimeout?.destroy();
+        this._updateTimeout = null;
     }
 
 }
@@ -86,6 +94,17 @@ class AppButtonMenuBase extends AppMenu {
         this._fixMenuSeparatorFontSize(this._openWindowsHeader);
 
         this._updateDetailsVisibility();
+
+        Main.panel.menuManager.addMenu(this);
+    }
+
+    destroy() {
+
+        this.close(false);
+
+        this._app = null;
+
+        super.destroy();
     }
 
     open() {
@@ -181,6 +200,10 @@ class AppButtonMenuBase extends AppMenu {
     }
 
     _updateWindowsSection() {
+
+        if (!this._app) {
+            return;
+        }
         
         if (!this._config.isolateWorkspaces) {
             super._updateWindowsSection();
@@ -236,13 +259,14 @@ var AppButtonMenu = class extends AppButtonMenuBase {
     }
 
     destroy() {
-        super.destroy();
 
-        this._soundControlSection.destroy();
+        this._soundControlSection?.destroy();
 
         this._customizeSection?.destroy();
 
         this._stopApplyConfigOverride();
+
+        super.destroy();
     }
 
     open() {
@@ -255,7 +279,11 @@ var AppButtonMenu = class extends AppButtonMenuBase {
     setApp(app) {
         super.setApp(app);
 
-        this._customizeSection?.addLater(() => this._populateCustomizeSection());
+        if (!app) {
+            return;
+        }
+
+        this._customizeSection?.queueUpdate(() => this._populateCustomizeSection());
     }
 
     //#endregion public methods
@@ -265,7 +293,7 @@ var AppButtonMenu = class extends AppButtonMenuBase {
     _handleSettings() {
         super._handleSettings();
 
-        this._customizeSection?.addLater(() => this._updateCustomizeSection());
+        this._customizeSection?.queueUpdate(() => this._updateCustomizeSection());
     }
 
     _setConfig() {
@@ -361,7 +389,7 @@ var AppButtonMenu = class extends AppButtonMenuBase {
             return;
         }
 
-        this._soundControlSection.addLater(() => {
+        this._soundControlSection.queueUpdate(() => {
 
             if (!this._appButton.soundVolumeControl) {
                 return;
@@ -647,15 +675,13 @@ var AppButtonMenu = class extends AppButtonMenuBase {
 
         this._stopApplyConfigOverride();
 
-        this._applyConfigOverrideTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
+        this._applyConfigOverrideTimeout = Timeout.idle(300).run(() => {
 
             this._applyConfigOverrideTimeout = null;
 
             this._appButton.setConfigOverride(this._config.configOverride);
 
             this._resetAllItem.actor.reactive = true;
-
-            return GLib.SOURCE_REMOVE;
         });
     }
 
@@ -670,10 +696,8 @@ var AppButtonMenu = class extends AppButtonMenuBase {
     }
 
     _stopApplyConfigOverride() {
-        if (this._applyConfigOverrideTimeout) {
-            GLib.source_remove(this._applyConfigOverrideTimeout);
-            this._applyConfigOverrideTimeout = null;
-        }
+        this._applyConfigOverrideTimeout?.destroy();
+        this._applyConfigOverrideTimeout = null;
     }
 
     //#endregion private methods

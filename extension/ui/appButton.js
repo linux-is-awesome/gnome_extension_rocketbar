@@ -1,6 +1,8 @@
+/* exported AppButton */
+
 //#region imports
 
-const { Clutter, GLib, Gio, GObject, Meta, Shell, St } = imports.gi;
+const { Clutter, Gio, GObject, Meta, Shell, St } = imports.gi;
 const { PopupMenuManager } = imports.ui.popupMenu;
 const Main = imports.ui.main;
 const DND = imports.ui.dnd;
@@ -17,6 +19,7 @@ const { NotificationHandler } = Me.imports.utils.notificationService;
 const { AppSoundVolumeControl } = Me.imports.utils.soundVolumeControl;
 const { Connections } = Me.imports.utils.connections;
 const { ScrollHandler } = Me.imports.utils.scrollHandler;
+const { Timeout } = Me.imports.utils.timeout;
 
 //#endregion imports
 
@@ -28,6 +31,9 @@ var AppButton = GObject.registerClass(
         // appId => {...}
         static _configOverride = null;
 
+        // appId => color
+        static _dominantColorCache = {};
+
         //#endregion static
 
         //#region public methods
@@ -38,10 +44,9 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
-            // connect parent to handle size and position changes
+            // connect parent events
             this._connections.add(parent, 'queue_relayout', () => this._queueUpdateIconGeometry());
-
-            this.opacity = 0;
+            this._connections.add(parent, 'destroy', () => this._parentDestroy());
 
             parent.insert_child_at_index(this, position);
 
@@ -146,16 +151,18 @@ var AppButton = GObject.registerClass(
 
         //#region private methods
 
-        _init(app, isFavorite, settings) {
+        _init(params = []) {
 
             // init the button
             super._init({
                 name: 'taskbar-appButton',
                 reactive: true,
                 can_focus: true,
-                track_hover: true,
-                button_mask: St.ButtonMask.ONE | St.ButtonMask.TWO | St.ButtonMask.THREE
+                button_mask: St.ButtonMask.ONE | St.ButtonMask.TWO | St.ButtonMask.THREE,
+                opacity: 0
             });
+
+            const [ app, isFavorite, settings ] = params;
 
             // set public properties
             this.app = app;
@@ -174,15 +181,15 @@ var AppButton = GObject.registerClass(
             this._firstUpdateIconGeometry = true;
             this._lastFocusedWindow = null;
 
-            // create layout
             this._createLayout();
-            this._createMenu();
+
             this._handleSettings();
 
-            // create connections
             this._createConnections();
 
-            // add notifications for the button
+            this._createMenu();
+
+            // init notification handler
             this._notificationHandler = new NotificationHandler(count => this._setNotifications(count), this.appId);
         }
 
@@ -211,9 +218,12 @@ var AppButton = GObject.registerClass(
         }
 
         _createMenu() {
-            this._menu = new AppButtonMenu(this, this._settings);
+            this._createMenuTimeout = Timeout.low(300).run(() => {
 
-            Main.panel.menuManager.addMenu(this._menu);
+                this._menu = new AppButtonMenu(this, this._settings);
+
+                this._connections.add(this._menu, 'open-state-changed', () => this._focus());
+            });
         }
 
         _createConnections() {
@@ -225,9 +235,8 @@ var AppButton = GObject.registerClass(
             this.connect('notify::hover', () => this._hover());
             // external connections
             this._connections = new Connections();
-            this._connections.add(this._menu, 'open-state-changed', () => this._focus());
             this._connections.add(global.display, 'notify::focus-window', () => this._handleFocusedWindow());
-            this._connections.add(St.Settings.get(), 'notify::gtk-icon-theme', () => this._handleIconTheme());
+            this._connections.add(St.Settings.get(), 'notify::gtk-icon-theme', () => this._handleIconTheme(true));
             // handle settings
             this._connections.addScope(this._settings, [
                 'changed::taskbar-isolate-workspaces',
@@ -258,6 +267,8 @@ var AppButton = GObject.registerClass(
                 'changed::indicator-position',
                 'changed::indicator-size',
                 'changed::indicator-display-limit',
+                'changed::indicator-dominant-color-inactive',
+                'changed::indicator-dominant-color-active',
                 'changed::notification-badge-color',
                 'changed::notification-badge-border-color',
                 'changed::notification-badge-position',
@@ -275,19 +286,23 @@ var AppButton = GObject.registerClass(
         }
 
         _handleSettings() {
+
+            const hasOldConfig = this._config ? true : false;
             const oldConfig = this._config || {};
 
             this._setConfig();
 
             // set icon
-            if (this._config.customIconPath !== oldConfig.customIconPath) {
+            if (hasOldConfig && this._config.customIconPath !== oldConfig.customIconPath) {
                 this._handleIconTheme();
             } else if (this._config.iconTextureSize !== oldConfig.iconTextureSize) {
                 this._updateIcon();
+            } else {
+                this._updateDominantColor();
             }
 
             // set style
-            if (
+            if ((hasOldConfig || !this.style) && (
                 this._config.iconSize !== oldConfig.iconSize ||
                 this._config.iconPadding !== oldConfig.iconPadding ||
                 this._config.verticalMargin !== oldConfig.verticalMargin ||
@@ -295,7 +310,7 @@ var AppButton = GObject.registerClass(
                 this._config.spacing !== oldConfig.spacing ||
                 this._config.backlight !== oldConfig.backlight ||
                 this._config.backlightIntensity !== oldConfig.backlightIntensity
-            ) {
+            )) {
                 this._updateStyle();
             }
 
@@ -383,6 +398,10 @@ var AppButton = GObject.registerClass(
                 spacing: this._settings.get_int('appbutton-spacing'),
                 backlight: this._settings.get_boolean('appbutton-backlight'),
                 backlightIntensity: this._settings.get_int('appbutton-backlight-intensity'),
+                indicatorDominantColor: (
+                    this._settings.get_boolean('indicator-dominant-color-inactive') ||
+                    this._settings.get_boolean('indicator-dominant-color-active')
+                ),
                 customIconPath: null
             };
 
@@ -430,15 +449,19 @@ var AppButton = GObject.registerClass(
 
         }
 
+        _parentDestroy() {
+            // destroy static variables when taskbar is destroying
+            AppButton._configOverride = null;
+        }
+
         _destroy() {
 
             this.remove_all_transitions();
 
+            // remove timeouts
             this._stopUpdateIconGeometryQueue();
-
-            if (this._handleScrollTimeout) {
-                GLib.source_remove(this._handleScrollTimeout);
-            }
+            this._handleScrollTimeout?.destroy();
+            this._createMenuTimeout?.destroy();
 
             // remove connections
             this._connections.destroy();
@@ -448,8 +471,7 @@ var AppButton = GObject.registerClass(
             this.appId = null;
 
             // destroy context menu
-            Main.panel.menuManager.removeMenu(this._menu);
-            this._menu?.close(false);
+            this._menu?.destroy();
             this._menu = null;
 
             // destroy indicator
@@ -475,11 +497,6 @@ var AppButton = GObject.registerClass(
             // destroy scroll handler
             this._scrollHandler?.destroy();
             this._scrollHandler = null;
-
-            // destroy static variables when taskbar is destroying
-            if (!this._getTaskbar()) {
-                AppButton._configOverride = null;
-            }
         }
 
         //#region drag & drop
@@ -759,9 +776,8 @@ var AppButton = GObject.registerClass(
             }
 
             // make scrolling less aggressive
-            this._handleScrollTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
+            this._handleScrollTimeout = Timeout.default(300).run(() => {
                 this._handleScrollTimeout = null;
-                return GLib.SOURCE_REMOVE;
             });
 
             this._cycleAppWindows(this._getAppWindows(), scrollDirection === Clutter.ScrollDirection.UP);
@@ -870,9 +886,15 @@ var AppButton = GObject.registerClass(
 
         }
 
-        _handleIconTheme() {
+        _handleIconTheme(resetCache) {
 
             this.dominantColor = null;
+
+            if (resetCache) {
+                AppButton._dominantColorCache = {};
+            } else {
+                delete AppButton._dominantColorCache[this.appId];
+            }
 
             this._updateIcon();
         }
@@ -893,11 +915,21 @@ var AppButton = GObject.registerClass(
 
         _updateDominantColor() {
 
-            if (this.dominantColor) {
+            if (this.dominantColor || (
+                !this._config.backlight &&
+                !this._config.indicatorDominantColor
+            )) {
                 return;
             }
+            
+            this.dominantColor = AppButton._dominantColorCache[this.appId];
 
-            this.dominantColor = new DominantColorExtractor(this._appIcon.get_child()).getColor();
+            if (!this.dominantColor) {
+
+                this.dominantColor = new DominantColorExtractor(this._appIcon.get_child()).getColor();
+
+                AppButton._dominantColorCache[this.appId] = this.dominantColor;
+            }
 
             this._updateStyle();
 
@@ -1016,18 +1048,15 @@ var AppButton = GObject.registerClass(
 
             this._stopUpdateIconGeometryQueue();
 
-            this._updateIconGeometryTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+            this._updateIconGeometryTimeout = Timeout.idle(100).run(() => {
                 this._updateIconGeometryTimeout = null;
                 this._updateIconGeometry();
-                return GLib.SOURCE_REMOVE;
             });
         }
 
         _stopUpdateIconGeometryQueue() {
-            if (this._updateIconGeometryTimeout) {
-                GLib.source_remove(this._updateIconGeometryTimeout);
-                this._updateIconGeometryTimeout = null;
-            }
+            this._updateIconGeometryTimeout?.destroy();
+            this._updateIconGeometryTimeout = null;
         }
 
         /**
@@ -1213,7 +1242,7 @@ var AppButton = GObject.registerClass(
 
             const taskbar = this.get_parent()?.get_parent();
 
-            return taskbar && !taskbar.isDestroying ? taskbar  : null;
+            return taskbar && !taskbar.isDestroying ? taskbar : null;
         }
 
         _loadCustomIcon(iconPath) {

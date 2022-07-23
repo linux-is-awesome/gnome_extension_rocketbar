@@ -1,5 +1,16 @@
-const { Clutter, GLib, GObject, Meta, St } = imports.gi;
+/* exported AppButtonTooltip */
+
+//#region imports
+
+const { Clutter, St } = imports.gi;
 const Main = imports.ui.main;
+
+// custom modules import
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
+const { Timeout } = Me.imports.utils.timeout;
+
+//#endregion imports
 
 class TooltipCounter {
 
@@ -58,17 +69,13 @@ var AppButtonTooltip = class {
 
     constructor(appButton, settings) {
 
-        this._showDelay = settings.get_int('tooltip-show-delay');
-
         this._appButton = appButton;
 
-        this._showTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, this._showDelay, () => {
+        const showDelay = settings.get_int('tooltip-show-delay');
 
+        this._showTimeout = Timeout.default(showDelay).run(() => {
             this._showTimeout = null;
-
             this._show();
-
-            return GLib.SOURCE_REMOVE;
         });
     }
 
@@ -78,10 +85,7 @@ var AppButtonTooltip = class {
 
     destroy(animation) {
 
-        if (this._showTimeout) {
-            GLib.source_remove(this._showTimeout);
-            this._showTimeout = null;
-        }
+        this._showTimeout?.destroy();
 
         if (!this._tooltip) {
             return;
