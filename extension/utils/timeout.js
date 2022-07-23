@@ -12,6 +12,10 @@ var Timeout = class {
         return new Timeout(delay ? GLib.PRIORITY_DEFAULT_IDLE : Meta.LaterType.IDLE, delay);
     }
 
+    static low(delay = 0) {
+        return new Timeout(GLib.PRIORITY_LOW, delay);
+    }
+
     static redraw() {
         return new Timeout(Meta.LaterType.BEFORE_REDRAW);
     }
