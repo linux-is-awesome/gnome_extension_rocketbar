@@ -567,9 +567,15 @@ var Taskbar = GObject.registerClass(
             // clear init render timeout
             this._initRenderTimeout?.destroy();
 
-            // stop rendering
+            // remove some values to prevent issues
             this._workId = null;
+            this._activeAppButton = null;
+
+            // stop rendering
             this._stopRerender();
+
+            // stop other timeouts
+            this._stopScrollToActiveButton();
 
             // destroy favorites
             this._favorites?.destroy();
@@ -577,17 +583,8 @@ var Taskbar = GObject.registerClass(
             // destroy position provider
             this._positionProvider.destroy();
     
-            // remove connections
+            // destroy connections
             this._connections.destroy();
-
-            // remove some values that may cause exceptions
-            this._activeAppButton = null;
-
-            // stop other timers
-            this._stopScrollToActiveButton();
-
-            // destroy layout
-            this._layout.get_children().forEach(item => item.destroy());
 
             // restore default app button in the panel
             if (!Main.overview.visible && !Main.sessionMode.isLocked) {
