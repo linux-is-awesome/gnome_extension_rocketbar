@@ -310,6 +310,8 @@ var AppButtonIndicator = class {
                 // animate and destroy
                 oldNotificationBadge.ease({
                     opacity: 0,
+                    scale_x: 0.75,
+                    scale_y: 0.75,
                     duration: 200,
                     mode: Clutter.AnimationMode.EASE_OUT_QUAD,
                     onComplete: () => {
@@ -337,15 +339,21 @@ var AppButtonIndicator = class {
             y_expand: true,
             x_align: Clutter.ActorAlign.END,
             y_align: Clutter.ActorAlign.END,
-            opacity: 0
+            opacity: 0,
+            scale_x: 0.75,
+            scale_y: 0.75
         });
 
         this._updateNotificationBadgeStyle();
 
         this._layout.add_actor(this._notificationBadge);
 
+        this._notificationBadge.set_pivot_point(0.5, 0.5);
+
         this._notificationBadge.ease({
             opacity: 255,
+            scale_x: 1,
+            scale_y: 1,
             duration: 300,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD
         });
