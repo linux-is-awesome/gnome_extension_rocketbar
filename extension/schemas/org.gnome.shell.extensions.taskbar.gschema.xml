@@ -71,7 +71,7 @@
             <summary>App Buttons roundness</summary>
         </key>
         <key type="b" name="appbutton-backlight">
-            <default>true</default>
+            <default>false</default>
             <summary>App Buttons Dominant color backlight</summary>
         </key>
         <key type="i" name="appbutton-backlight-intensity">
@@ -79,7 +79,7 @@
             <summary>App Buttons backlight intensity</summary>
         </key>
         <key type="b" name="indicator-dominant-color-active">
-            <default>true</default>
+            <default>false</default>
             <summary>Use dominant color for active indicators</summary>
         </key>
         <key type="s" name="indicator-color-active">
@@ -87,7 +87,7 @@
             <summary>Active indicators color when dominant color is not enabled</summary>
         </key>
         <key type="b" name="indicator-dominant-color-inactive">
-            <default>true</default>
+            <default>false</default>
             <summary>Use dominant color for inactive indicators</summary>
         </key>
         <key type="s" name="indicator-color-inactive">
