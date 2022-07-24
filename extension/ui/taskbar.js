@@ -563,12 +563,15 @@ var Taskbar = GObject.registerClass(
 
             // destroy favorites
             this._favorites?.destroy();
+            this._favorites = null;
 
             // destroy position provider
             this._positionProvider.destroy();
+            this._positionProvider = null;
     
             // destroy connections
             this._connections.destroy();
+            this._connections = null;
 
             // restore default app button in the panel
             if (!Main.overview.visible && !Main.sessionMode.isLocked) {
