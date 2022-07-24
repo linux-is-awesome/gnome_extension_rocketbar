@@ -20,6 +20,7 @@ const { AppSoundVolumeControl } = Me.imports.utils.soundVolumeControl;
 const { Connections } = Me.imports.utils.connections;
 const { ScrollHandler } = Me.imports.utils.scrollHandler;
 const { Timeout } = Me.imports.utils.timeout;
+const { IconProvider } = Me.imports.utils.iconProvider;
 
 //#endregion imports
 
@@ -143,15 +144,11 @@ var AppButton = GObject.registerClass(
             );
         }
 
-        isValidCustomIcon(iconPath) {
-            return this._loadCustomIcon(iconPath) != null;
-        }
-
         //#endregion public methods
 
         //#region private methods
 
-        _init(params = []) {
+        _init({ app, isFavorite }, settings, stateHandler) {
 
             // init the button
             super._init({
@@ -162,11 +159,9 @@ var AppButton = GObject.registerClass(
                 opacity: 0
             });
 
-            const [ app, isFavorite, settings ] = params;
-
             // set public properties
             this.app = app;
-            this.appId = app.id;
+            this.appId = app?.id;
             this.isFavorite = isFavorite;
             this.isActive = false;
             this.activeWindow = null;
@@ -180,6 +175,7 @@ var AppButton = GObject.registerClass(
             this._delegate = this;
             this._firstUpdateIconGeometry = true;
             this._lastFocusedWindow = null;
+            this._stateHandler = stateHandler;
 
             this._createLayout();
 
@@ -452,11 +448,16 @@ var AppButton = GObject.registerClass(
         _parentDestroy() {
             // destroy static variables when taskbar is destroying
             AppButton._configOverride = null;
+            // avoid triggering the handler
+            this._stateHandler = null;
         }
 
         _destroy() {
 
             this.remove_all_transitions();
+
+            // notify taskbar about destroying
+            this._triggerState('destroy');
 
             // remove timeouts
             this._stopUpdateIconGeometryQueue();
@@ -567,7 +568,7 @@ var AppButton = GObject.registerClass(
 
             parent.set_child_at_index(this, dragIndex);
 
-            this._scrollToAppButton();
+            this._triggerState('drag-motion');
 
             this.ease({
                 opacity: 150,
@@ -602,7 +603,7 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
-            this._getTaskbar()?.handleAppButtonPosition(this);
+            this._triggerState('drag-end');
         }
 
         //#endregion drag & drop
@@ -872,8 +873,7 @@ var AppButton = GObject.registerClass(
             this._indicator?.rerender();
 
             if (this.isActive) {
-                this._getTaskbar()?.setActiveAppButton(this);
-                this._scrollToAppButton();
+                this._triggerState('active');
             }
 
             // the first window has been created for the app
@@ -938,17 +938,21 @@ var AppButton = GObject.registerClass(
 
         _createAppIconTexture(scale) {
 
-            const customIcon = this._loadCustomIcon(this._config.customIconPath); 
+            const customIcon = (
+                this._config.customIconPath ?
+                IconProvider.instance().getCustomIcon(this._config.customIconPath) :
+                null
+            ); 
 
             if (customIcon) {
 
                 const result = new St.Icon({
-                    icon_size: this._config.iconTextureSize * (scale || 1)
+                    icon_size: this._config.iconTextureSize * (scale || 1),
+                    gicon: customIcon
                 });
 
-                result.set_gicon(customIcon);
-
                 return result;
+
             } else if (this._config.customIconPath) {
     
                 // avoid loading the broken icon again
@@ -1173,10 +1177,8 @@ var AppButton = GObject.registerClass(
             if (isFocused) {
                 
                 this._appIcon.add_style_pseudo_class('focus');
-                
-                this._getTaskbar()?.setActiveAppButton(null);
-                
-                this._scrollToAppButton();
+
+                this._triggerState(this._menu?.isOpen ? 'menu' : 'focus');
 
                 return;
             }
@@ -1186,10 +1188,10 @@ var AppButton = GObject.registerClass(
 
         _hover() {
 
-            // lock taskbar scroll while hovering the app button 
-            this._getTaskbar()?.setScrollLock(this, this.hover);
-
             this._toggleTooltip(this.hover);
+
+            this._triggerState('hover');
+
         }
 
         _toggleTooltip(show) {
@@ -1212,15 +1214,6 @@ var AppButton = GObject.registerClass(
             this._tooltip = null;
         }
 
-        _scrollToAppButton() {
-
-            if (this._menu?.isOpen) {
-                return;
-            }
-
-            this._getTaskbar()?.scrollToAppButton(this);
-        }
-
         _setNotifications(count) {
 
             if (this.notifications === count) {
@@ -1235,41 +1228,16 @@ var AppButton = GObject.registerClass(
         }
 
         _isValid() {
-            return !(!this.mapped || this.get_stage() === null || !this._getTaskbar());
+            return this.mapped && this.get_stage() !== null;
         }
 
-        _getTaskbar() {
+        _triggerState(state) {
 
-            const taskbar = this.get_parent()?.get_parent();
-
-            return taskbar && !taskbar.isDestroying ? taskbar : null;
-        }
-
-        _loadCustomIcon(iconPath) {
-
-            if (!iconPath || !iconPath.length) {
-                return null;
+            if (!state || !this._stateHandler) {
+                return;
             }
 
-            // a simple validation to check that the iconPath looks like a real path
-            // NOTE: it's not the safest way to validate the icon, but it's fast
-            if (!iconPath.startsWith('/') || !(
-                // only .png and .svg files supported for now
-                iconPath.endsWith('.png') ||
-                iconPath.endsWith('.svg')
-            )) {
-                return null;
-            }
-
-            // check that the path exists
-            const iconFile = Gio.File.new_for_path(iconPath);
-
-            if (!iconFile.query_exists(null)) {
-                return null;
-            }
-
-            // create GIcon if everything looks fine
-            return Gio.Icon.new_for_string(iconFile.get_path());
+            this._stateHandler(this, state);
         }
 
         //#endregion private methods

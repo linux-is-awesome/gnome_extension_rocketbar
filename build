@@ -5,6 +5,7 @@ cd ./extension
 gnome-extensions pack --force\
                       --podir=locale ./\
                       --extra-source ../LICENSE\
+                      --extra-source assets/\
                       --extra-source ui/\
                       --extra-source utils/\
                       --extra-source shell/\

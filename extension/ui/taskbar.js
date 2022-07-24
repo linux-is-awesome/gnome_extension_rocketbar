@@ -30,26 +30,6 @@ var Taskbar = GObject.registerClass(
 
         //#region public methods
 
-        setActiveAppButton(appButton) {
-            this._activeAppButton = appButton;
-
-            if (!this._activeAppButton) {
-                this._stopScrollToActiveButton();
-            }
-        }
-
-        handleAppButtonPosition(appButton)  {
-            this._handleAppButtonPosition(appButton);
-        }
-
-        scrollToAppButton(appButton) {
-            this._scrollToAppButton(appButton);
-        }
-
-        setScrollLock(appButton, locked) {
-            this._setScrollLock(appButton, locked);
-        }
-
         handleDragOver(source) {
 
             if (!source || !source.app || (source instanceof AppButton)) {
@@ -379,7 +359,11 @@ var Taskbar = GObject.registerClass(
                 if (!taskbarAppButtonsByAppId.size || !taskbarAppButtonsByAppId.has(appId)) {
                     const enableAnimation = !this._isRendered || !isRestored;
                     // disable animation for restored app buttons
-                    new AppButton([ app, isFavorite, this._settings ]).setParent(this._layout, i, enableAnimation);
+                    new AppButton(
+                        { app, isFavorite }, this._settings,
+                        (appButton, state) => this._handleAppButtonState(appButton, state)
+                    ).setParent(this._layout, i, enableAnimation);
+                    // remember position of the new button
                     taskbarAppButtonsPosition.splice(i, 0, appId);
                     continue;
                 }
@@ -597,6 +581,41 @@ var Taskbar = GObject.registerClass(
             this._rerenderTimeout = null;
         }
 
+        _handleAppButtonState(appButton, state) {
+            switch (state) {
+
+                case 'destroy':
+                    if (this._activeAppButton !== appButton) {
+                        break;
+                    }
+                case 'menu':
+                    this._activeAppButton = null;
+                    this._stopScrollToActiveButton();
+                    break;
+
+                case 'focus':
+                    this._activeAppButton = null;
+                    this._stopScrollToActiveButton();
+                    this._scrollToAppButton(appButton);
+                    break;
+    
+                case 'hover':
+                    this._setScrollLock(appButton, appButton?.hover);
+                    break;
+
+                case 'active':
+                    this._activeAppButton = appButton;
+                case 'drag-motion':
+                    this._scrollToAppButton(appButton);
+                    break;
+
+                case 'drag-end':
+                    this._handleAppButtonPosition(appButton);
+                    break;
+
+            }
+        }
+
         _handleAppButtonPosition(appButton) {
 
             if (!appButton || !appButton.appId) {
@@ -611,7 +630,7 @@ var Taskbar = GObject.registerClass(
 
             for (let i = 0, l = layoutActors.length; i < l; ++i) {
 
-                let actor = layoutActors[i];
+                const actor = layoutActors[i];
                 const appId = actor instanceof AppButton ? actor.appId : null;
 
                 if (!appId) {
@@ -711,7 +730,7 @@ var Taskbar = GObject.registerClass(
          */
         _scrollToAppButton(appButton) {
 
-            if (this.get_stage() === null || !appButton) {
+            if (!this.mapped || this.get_stage() === null || !appButton) {
                 return;
             }
 

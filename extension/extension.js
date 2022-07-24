@@ -5,6 +5,7 @@ const Me = ExtensionUtils.getCurrentExtension();
 const { Connections } = Me.imports.utils.connections;
 const { Taskbar } = Me.imports.ui.taskbar;
 const { ShellTweaks } = Me.imports.shell.tweaks;
+const { IconProvider } = Me.imports.utils.iconProvider;
 
 //#endregion imports
 
@@ -24,6 +25,7 @@ function init() {
 }
 
 function enable() {
+
     settings = ExtensionUtils.getSettings();
 
     shellTweaks = new ShellTweaks(settings);
@@ -47,6 +49,9 @@ function disable() {
     shellTweaks = null;
     settings = null;
     connections = null;
+
+    // destroy icon provider just in case
+    IconProvider.destroy();
 }
 
 function _handleSettings() {

@@ -9,6 +9,7 @@ const Main = imports.ui.main;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { Timeout } = Me.imports.utils.timeout;
+const { IconProvider } = Me.imports.utils.iconProvider;
 
 //#endregion imports
 
@@ -33,7 +34,7 @@ class TooltipCounter {
 
         this.actor.add_actor(new St.Icon({
             name: 'appButton-tooltip-counter-icon',
-            icon_name: iconName,
+            gicon: IconProvider.instance().getIcon(iconName),
             style_class: 'system-status-icon',
             width: iconSize,
             height: iconSize,
@@ -152,7 +153,7 @@ var AppButtonTooltip = class {
 
         // create notifications counter
 
-        this._notificationsCounter = new TooltipCounter('notifications-symbolic', 1);
+        this._notificationsCounter = new TooltipCounter('notification-symbolic', 1);
 
         this._tooltip.add_actor(this._notificationsCounter.actor);
 

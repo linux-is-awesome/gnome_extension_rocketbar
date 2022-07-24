@@ -19,6 +19,7 @@ const _ = imports.misc.extensionUtils.gettext;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { Timeout } = Me.imports.utils.timeout;
+const { IconProvider } = Me.imports.utils.iconProvider;
 
 //#endregion imports
 
@@ -654,7 +655,10 @@ var AppButtonMenu = class extends AppButtonMenuBase {
     _importIconFromClipboard() {
         return new Promise(resolve => St.Clipboard.get_default().get_text(
             St.ClipboardType.CLIPBOARD,
-            (clipboard, iconPath) => resolve(this._appButton.isValidCustomIcon(iconPath) ? iconPath : null)
+            (clipboard, iconPath) => resolve(
+                IconProvider.instance().getCustomIcon(iconPath) !== null ?
+                iconPath : null
+            )
         ));
     }
 

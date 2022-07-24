@@ -2,6 +2,10 @@
 
 const { Gio, St, Gtk, GdkPixbuf } = imports.gi;
 
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
+const { IconProvider } = Me.imports.utils.iconProvider;
+
 const DOMINANT_COLOR_SAMPLE_SIZE = 16;
 
 /**
@@ -131,14 +135,14 @@ var DominantColorExtractor = class {
             return null;
         }
 
-        const iconTheme = new Gtk.IconTheme();
-        iconTheme.set_custom_theme(St.Settings.get().gtkIconTheme);
-
         // Get the pixel buffer from the icon theme
-        let icon_info = iconTheme.lookup_icon(iconTexture.get_names()[0], DOMINANT_COLOR_SAMPLE_SIZE, 0);
+        const iconInfo = IconProvider.instance().getIconInfo(
+            iconTexture.get_names()[0],
+            DOMINANT_COLOR_SAMPLE_SIZE
+        );
 
-        if (icon_info !== null) {
-            return icon_info.load_icon();
+        if (iconInfo !== null) {
+            return iconInfo.load_icon();
         }
         
         return null;

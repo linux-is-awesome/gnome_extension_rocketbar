@@ -2,9 +2,10 @@
 
 //#region imports
 
-const Clutter = imports.gi.Clutter;
+const { Clutter, Meta } = imports.gi;
 const Main = imports.ui.main;
 const HotCorner = imports.ui.layout.HotCorner;
+const { WorkspaceSwitcherPopup } = imports.ui.workspaceSwitcherPopup;
 
 // custom modules import
 const ExtensionUtils = imports.misc.extensionUtils;
@@ -201,6 +202,40 @@ var ShellTweaks = class {
         );
 
         return Clutter.EVENT_STOP;
+    }
+
+    _switchWorkspace(scrollDirection) {
+
+        if (this._switchWorkspaceTimeout) {
+            return;
+        }
+
+        this._switchWorkspaceTimeout = Timeout.default(300).run(() => {
+            this._switchWorkspaceTimeout = null;
+        });
+
+        let moveDirection = (
+            scrollDirection === Clutter.ScrollDirection.UP ?
+                Meta.MotionDirection.RIGHT :
+                Meta.MotionDirection.LEFT
+        );
+
+        const activeWorkspace = global.workspace_manager.get_active_workspace();
+        const nextWorkspace = activeWorkspace.get_neighbor(moveDirection);
+
+        if (!Main.overview.visible) {
+
+            if (Main.wm._workspaceSwitcherPopup == null) {
+                Main.wm._workspaceSwitcherPopup = new WorkspaceSwitcherPopup();
+                Main.wm._workspaceSwitcherPopup.connect('destroy', () => {
+                    Main.wm._workspaceSwitcherPopup = null;
+                });
+            }
+
+            Main.wm._workspaceSwitcherPopup.display(nextWorkspace.index());
+        }
+
+        Main.wm.actionMoveWorkspace(nextWorkspace);
     }
 
     //#endregion panel scroll handling
