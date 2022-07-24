@@ -151,7 +151,7 @@ var AppButton = GObject.registerClass(
 
         //#region private methods
 
-        _init(params = []) {
+        _init({ app, isFavorite }, settings, stateHandler) {
 
             // init the button
             super._init({
@@ -162,11 +162,9 @@ var AppButton = GObject.registerClass(
                 opacity: 0
             });
 
-            const [ app, isFavorite, settings ] = params;
-
             // set public properties
             this.app = app;
-            this.appId = app.id;
+            this.appId = app?.id;
             this.isFavorite = isFavorite;
             this.isActive = false;
             this.activeWindow = null;
@@ -180,6 +178,7 @@ var AppButton = GObject.registerClass(
             this._delegate = this;
             this._firstUpdateIconGeometry = true;
             this._lastFocusedWindow = null;
+            this._stateHandler = stateHandler;
 
             this._createLayout();
 
@@ -452,11 +451,16 @@ var AppButton = GObject.registerClass(
         _parentDestroy() {
             // destroy static variables when taskbar is destroying
             AppButton._configOverride = null;
+            // avoid triggering the handler
+            this._stateHandler = null;
         }
 
         _destroy() {
 
             this.remove_all_transitions();
+
+            // notify taskbar about destroying
+            this._triggerState('destroy');
 
             // remove timeouts
             this._stopUpdateIconGeometryQueue();
@@ -567,7 +571,7 @@ var AppButton = GObject.registerClass(
 
             parent.set_child_at_index(this, dragIndex);
 
-            this._scrollToAppButton();
+            this._triggerState('drag-motion');
 
             this.ease({
                 opacity: 150,
@@ -602,7 +606,7 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
-            this._getTaskbar()?.handleAppButtonPosition(this);
+            this._triggerState('drag-end');
         }
 
         //#endregion drag & drop
@@ -872,8 +876,7 @@ var AppButton = GObject.registerClass(
             this._indicator?.rerender();
 
             if (this.isActive) {
-                this._getTaskbar()?.setActiveAppButton(this);
-                this._scrollToAppButton();
+                this._triggerState('active');
             }
 
             // the first window has been created for the app
@@ -1173,10 +1176,8 @@ var AppButton = GObject.registerClass(
             if (isFocused) {
                 
                 this._appIcon.add_style_pseudo_class('focus');
-                
-                this._getTaskbar()?.setActiveAppButton(null);
-                
-                this._scrollToAppButton();
+
+                this._triggerState(this._menu?.isOpen ? 'menu' : 'focus');
 
                 return;
             }
@@ -1186,10 +1187,10 @@ var AppButton = GObject.registerClass(
 
         _hover() {
 
-            // lock taskbar scroll while hovering the app button 
-            this._getTaskbar()?.setScrollLock(this, this.hover);
-
             this._toggleTooltip(this.hover);
+
+            this._triggerState('hover');
+
         }
 
         _toggleTooltip(show) {
@@ -1212,15 +1213,6 @@ var AppButton = GObject.registerClass(
             this._tooltip = null;
         }
 
-        _scrollToAppButton() {
-
-            if (this._menu?.isOpen) {
-                return;
-            }
-
-            this._getTaskbar()?.scrollToAppButton(this);
-        }
-
         _setNotifications(count) {
 
             if (this.notifications === count) {
@@ -1235,14 +1227,7 @@ var AppButton = GObject.registerClass(
         }
 
         _isValid() {
-            return !(!this.mapped || this.get_stage() === null || !this._getTaskbar());
-        }
-
-        _getTaskbar() {
-
-            const taskbar = this.get_parent()?.get_parent();
-
-            return taskbar && !taskbar.isDestroying ? taskbar : null;
+            return this.mapped && this.get_stage() !== null;
         }
 
         _loadCustomIcon(iconPath) {
@@ -1270,6 +1255,15 @@ var AppButton = GObject.registerClass(
 
             // create GIcon if everything looks fine
             return Gio.Icon.new_for_string(iconFile.get_path());
+        }
+
+        _triggerState(state) {
+
+            if (!state || !this._stateHandler) {
+                return;
+            }
+
+            this._stateHandler(this, state);
         }
 
         //#endregion private methods
