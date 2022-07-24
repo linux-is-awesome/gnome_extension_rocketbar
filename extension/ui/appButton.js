@@ -20,6 +20,7 @@ const { AppSoundVolumeControl } = Me.imports.utils.soundVolumeControl;
 const { Connections } = Me.imports.utils.connections;
 const { ScrollHandler } = Me.imports.utils.scrollHandler;
 const { Timeout } = Me.imports.utils.timeout;
+const { IconProvider } = Me.imports.utils.iconProvider;
 
 //#endregion imports
 
@@ -141,10 +142,6 @@ var AppButton = GObject.registerClass(
                 AppButton._configOverride &&
                 AppButton._configOverride.hasOwnProperty(this.appId)
             );
-        }
-
-        isValidCustomIcon(iconPath) {
-            return this._loadCustomIcon(iconPath) != null;
         }
 
         //#endregion public methods
@@ -941,17 +938,21 @@ var AppButton = GObject.registerClass(
 
         _createAppIconTexture(scale) {
 
-            const customIcon = this._loadCustomIcon(this._config.customIconPath); 
+            const customIcon = (
+                this._config.customIconPath ?
+                IconProvider.instance().getCustomIcon(this._config.customIconPath) :
+                null
+            ); 
 
             if (customIcon) {
 
                 const result = new St.Icon({
-                    icon_size: this._config.iconTextureSize * (scale || 1)
+                    icon_size: this._config.iconTextureSize * (scale || 1),
+                    gicon: customIcon
                 });
 
-                result.set_gicon(customIcon);
-
                 return result;
+
             } else if (this._config.customIconPath) {
     
                 // avoid loading the broken icon again
@@ -1228,33 +1229,6 @@ var AppButton = GObject.registerClass(
 
         _isValid() {
             return this.mapped && this.get_stage() !== null;
-        }
-
-        _loadCustomIcon(iconPath) {
-
-            if (!iconPath || !iconPath.length) {
-                return null;
-            }
-
-            // a simple validation to check that the iconPath looks like a real path
-            // NOTE: it's not the safest way to validate the icon, but it's fast
-            if (!iconPath.startsWith('/') || !(
-                // only .png and .svg files supported for now
-                iconPath.endsWith('.png') ||
-                iconPath.endsWith('.svg')
-            )) {
-                return null;
-            }
-
-            // check that the path exists
-            const iconFile = Gio.File.new_for_path(iconPath);
-
-            if (!iconFile.query_exists(null)) {
-                return null;
-            }
-
-            // create GIcon if everything looks fine
-            return Gio.Icon.new_for_string(iconFile.get_path());
         }
 
         _triggerState(state) {
