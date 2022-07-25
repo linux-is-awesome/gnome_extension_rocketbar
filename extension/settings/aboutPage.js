@@ -23,7 +23,8 @@ var AboutPage = GObject.registerClass(
             const metadata = Me.metadata;
 
             this.addGroup(null, [
-                this.createLabel(Me.metadata.name + _(' Version'),  Me.metadata.version + '.0')
+                this.createLabel(Me.metadata.name + _(' Version'),  Me.metadata.version + '.0'),
+                this.createLink(_('Release Notes'), metadata.url + '/releases')
             ]);
 
             this.addGroup(_('Useful Links'), [
