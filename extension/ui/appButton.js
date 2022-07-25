@@ -2,8 +2,7 @@
 
 //#region imports
 
-const { Clutter, Gio, GObject, Meta, Shell, St } = imports.gi;
-const { PopupMenuManager } = imports.ui.popupMenu;
+const { Clutter, GObject, Meta, Shell, St } = imports.gi;
 const Main = imports.ui.main;
 const DND = imports.ui.dnd;
 const IconGrid = imports.ui.iconGrid;

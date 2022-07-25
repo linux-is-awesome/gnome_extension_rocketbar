@@ -10,7 +10,6 @@ const { WorkspaceSwitcherPopup } = imports.ui.workspaceSwitcherPopup;
 // custom modules import
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
-const { AppButton } = Me.imports.ui.appButton;
 const { AppButtonMenu } = Me.imports.ui.appButtonMenu;
 const { SoundVolumeControl } = Me.imports.utils.soundVolumeControl;
 const { Connections } = Me.imports.utils.connections;
