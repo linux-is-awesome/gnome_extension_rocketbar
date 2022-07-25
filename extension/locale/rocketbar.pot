@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-07-25 21:58+0300\n"
+"POT-Creation-Date: 2022-07-25 23:22+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -25,19 +25,23 @@ msgstr ""
 msgid " Version"
 msgstr ""
 
-#: settings/aboutPage.js:29
-msgid "Useful Links"
+#: settings/aboutPage.js:27
+msgid "Release Notes"
 msgstr ""
 
 #: settings/aboutPage.js:30
-msgid "Report an issue"
+msgid "Useful Links"
 msgstr ""
 
 #: settings/aboutPage.js:31
+msgid "Report an issue"
+msgstr ""
+
+#: settings/aboutPage.js:32
 msgid "Share your ideas"
 msgstr ""
 
-#: settings/aboutPage.js:34
+#: settings/aboutPage.js:35
 msgid "Credits"
 msgstr ""
 
