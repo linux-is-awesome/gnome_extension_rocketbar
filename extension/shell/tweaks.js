@@ -69,7 +69,7 @@ var ShellTweaks = class {
             'changed::sound-volume-control-change-speed-ctrl'], () => this._setConfig());
         this._connections.addScope(this._settings, [
             'changed::overview-kill-dash',
-            'changed::panel-enable-scroll',
+            'changed::panel-scroll-action',
             'changed::panel-enable-middle-button',
             'changed::hotcorner-enable-in-fullscreen',
             'changed::activities-show-apps-button',
@@ -88,7 +88,7 @@ var ShellTweaks = class {
             this._restoreOverviewDash();
         }
 
-        if (this._config.enablePanelScrollHandler ||
+        if (this._config.panelScrollAction === 'change_sound_volume' ||
                 this._config.enablePanelMiddleButtonHandler) {
 
             if (!this._soundVolumeControl) {
@@ -100,7 +100,7 @@ var ShellTweaks = class {
             this._soundVolumeControl = null;
         }
 
-        if (this._config.enablePanelScrollHandler) {
+        if (this._config.panelScrollAction !== 'none') {
             this._addPanelScrollHandler();
         } else {
             this._removePanelScrollHandler();
@@ -142,7 +142,7 @@ var ShellTweaks = class {
     _setConfig() {
         this._config = {
             overviewKillDash: this._settings.get_boolean('overview-kill-dash'),
-            enablePanelScrollHandler: this._settings.get_boolean('panel-enable-scroll'),
+            panelScrollAction: this._settings.get_string('panel-scroll-action'),
             enablePanelMiddleButtonHandler: this._settings.get_boolean('panel-enable-middle-button'),
             enableFullscreenHotCorner: this._settings.get_boolean('hotcorner-enable-in-fullscreen'),
             enableOverviewClickHandler: this._settings.get_boolean('overview-enable-empty-space-clicks'),
@@ -179,26 +179,30 @@ var ShellTweaks = class {
     }
 
     _handlePanelScroll(params) {
-        
-        if (!this._soundVolumeControl) {
-            return Clutter.EVENT_PROPAGATE;
-        }
 
         const [scrollDirection, isCtrlPressed] = params;
 
-        // change sound volume
+        if (this._config.panelScrollAction === 'switch_workspace') {
 
-        const soundVolumeStep = (
-            isCtrlPressed ?
-            this._config.soundVolumeStepCtrl :
-            this._config.soundVolumeStep
-        );
+            this._switchWorkspace(scrollDirection);
 
-        this._soundVolumeControl.addVolume(
-            scrollDirection === Clutter.ScrollDirection.UP ?
-            soundVolumeStep :
-            -soundVolumeStep
-        );
+        } else if (this._config.panelScrollAction === 'change_sound_volume') {
+
+            const soundVolumeStep = (
+                isCtrlPressed ?
+                this._config.soundVolumeStepCtrl :
+                this._config.soundVolumeStep
+            );
+
+            this._soundVolumeControl?.addVolume(
+                scrollDirection === Clutter.ScrollDirection.UP ?
+                soundVolumeStep :
+                -soundVolumeStep
+            );
+
+        } else {
+            return Clutter.EVENT_PROPAGATE;
+        }
 
         return Clutter.EVENT_STOP;
     }
@@ -215,8 +219,8 @@ var ShellTweaks = class {
 
         let moveDirection = (
             scrollDirection === Clutter.ScrollDirection.UP ?
-                Meta.MotionDirection.RIGHT :
-                Meta.MotionDirection.LEFT
+            Meta.MotionDirection.LEFT :
+            Meta.MotionDirection.RIGHT
         );
 
         const activeWorkspace = global.workspace_manager.get_active_workspace();
@@ -230,6 +234,8 @@ var ShellTweaks = class {
                     Main.wm._workspaceSwitcherPopup = null;
                 });
             }
+
+            Main.osdWindowManager.hideAll();
 
             Main.wm._workspaceSwitcherPopup.display(nextWorkspace.index());
         }

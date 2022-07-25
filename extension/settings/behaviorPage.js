@@ -82,11 +82,18 @@ var BehaviorPage = GObject.registerClass(
         }
 
         _addPanelOptions() {
+
+            const scrollActionOptions = [
+                { label: _('None'), value: 'none' },
+                { label: _('Change Sound Volume'), value: 'change_sound_volume' },
+                { label: _('Switch Workspace'), value: 'switch_workspace' }
+            ];
+
             this.addGroup(_('Panel'), [
-                this.createSwitch(_('Require click to activate the panel menu buttons'), 'panel-menu-require-click'),
+                this.createSwitch(_('Require click to activate menu buttons'), 'panel-menu-require-click'),
                 this.createSwitch(_('Middle click to toggle sound mute'), 'panel-enable-middle-button',
                                   _('Press middle button on an empty space of the panel')),
-                this.createSwitch(_('Scroll to change sound volume'), 'panel-enable-scroll')
+                this.createPicklist(_('Scroll action'), 'panel-scroll-action', scrollActionOptions)
             ]);
         }
 
@@ -118,7 +125,7 @@ var BehaviorPage = GObject.registerClass(
                         this._settings.get_boolean('appbutton-enable-sound-control') ?
                     value : false
                 ),
-                'panel-enable-scroll': value => value
+                'panel-scroll-action': value => value === 'change_sound_volume'
             });
         }
 
