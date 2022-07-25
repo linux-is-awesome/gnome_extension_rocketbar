@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-07-21 01:39+0300\n"
+"POT-Creation-Date: 2022-07-25 21:58+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -67,11 +67,11 @@ msgstr ""
 msgid "Enable Fullscreen Hot Corner"
 msgstr ""
 
-#: settings/behaviorPage.js:52 ui/appButtonMenu.js:398
+#: settings/behaviorPage.js:52 ui/appButtonMenu.js:427
 msgid "New window"
 msgstr ""
 
-#: settings/behaviorPage.js:53 ui/appButtonMenu.js:402
+#: settings/behaviorPage.js:53 ui/appButtonMenu.js:431
 msgid "Move windows"
 msgstr ""
 
@@ -129,87 +129,95 @@ msgid ""
 "separately for each app via an app menu"
 msgstr ""
 
-#: settings/behaviorPage.js:85
-msgid "Panel"
-msgstr ""
-
-#: settings/behaviorPage.js:86
-msgid "Require click to activate the panel menu buttons"
-msgstr ""
-
-#: settings/behaviorPage.js:87
-msgid "Middle click to toggle sound mute"
-msgstr ""
-
-#: settings/behaviorPage.js:88
-msgid "Press middle button on an empty space of the panel"
-msgstr ""
-
-#: settings/behaviorPage.js:89
-msgid "Scroll to change sound volume"
-msgstr ""
-
-#: settings/behaviorPage.js:96
-msgid "Slowest"
-msgstr ""
-
-#: settings/behaviorPage.js:97
-msgid "Slow"
-msgstr ""
-
-#: settings/behaviorPage.js:98
-msgid "Normal"
-msgstr ""
-
-#: settings/behaviorPage.js:99
-msgid "Fast"
-msgstr ""
-
-#: settings/behaviorPage.js:100
-msgid "Faster"
-msgstr ""
-
-#: settings/behaviorPage.js:101
-msgid "Turbo"
-msgstr ""
-
-#: settings/behaviorPage.js:104 ui/appButtonMenu.js:279
-msgid "Sound Volume Control"
-msgstr ""
-
-#: settings/behaviorPage.js:106
-msgid "Volume change speed"
-msgstr ""
-
-#: settings/behaviorPage.js:110
-msgid "Volume change speed when Ctrl pressed"
-msgstr ""
-
-#: settings/behaviorPage.js:128
+#: settings/behaviorPage.js:87 settings/behaviorPage.js:135
 msgid "None"
 msgstr ""
 
-#: settings/behaviorPage.js:129
-msgid "Left Button"
+#: settings/behaviorPage.js:88
+msgid "Change Sound Volume"
 msgstr ""
 
-#: settings/behaviorPage.js:130
-msgid "Right Button"
+#: settings/behaviorPage.js:89
+msgid "Switch Workspace"
 msgstr ""
 
-#: settings/behaviorPage.js:131
-msgid "Middle Button"
+#: settings/behaviorPage.js:92
+msgid "Panel"
 msgstr ""
 
-#: settings/behaviorPage.js:134
-msgid "Activities"
+#: settings/behaviorPage.js:93
+msgid "Require click to activate menu buttons"
+msgstr ""
+
+#: settings/behaviorPage.js:94
+msgid "Middle click to toggle sound mute"
+msgstr ""
+
+#: settings/behaviorPage.js:95
+msgid "Press middle button on an empty space of the panel"
+msgstr ""
+
+#: settings/behaviorPage.js:96
+msgid "Scroll action"
+msgstr ""
+
+#: settings/behaviorPage.js:103
+msgid "Slowest"
+msgstr ""
+
+#: settings/behaviorPage.js:104
+msgid "Slow"
+msgstr ""
+
+#: settings/behaviorPage.js:105
+msgid "Normal"
+msgstr ""
+
+#: settings/behaviorPage.js:106
+msgid "Fast"
+msgstr ""
+
+#: settings/behaviorPage.js:107
+msgid "Faster"
+msgstr ""
+
+#: settings/behaviorPage.js:108
+msgid "Turbo"
+msgstr ""
+
+#: settings/behaviorPage.js:111 ui/appButtonMenu.js:308
+msgid "Sound Volume Control"
+msgstr ""
+
+#: settings/behaviorPage.js:113
+msgid "Volume change speed"
+msgstr ""
+
+#: settings/behaviorPage.js:117
+msgid "Volume change speed when Ctrl pressed"
 msgstr ""
 
 #: settings/behaviorPage.js:136
+msgid "Left Button"
+msgstr ""
+
+#: settings/behaviorPage.js:137
+msgid "Right Button"
+msgstr ""
+
+#: settings/behaviorPage.js:138
+msgid "Middle Button"
+msgstr ""
+
+#: settings/behaviorPage.js:141
+msgid "Activities"
+msgstr ""
+
+#: settings/behaviorPage.js:143
 msgid "Click Activities to show tha App Grid"
 msgstr ""
 
-#: settings/customizePage.js:14 ui/appButtonMenu.js:299
+#: settings/customizePage.js:14 ui/appButtonMenu.js:328
 msgid "Customize"
 msgstr ""
 
@@ -250,7 +258,7 @@ msgstr ""
 msgid "App Buttons"
 msgstr ""
 
-#: settings/customizePage.js:101 ui/appButtonMenu.js:434
+#: settings/customizePage.js:101 ui/appButtonMenu.js:463
 msgid "Icon Size"
 msgstr ""
 
@@ -407,26 +415,26 @@ msgid ""
 "Hide the Dash from Overview and prevent it from rerendering behind the scene"
 msgstr ""
 
-#: ui/appButtonMenu.js:179
+#: ui/appButtonMenu.js:199
 msgid "Pin"
 msgstr ""
 
-#: ui/appButtonMenu.js:395
+#: ui/appButtonMenu.js:424
 msgid "Activation Behavior"
 msgstr ""
 
-#: ui/appButtonMenu.js:412
+#: ui/appButtonMenu.js:441
 msgid "Icon"
 msgstr ""
 
-#: ui/appButtonMenu.js:415
+#: ui/appButtonMenu.js:444
 msgid "Import"
 msgstr ""
 
-#: ui/appButtonMenu.js:426
+#: ui/appButtonMenu.js:455
 msgid "Reset to default"
 msgstr ""
 
-#: ui/appButtonMenu.js:440
+#: ui/appButtonMenu.js:469
 msgid "Reset all to default"
 msgstr ""
