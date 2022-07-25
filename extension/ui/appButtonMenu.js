@@ -301,7 +301,7 @@ var AppButtonMenu = class extends AppButtonMenuBase {
         super._setConfig();
 
         this._config.defaultIconSize = this._settings.get_int('appbutton-icon-size');
-        this._config.configOverride = this._appButton.getConfigOverride();
+        this._config.configOverride = this._appButton.configOverride.get();
     }
 
     _addSoundControlSection() {
@@ -467,7 +467,7 @@ var AppButtonMenu = class extends AppButtonMenuBase {
         this._customizeSection.addMenuItem(this._createSeparator());
         this._resetAllItem = this._customizeSection.addAction(
             _('Reset all to default'),
-            () => this._appButton.resetConfigOverride()
+            () => this._appButton.configOverride.reset()
         );
 
         this._updateCustomizeSection();
@@ -491,7 +491,7 @@ var AppButtonMenu = class extends AppButtonMenuBase {
 
         this._updateCustomIconSection();
 
-        this._resetAllItem.actor.reactive = this._appButton.hasConfigOverride();
+        this._resetAllItem.actor.reactive = !this._appButton.configOverride.isEmpty();
 
         this._customizeSection._isUpdating = false;
     }
@@ -673,7 +673,7 @@ var AppButtonMenu = class extends AppButtonMenuBase {
 
         // no need to apply the config override
         if (this._customizeSection?._isUpdating ||
-                !this._isConfigOverrideChanged()) {
+                this._appButton.configOverride.equals(this._config.configOverride)) {
             return;
         }
 
@@ -683,20 +683,10 @@ var AppButtonMenu = class extends AppButtonMenuBase {
 
             this._applyConfigOverrideTimeout = null;
 
-            this._appButton.setConfigOverride(this._config.configOverride);
+            this._appButton.configOverride.set(this._config.configOverride);
 
             this._resetAllItem.actor.reactive = true;
         });
-    }
-
-    _isConfigOverrideChanged() {
-        const oldConfigOverride = this._appButton.getConfigOverride();
-
-        return !(
-            this._config.configOverride.iconSize === oldConfigOverride.iconSize &&
-            this._config.configOverride.activateRunningBehavior === oldConfigOverride.activateRunningBehavior &&
-            this._config.configOverride.customIconPath === oldConfigOverride.customIconPath
-        );
     }
 
     _stopApplyConfigOverride() {

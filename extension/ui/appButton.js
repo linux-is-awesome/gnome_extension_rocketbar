@@ -2,8 +2,7 @@
 
 //#region imports
 
-const { Clutter, Gio, GObject, Meta, Shell, St } = imports.gi;
-const { PopupMenuManager } = imports.ui.popupMenu;
+const { Clutter, GObject, Meta, Shell, St } = imports.gi;
 const Main = imports.ui.main;
 const DND = imports.ui.dnd;
 const IconGrid = imports.ui.iconGrid;
@@ -24,13 +23,148 @@ const { IconProvider } = Me.imports.utils.iconProvider;
 
 //#endregion imports
 
+class AppButtonConfigOverride {
+
+    // appId => {...}
+    static _cache = null;
+
+    constructor(appId, settings, callback) {
+
+        this._appId = appId;
+        this._settings = settings;
+        this._callback = callback;
+        this._values = {};
+
+        if (this.constructor._cache) {
+            return;
+        }
+
+        const configOverride = this._settings.get_string('appbutton-config-override');
+
+        // parse config override
+        this.constructor._cache = (
+            configOverride && configOverride.length ?
+            JSON.parse(configOverride) :
+            {}
+        );
+    }
+
+    destroy() {
+        this.constructor._cache = null;
+    }
+
+    apply(config) {
+
+        if (!config) {
+            return;
+        }
+
+        // get override
+        const configOverride = this.constructor._cache[this._appId];
+
+        // calculate icon texture size based on offset from the override
+        // result size can be > or < then the icon size
+        if (configOverride?.iconSizeOffset) {
+
+            let iconTextureSize = config.iconTextureSize + configOverride.iconSizeOffset;
+
+            // size should not be < 16 and > 64
+            iconTextureSize = Math.max(iconTextureSize, 16);
+            iconTextureSize = Math.min(iconTextureSize, 64);
+
+            config.iconTextureSize = iconTextureSize;
+        }
+
+        if (configOverride?.customIconPath) {
+            config.customIconPath = configOverride.customIconPath;
+        }
+
+        if (configOverride?.activateRunningBehavior) {
+            config.activateRunningBehavior = configOverride.activateRunningBehavior;
+        }
+
+        this._values = config;
+    }
+
+    equals(values) {
+
+        if (!values) {
+            return false;
+        }
+
+        const initialValues = this.get();
+
+        for (let key in initialValues) {
+            if (initialValues[key] !== values[key]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    get() {
+        return {
+            iconSize: this._values.iconTextureSize,
+            activateRunningBehavior: this._values.activateRunningBehavior,
+            customIconPath: this._values.customIconPath
+        };
+    }
+
+    set(values) {
+
+        if (!values) {
+            return;
+        }
+
+        this.constructor._cache[this._appId] = {
+            iconSizeOffset: (
+                values.iconSize ?
+                values.iconSize - this._values.iconSize :
+                0
+            ),
+            activateRunningBehavior: values.activateRunningBehavior,
+            customIconPath: values.customIconPath
+        };
+
+        this.save();
+    }
+
+    reset() {
+
+        if (this.isEmpty()) {
+            return;
+        }
+
+        delete this.constructor._cache[this._appId];
+
+        this.save();
+    }
+
+    save() {
+
+        this._settings.set_string(
+            'appbutton-config-override',
+            JSON.stringify(this.constructor._cache)
+        );
+
+        if (!this._callback) {
+            return;
+        }
+
+        this._callback();
+    }
+
+    isEmpty() {
+        return !this.constructor._cache?.hasOwnProperty(this._appId);
+    }
+
+}
+
 var AppButton = GObject.registerClass(
     class Rocketbar__AppButton extends St.Button {
 
         //#region static
-
-        // appId => {...}
-        static _configOverride = null;
 
         // appId => color
         static _dominantColorCache = {};
@@ -94,56 +228,6 @@ var AppButton = GObject.registerClass(
             return this;
         }
 
-        getConfigOverride() {
-            return {
-                iconSize: this._config.iconTextureSize,
-                activateRunningBehavior: this._config.activateRunningBehavior,
-                customIconPath: this._config.customIconPath
-            };
-        }
-
-        setConfigOverride(configOverride) {
-
-            if (!configOverride) {
-                return;
-            }
-
-            if (!AppButton._configOverride) {
-                AppButton._configOverride = {};
-            }
-
-            AppButton._configOverride[this.appId] = {
-                iconSizeOffset: (
-                    configOverride.iconSize ?
-                    configOverride.iconSize - this._config.iconSize :
-                    0
-                ),
-                activateRunningBehavior: configOverride.activateRunningBehavior,
-                customIconPath: configOverride.customIconPath
-            };
-
-            this._saveConfigOverride();
-        }
-
-        resetConfigOverride() {
-            
-            // if nothing to reset
-            if (!this.hasConfigOverride()) {
-                return;
-            }
-
-            delete AppButton._configOverride[this.appId];
-
-            this._saveConfigOverride();
-        }
-
-        hasConfigOverride() {
-            return (
-                AppButton._configOverride &&
-                AppButton._configOverride.hasOwnProperty(this.appId)
-            );
-        }
-
         //#endregion public methods
 
         //#region private methods
@@ -169,6 +253,7 @@ var AppButton = GObject.registerClass(
             this.notifications = 0;
             this.dominantColor = null;
             this.soundVolumeControl = null;
+            this.configOverride = new AppButtonConfigOverride(this.appId, settings, () => this._handleSettings());
 
             // set private properties
             this._settings = settings;
@@ -270,15 +355,6 @@ var AppButton = GObject.registerClass(
                 'changed::notification-badge-position',
                 'changed::notification-badge-size',
                 'changed::notification-badge-margin'], () => this._handleSettings());
-        }
-
-        _saveConfigOverride() {
-
-            // store customizations as a JSON string
-            this._settings.set_string('appbutton-config-override', JSON.stringify(AppButton._configOverride));
-
-            // apply changes
-            this._handleSettings()
         }
 
         _handleSettings() {
@@ -401,53 +477,12 @@ var AppButton = GObject.registerClass(
                 customIconPath: null
             };
 
-            this._applyConfigOverride();
-        }
-
-        _applyConfigOverride() {
-
-            // create config override
-            if (!AppButton._configOverride) {
-
-                const configOverride = this._settings.get_string('appbutton-config-override');
-
-                // parse config override
-                AppButton._configOverride = (
-                    configOverride && configOverride.length ?
-                    JSON.parse(configOverride) :
-                    {}
-                );
-            }
-
-            // get override
-            const configOverride = AppButton._configOverride[this.appId];
-
-            // calculate icon texture size based on offset from the override
-            // result size can be > or < then the icon size
-            if (configOverride?.iconSizeOffset) {
-                
-                let iconTextureSize = this._config.iconTextureSize + configOverride.iconSizeOffset;
-
-                // size should not be < 16 and > 64
-                iconTextureSize = Math.max(iconTextureSize, 16);
-                iconTextureSize = Math.min(iconTextureSize, 64);
-
-                this._config.iconTextureSize = iconTextureSize;
-            }
-
-            if (configOverride?.customIconPath) {
-                this._config.customIconPath = configOverride.customIconPath;
-            }
-
-            if (configOverride?.activateRunningBehavior) {
-                this._config.activateRunningBehavior = configOverride.activateRunningBehavior;
-            }
-
+            this.configOverride.apply(this._config);
         }
 
         _parentDestroy() {
             // destroy static variables when taskbar is destroying
-            AppButton._configOverride = null;
+            this.configOverride?.destroy();
             // avoid triggering the handler
             this._stateHandler = null;
         }
@@ -466,10 +501,12 @@ var AppButton = GObject.registerClass(
 
             // remove connections
             this._connections.destroy();
+            this._connections = null;
 
             // remove app information
             this.app = null;
             this.appId = null;
+            this.configOverride = null;
 
             // destroy context menu
             this._menu?.destroy();
@@ -504,8 +541,6 @@ var AppButton = GObject.registerClass(
 
         _dragBegin() {
 
-            this.remove_all_transitions();
-
             this._dragMonitor = {
                 dragMotion: event => this._dragMotion(event)
             };
@@ -513,6 +548,8 @@ var AppButton = GObject.registerClass(
             DND.addDragMonitor(this._dragMonitor);
 
             Main.overview.beginItemDrag(this);
+
+            this._triggerState('drag-start');
         }
 
         /*
@@ -562,23 +599,9 @@ var AppButton = GObject.registerClass(
             }
 
             // drop the app button at the new index
-            this.remove_all_transitions();
-
-            this.opacity = 150;
-
             parent.set_child_at_index(this, dragIndex);
 
             this._triggerState('drag-motion');
-
-            this.ease({
-                opacity: 150,
-                duration: 1000,
-                onComplete: () => this.ease({
-                    opacity: 255,
-                    duration: 300,
-                    mode: Clutter.AnimationMode.EASE_OUT_QUAD
-                })
-            });
 
             return DND.DragMotionResult.CONTINUE;
         }
@@ -588,10 +611,6 @@ var AppButton = GObject.registerClass(
             if (!this._dragMonitor) {
                 return;
             }
-
-            this.remove_all_transitions();
-
-            this.opacity = 255;
 
             DND.removeDragMonitor(this._dragMonitor);
             this._dragMonitor = null;

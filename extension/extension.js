@@ -43,6 +43,7 @@ function disable() {
     taskbar?.destroy();
     shellTweaks?.destroy();
     settings?.run_dispose();
+    IconProvider.destroy();
 
     // and nullify all
     taskbar = null;
@@ -50,8 +51,6 @@ function disable() {
     settings = null;
     connections = null;
 
-    // destroy icon provider just in case
-    IconProvider.destroy();
 }
 
 function _handleSettings() {

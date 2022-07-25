@@ -271,7 +271,19 @@ var SettingsPageTemplate = GObject.registerClass(
                         continue;
                     }
 
-                    if (keyHandler(this._settings.get_boolean(settingsKey))) {
+                    let value = this._settings.get_value(settingsKey);
+
+                    // only boolean and string values are supported for now
+                    switch (value.get_type_string()) {
+                        case 'b':
+                            value = this._settings.get_boolean(settingsKey);
+                            break; 
+                        case 's':
+                            value = this._settings.get_string(settingsKey);
+                            break;
+                    }
+
+                    if (keyHandler(value)) {
                         visibilityState = true;
                         break;
                     }

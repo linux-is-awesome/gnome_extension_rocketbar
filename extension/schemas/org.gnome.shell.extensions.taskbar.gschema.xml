@@ -169,9 +169,9 @@
             <default>true</default>
             <summary>Middle click on panel empty space to toggle sound mute</summary>
         </key>
-        <key type="b" name="panel-enable-scroll">
-            <default>true</default>
-            <summary>Scroll panel to changes sound volume</summary>
+        <key type="s" name="panel-scroll-action">
+            <default>'none'</default>
+            <summary>Panel scroll action</summary>
         </key>
         <key type="i" name="sound-volume-control-change-speed">
             <default>2</default>
