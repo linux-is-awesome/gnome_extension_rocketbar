@@ -169,7 +169,6 @@ class SoundVolumeControlBase {
 
 //#endregion base classes
 
-
 //#region system wide control
 
 var SoundVolumeControl = class extends SoundVolumeControlBase {

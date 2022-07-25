@@ -36,14 +36,14 @@ class AppButtonConfigOverride {
         this._callback = callback;
         this._values = {};
 
-        if (AppButtonConfigOverride._cache) {
+        if (this.constructor._cache) {
             return;
         }
 
         const configOverride = this._settings.get_string('appbutton-config-override');
 
         // parse config override
-        AppButtonConfigOverride._cache = (
+        this.constructor._cache = (
             configOverride && configOverride.length ?
             JSON.parse(configOverride) :
             {}
@@ -51,7 +51,7 @@ class AppButtonConfigOverride {
     }
 
     destroy() {
-        AppButtonConfigOverride._cache = null;
+        this.constructor._cache = null;
     }
 
     apply(config) {
@@ -61,7 +61,7 @@ class AppButtonConfigOverride {
         }
 
         // get override
-        const configOverride = AppButtonConfigOverride._cache[this._appId];
+        const configOverride = this.constructor._cache[this._appId];
 
         // calculate icon texture size based on offset from the override
         // result size can be > or < then the icon size
@@ -118,7 +118,7 @@ class AppButtonConfigOverride {
             return;
         }
 
-        AppButtonConfigOverride._cache[this._appId] = {
+        this.constructor._cache[this._appId] = {
             iconSizeOffset: (
                 values.iconSize ?
                 values.iconSize - this._values.iconSize :
@@ -137,7 +137,7 @@ class AppButtonConfigOverride {
             return;
         }
 
-        delete AppButtonConfigOverride._cache[this._appId];
+        delete this.constructor._cache[this._appId];
 
         this.save();
     }
@@ -146,7 +146,7 @@ class AppButtonConfigOverride {
 
         this._settings.set_string(
             'appbutton-config-override',
-            JSON.stringify(AppButtonConfigOverride._cache)
+            JSON.stringify(this.constructor._cache)
         );
 
         if (!this._callback) {
@@ -157,7 +157,7 @@ class AppButtonConfigOverride {
     }
 
     isEmpty() {
-        return !AppButtonConfigOverride._cache?.hasOwnProperty(this._appId);
+        return !this.constructor._cache?.hasOwnProperty(this._appId);
     }
 
 }
@@ -166,9 +166,6 @@ var AppButton = GObject.registerClass(
     class Rocketbar__AppButton extends St.Button {
 
         //#region static
-
-        // appId => {...}
-        static _configOverride = null;
 
         // appId => color
         static _dominantColorCache = {};
