@@ -984,10 +984,7 @@ var AppButton = GObject.registerClass(
 
         _updateStyle() {
 
-            // add equal spacing on left and right
-            const spacing = this._config.spacing / 2;
-
-            this.style = `margin-left: ${spacing}px; margin-right: ${spacing}px;`;
+            this.style = `margin-left: ${this._config.spacing}px; margin-right: ${this._config.spacing}px;`;
 
             this._appIcon.style = (
                 //set width as sum of icon size and paddings to give extra space for the icon inside
