@@ -541,8 +541,6 @@ var AppButton = GObject.registerClass(
 
         _dragBegin() {
 
-            this.remove_all_transitions();
-
             this._dragMonitor = {
                 dragMotion: event => this._dragMotion(event)
             };
@@ -550,6 +548,8 @@ var AppButton = GObject.registerClass(
             DND.addDragMonitor(this._dragMonitor);
 
             Main.overview.beginItemDrag(this);
+
+            this._triggerState('drag-start');
         }
 
         /*
@@ -599,23 +599,9 @@ var AppButton = GObject.registerClass(
             }
 
             // drop the app button at the new index
-            this.remove_all_transitions();
-
-            this.opacity = 150;
-
             parent.set_child_at_index(this, dragIndex);
 
             this._triggerState('drag-motion');
-
-            this.ease({
-                opacity: 150,
-                duration: 1000,
-                onComplete: () => this.ease({
-                    opacity: 255,
-                    duration: 300,
-                    mode: Clutter.AnimationMode.EASE_OUT_QUAD
-                })
-            });
 
             return DND.DragMotionResult.CONTINUE;
         }
@@ -625,10 +611,6 @@ var AppButton = GObject.registerClass(
             if (!this._dragMonitor) {
                 return;
             }
-
-            this.remove_all_transitions();
-
-            this.opacity = 255;
 
             DND.removeDragMonitor(this._dragMonitor);
             this._dragMonitor = null;

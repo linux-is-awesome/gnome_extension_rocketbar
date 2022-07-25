@@ -612,10 +612,44 @@ var Taskbar = GObject.registerClass(
                     this._scrollToAppButton(appButton);
                     break;
 
+                case 'drag-start':
+                    this._toggleAppButtonHighlight(appButton, true);
+                    break;
+
                 case 'drag-end':
+                    this._toggleAppButtonHighlight(appButton, false);
                     this._handleAppButtonPosition(appButton);
                     break;
 
+            }
+        }
+
+        _toggleAppButtonHighlight(appButton, state) {
+
+            if (!appButton) {
+                return;
+            }
+
+            const layoutActors = this._layout.get_children();
+
+            // there is just only one app button
+            // so no need to highlight it
+            if (layoutActors.length < 2) {
+                return;
+            }
+
+            for (let actor of layoutActors) {
+
+                if (!(actor instanceof AppButton) || actor === appButton ||
+                        actor.isFavorite !== appButton.isFavorite) {
+                    continue;
+                }
+
+                actor.ease({
+                    opacity: state ? 150 : 255,
+                    duration: state ? 300 : 200,
+                    mode: Clutter.AnimationMode.EASE_OUT_QUAD
+                });
             }
         }
 
