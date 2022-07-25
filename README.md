@@ -1,7 +1,7 @@
 # Rocketbar
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/linux-is-awesome/gnome_extension_rocketbar/blob/master/LICENSE)
 
-![](/media/taskbar.jpg)
+![](/screenshots/taskbar.jpg)
 
 -----
 
@@ -40,11 +40,11 @@ Note: to get additional customization options for the GNOME Shell I would sugges
 
 - Taskbar on top
 
-![](/media/taskbar_top.png)
+![](/screenshots/taskbar_top.png)
 
 - Taskbar on bottom
 
-![](/media/taskbar_bottom.png)
+![](/screenshots/taskbar_bottom.png)
 
 ### Per app customization options
 
@@ -57,7 +57,7 @@ Note: to get additional customization options for the GNOME Shell I would sugges
     - Icon Size
         - Allows to change the icon size a bit when app icon looks smaller/bigger than others
             
-![](/media/customize.png)
+![](/screenshots/customize.png)
 
 -----
 
@@ -65,7 +65,7 @@ Note: to get additional customization options for the GNOME Shell I would sugges
 
 <p align="left">
     <a href="https://extensions.gnome.org/extension/5180/rocketbar" >
-        <img src="/media/get-it-logo.png" width="240"/>
+        <img src="/screenshots/get-it-logo.png" width="240"/>
     </a>
 </p>
 
