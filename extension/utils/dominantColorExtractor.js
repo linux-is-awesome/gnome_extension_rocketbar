@@ -6,7 +6,7 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { IconProvider } = Me.imports.utils.iconProvider;
 
-const DOMINANT_COLOR_SAMPLE_SIZE = 16;
+const DOMINANT_COLOR_SAMPLE_SIZE = 20;
 
 /**
 * Credit: Dash to Dock
