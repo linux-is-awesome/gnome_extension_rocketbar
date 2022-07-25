@@ -1,3 +1,5 @@
+/* exported AppButtonIndicator */
+
 const { Clutter, St } = imports.gi;
 const IconGrid = imports.ui.iconGrid;
 
