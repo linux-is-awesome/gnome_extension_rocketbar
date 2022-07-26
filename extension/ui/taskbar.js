@@ -588,9 +588,15 @@ var Taskbar = GObject.registerClass(
             switch (state) {
 
                 case 'destroy':
+
+                    if (this._scrollLock === appButton) {
+                        this._scrollLock = null;
+                    }
+
                     if (this._activeAppButton !== appButton) {
                         break;
                     }
+
                 case 'menu':
                     this._activeAppButton = null;
                     this._stopScrollToActiveButton();
