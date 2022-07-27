@@ -3,8 +3,9 @@
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { Connections } = Me.imports.utils.connections;
-const { Taskbar } = Me.imports.ui.taskbar;
 const { ShellTweaks } = Me.imports.shell.tweaks;
+const { Taskbar } = Me.imports.ui.taskbar;
+const { NotificationCounter } = Me.imports.ui.notificationCounter;
 const { IconProvider } = Me.imports.utils.iconProvider;
 
 //#endregion imports
@@ -13,8 +14,9 @@ const { IconProvider } = Me.imports.utils.iconProvider;
 
 let connections = null;
 let settings = null;
-let taskbar = null;
 let shellTweaks = null;
+let taskbar = null;
+let notificationCounter = null;
 
 //#endregion variables
 
@@ -30,6 +32,8 @@ function enable() {
 
     shellTweaks = new ShellTweaks(settings);
 
+    notificationCounter = new NotificationCounter();
+
     this._handleSettings();
 
     connections = new Connections();
@@ -41,12 +45,14 @@ function disable() {
     // destroy all
     connections.destroy();
     taskbar?.destroy();
+    notificationCounter?.destroy();
     shellTweaks?.destroy();
     settings?.run_dispose();
     IconProvider.destroy();
 
     // and nullify all
     taskbar = null;
+    notificationCounter = null;
     shellTweaks = null;
     settings = null;
     connections = null;
