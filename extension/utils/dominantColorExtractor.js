@@ -263,4 +263,4 @@ var DominantColorExtractor = class {
         };
     }
 
-};
+}
