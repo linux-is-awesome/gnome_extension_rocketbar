@@ -4,6 +4,10 @@ const { GLib, Meta } = imports.gi;
 
 var Timeout = class {
 
+    static init() {
+        return Timeout.idle(400);
+    }
+
     static default(delay = 0) {
         return new Timeout(GLib.PRIORITY_DEFAULT, delay);
     }

@@ -211,7 +211,7 @@ var Taskbar = GObject.registerClass(
                 return;
             }
 
-            this._initRenderTimeout = Timeout.idle(300).run(() => {
+            this._initRenderTimeout = Timeout.init().run(() => {
 
                 this._initRenderTimeout = null;
 
