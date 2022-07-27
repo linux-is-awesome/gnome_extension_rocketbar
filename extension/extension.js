@@ -30,9 +30,9 @@ function enable() {
 
     settings = ExtensionUtils.getSettings();
 
-    shellTweaks = new ShellTweaks(settings);
+    shellTweaks = this._createModule(ShellTweaks);
 
-    notificationCounter = new NotificationCounter();
+    notificationCounter = this._createModule(NotificationCounter);
 
     this._handleSettings();
 
@@ -62,12 +62,21 @@ function disable() {
 function _handleSettings() {
 
     if (settings.get_boolean('taskbar-enabled') && !taskbar) {
-        taskbar = new Taskbar(settings);
+        taskbar = this._createModule(Taskbar);
     } else if (!settings.get_boolean('taskbar-enabled') && taskbar) {
         taskbar.destroy();
         taskbar = null;
     }
 
+}
+
+function _createModule(module) {
+    try {
+        return new module(settings);
+    } catch (e) {
+        logError(e, Me.metadata.name + ' Error');
+    }
+    return null;
 }
 
 //#endregion main
