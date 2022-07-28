@@ -140,7 +140,7 @@ var BehaviorPage = GObject.registerClass(
 
             this.addGroup(_('Activities'), [
                 this.createPicklist(
-                    _('Click Activities to show tha App Grid'), 'activities-show-apps-button',
+                    _('Click Activities to show the App Grid'), 'activities-show-apps-button',
                     clickOptions
                 )
             ]);

@@ -213,7 +213,7 @@ msgid "Activities"
 msgstr "Activités"
 
 #: settings/behaviorPage.js:136
-msgid "Click Activities to show tha App Grid"
+msgid "Click Activities to show the App Grid"
 msgstr "Cliquer sur Activités pour ouvrir la grille des Applications"
 
 #: settings/customizePage.js:14 ui/appButtonMenu.js:299
