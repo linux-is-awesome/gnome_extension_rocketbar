@@ -178,7 +178,7 @@ class AppButtonMenuBase extends AppMenu {
             return Clutter.EVENT_PROPAGATE;
         }
 
-        super._onKeyPress(actor, event);
+        return super._onKeyPress(actor, event);
     }
 
     _updateFavoriteItem() {
