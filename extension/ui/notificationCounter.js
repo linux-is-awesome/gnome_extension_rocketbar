@@ -31,6 +31,10 @@ class NotificationCounterContainer {
         this._removeNotificationCounter();
     }
 
+    getDndState() {
+        return this._dateMenu?._indicator?._settings?.get_boolean('show-banners') === false;
+    }
+
     _setNotificationCounter() {
 
         if (this._container || !this._dateMenu || !this._dateMenu._clockDisplay) {
@@ -42,8 +46,12 @@ class NotificationCounterContainer {
         // hide the indicator and prevent it from displaying
         // also handle Do not disturb state
         this._connections.add(this._dateMenu._indicator, 'notify::visible', indicator => indicator.hide());
-        this._connections.add(this._dateMenu._indicator?._settings, 'changed::show-banners', () => this._handleDndState());
+        this._connections.add(this._dateMenu._indicator?._settings, 'changed::show-banners', () => this._dndCallback());
         this._dateMenu._indicator?.hide();
+
+        // remove date menu padding
+        // TODO: configurable?
+        this._dateMenu.style = '-natural-hpadding: 0; -minimum-hpadding: 0;';
 
         // remember the class of the clock display
         this._clockDisplayStyleClass = this._dateMenu._clockDisplay?.style_class;
@@ -67,14 +75,8 @@ class NotificationCounterContainer {
         // create a custom container and make it look as a panel button
         this._container = new St.BoxLayout({ style_class: this._clockDisplayStyleClass });
 
-        // create a spacer to display between the clock display and the counter
-        const spacer = new St.Label({ text: '  ' });
-        // the spacer visibility should be controlled by the counter visibility
-        this._notificationCounter.bind_property('visible', spacer, 'visible', GObject.BindingFlags.SYNC_CREATE);
-
         // add items to the container
         this._container.add_child(Main.panel.statusArea.dateMenu._clockDisplay);
-        this._container.add_child(spacer);
         this._container.add_child(this._notificationCounter);
 
         // remove a css class from the clock display
@@ -84,17 +86,6 @@ class NotificationCounterContainer {
         dateMenuContainer.add_child(this._container);
     }
 
-    _handleDndState() {
-
-        if (!this._dndCallback) {
-            return;
-        }
-
-        const dndState = this._dateMenu._indicator?._settings?.get_boolean('show-banners');
-
-        this._dndCallback(dndState);
-    }
-
     _removeNotificationCounter() {
 
         this._initTimeout?.destroy();
@@ -102,7 +93,7 @@ class NotificationCounterContainer {
         this._connections?.destroy();
 
         // restore the indicator
-        this._dateMenu._indicator?._sync();
+        this._dateMenu?._indicator?._sync();
 
         if (!this._container || !this._dateMenu || !this._dateMenu._clockDisplay) {
             return;
@@ -110,9 +101,7 @@ class NotificationCounterContainer {
 
         // remove children we don't want to destroy from the container
         // before destroying the container itself
-        this._container.remove_child(this._dateMenu._clockDisplay);
-        this._container.remove_child(this._notificationCounter);
-
+        this._container.remove_all_children();
         this._container.destroy();
 
         const dateMenuContainer = this._dateMenu.get_children()[0];
@@ -124,6 +113,9 @@ class NotificationCounterContainer {
         // restore the original css class for the clock display
         this._dateMenu._clockDisplay.style_class = this._clockDisplayStyleClass;
 
+        // restore date menu padding
+        this._dateMenu.style = null;
+
         // add the clock display into the original container
         dateMenuContainer.insert_child_at_index(this._dateMenu._clockDisplay, 1);       
     }
@@ -131,24 +123,40 @@ class NotificationCounterContainer {
 }
 
 var NotificationCounter = GObject.registerClass(
-    class Rocketbar__NotificationCounter extends St.Bin {
+    class Rocketbar__NotificationCounter extends St.BoxLayout {
 
         _init() {
 
-            super._init({ y_align: Clutter.ActorAlign.CENTER });
+            super._init();
 
             this._count = 0;
             this._isDnd = false;
 
-            this._createCounter();
-
             this._setConfig();
+
+            this._createCounter();
 
             this._createConnections();
 
             this._notificationHandler = new NotificationHandler(count => this._setCount(count), null);
 
-            this._container = new NotificationCounterContainer(this);
+            this._container = new NotificationCounterContainer(this, () => this._updateDndState());
+        }
+
+        _setConfig() {
+            this._config = {
+                hideEmpty: false,
+                centerClock: true,
+                maxCount: 999,
+                fontSize: 10,
+                roundness: 10,
+                colorEmpty: 'rgb(255, 255, 255)',
+                colorNotEmpty: 'rgb(255, 255, 255)',
+                textColor: 'rgb(0, 0, 0)',
+                colorEmptyDnd: 'rgba(255, 255, 255, 0.8)',
+                colorNotEmptyDnd: 'rgba(255, 255, 255, 0.8)',
+                textColorDnd: 'rgb(0, 0, 0)'
+            };
         }
 
         _createCounter() {
@@ -157,37 +165,62 @@ var NotificationCounter = GObject.registerClass(
                 x_align: Clutter.ActorAlign.CENTER,
                 y_align: Clutter.ActorAlign.CENTER,
                 text: '0',
-                opacity: 0
+                opacity: 0,
+                visible: false//!this._config.hideEmpty
             });
 
             this._counter.set_pivot_point(0.5, 0.5);
 
-            this.set_child(this._counter);
+            // create a spacer to display between the clock display and the counter
+            const spacer = new St.Label({ text: '  ' });
+            // the spacer visibility should be controlled by the counter visibility
+            this._counter.bind_property('visible', spacer, 'visible', GObject.BindingFlags.SYNC_CREATE);
+
+            this.add_actor(spacer);
+            this.add_actor(this._counter);
         }
 
         _createConnections() {
 
             this.connect('destroy', () => this._destroy());
 
-            this._counter.connect('notify::mapped', () => {
-                this._updateStyle();
-                this._update();
+            const mappedHandler = this.connect('notify::mapped', () => {
+
+                // disconnect it to prevent from executing more than once
+                this.disconnect(mappedHandler);
+
+                this._updateDndState();
+
+                // let's wait for notification service a bit
+                this._initTimeout = Timeout.idle(100).run(() => {
+                    // means we don't need to call the update
+                    // when count has changed by the notification service
+                    if (this._count === 0) {
+                        this._update();
+                    }
+                });
+
             });
         }
 
-        _setConfig() {
-            this._config = {
-                fontSize: 10,
-                maxCount: 999
-            };
-        }
-
         _destroy() {
-            this._notificationHandler?.destroy();
+
+            this._initTimeout?.destroy();
+            this._updateTimeout?.destroy();
+
+            this._counter.remove_all_transitions();
+
             this._container?.destroy();
+            this._container = null;
+
+            this._notificationHandler?.destroy();
         }
 
         _setCount(count) {
+
+            if (count > this._config.maxCount) {
+                count = this._config.maxCount;
+            }
 
             if (this._count === count) {
                 return;
@@ -199,6 +232,30 @@ var NotificationCounter = GObject.registerClass(
         }
 
         _update() {
+
+            if (!this._container) {
+                return;
+            }
+
+            log('CAN UPDATE ?');
+
+            this._updateTimeout?.destroy();
+
+            if (!this._isValid()) {
+                // a workaround for the first update
+                this._updateTimeout = Timeout.idle(100).run(() => {
+                    this._update();
+                    this._updateTimeout = null;
+                });
+                return;
+            }
+
+            log('UPDATE ');
+
+            if (this._canShow() && this.width) {
+                //this._counter.show();
+                this.get_parent().style = `margin-left: ${this.width}px;`;
+            }
 
             this._counter.remove_all_transitions();
 
@@ -212,13 +269,21 @@ var NotificationCounter = GObject.registerClass(
                 
                     // update the counter when it's hidden
 
-                    this._counter.text = (
-                        this._count > this._config.maxCount ?
-                        this._config.maxCount.toString() :
-                        this._count.toString()
-                    );
+                    this._counter.text = this._count.toString();
+
+                    if (!this._canShow()) {
+
+                        this.get_parent().style = null;
+
+                        this._counter.hide()
+                        return;
+                    }
+
+                    this._counter.show();
 
                     this._updateStyle();
+
+                    this.get_parent().style = `margin-left: ${this.width}px;`;
 
                     this._counter.ease({
                         opacity: 255,
@@ -231,23 +296,55 @@ var NotificationCounter = GObject.registerClass(
             });
         }
 
+        _canShow() {
+            return this._count || !this._config.hideEmpty;
+        }
+
+        _updateDndState() {
+
+            this._isDnd = this._container?.getDndState();
+
+            this._updateStyle();
+        }
+
         _updateStyle() {
 
-            if (!this.mapped || this.get_stage() === null) {
+            if (!this._isValid()) {
                 return;
             }
 
-            const padding = this._count > 9 ? 3 : 0;
-            const borderSize = this._count > 0 ? 0 : 2;
-            const backgroundColor = this._count > 0 ? 'white' : 'transparent';
-            const textColor = this._count > 0 ? 'black' : 'transparent';
+            const isNotEmpty = this._count > 0;
+            const isShort = this._count < 10;
+
+            const borderColor = (
+                this._isDnd ?
+                this._config.colorEmptyDnd :
+                this._config.colorEmpty
+            );
+
+            const backgroundColor = isNotEmpty ? (
+                this._isDnd ?
+                this._config.colorNotEmptyDnd :
+                this._config.colorNotEmpty
+            ) : 'transparent';
+
+            const textColor = isNotEmpty ? (
+                this._isDnd ?
+                this._config.textColorDnd :
+                this._config.textColor
+            ) : 'transparent';
+
+            // use predefined values for now
+            const padding = isShort ? 0 : 3;
+            const borderSize = isNotEmpty ? 0 : 2;
 
             this._counter.style = (
                 `font-size: ${this._config.fontSize}px;` +
                 `font-weight: bold;` +
                 `text-align: center;` +
                 `padding: 0 ${padding}px;` +
-                `border: ${borderSize}px solid white;` +
+                `border: ${borderSize}px solid ${borderColor};` +
+                `border-radius: ${this._config.roundness}px;` +
                 `background-color: ${backgroundColor};` +
                 `color: ${textColor};`
             );
@@ -259,9 +356,12 @@ var NotificationCounter = GObject.registerClass(
 
             this._counter.style += (
                 `height: ${height}px;` +
-                `min-width: ${height}px;` +
-                `border-radius: ${height}px;`
+                `min-width: ${height}px;`
             );
+        }
+
+        _isValid() {
+            return this.mapped && this.get_stage() !== null;
         }
 
     }
