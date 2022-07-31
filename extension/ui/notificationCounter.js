@@ -49,12 +49,11 @@ class NotificationCounterContainer {
         this._connections.add(this._dateMenu._indicator?._settings, 'changed::show-banners', () => this._dndCallback());
         this._dateMenu._indicator?.hide();
 
-        // remove date menu padding
-        // TODO: configurable?
-        this._dateMenu.style = '-natural-hpadding: 0; -minimum-hpadding: 0;';
-
         // remember the class of the clock display
         this._clockDisplayStyleClass = this._dateMenu._clockDisplay?.style_class;
+
+        // remove extra padding
+        this._dateMenu.style = '-natural-hpadding: 0; -minimum-hpadding: 0;';
 
         // create a container for the notification counter with a delay
         // the delay helps to avoid animations stuttering
@@ -127,8 +126,9 @@ var NotificationCounter = GObject.registerClass(
 
         _init() {
 
-            super._init();
+            super._init({ name: 'rocketbar__notification-counter' });
 
+            this._totalCount = 0;
             this._count = 0;
             this._isDnd = false;
 
@@ -145,7 +145,7 @@ var NotificationCounter = GObject.registerClass(
 
         _setConfig() {
             this._config = {
-                hideEmpty: false,
+                hideEmpty: true,
                 centerClock: true,
                 maxCount: 999,
                 fontSize: 10,
@@ -162,17 +162,21 @@ var NotificationCounter = GObject.registerClass(
         _createCounter() {
 
             this._counter = new St.Label({
+                name: 'rocketbar__notification-counter_counter',
                 x_align: Clutter.ActorAlign.CENTER,
                 y_align: Clutter.ActorAlign.CENTER,
                 text: '0',
                 opacity: 0,
-                visible: false//!this._config.hideEmpty
+                visible: false
             });
 
             this._counter.set_pivot_point(0.5, 0.5);
 
             // create a spacer to display between the clock display and the counter
-            const spacer = new St.Label({ text: '  ' });
+            const spacer = new St.Label({
+                name: 'rocketbar__notification-counter_spacer',
+                text: '  '
+            });
             // the spacer visibility should be controlled by the counter visibility
             this._counter.bind_property('visible', spacer, 'visible', GObject.BindingFlags.SYNC_CREATE);
 
@@ -218,6 +222,8 @@ var NotificationCounter = GObject.registerClass(
 
         _setCount(count) {
 
+            this._totalCount = count;
+
             if (count > this._config.maxCount) {
                 count = this._config.maxCount;
             }
@@ -237,8 +243,6 @@ var NotificationCounter = GObject.registerClass(
                 return;
             }
 
-            log('CAN UPDATE ?');
-
             this._updateTimeout?.destroy();
 
             if (!this._isValid()) {
@@ -250,11 +254,9 @@ var NotificationCounter = GObject.registerClass(
                 return;
             }
 
-            log('UPDATE ');
-
-            if (this._canShow() && this.width) {
-                //this._counter.show();
-                this.get_parent().style = `margin-left: ${this.width}px;`;
+            // the validation before calling the method is required
+            if (this._canShow()) {
+                this._updateClockMargin();
             }
 
             this._counter.remove_all_transitions();
@@ -272,9 +274,7 @@ var NotificationCounter = GObject.registerClass(
                     this._counter.text = this._count.toString();
 
                     if (!this._canShow()) {
-
-                        this.get_parent().style = null;
-
+                        this._updateClockMargin();
                         this._counter.hide()
                         return;
                     }
@@ -283,7 +283,7 @@ var NotificationCounter = GObject.registerClass(
 
                     this._updateStyle();
 
-                    this.get_parent().style = `margin-left: ${this.width}px;`;
+                    this._updateClockMargin();
 
                     this._counter.ease({
                         opacity: 255,
@@ -294,6 +294,25 @@ var NotificationCounter = GObject.registerClass(
                     });
                 }
             });
+        }
+
+        _updateClockMargin() {
+
+            const parent = this.get_parent();
+
+            if (!parent) {
+                return;
+            }
+
+            if (!this._config.centerClock || !this._canShow()) {
+                parent.style = null;
+                return;
+            }
+
+            if (this.width) {
+                parent.style = `margin-left: ${this.width}px;`;
+            }
+
         }
 
         _canShow() {
