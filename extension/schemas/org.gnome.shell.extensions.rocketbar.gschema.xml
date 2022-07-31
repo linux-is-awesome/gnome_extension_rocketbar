@@ -31,13 +31,17 @@
             <default>false</default>
             <summary>Enable Sound Volume Control</summary>
         </key>
+        <key type="b" name="notification-counter-enabled">
+            <default>false</default>
+            <summary>Enable Notification Counter</summary>
+        </key>
         <key type="b" name="overview-kill-dash">
             <default>false</default>
             <summary>Hide the Dash from Overview and prevent it from rerendering behind the scene</summary>
         </key>
         <!-- /general page -->
 
-        <!-- customize page -->
+        <!-- customize page: taskbar -->
         <key type="s" name="taskbar-position">
             <default>'left'</default>
             <summary>Taskbar position in the panel</summary>
@@ -50,6 +54,7 @@
             <default>false</default>
             <summary>Preserve the selected Taskbar position</summary>
         </key>
+        <!-- customize page: appbutton -->
         <key type="i" name="appbutton-icon-size">
             <default>20</default>
             <summary>App Buttons icon size</summary>
@@ -78,6 +83,7 @@
             <default>2</default>
             <summary>App Buttons backlight intensity</summary>
         </key>
+        <!-- customize page: indicator -->
         <key type="b" name="indicator-dominant-color-active">
             <default>false</default>
             <summary>Use dominant color for active indicators</summary>
@@ -106,6 +112,7 @@
             <default>3</default>
             <summary>Max number of indicators to display for running apps</summary>
         </key>
+        <!-- customize page: notification-badge -->
         <key type="s" name="notification-badge-color">
             <default>'rgb(255, 0, 0)'</default>
             <summary>Notification Badge color</summary>
@@ -126,9 +133,55 @@
             <default>7</default>
             <summary>Notification Badge margin</summary>
         </key>
+        <!-- customize page: tooltip -->
         <key type="i" name="tooltip-show-delay">
             <default>500</default>
             <summary>Tooltips show delay</summary>
+        </key>
+        <!-- customize page: notification-counter -->
+        <key type="b" name="notification-counter-hide-empty">
+            <default>false</default>
+            <summary>Hide Notification Counter when it's empty</summary>
+        </key>
+        <key type="b" name="notification-counter-center-clock">
+            <default>false</default>
+            <summary>Center the clock when Notification Counter is shown</summary>
+        </key>
+        <key type="i" name="notification-counter-max-count">
+            <default>999</default>
+            <summary>Notification Counter max count to display</summary>
+        </key>
+        <key type="i" name="notification-counter-font-size">
+            <default>10</default>
+            <summary>Notification Counter font size</summary>
+        </key>
+        <key type="i" name="notification-counter-roundness">
+            <default>10</default>
+            <summary>Notification Counter roundness</summary>
+        </key>
+        <key type="s" name="notification-counter-color-empty">
+            <default>'rgb(255, 255, 255)'</default>
+            <summary>Notification Counter color when empty</summary>
+        </key>
+        <key type="s" name="notification-counter-color-not-empty">
+            <default>'rgb(255, 255, 255)'</default>
+            <summary>Notification Counter color when not empty</summary>
+        </key>
+        <key type="s" name="notification-counter-text-color">
+            <default>'rgb(0, 0, 0)'</default>
+            <summary>Notification Counter text color</summary>
+        </key>
+        <key type="s" name="notification-counter-color-empty-dnd">
+            <default>'rgba(255, 255, 255, 0.8)'</default>
+            <summary>Notification Counter - Do Not Disturb color when empty</summary>
+        </key>
+        <key type="s" name="notification-counter-color-not-empty-dnd">
+            <default>'rgb(255, 255, 255, 0.8)'</default>
+            <summary>Notification Counter - Do Not Disturb color when not empty</summary>
+        </key>
+        <key type="s" name="notification-counter-text-color-dnd">
+            <default>'rgb(0, 0, 0)'</default>
+            <summary>Notification Counter - Do Not Disturb text color</summary>
         </key>
         <!-- /customize page -->
 

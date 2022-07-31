@@ -124,10 +124,11 @@ class NotificationCounterContainer {
 var NotificationCounter = GObject.registerClass(
     class Rocketbar__NotificationCounter extends St.BoxLayout {
 
-        _init() {
+        _init(settings) {
 
             super._init({ name: 'rocketbar__notification-counter' });
 
+            this._settings = settings;
             this._totalCount = 0;
             this._count = 0;
             this._isDnd = false;
@@ -145,17 +146,17 @@ var NotificationCounter = GObject.registerClass(
 
         _setConfig() {
             this._config = {
-                hideEmpty: true,
-                centerClock: true,
-                maxCount: 999,
-                fontSize: 10,
-                roundness: 10,
-                colorEmpty: 'rgb(255, 255, 255)',
-                colorNotEmpty: 'rgb(255, 255, 255)',
-                textColor: 'rgb(0, 0, 0)',
-                colorEmptyDnd: 'rgba(255, 255, 255, 0.8)',
-                colorNotEmptyDnd: 'rgba(255, 255, 255, 0.8)',
-                textColorDnd: 'rgb(0, 0, 0)'
+                hideEmpty: this._settings.get_boolean('notification-counter-hide-empty'),
+                centerClock: this._settings.get_boolean('notification-counter-center-clock'),
+                maxCount: this._settings.get_int('notification-counter-max-count'),
+                fontSize: this._settings.get_int('notification-counter-font-size'),
+                roundness: this._settings.get_int('notification-counter-roundness'),
+                colorEmpty: this._settings.get_string('notification-counter-color-empty'),
+                colorNotEmpty: this._settings.get_string('notification-counter-color-not-empty'),
+                textColor: this._settings.get_string('notification-counter-text-color'),
+                colorEmptyDnd: this._settings.get_string('notification-counter-color-empty-dnd'),
+                colorNotEmptyDnd: this._settings.get_string('notification-counter-color-not-empty-dnd'),
+                textColorDnd: this._settings.get_string('notification-counter-text-color-dnd')
             };
         }
 
