@@ -176,7 +176,7 @@
             <summary>Notification Counter - Do Not Disturb color when empty</summary>
         </key>
         <key type="s" name="notification-counter-color-not-empty-dnd">
-            <default>'rgb(255, 255, 255, 0.8)'</default>
+            <default>'rgba(255, 255, 255, 0.8)'</default>
             <summary>Notification Counter - Do Not Disturb color when not empty</summary>
         </key>
         <key type="s" name="notification-counter-text-color-dnd">
