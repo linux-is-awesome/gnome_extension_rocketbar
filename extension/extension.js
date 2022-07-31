@@ -32,12 +32,13 @@ function enable() {
 
     shellTweaks = this._createModule(ShellTweaks);
 
-    notificationCounter = this._createModule(NotificationCounter);
-
     this._handleSettings();
 
     connections = new Connections();
-    connections.add(settings, 'changed::taskbar-enabled', () => this._handleSettings());    
+    connections.addScope(settings, [
+        'changed::taskbar-enabled',
+        'changed::notification-counter-enabled'
+    ], () => this._handleSettings());    
 }
 
 function disable() {
@@ -61,11 +62,21 @@ function disable() {
 
 function _handleSettings() {
 
-    if (settings.get_boolean('taskbar-enabled') && !taskbar) {
+    const taskbarEnabled = settings.get_boolean('taskbar-enabled');
+    const notificationCounterEnabled = settings.get_boolean('notification-counter-enabled');
+
+    if (taskbarEnabled && !taskbar) {
         taskbar = this._createModule(Taskbar);
-    } else if (!settings.get_boolean('taskbar-enabled') && taskbar) {
+    } else if (!taskbarEnabled && taskbar) {
         taskbar.destroy();
         taskbar = null;
+    }
+
+    if (notificationCounterEnabled && !notificationCounter) {
+        notificationCounter = this._createModule(NotificationCounter);
+    } else if (!notificationCounterEnabled && notificationCounter) {
+        notificationCounter.destroy();
+        notificationCounter = null;
     }
 
 }

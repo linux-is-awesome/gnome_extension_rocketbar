@@ -25,6 +25,11 @@ var GeneralPage = GObject.registerClass(
             // Taskbar
             this._addTaskbarOptions();
 
+            // Notification Counter
+            this.addGroup(_('Notification Counter'), [
+                this.createSwitch(_('Enabled'), 'notification-counter-enabled')
+            ]);
+
             // Overview
             this._addOverviewOptions();
 
