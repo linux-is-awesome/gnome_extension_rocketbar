@@ -72,7 +72,10 @@ class NotificationCounterContainer {
         dateMenuContainer.remove_child(Main.panel.statusArea.dateMenu._clockDisplay);
 
         // create a custom container and make it look as a panel button
-        this._container = new St.BoxLayout({ style_class: this._clockDisplayStyleClass });
+        this._container = new St.BoxLayout({
+            name: 'notification-counter_container',
+            style_class: this._clockDisplayStyleClass
+        });
 
         // add items to the container
         this._container.add_child(Main.panel.statusArea.dateMenu._clockDisplay);
@@ -126,7 +129,7 @@ var NotificationCounter = GObject.registerClass(
 
         _init(settings) {
 
-            super._init({ name: 'rocketbar__notification-counter' });
+            super._init({ name: 'notification-counter' });
 
             this._settings = settings;
             this._totalCount = 0;
@@ -142,6 +145,100 @@ var NotificationCounter = GObject.registerClass(
             this._notificationHandler = new NotificationHandler(count => this._setCount(count), null);
 
             this._container = new NotificationCounterContainer(this, () => this._updateDndState());
+        }
+
+        _createCounter() {
+
+            this._counter = new St.Label({
+                name: 'notification-counter_counter',
+                x_align: Clutter.ActorAlign.CENTER,
+                y_align: Clutter.ActorAlign.CENTER,
+                text: '0',
+                opacity: 0,
+                visible: false
+            });
+
+            this._counter.set_pivot_point(0.5, 0.5);
+
+            // create a spacer to display between the clock display and the counter
+            const spacer = new St.Label({
+                name: 'notification-counter_spacer',
+                text: '  '
+            });
+            // the spacer visibility should be controlled by the counter visibility
+            this._counter.bind_property('visible', spacer, 'visible', GObject.BindingFlags.SYNC_CREATE);
+
+            this.add_actor(spacer);
+            this.add_actor(this._counter);
+        }
+
+        _createConnections() {
+
+            this.connect('destroy', () => this._destroy());
+
+            this._connections = new Connections();
+
+            this._connections.add(this, 'notify::mapped', () => {
+
+                // disconnect it to prevent from executing more than once
+                this._connections.remove('notify::mapped');
+
+                this._updateDndState();
+
+                // let's wait for notification service a bit
+                this._initTimeout = Timeout.idle(100).run(() => {
+                    // means we don't need to call the update
+                    // when the first update has been initiated by the notification service
+                    if (!this._updateTimeout) {
+                        this._update();
+                    }
+                });
+
+            });
+
+            // handle settings
+            this._connections.addScope(this._settings, [
+                'changed::notification-counter-hide-empty',
+                'changed::notification-counter-center-clock',
+                'changed::notification-counter-max-count',
+                'changed::notification-counter-font-size',
+                'changed::notification-counter-roundness',
+                'changed::notification-counter-color-empty',
+                'changed::notification-counter-color-not-empty',
+                'changed::notification-counter-text-color',
+                'changed::notification-counter-color-empty-dnd',
+                'changed::notification-counter-color-not-empty-dnd',
+                'changed::notification-counter-text-color-dnd'
+            ], () => this._handleSettings());
+        }
+
+        _handleSettings() {
+            const oldConfig = this._config || {};
+
+            this._setConfig();
+
+            if (this._config.hideEmpty !== oldConfig.hideEmpty ||
+                    this._config.centerClock !== oldConfig.centerClock) {
+                
+                if (this._canShow()) {
+                    this._counter.show();
+                } else {
+                    this._counter.hide()
+                }
+
+                this._updateClockMargin();
+    
+                return;
+            }
+
+            if (this._config.maxCount !== oldConfig.maxCount) {
+                
+                this._setCount(this._totalCount);
+
+                return;
+            }
+
+            this._updateStyle();
         }
 
         _setConfig() {
@@ -160,58 +257,12 @@ var NotificationCounter = GObject.registerClass(
             };
         }
 
-        _createCounter() {
-
-            this._counter = new St.Label({
-                name: 'rocketbar__notification-counter_counter',
-                x_align: Clutter.ActorAlign.CENTER,
-                y_align: Clutter.ActorAlign.CENTER,
-                text: '0',
-                opacity: 0,
-                visible: false
-            });
-
-            this._counter.set_pivot_point(0.5, 0.5);
-
-            // create a spacer to display between the clock display and the counter
-            const spacer = new St.Label({
-                name: 'rocketbar__notification-counter_spacer',
-                text: '  '
-            });
-            // the spacer visibility should be controlled by the counter visibility
-            this._counter.bind_property('visible', spacer, 'visible', GObject.BindingFlags.SYNC_CREATE);
-
-            this.add_actor(spacer);
-            this.add_actor(this._counter);
-        }
-
-        _createConnections() {
-
-            this.connect('destroy', () => this._destroy());
-
-            const mappedHandler = this.connect('notify::mapped', () => {
-
-                // disconnect it to prevent from executing more than once
-                this.disconnect(mappedHandler);
-
-                this._updateDndState();
-
-                // let's wait for notification service a bit
-                this._initTimeout = Timeout.idle(100).run(() => {
-                    // means we don't need to call the update
-                    // when count has changed by the notification service
-                    if (this._count === 0) {
-                        this._update();
-                    }
-                });
-
-            });
-        }
-
         _destroy() {
 
             this._initTimeout?.destroy();
             this._updateTimeout?.destroy();
+
+            this._connections.destroy();
 
             this._counter.remove_all_transitions();
 

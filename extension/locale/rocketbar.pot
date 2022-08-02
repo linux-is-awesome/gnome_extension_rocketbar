@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-07-28 21:22+0300\n"
+"POT-Creation-Date: 2022-08-02 22:47+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -49,7 +49,7 @@ msgstr ""
 msgid "Behavior"
 msgstr ""
 
-#: settings/behaviorPage.js:38 settings/generalPage.js:49
+#: settings/behaviorPage.js:38 settings/generalPage.js:54
 msgid "Overview"
 msgstr ""
 
@@ -79,8 +79,8 @@ msgstr ""
 msgid "Move windows"
 msgstr ""
 
-#: settings/behaviorPage.js:56 settings/customizePage.js:84
-#: settings/generalPage.js:34
+#: settings/behaviorPage.js:56 settings/customizePage.js:93
+#: settings/generalPage.js:39
 msgid "Taskbar"
 msgstr ""
 
@@ -229,192 +229,236 @@ msgstr ""
 msgid "No customizations available"
 msgstr ""
 
-#: settings/customizePage.js:79
+#: settings/customizePage.js:88
 msgid "Left"
 msgstr ""
 
-#: settings/customizePage.js:80
+#: settings/customizePage.js:89
 msgid "Center"
 msgstr ""
 
-#: settings/customizePage.js:81
+#: settings/customizePage.js:90
 msgid "Right"
 msgstr ""
 
-#: settings/customizePage.js:86 settings/customizePage.js:148
-#: settings/customizePage.js:176
+#: settings/customizePage.js:95 settings/customizePage.js:157
+#: settings/customizePage.js:185
 msgid "Position"
 msgstr ""
 
-#: settings/customizePage.js:90
+#: settings/customizePage.js:99
 msgid "Position Offset"
 msgstr ""
 
-#: settings/customizePage.js:93
+#: settings/customizePage.js:102
 msgid "Preserve Position"
 msgstr ""
 
-#: settings/customizePage.js:94
+#: settings/customizePage.js:103
 msgid "Prevent position changes caused by other extensions in the panel"
 msgstr ""
 
-#: settings/customizePage.js:99
+#: settings/customizePage.js:108
 msgid "App Buttons"
 msgstr ""
 
-#: settings/customizePage.js:101 ui/appButtonMenu.js:463
+#: settings/customizePage.js:110 ui/appButtonMenu.js:463
 msgid "Icon Size"
 msgstr ""
 
-#: settings/customizePage.js:103
+#: settings/customizePage.js:112
 msgid "Can be configured separately for each app via an app menu"
 msgstr ""
 
-#: settings/customizePage.js:106
+#: settings/customizePage.js:115
 msgid "Icon Padding"
 msgstr ""
 
-#: settings/customizePage.js:110
+#: settings/customizePage.js:119
 msgid "Vertical Margin"
 msgstr ""
 
-#: settings/customizePage.js:114
+#: settings/customizePage.js:123 settings/customizePage.js:221
 msgid "Roundness"
 msgstr ""
 
-#: settings/customizePage.js:118
+#: settings/customizePage.js:127
 msgid "Spacing"
 msgstr ""
 
-#: settings/customizePage.js:121
+#: settings/customizePage.js:130
 msgid "Dominant Color Backlight"
 msgstr ""
 
-#: settings/customizePage.js:124
+#: settings/customizePage.js:133
 msgid "Backlight Intensity"
 msgstr ""
 
-#: settings/customizePage.js:134
+#: settings/customizePage.js:143
 msgid "Top"
 msgstr ""
 
-#: settings/customizePage.js:135
+#: settings/customizePage.js:144
 msgid "Bottom"
 msgstr ""
 
-#: settings/customizePage.js:138
+#: settings/customizePage.js:147
 msgid "Indicators"
 msgstr ""
 
-#: settings/customizePage.js:139
+#: settings/customizePage.js:148
 msgid "Active Dominant Color"
 msgstr ""
 
-#: settings/customizePage.js:141
+#: settings/customizePage.js:150
 msgid "Active Color"
 msgstr ""
 
-#: settings/customizePage.js:143
+#: settings/customizePage.js:152
 msgid "Inactive Dominant Color"
 msgstr ""
 
-#: settings/customizePage.js:145
+#: settings/customizePage.js:154
 msgid "Inactive Color"
 msgstr ""
 
-#: settings/customizePage.js:152 settings/customizePage.js:180
+#: settings/customizePage.js:161 settings/customizePage.js:189
 msgid "Size"
 msgstr ""
 
-#: settings/customizePage.js:156
+#: settings/customizePage.js:165
 msgid "Limit"
 msgstr ""
 
-#: settings/customizePage.js:158
+#: settings/customizePage.js:167
 msgid "The maximum number of indicators to display on top of app buttons"
 msgstr ""
 
-#: settings/customizePage.js:166
+#: settings/customizePage.js:175
 msgid "Top Left"
 msgstr ""
 
-#: settings/customizePage.js:167
+#: settings/customizePage.js:176
 msgid "Top Right"
 msgstr ""
 
-#: settings/customizePage.js:168
+#: settings/customizePage.js:177
 msgid "Bottom Left"
 msgstr ""
 
-#: settings/customizePage.js:169
+#: settings/customizePage.js:178
 msgid "Bottom Right"
 msgstr ""
 
-#: settings/customizePage.js:172
+#: settings/customizePage.js:181
 msgid "Notification Badges"
 msgstr ""
 
-#: settings/customizePage.js:173
+#: settings/customizePage.js:182
 msgid "Color"
 msgstr ""
 
-#: settings/customizePage.js:174
+#: settings/customizePage.js:183
 msgid "Border Color"
 msgstr ""
 
-#: settings/customizePage.js:184
+#: settings/customizePage.js:193
 msgid "Margin"
 msgstr ""
 
-#: settings/customizePage.js:191
+#: settings/customizePage.js:200
 msgid "Tooltips"
 msgstr ""
 
-#: settings/customizePage.js:193
+#: settings/customizePage.js:202
 msgid "Show Delay"
+msgstr ""
+
+#: settings/customizePage.js:209 settings/generalPage.js:29
+msgid "Notification Counter"
+msgstr ""
+
+#: settings/customizePage.js:210
+msgid "Hide when empty"
+msgstr ""
+
+#: settings/customizePage.js:211
+msgid "Center clock"
+msgstr ""
+
+#: settings/customizePage.js:213
+msgid "Max Count"
+msgstr ""
+
+#: settings/customizePage.js:217
+msgid "Font Size"
+msgstr ""
+
+#: settings/customizePage.js:224
+msgid "Empty Color"
+msgstr ""
+
+#: settings/customizePage.js:225
+msgid "Not Empty Color"
+msgstr ""
+
+#: settings/customizePage.js:226
+msgid "Text Color"
+msgstr ""
+
+#: settings/customizePage.js:227
+msgid "Do Not Disturb - Empty Color"
+msgstr ""
+
+#: settings/customizePage.js:228
+msgid "Do Not Disturb - Not Empty Color"
+msgstr ""
+
+#: settings/customizePage.js:229
+msgid "Do Not Disturb - Text Color"
 msgstr ""
 
 #: settings/generalPage.js:14
 msgid "General"
 msgstr ""
 
-#: settings/generalPage.js:35
+#: settings/generalPage.js:30 settings/generalPage.js:40
 msgid "Enabled"
 msgstr ""
 
-#: settings/generalPage.js:37
+#: settings/generalPage.js:42
 msgid "Show Favorites"
 msgstr ""
 
-#: settings/generalPage.js:38
+#: settings/generalPage.js:43
 msgid "Isolate Workspaces"
 msgstr ""
 
-#: settings/generalPage.js:39
+#: settings/generalPage.js:44
 msgid "Enable Indicators"
 msgstr ""
 
-#: settings/generalPage.js:40
+#: settings/generalPage.js:45
 msgid "Enable Notification Badges"
 msgstr ""
 
-#: settings/generalPage.js:41
+#: settings/generalPage.js:46
 msgid "Enable Tooltips"
 msgstr ""
 
-#: settings/generalPage.js:42
+#: settings/generalPage.js:47
 msgid "Enable Sound Volume Control"
 msgstr ""
 
-#: settings/generalPage.js:43
+#: settings/generalPage.js:48
 msgid "Experimental feature"
 msgstr ""
 
-#: settings/generalPage.js:50
+#: settings/generalPage.js:55
 msgid "Kill the Dash"
 msgstr ""
 
-#: settings/generalPage.js:51
+#: settings/generalPage.js:56
 msgid ""
 "Hide the Dash from Overview and prevent it from rerendering behind the scene"
 msgstr ""
