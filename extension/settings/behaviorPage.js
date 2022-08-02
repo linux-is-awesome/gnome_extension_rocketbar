@@ -44,6 +44,11 @@ var BehaviorPage = GObject.registerClass(
             this.addGroup(_('Hot Corner'), [
                 this.createSwitch(_('Enable Fullscreen Hot Corner'), 'hotcorner-enable-in-fullscreen')
             ]);
+
+            // Lock Screen
+            this.addGroup(_('Lock Screen'), [
+                this.createSwitch(_('Force primary input source on Lock Screen'), 'lockscreen-primary-input')
+            ]);
         }
 
         _addTaskbarOptions() {

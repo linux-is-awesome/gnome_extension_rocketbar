@@ -246,6 +246,10 @@
             <default>true</default>
             <summary>Enable empty space clicks in Overview</summary>
         </key>
+        <key type="b" name="lockscreen-primary-input">
+            <default>false</default>
+            <summary>Force primary input source on Lock Screen</summary>
+        </key>
         <!-- /behavior page -->
 
         <!-- app button config override -->

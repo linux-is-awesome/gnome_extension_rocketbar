@@ -5,6 +5,7 @@
 const { Clutter, Meta } = imports.gi;
 const Main = imports.ui.main;
 const HotCorner = imports.ui.layout.HotCorner;
+const Keyboard = imports.ui.status.keyboard
 const { WorkspaceSwitcherPopup } = imports.ui.workspaceSwitcherPopup;
 
 // custom modules import
@@ -58,15 +59,17 @@ var ShellTweaks = class {
 
         this._restorePanelMenuManagerBehavior();
 
-        this._soundVolumeControl?.destroy();
-        this._soundVolumeControl = null;
+        this._destroySoundVolumeControl();
+
+        this._handleLockScreen();
     }
 
     _createConnections() {
         this._connections = new Connections();
         this._connections.addScope(this._settings, [
             'changed::sound-volume-control-change-speed',
-            'changed::sound-volume-control-change-speed-ctrl'], () => this._setConfig());
+            'changed::sound-volume-control-change-speed-ctrl',
+            'changed::lockscreen-primary-input'], () => this._setConfig());
         this._connections.addScope(this._settings, [
             'changed::overview-kill-dash',
             'changed::panel-scroll-action',
@@ -96,8 +99,7 @@ var ShellTweaks = class {
             }
 
         } else {
-            this._soundVolumeControl?.destroy();
-            this._soundVolumeControl = null;
+            this._destroySoundVolumeControl();
         }
 
         if (this._config.panelScrollAction !== 'none') {
@@ -150,8 +152,14 @@ var ShellTweaks = class {
             soundVolumeStep: this._settings.get_int('sound-volume-control-change-speed'),
             soundVolumeStepCtrl: this._settings.get_int('sound-volume-control-change-speed-ctrl'),
             appButtonMenuRequireClick: this._settings.get_boolean('appbutton-menu-require-click'),
-            panelMenuRequireClick: this._settings.get_boolean('panel-menu-require-click')
+            panelMenuRequireClick: this._settings.get_boolean('panel-menu-require-click'),
+            lockscreenPrimaryInput: this._settings.get_boolean('lockscreen-primary-input')
         };
+    }
+
+    _destroySoundVolumeControl() {
+        this._soundVolumeControl?.destroy();
+        this._soundVolumeControl = null;
     }
 
     //#region panel scroll handling
@@ -538,4 +546,20 @@ var ShellTweaks = class {
     }
 
     //#endregion panel menu manager tweaks
+
+    //#region lockscreen
+
+    _handleLockScreen() {
+
+        if (!Main.sessionMode.isLocked || !this._config.lockscreenPrimaryInput) {
+            return;
+        }
+
+        const primaryInput = Keyboard.getInputSourceManager()?.inputSources['0'];
+
+        primaryInput?.activate();
+    }
+
+    //#endregion lockscreen
+
 }
