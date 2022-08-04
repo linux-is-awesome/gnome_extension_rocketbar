@@ -107,11 +107,10 @@ class SoundVolumeControlBase {
         }
 
         const volumeLevel = stream.getVolume(isMuted);
-
         const volumeIcon = this._getVolumeIcon(volumeLevel);
+        const monitorIndex = global.display.get_current_monitor();
 
-        // pass -1 as monitor index to show on all monitors
-        Main.osdWindowManager.show(-1, volumeIcon, name || stream.getName(), volumeLevel);
+        Main.osdWindowManager.show(monitorIndex, volumeIcon, name || stream.getName(), volumeLevel);
     }
 
     _getVolumeIcon(volumeLevel = 0) {
