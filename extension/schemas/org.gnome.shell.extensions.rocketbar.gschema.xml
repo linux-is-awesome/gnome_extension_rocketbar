@@ -255,7 +255,7 @@
             <summary>Allow to override Switcher Popup windows show delay</summary>
         </key>
         <key type="i" name="switcherpopup-show-delay">
-            <default>0</default>
+            <default>150</default>
             <summary>Switcher Popup windows show delay</summary>
         </key>
         <key type="b" name="switcherpopup-enable-handler">

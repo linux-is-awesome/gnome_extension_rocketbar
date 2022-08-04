@@ -239,6 +239,10 @@ var NotificationCounter = GObject.registerClass(
             }
 
             this._updateStyle();
+
+            if (this._config.fontSize !== oldConfig.fontSize) {
+                this._updateClockMargin();
+            }
         }
 
         _setConfig() {

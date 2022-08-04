@@ -157,11 +157,13 @@ var BehaviorPage = GObject.registerClass(
         _addSwitcherPopupOptions() {
             this.addGroup(_('Switcher Popups'), [
                 this.createSwitch(_('Override show delay'), 'switcherpopup-enable-show-delay'),
-                this.createSpinButton(
-                    _('Show Delay'), 'switcherpopup-show-delay',
-                    { min: 0, max: 500, step: 50 }
-                ),
-                this.createSwitch(_('Disable focus'), 'switcherpopup-enable-handler'),
+                ...this.addVisibilityControl([
+                    this.createSpinButton(
+                        _('Show Delay'), 'switcherpopup-show-delay',
+                        { min: 0, max: 500, step: 50 }
+                    )
+                ], { 'switcherpopup-enable-show-delay': value => value }),
+                this.createSwitch(_('Do not grab focus'), 'switcherpopup-enable-handler'),
             ]);
         }
 

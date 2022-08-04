@@ -215,16 +215,20 @@ var CustomizePage = GObject.registerClass(
                 ),
                 this.createSpinButton(
                     _('Font Size'), 'notification-counter-font-size',
-                    { min: 10, max: 20 }
+                    { min: 8, max: 20 }
                 ),
                 this.createSpinButton(
                     _('Roundness'), 'notification-counter-roundness',
                     { min: 0, max: 50 }
                 ),
-                this.createColorButton(_('Empty Color'), 'notification-counter-color-empty'),
+                ...this.addVisibilityControl([
+                    this.createColorButton(_('Empty Color'), 'notification-counter-color-empty')
+                ], { 'notification-counter-hide-empty': value => !value }),
                 this.createColorButton(_('Not Empty Color'), 'notification-counter-color-not-empty'),
                 this.createColorButton(_('Text Color'), 'notification-counter-text-color'),
-                this.createColorButton(_('Do Not Disturb - Empty Color'), 'notification-counter-color-empty-dnd'),
+                ...this.addVisibilityControl([
+                    this.createColorButton(_('Do Not Disturb - Empty Color'), 'notification-counter-color-empty-dnd'),
+                ], { 'notification-counter-hide-empty': value => !value }),
                 this.createColorButton(_('Do Not Disturb - Not Empty Color'), 'notification-counter-color-not-empty-dnd'),
                 this.createColorButton(_('Do Not Disturb - Text Color'), 'notification-counter-text-color-dnd'),
             ]);
