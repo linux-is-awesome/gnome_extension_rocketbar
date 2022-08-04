@@ -6,6 +6,7 @@ const { Clutter, Meta } = imports.gi;
 const Main = imports.ui.main;
 const HotCorner = imports.ui.layout.HotCorner;
 const Keyboard = imports.ui.status.keyboard
+const SwitcherPopup = imports.ui.switcherPopup;
 const { WorkspaceSwitcherPopup } = imports.ui.workspaceSwitcherPopup;
 
 // custom modules import
@@ -61,6 +62,10 @@ var ShellTweaks = class {
 
         this._destroySoundVolumeControl();
 
+        this._restoreSwitcherPopupDelay();
+
+        this._removeSwitcherPopupHandler();
+
         this._handleLockScreen();
     }
 
@@ -78,7 +83,10 @@ var ShellTweaks = class {
             'changed::activities-show-apps-button',
             'changed::overview-enable-empty-space-clicks',
             'changed::appbutton-menu-require-click',
-            'changed::panel-menu-require-click'], () => this._handleSettings());
+            'changed::panel-menu-require-click',
+            'changed::switcherpopup-enable-show-delay',
+            'changed::switcherpopup-show-delay',
+            'changed::switcherpopup-enable-handler'], () => this._handleSettings());
     }
 
     _handleSettings() {
@@ -139,6 +147,19 @@ var ShellTweaks = class {
         } else {
             this._restorePanelMenuManagerBehavior();
         }
+
+        if (this._config.enableSwitcherPopupDelay) {
+            this._setSwitcherPopupDelay();
+        } else {
+            this._restoreSwitcherPopupDelay();
+        }
+
+        if (this._config.enableSwitcherPopupHandler) {
+            this._addSwitcherPopupHandler();
+        } else {
+            this._removeSwitcherPopupHandler();
+        }
+
     }
 
     _setConfig() {
@@ -153,7 +174,10 @@ var ShellTweaks = class {
             soundVolumeStepCtrl: this._settings.get_int('sound-volume-control-change-speed-ctrl'),
             appButtonMenuRequireClick: this._settings.get_boolean('appbutton-menu-require-click'),
             panelMenuRequireClick: this._settings.get_boolean('panel-menu-require-click'),
-            lockscreenPrimaryInput: this._settings.get_boolean('lockscreen-primary-input')
+            lockscreenPrimaryInput: this._settings.get_boolean('lockscreen-primary-input'),
+            enableSwitcherPopupDelay: this._settings.get_boolean('switcherpopup-enable-show-delay'),
+            switcherPopupDelay: this._settings.get_int('switcherpopup-show-delay'),
+            enableSwitcherPopupHandler: this._settings.get_boolean('switcherpopup-enable-handler')
         };
     }
 
@@ -561,5 +585,67 @@ var ShellTweaks = class {
     }
 
     //#endregion lockscreen
+
+    //#region switcher popups
+
+    _setSwitcherPopupDelay() {
+
+        if (!this._switcherPopupDefaultDelay) {
+            this._switcherPopupDefaultDelay = SwitcherPopup.POPUP_DELAY_TIMEOUT;
+        }
+
+        SwitcherPopup.POPUP_DELAY_TIMEOUT = this._config.switcherPopupDelay;
+    }
+
+    _restoreSwitcherPopupDelay() {
+
+        if (!this._switcherPopupDefaultDelay) {
+            return;
+        }
+
+        SwitcherPopup.POPUP_DELAY_TIMEOUT = this._switcherPopupDefaultDelay;
+
+        this._switcherPopupDefaultDelay = null;
+    }
+
+    _addSwitcherPopupHandler() {
+
+        if (this._originalMainPushModal) {
+            return;
+        }
+    
+        this._originalMainPushModal = Main.pushModal;
+
+        Main.pushModal = (actor, params) => {
+
+            if (actor && actor instanceof SwitcherPopup.SwitcherPopup) {
+
+                const originalSetKeyFocus = global.stage.set_key_focus;
+
+                global.stage.set_key_focus = () => {};
+
+                const result = this._originalMainPushModal(actor, params);
+
+                global.stage.set_key_focus = originalSetKeyFocus;
+
+                return result;
+            }
+
+            return this._originalMainPushModal(actor, params);
+        };
+    }
+
+    _removeSwitcherPopupHandler() {
+
+        if (!this._originalMainPushModal) {
+            return;
+        }
+
+        Main.pushModal = this._originalMainPushModal;
+
+        this._originalMainPushModal = null;
+    }
+
+    //#endregion switcher popups
 
 }

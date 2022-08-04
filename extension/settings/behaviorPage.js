@@ -49,6 +49,9 @@ var BehaviorPage = GObject.registerClass(
             this.addGroup(_('Lock Screen'), [
                 this.createSwitch(_('Force primary input source on Lock Screen'), 'lockscreen-primary-input')
             ]);
+
+            // Switcher Popups
+            this._addSwitcherPopupOptions();
         }
 
         _addTaskbarOptions() {
@@ -148,6 +151,17 @@ var BehaviorPage = GObject.registerClass(
                     _('Click Activities to show the App Grid'), 'activities-show-apps-button',
                     clickOptions
                 )
+            ]);
+        }
+
+        _addSwitcherPopupOptions() {
+            this.addGroup(_('Switcher Popups'), [
+                this.createSwitch(_('Override show delay'), 'switcherpopup-enable-show-delay'),
+                this.createSpinButton(
+                    _('Show Delay'), 'switcherpopup-show-delay',
+                    { min: 0, max: 500, step: 50 }
+                ),
+                this.createSwitch(_('Disable focus'), 'switcherpopup-enable-handler'),
             ]);
         }
 

@@ -250,6 +250,18 @@
             <default>false</default>
             <summary>Force primary input source on Lock Screen</summary>
         </key>
+        <key type="b" name="switcherpopup-enable-show-delay">
+            <default>false</default>
+            <summary>Allow to override Switcher Popup windows show delay</summary>
+        </key>
+        <key type="i" name="switcherpopup-show-delay">
+            <default>0</default>
+            <summary>Switcher Popup windows show delay</summary>
+        </key>
+        <key type="b" name="switcherpopup-enable-handler">
+            <default>false</default>
+            <summary>Handle Switcher Popup windows to change focus behavior</summary>
+        </key>
         <!-- /behavior page -->
 
         <!-- app button config override -->
