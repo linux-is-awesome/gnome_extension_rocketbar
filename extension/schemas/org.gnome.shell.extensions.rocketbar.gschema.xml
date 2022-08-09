@@ -159,6 +159,10 @@
             <default>10</default>
             <summary>Notification Counter roundness</summary>
         </key>
+        <key type="i" name="notification-counter-margin-top">
+            <default>0</default>
+            <summary>Notification Counter top margin</summary>
+        </key>
         <key type="s" name="notification-counter-color-empty">
             <default>'rgb(255, 255, 255)'</default>
             <summary>Notification Counter color when empty</summary>

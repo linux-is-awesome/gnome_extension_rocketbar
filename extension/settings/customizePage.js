@@ -221,6 +221,10 @@ var CustomizePage = GObject.registerClass(
                     _('Roundness'), 'notification-counter-roundness',
                     { min: 0, max: 50 }
                 ),
+                this.createSpinButton(
+                    _('Top Margin'), 'notification-counter-margin-top',
+                    { min: 0, max: 10 }
+                ),
                 ...this.addVisibilityControl([
                     this.createColorButton(_('Empty Color'), 'notification-counter-color-empty')
                 ], { 'notification-counter-hide-empty': value => !value }),

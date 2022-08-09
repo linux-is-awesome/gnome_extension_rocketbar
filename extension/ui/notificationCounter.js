@@ -207,6 +207,7 @@ var NotificationCounter = GObject.registerClass(
                 'changed::notification-counter-max-count',
                 'changed::notification-counter-font-size',
                 'changed::notification-counter-roundness',
+                'changed::notification-counter-margin-top',
                 'changed::notification-counter-color-empty',
                 'changed::notification-counter-color-not-empty',
                 'changed::notification-counter-text-color',
@@ -256,6 +257,7 @@ var NotificationCounter = GObject.registerClass(
                 maxCount: this._settings.get_int('notification-counter-max-count'),
                 fontSize: this._settings.get_int('notification-counter-font-size'),
                 roundness: this._settings.get_int('notification-counter-roundness'),
+                marginTop: this._settings.get_int('notification-counter-margin-top'),
                 colorEmpty: this._settings.get_string('notification-counter-color-empty'),
                 colorNotEmpty: this._settings.get_string('notification-counter-color-not-empty'),
                 textColor: this._settings.get_string('notification-counter-text-color'),
@@ -435,7 +437,8 @@ var NotificationCounter = GObject.registerClass(
 
             this._counter.style += (
                 `height: ${height}px;` +
-                `min-width: ${height}px;`
+                `min-width: ${height}px;` +
+                `margin-top: ${this._config.marginTop}px;`
             );
         }
 
