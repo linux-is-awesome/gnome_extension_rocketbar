@@ -2,7 +2,7 @@
 
 //#region imports
 
-const { GObject, St, Clutter } = imports.gi;
+const { GObject, St, Gtk, Clutter } = imports.gi;
 const Main = imports.ui.main;
 
 // custom modules import
@@ -163,7 +163,9 @@ var NotificationCounter = GObject.registerClass(
             // create a spacer to display between the clock display and the counter
             const spacer = new St.Label({
                 name: 'notification-counter_spacer',
-                text: '  '
+                y_align: Clutter.ActorAlign.CENTER,
+                text: '0',
+                opacity: 0
             });
             // the spacer visibility should be controlled by the counter visibility
             this._counter.bind_property('visible', spacer, 'visible', GObject.BindingFlags.SYNC_CREATE);
@@ -177,6 +179,8 @@ var NotificationCounter = GObject.registerClass(
             this.connect('destroy', () => this._destroy());
 
             this._connections = new Connections();
+
+            this._connections.add(Gtk.Settings.get_default(), 'notify::gtk-font-name', () => this._update());
 
             this._connections.add(this, 'notify::mapped', () => {
 
