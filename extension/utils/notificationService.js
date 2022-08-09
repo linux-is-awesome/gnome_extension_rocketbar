@@ -3,6 +3,7 @@
 //#region imports
 
 const Main = imports.ui.main;
+const Gio = imports.gi.Gio;
 const { FdoNotificationDaemonSource, GtkNotificationDaemonAppSource } = imports.ui.notificationDaemon;
 const { WindowAttentionSource } = imports.ui.windowAttentionHandler;
 
@@ -13,9 +14,74 @@ const { Timeout } = Me.imports.utils.timeout;
 
 //#endregion imports
 
+class UnityDBusConnector {
+
+    constructor(callback) {
+
+        this._countByAppId = new Map();
+        this._callback = callback;
+
+        this._dbusHandler = Gio.DBus.session.signal_subscribe(
+            null, 'com.canonical.Unity.LauncherEntry',
+            null, null, null,
+            Gio.DBusSignalFlags.NONE,
+            (connection, sender, path, name, signal, params) => this._update(params)
+        );
+    }
+
+    destroy() {
+        Gio.DBus.session.signal_unsubscribe(this._dbusHandler);
+        this._dbusHandler = null;
+        this._countByAppId = null;
+    }
+
+    getCount(callback) {
+
+        if (!this._countByAppId?.size || !callback) {
+            return;
+        }
+
+        this._countByAppId.forEach(callback);
+    }
+
+    _update(params) {
+
+        if (!params || !this._countByAppId) {
+            return;
+        }
+
+        const [ appUri, props ] = params.deep_unpack();
+
+        const appId = appUri?.replace(/(^\w+:|^)\/\//, '');
+
+        if (!appId || !props) {
+            return;
+        }
+
+        const count = props['count']?.get_int64() ?? 0;
+        const countVisible = props['count-visible']?.get_boolean() ?? false;
+
+        if (!count || !countVisible) {
+
+            // no need to trigger the callback as nothing has changed
+            if (!this._countByAppId.has(appId)) {
+                return;
+            }
+
+            this._countByAppId.delete(appId);
+        } else {
+            this._countByAppId.set(appId, count);
+        }
+
+        this._callback();
+    }
+
+}
+
 class NotificationService {
 
     constructor() {
+
         this._handlers = []; // [NotificationHandler...]
 
         this._resetCounts();
@@ -23,6 +89,8 @@ class NotificationService {
         this._createSources();
 
         this._createConnections();
+
+        this._unityDBusConnector = new UnityDBusConnector(() => this._queueUpdateCount());
     }
 
     addHandler(handler) {
@@ -58,6 +126,8 @@ class NotificationService {
     destroy() {
 
         this._stopUpdateCountQueue();
+
+        this._unityDBusConnector?.destroy();
 
         this._connections.forEach(id => Main.messageTray.disconnect(id));
     }
@@ -125,7 +195,16 @@ class NotificationService {
 
         this._resetCounts();
 
-        const sources = [...this._sources.keys()];        
+        let unityAppIds = new Set();
+
+        // let's use the Unity dbus connection
+        // as the source of truth to count notifications for apps
+        this._unityDBusConnector?.getCount((count, appId) => {
+            unityAppIds.add(appId);
+            this._countByAppId.set(appId, count);
+        });
+
+        const sources = [...this._sources.keys()];      
 
         for (let i = 0, l = sources.length; i < l; ++i) {
 
@@ -148,7 +227,7 @@ class NotificationService {
                 continue;
             }
 
-            if (!appId) {
+            if (!appId || unityAppIds.has(appId)) {
                 continue;
             }
 
