@@ -540,7 +540,7 @@ var AppButtonMenu = class extends AppButtonMenuBase {
         });
 
         const valueLabel = new St.Label({
-            text: '0',
+            text: '16', // min size by default
             y_expand: true,
             y_align: Clutter.ActorAlign.CENTER,
         });
