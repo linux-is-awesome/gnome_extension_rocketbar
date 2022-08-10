@@ -800,6 +800,10 @@ var AppButton = GObject.registerClass(
                 this._handleScrollTimeout = null;
             });
 
+            if (Main.overview.visible) {
+                Main.overview.hide();
+            }
+
             this._cycleAppWindows(this._getAppWindows(), scrollDirection === Clutter.ScrollDirection.UP);
 
             return Clutter.EVENT_STOP;
@@ -834,7 +838,6 @@ var AppButton = GObject.registerClass(
                 nextWindowIndex = windows.length - 1;
             }
 
-            if (windowIndex != nextWindowIndex) {
                 Main.activateWindow(windows[nextWindowIndex]);
             }
         }
