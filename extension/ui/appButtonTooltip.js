@@ -97,7 +97,7 @@ var AppButtonTooltip = class {
         if (animation) {
             this._tooltip.ease({
                 opacity: 0,
-                duration: 100,
+                duration: 200,
                 mode: Clutter.AnimationMode.EASE_OUT_QUAD,
                 onComplete: () => this._tooltip.destroy()
             });
