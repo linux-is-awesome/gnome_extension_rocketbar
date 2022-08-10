@@ -61,11 +61,11 @@
         </key>
         <key type="i" name="appbutton-icon-padding">
             <default>8</default>
-            <summary>App Buttons icon padding</summary>
+            <summary>App Buttons icon horizontal padding</summary>
         </key>
-        <key type="i" name="appbutton-vertical-margin">
-            <default>2</default>
-            <summary>App Buttons vertical margin</summary>
+        <key type="i" name="appbutton-icon-vertical-padding">
+            <default>3</default>
+            <summary>App Buttons icon vertical padding</summary>
         </key>
         <key type="i" name="appbutton-spacing">
             <default>0</default>

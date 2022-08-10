@@ -278,9 +278,9 @@ var AppButton = GObject.registerClass(
 
             this._appIcon = new St.Bin({
                 name: 'taskbar-appButton-icon',
-                y_expand: true,
+                y_expand: false,
                 x_align: Clutter.ActorAlign.CENTER,
-                y_align: Clutter.ActorAlign.FILL,
+                y_align: Clutter.ActorAlign.CENTER,
                 style_class: 'panel-button'
             });
 
@@ -336,7 +336,7 @@ var AppButton = GObject.registerClass(
                 'changed::appbutton-scroll-change-sound-volume',
                 'changed::appbutton-icon-size',
                 'changed::appbutton-icon-padding',
-                'changed::appbutton-vertical-margin',
+                'changed::appbutton-icon-vertical-padding',
                 'changed::appbutton-spacing',
                 'changed::appbutton-roundness',
                 'changed::appbutton-backlight',
@@ -377,7 +377,7 @@ var AppButton = GObject.registerClass(
             if ((hasOldConfig || !this.style) && (
                 this._config.iconSize !== oldConfig.iconSize ||
                 this._config.iconPadding !== oldConfig.iconPadding ||
-                this._config.verticalMargin !== oldConfig.verticalMargin ||
+                this._config.iconVerticalPadding !== oldConfig.iconVerticalPadding ||
                 this._config.roundness !== oldConfig.roundness ||
                 this._config.spacing !== oldConfig.spacing ||
                 this._config.backlight !== oldConfig.backlight ||
@@ -465,7 +465,7 @@ var AppButton = GObject.registerClass(
                 iconSize: this._settings.get_int('appbutton-icon-size'),
                 iconTextureSize: this._settings.get_int('appbutton-icon-size'),
                 iconPadding: this._settings.get_int('appbutton-icon-padding'),
-                verticalMargin: this._settings.get_int('appbutton-vertical-margin'),
+                iconVerticalPadding: this._settings.get_int('appbutton-icon-vertical-padding'),
                 roundness: this._settings.get_int('appbutton-roundness'),
                 spacing: this._settings.get_int('appbutton-spacing'),
                 backlight: this._settings.get_boolean('appbutton-backlight'),
@@ -987,15 +987,14 @@ var AppButton = GObject.registerClass(
             this.style = `margin-left: ${this._config.spacing}px; margin-right: ${this._config.spacing}px;`;
 
             this._appIcon.style = (
-                //set width as sum of icon size and paddings to give extra space for the icon inside
+                // set width as sum of icon size and paddings to give extra space for the icon inside
                 // we need the space to allow tuning of the icon size for each application
                 `width: ${this._config.iconSize + this._config.iconPadding * 2}px;` +
-                `height: ${this._config.iconSize}px;` +
-                `margin: ${this._config.verticalMargin}px 0;` +
+                `height: ${this._config.iconSize + this._config.iconVerticalPadding * 2}px;` +
                 `border-radius: ${this._config.roundness}px;` +
-                // currently I have no idea how to completely remove the border
-                // when border is 0 panel-button highlight doesn't work for some reason
-                `border-width: 1px;`
+                // it's trick to remove the border
+                // I hope this background color will not be visible at all
+                `border-width: 0px; background: rgba(0, 0, 0, 0.01);`
             );
 
             if (this.isActive) {
@@ -1207,7 +1206,6 @@ var AppButton = GObject.registerClass(
             this._toggleTooltip(this.hover);
 
             this._triggerState('hover');
-
         }
 
         _toggleTooltip(show) {

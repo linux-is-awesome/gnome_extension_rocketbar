@@ -112,12 +112,12 @@ var CustomizePage = GObject.registerClass(
                     _('Can be configured separately for each app via an app menu')
                 ),
                 this.createSpinButton(
-                    _('Icon Padding'), 'appbutton-icon-padding',
+                    _('Icon Horizontal Padding'), 'appbutton-icon-padding',
                     { min: 0, max: 20 }
                 ),
                 this.createSpinButton(
-                    _('Vertical Margin'), 'appbutton-vertical-margin',
-                    { min: 0, max: 10 }
+                    _('Icon Vertical Padding'), 'appbutton-icon-vertical-padding',
+                    { min: 0, max: 20 }
                 ),
                 this.createSpinButton(
                     _('Roundness'), 'appbutton-roundness',
