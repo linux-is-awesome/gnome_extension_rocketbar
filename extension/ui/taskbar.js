@@ -90,6 +90,7 @@ var Taskbar = GObject.registerClass(
             this._currentWorkspace = null;
             this._activeAppButton = null;
             this._workId = null;
+            this._positionProvider = new PositionProvider(this);
 
             // caches
             this._favoriteApps = null;
@@ -120,8 +121,6 @@ var Taskbar = GObject.registerClass(
             });
 
             this.add_actor(this._layout);
-
-            this._positionProvider = new PositionProvider(this);
         }
 
         _createConnections() {
