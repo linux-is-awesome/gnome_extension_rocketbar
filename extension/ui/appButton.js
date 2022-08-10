@@ -734,6 +734,7 @@ var AppButton = GObject.registerClass(
             // activate/minimize a single window
             // or activate the first window when gnome shell overview is shown
             if (windows.length === 1 || isOverview) {
+
                 const window = windows[0];
                 
                 if (window.minimized || !window.has_focus() || isOverview) {
