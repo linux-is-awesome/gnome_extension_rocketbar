@@ -68,7 +68,7 @@
             <summary>App Buttons icon vertical padding</summary>
         </key>
         <key type="i" name="appbutton-spacing">
-            <default>0</default>
+            <default>1</default>
             <summary>App Buttons spacing</summary>
         </key>
         <key type="i" name="appbutton-roundness">
