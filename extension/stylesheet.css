@@ -1,3 +1,5 @@
+/* button */
+
 .rocketbar__button {
     border-width: 0;
 }
@@ -5,4 +7,28 @@
 .rocketbar__button:focus,
 .rocketbar__button:active {
     background: rgba(0, 0, 0, 0.01);
+}
+
+/* tooltip */
+
+.rocketbar__tooltip {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+}
+.rocketbar__tooltip StLabel:first-child {
+    max-width: 500px;
+}
+.rocketbar__tooltip
+.rocketbar__tooltip-counter {
+    margin-left: 8px;
+}
+.rocketbar__tooltip
+.rocketbar__tooltip-counter StIcon {
+    height: 15px;
+    width: 15px;
+    color: rgba(255, 255, 255, 0.85);
+}
+.rocketbar__tooltip
+.rocketbar__tooltip-counter StLabel {
+    margin-left: 5px;
 }

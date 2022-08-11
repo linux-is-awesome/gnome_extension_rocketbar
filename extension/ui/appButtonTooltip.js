@@ -19,31 +19,20 @@ class TooltipCounter {
 
         this._minCount = minCount || 0;
 
-        // define default styling params
-
-        const style = 'margin-left: 8px;'
-        const textStyle = 'margin-left: 5px;'
-        const iconSize = 15;
-
         // create layout
 
         this.actor = new St.BoxLayout({
             name: 'appButton-tooltip-counter',
-            style: style
+            style_class: 'rocketbar__tooltip-counter'
         });
 
         this.actor.add_actor(new St.Icon({
             name: 'appButton-tooltip-counter-icon',
-            gicon: IconProvider.instance().getIcon(iconName),
-            style_class: 'system-status-icon',
-            width: iconSize,
-            height: iconSize,
-            opacity: 200
+            gicon: IconProvider.instance().getIcon(iconName)
         }));
 
         this._label = new St.Label({
-            name: 'appButton-tooltip-counter-text',
-            style: textStyle
+            name: 'appButton-tooltip-counter-text'
         });
 
         this.actor.add_actor(this._label);
@@ -128,19 +117,14 @@ var AppButtonTooltip = class {
 
         this._tooltip = new St.BoxLayout({
             name: 'appButton-tooltip',
-            style_class: 'dash-label',
-            style: (
-                'border: 1px solid rgba(255, 255, 255, 0.1);' +
-                'box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);'
-            ),
+            style_class: 'dash-label rocketbar__tooltip',
             opacity: 0
         });
 
         // create tooltip text
 
         this._tooltipText = new St.Label({
-            name: 'appButton-tooltip-text',
-            style: 'max-width: 500px;'
+            name: 'appButton-tooltip-text'
         });
 
         this._tooltip.add_actor(this._tooltipText);
