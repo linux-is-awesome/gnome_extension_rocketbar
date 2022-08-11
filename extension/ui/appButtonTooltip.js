@@ -23,7 +23,7 @@ class TooltipCounter {
 
         this.actor = new St.BoxLayout({
             name: 'appButton-tooltip-counter',
-            style_class: 'rocketbar__tooltip-counter'
+            style_class: 'rocketbar__tooltip_counter'
         });
 
         this.actor.add_actor(new St.Icon({

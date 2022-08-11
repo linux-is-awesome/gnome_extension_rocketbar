@@ -19,16 +19,31 @@
     max-width: 500px;
 }
 .rocketbar__tooltip
-.rocketbar__tooltip-counter {
+.rocketbar__tooltip_counter {
     margin-left: 8px;
 }
 .rocketbar__tooltip
-.rocketbar__tooltip-counter StIcon {
+.rocketbar__tooltip_counter StIcon {
     height: 15px;
     width: 15px;
     color: rgba(255, 255, 255, 0.85);
 }
 .rocketbar__tooltip
-.rocketbar__tooltip-counter StLabel {
+.rocketbar__tooltip_counter StLabel {
     margin-left: 5px;
+}
+
+/* popup menu */
+
+.rocketbar__popup-menu {
+    /* shrink menu width as much as possible */
+    max-width: 0;
+}
+.rocketbar__popup-menu
+.popup-separator-menu-item {
+    font-size: 0.8em;
+}
+.rocketbar__popup-menu
+.rocketbar__popup-menu_section-title {
+    margin-top: 10px;
 }

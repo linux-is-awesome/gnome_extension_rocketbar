@@ -87,12 +87,7 @@ class AppButtonMenuBase extends AppMenu {
 
         // override styles
         this.actor.remove_style_class_name('app-menu');
-        this.actor.add_style_class_name('panel-menu aggregate-menu');
-
-        // shrink menu width as much as possible
-        this.actor.style = 'max-width: 0;';
-
-        this._fixMenuSeparatorFontSize(this._openWindowsHeader);
+        this.actor.add_style_class_name('panel-menu aggregate-menu rocketbar__popup-menu');
 
         this._updateDetailsVisibility();
 
@@ -161,10 +156,6 @@ class AppButtonMenuBase extends AppMenu {
             St.Side.TOP :
             St.Side.BOTTOM
         );
-    }
-
-    _fixMenuSeparatorFontSize(separator) {
-        separator.style = 'font-size: 0.8em;';
     }
 
     //#region default methods override
@@ -582,9 +573,7 @@ var AppButtonMenu = class extends AppButtonMenuBase {
             return separator;
         }
 
-        this._fixMenuSeparatorFontSize(separator);
-
-        separator.style += 'margin-top: 10px;';
+        separator.add_style_class_name('rocketbar__popup-menu_section-title');
 
         return separator;
     }
