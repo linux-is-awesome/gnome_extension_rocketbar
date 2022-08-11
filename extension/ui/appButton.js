@@ -281,7 +281,7 @@ var AppButton = GObject.registerClass(
                 y_expand: false,
                 x_align: Clutter.ActorAlign.CENTER,
                 y_align: Clutter.ActorAlign.CENTER,
-                style_class: 'panel-button'
+                style_class: 'panel-button rocketbar-button'
             });
 
             this.bind_property('hover', this._appIcon, 'hover', GObject.BindingFlags.SYNC_CREATE);
@@ -997,10 +997,7 @@ var AppButton = GObject.registerClass(
                 // we need the space to allow tuning of the icon size for each application
                 `width: ${this._config.iconSize + this._config.iconPadding * 2}px;` +
                 `height: ${this._config.iconSize + this._config.iconVerticalPadding * 2}px;` +
-                `border-radius: ${this._config.roundness}px;` +
-                // it's trick to remove the border
-                // I hope this background color will not be visible at all
-                `border-width: 0px; background: rgba(0, 0, 0, 0.01);`
+                `border-radius: ${this._config.roundness}px;`
             );
 
             if (this.isActive) {
