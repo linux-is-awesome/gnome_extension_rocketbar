@@ -281,7 +281,7 @@ var AppButton = GObject.registerClass(
                 y_expand: false,
                 x_align: Clutter.ActorAlign.CENTER,
                 y_align: Clutter.ActorAlign.CENTER,
-                style_class: 'panel-button rocketbar-button'
+                style_class: 'panel-button rocketbar__button'
             });
 
             this.bind_property('hover', this._appIcon, 'hover', GObject.BindingFlags.SYNC_CREATE);
@@ -1106,7 +1106,7 @@ var AppButton = GObject.registerClass(
             if (!windows.length) {
                 return;
             }
-            
+
             const rect = new Meta.Rectangle();
 
             [rect.x, rect.y] = this.get_transformed_position();
