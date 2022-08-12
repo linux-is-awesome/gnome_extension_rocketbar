@@ -681,8 +681,7 @@ var AppButton = GObject.registerClass(
 
             // app is running and we want to open a new window for it
             if (openNewWindow) {
-                IconGrid.zoomOutActor(this._appIcon);
-                this.app.open_new_window(-1);
+                this._openNewAppWindow();
                 return;
             }
 
@@ -738,7 +737,11 @@ var AppButton = GObject.registerClass(
                 const window = windows[0];
                 
                 if (window.minimized || !window.has_focus() || isOverview) {
+
                     Main.activateWindow(window);
+
+                    this._addCycledWindow(window);
+
                     return;
                 }
 
@@ -755,14 +758,20 @@ var AppButton = GObject.registerClass(
             this._cycleAppWindows(windows);
         }
 
+        _openNewAppWindow() {
+
+            IconGrid.zoomOutActor(this._appIcon);
+
+            this.app.open_new_window(-1);
+
+            this._resetCycledWindows();
+        }
+
         _closeFirstAppWindow() {
-            const windows = this._getAppWindows();
 
-            if (!windows.length) {
-                return;
-            }
+            this.activeWindow?.delete(global.get_current_time());
 
-            windows[0].delete(global.get_current_time());
+            this._resetCycledWindows();
         }
 
         _handleScroll(params) {
@@ -804,6 +813,8 @@ var AppButton = GObject.registerClass(
                 Main.overview.hide();
             }
 
+            this._resetCycledWindows();
+
             this._cycleAppWindows(this._getAppWindows(), scrollDirection === Clutter.ScrollDirection.UP);
 
             return Clutter.EVENT_STOP;
@@ -838,11 +849,25 @@ var AppButton = GObject.registerClass(
                 nextWindowIndex = windows.length - 1;
             }
 
+            const nextWindow = windows[nextWindowIndex];
+
             if (windowIndex === nextWindowIndex) {
                 return;
             }
 
-            Main.activateWindow(windows[nextWindowIndex]);
+            if (this._config.enableMinimizeAction &&
+                    !nextWindow.minimized && this._cycledWindows?.has(nextWindow)) {
+                
+                windows.forEach(window => window.minimize());
+                
+                this._resetCycledWindows();
+                
+                return;
+            }
+
+            this._addCycledWindow(nextWindow);
+
+            Main.activateWindow(nextWindow);
         }
 
         _handleFocusedWindow() {
@@ -1209,6 +1234,32 @@ var AppButton = GObject.registerClass(
             this._toggleTooltip(this.hover);
 
             this._triggerState('hover');
+
+            if (this.isActive && this.hover) {
+                this._addCycledWindow(this.activeWindow);
+                return;
+            }
+            
+            this._resetCycledWindows();
+        }
+
+        _addCycledWindow(window) {
+
+            if (!window) {
+                return;
+            }
+
+            if (!this._cycledWindows) {
+                this._cycledWindows = new Set();
+            }
+
+            if (!this._cycledWindows.has(window)) {
+                this._cycledWindows.add(window);
+            }
+        }
+
+        _resetCycledWindows() {
+            this._cycledWindows = null;
         }
 
         _toggleTooltip(show) {
