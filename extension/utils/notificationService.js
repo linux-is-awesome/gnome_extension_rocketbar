@@ -50,7 +50,7 @@ class UnityDBusConnector {
             return;
         }
 
-        const [ appUri, props ] = params.deep_unpack();
+        const [ appUri, props ] = params.deepUnpack();
 
         const appId = appUri?.replace(/(^\w+:|^)\/\//, '');
 
