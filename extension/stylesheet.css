@@ -47,3 +47,17 @@
 .rocketbar__popup-menu_section-title {
     margin-top: 10px;
 }
+
+/* date menu */
+
+.rocketbar__date-menu {
+    -natural-hpadding: 0;
+    -minimum-hpadding: 0;
+}
+
+/* notification counter */
+
+.rocketbar__notification-counter {
+    font-weight: bold;
+    text-align: center;
+}

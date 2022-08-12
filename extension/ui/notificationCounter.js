@@ -53,7 +53,7 @@ class NotificationCounterContainer {
         this._clockDisplayStyleClass = this._dateMenu._clockDisplay?.style_class;
 
         // remove extra padding
-        this._dateMenu.style = '-natural-hpadding: 0; -minimum-hpadding: 0;';
+        this._dateMenu.add_style_class_name('rocketbar__date-menu');
 
         // create a container for the notification counter with a delay
         // the delay helps to avoid animations stuttering
@@ -113,10 +113,10 @@ class NotificationCounterContainer {
         }
 
         // restore the original css class for the clock display
-        this._dateMenu._clockDisplay.style_class = this._clockDisplayStyleClass;
+        this._dateMenu._clockDisplay.set_style_class_name(this._clockDisplayStyleClass);
 
         // restore date menu padding
-        this._dateMenu.style = null;
+        this._dateMenu.remove_style_class_name('rocketbar__date-menu');
 
         // add the clock display into the original container
         dateMenuContainer.insert_child_at_index(this._dateMenu._clockDisplay, 1);       
@@ -151,6 +151,7 @@ var NotificationCounter = GObject.registerClass(
 
             this._counter = new St.Label({
                 name: 'notification-counter_counter',
+                style_class: 'rocketbar__notification-counter',
                 x_align: Clutter.ActorAlign.CENTER,
                 y_align: Clutter.ActorAlign.CENTER,
                 text: '0',
@@ -421,8 +422,6 @@ var NotificationCounter = GObject.registerClass(
 
             this._counter.style = (
                 `font-size: ${this._config.fontSize}px;` +
-                `font-weight: bold;` +
-                `text-align: center;` +
                 `padding: 0 ${padding}px;` +
                 `border: ${borderSize}px solid ${borderColor};` +
                 `border-radius: ${this._config.roundness}px;` +
