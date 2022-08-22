@@ -314,6 +314,8 @@ var AppButton = GObject.registerClass(
             this.connect('key-focus-in', () => this._focus());
             this.connect('key-focus-out', () => this._focus());
             this.connect('notify::hover', () => this._hover());
+            this.connect('button-press-event', () => this._buttonPress());
+            this.connect('button-release-event', () => this._buttonRelease());
             // external connections
             this._connections = new Connections();
             this._connections.add(global.display, 'notify::focus-window', () => this._handleFocusedWindow());
@@ -540,6 +542,8 @@ var AppButton = GObject.registerClass(
         //#region drag & drop
 
         _dragBegin() {
+
+            this._buttonRelease();
 
             this._dragMonitor = {
                 dragMotion: event => this._dragMotion(event)
@@ -1246,6 +1250,32 @@ var AppButton = GObject.registerClass(
             }
             
             this._resetCycledWindows();
+        }
+
+        _buttonPress() {
+
+            const appIconTexture = this._appIcon.get_child();
+
+            appIconTexture?.set_pivot_point(0.5, 0.5);
+
+            appIconTexture?.ease({
+                scale_x: 0.9,
+                scale_y: 0.9,
+                duration: 200
+            });
+
+            return Clutter.EVENT_PROPAGATE;
+        }
+
+        _buttonRelease() {
+
+            this._appIcon.get_child()?.ease({
+                scale_x: 1,
+                scale_y: 1,
+                duration: 100
+            });
+
+            return Clutter.EVENT_PROPAGATE;
         }
 
         _addCycledWindow(window) {
