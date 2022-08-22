@@ -924,6 +924,11 @@ var AppButton = GObject.registerClass(
 
             if (this.isActive) {
                 this._triggerState('active');
+
+                // used after we create a new window or close the first one
+                if (this.hover) {
+                    this._addCycledWindow(this.activeWindow);
+                }
             }
 
             // the first window has been created for the app
