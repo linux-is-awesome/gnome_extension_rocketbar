@@ -47,7 +47,8 @@ var BehaviorPage = GObject.registerClass(
 
             // Lock Screen
             this.addGroup(_('Lock Screen'), [
-                this.createSwitch(_('Force primary input source on Lock Screen'), 'lockscreen-primary-input')
+                this.createSwitch(_('Force primary input source on Lock Screen'), 'lockscreen-primary-input',
+                                  _('Experimental feature'))
             ]);
 
             // Switcher Popups
