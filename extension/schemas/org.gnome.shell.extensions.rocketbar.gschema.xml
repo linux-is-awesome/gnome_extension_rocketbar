@@ -218,6 +218,14 @@
             <default>false</default>
             <summary>Middle click to toggle application sound mute</summary>
         </key>
+        <key type="b" name="notification-service-enable-unity-dbus">
+            <default>false</default>
+            <summary>Use Unity Launcher API DBus interface to count notifications for apps</summary>
+        </key>
+        <key type="b" name="notification-service-count-attention-sources">
+            <default>false</default>
+            <summary>Count Window Demands Attention notifications for apps</summary>
+        </key>
         <key type="b" name="panel-menu-require-click">
             <default>false</default>
             <summary>Require click to activate the panel menu buttons</summary>

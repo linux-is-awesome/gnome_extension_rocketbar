@@ -25,6 +25,13 @@ var BehaviorPage = GObject.registerClass(
             // Taskbar
             this._addTaskbarOptions();
 
+            // Notification Service
+            this.addGroup(_('Notification Service'), [
+                this.createSwitch(_('Enable Unity Launcher API support'), 'notification-service-enable-unity-dbus',
+                                  _('Use Unity Launcher API DBus interface to count notifications for apps')),
+                this.createSwitch(_('Count Window Demands Attention notifications for apps'), 'notification-service-count-attention-sources')
+            ]);
+
             // Panel
             this._addPanelOptions();
 
