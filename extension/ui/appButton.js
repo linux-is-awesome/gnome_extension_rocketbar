@@ -271,7 +271,10 @@ var AppButton = GObject.registerClass(
             this._createMenu();
 
             // init notification handler
-            this._notificationHandler = new NotificationHandler(count => this._setNotifications(count), this.appId);
+            this._notificationHandler = new NotificationHandler(
+                count => this._setNotifications(count),
+                this._settings, this.appId
+            );
         }
 
         _createLayout() {

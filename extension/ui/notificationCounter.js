@@ -142,7 +142,10 @@ var NotificationCounter = GObject.registerClass(
 
             this._createConnections();
 
-            this._notificationHandler = new NotificationHandler(count => this._setCount(count), null);
+            this._notificationHandler = new NotificationHandler(
+                count => this._setCount(count),
+                this._settings, null
+            );
 
             this._container = new NotificationCounterContainer(this, () => this._updateDndState());
         }
