@@ -7,6 +7,7 @@ const { ShellTweaks } = Me.imports.shell.tweaks;
 const { Taskbar } = Me.imports.ui.taskbar;
 const { NotificationCounter } = Me.imports.ui.notificationCounter;
 const { IconProvider } = Me.imports.utils.iconProvider;
+const { LauncherAPI } = Me.imports.utils.launcherAPI;
 
 //#endregion imports
 
@@ -27,6 +28,11 @@ function init() {
 }
 
 function enable() {
+
+    // call instance() to initialize dbus interface
+    // this should be done as soon as possible
+    // to make apps use the interface correctly
+    LauncherAPI.instance();
 
     settings = ExtensionUtils.getSettings();
 
@@ -50,6 +56,7 @@ function disable() {
     shellTweaks?.destroy();
     settings?.run_dispose();
     IconProvider.destroy();
+    LauncherAPI.destroy();
 
     // and nullify all
     taskbar = null;

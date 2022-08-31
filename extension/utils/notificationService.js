@@ -3,7 +3,6 @@
 //#region imports
 
 const Main = imports.ui.main;
-const Gio = imports.gi.Gio;
 const { FdoNotificationDaemonSource, GtkNotificationDaemonAppSource } = imports.ui.notificationDaemon;
 const { WindowAttentionSource } = imports.ui.windowAttentionHandler;
 
@@ -11,42 +10,45 @@ const { WindowAttentionSource } = imports.ui.windowAttentionHandler;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { Timeout } = Me.imports.utils.timeout;
+const { Connections } = Me.imports.utils.connections;
+const { LauncherAPI } = Me.imports.utils.launcherAPI;
 
 //#endregion imports
 
 class UnityDBusConnector {
 
-    constructor(callback) {
+    // store the counters in a static variable
+    // to restore them after unlocking user's session
+    static _countByAppId = null; // Map
 
-        this._countByAppId = new Map();
+    constructor(callback) {
         this._callback = callback;
 
-        this._dbusHandler = Gio.DBus.session.signal_subscribe(
-            null, 'com.canonical.Unity.LauncherEntry',
-            null, null, null,
-            Gio.DBusSignalFlags.NONE,
-            (connection, sender, path, name, signal, params) => this._update(params)
-        );
+        if (!UnityDBusConnector._countByAppId) {
+            UnityDBusConnector._countByAppId = new Map();
+        } else {
+            this._callback();
+        }
+
+        this._dbusHandler = LauncherAPI.instance().subscribe(params => this._update(params));
     }
 
     destroy() {
-        Gio.DBus.session.signal_unsubscribe(this._dbusHandler);
-        this._dbusHandler = null;
-        this._countByAppId = null;
+        LauncherAPI.instance().unsubscribe(this._dbusHandler);
     }
 
     getCount(callback) {
 
-        if (!this._countByAppId?.size || !callback) {
+        if (!UnityDBusConnector._countByAppId?.size || !callback) {
             return;
         }
 
-        this._countByAppId.forEach(callback);
+        UnityDBusConnector._countByAppId.forEach(callback);
     }
 
     _update(params) {
 
-        if (!params || !this._countByAppId) {
+        if (!params || !UnityDBusConnector._countByAppId) {
             return;
         }
 
@@ -64,13 +66,13 @@ class UnityDBusConnector {
         if (!count || !countVisible) {
 
             // no need to trigger the callback as nothing has changed
-            if (!this._countByAppId.has(appId)) {
+            if (!UnityDBusConnector._countByAppId.has(appId)) {
                 return;
             }
 
-            this._countByAppId.delete(appId);
+            UnityDBusConnector._countByAppId.delete(appId);
         } else {
-            this._countByAppId.set(appId, count);
+            UnityDBusConnector._countByAppId.set(appId, count);
         }
 
         this._callback();
@@ -80,17 +82,18 @@ class UnityDBusConnector {
 
 class NotificationService {
 
-    constructor() {
+    constructor(settings) {
 
+        this._settings = settings;
         this._handlers = []; // [NotificationHandler...]
 
         this._resetCounts();
 
         this._createSources();
 
-        this._createConnections();
+        this._handleSettings();
 
-        this._unityDBusConnector = new UnityDBusConnector(() => this._queueUpdateCount());
+        this._createConnections();
     }
 
     addHandler(handler) {
@@ -129,7 +132,41 @@ class NotificationService {
 
         this._unityDBusConnector?.destroy();
 
-        this._connections.forEach(id => Main.messageTray.disconnect(id));
+        this._connections.destroy();
+    }
+
+    _createConnections() {
+        this._connections = new Connections();
+        this._connections.add(Main.messageTray, 'source-added', (tray, source) => this._addSource(source));
+        this._connections.add(Main.messageTray, 'source-removed', (tray, source) => this._removeSource(source));
+        this._connections.add(Main.messageTray, 'queue-changed', () => this._queueUpdateCount());
+        // handle settings
+        this._connections.addScope(this._settings, [
+            'changed::notification-service-enable-unity-dbus',
+            'changed::notification-service-count-attention-sources'
+        ], () => {
+            this._handleSettings();
+            this._queueUpdateCount();
+        });
+    }
+
+    _handleSettings() {
+
+        this._setConfig();
+
+        if (this._config.enableUnityDBus && !this._unityDBusConnector) {
+            this._unityDBusConnector = new UnityDBusConnector(() => this._queueUpdateCount());
+        } else if (!this._config.enableUnityDBus && this._unityDBusConnector) {
+            this._unityDBusConnector.destroy();
+            this._unityDBusConnector = null;
+        }
+    }
+
+    _setConfig() {
+        this._config = {
+            enableUnityDBus: this._settings.get_boolean('notification-service-enable-unity-dbus'),
+            countAttentionSources: this._settings.get_boolean('notification-service-count-attention-sources')
+        };
     }
 
     _createSources() {
@@ -145,14 +182,6 @@ class NotificationService {
         for (let i = 0, l = messageTraySources.length; i < l; ++i) {
             this._addSource(messageTraySources[i]);
         }
-    }
-
-    _createConnections() {
-        this._connections = [
-            Main.messageTray.connect('source-added', (tray, source) => this._addSource(source)),
-            Main.messageTray.connect('source-removed', (tray, source) => this._removeSource(source)),
-            Main.messageTray.connect('queue-changed', () => this._queueUpdateCount())
-        ];
     }
 
     _addSource(source) {
@@ -221,7 +250,7 @@ class NotificationService {
                 appId = source.app ? source.app.id : null;
             } else if (source instanceof GtkNotificationDaemonAppSource) {
                 appId = source._appId;
-            } else if (source instanceof WindowAttentionSource) {
+            } else if (source instanceof WindowAttentionSource && this._config.countAttentionSources) {
                 appId = source._app ? source._app.id : null;
             } else {
                 continue;
@@ -276,14 +305,14 @@ var NotificationHandler = class {
      * callback: (count) => {} to notify handler target about notifications
      * appId: optional string value to filter notifications by app Id, null to get total count
      */
-    constructor(callback, appId) {
+    constructor(callback, settings, appId) {
         
         this.appId = appId;
 
         this._callback = callback;
 
         if (!NotificationHandler._service) {
-            NotificationHandler._service = new NotificationService();
+            NotificationHandler._service = new NotificationService(settings);
         }
 
         NotificationHandler._service.addHandler(this);
