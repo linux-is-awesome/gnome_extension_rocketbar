@@ -105,6 +105,10 @@ var CustomizePage = GObject.registerClass(
         }
 
         _addAppButtonOptions() {
+
+            const backlightColorRow = this.createColorButton(_('Backlight Color'), 'appbutton-backlight-color');
+            backlightColorRow.activatable_widget.use_alpha = false;
+
             return this.addGroup(_('App Buttons'), [
                 this.createSlider(
                     _('Icon Size'), 'appbutton-icon-size',
@@ -127,13 +131,14 @@ var CustomizePage = GObject.registerClass(
                     _('Spacing'), 'appbutton-spacing',
                     { min: 0, max: 10 }
                 ),
-                this.createSwitch(_('Dominant Color Backlight'), 'appbutton-backlight'),
+                this.createSwitch(_('Dominant Color Backlight'), 'appbutton-backlight-dominant-color'),
                 ...this.addVisibilityControl([
-                    this.createSpinButton(
-                        _('Backlight Intensity'), 'appbutton-backlight-intensity',
-                        { min: 1, max: 9 }
-                    )
-                ], { 'appbutton-backlight': value => value })
+                    backlightColorRow
+                ], { 'appbutton-backlight-dominant-color': value => !value }),
+                this.createSpinButton(
+                    _('Backlight Intensity'), 'appbutton-backlight-intensity',
+                    { min: 0, max: 9 }
+                )
             ]);
         }
 

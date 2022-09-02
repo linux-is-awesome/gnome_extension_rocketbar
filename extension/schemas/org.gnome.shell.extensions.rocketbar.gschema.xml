@@ -75,12 +75,16 @@
             <default>50</default>
             <summary>App Buttons roundness</summary>
         </key>
-        <key type="b" name="appbutton-backlight">
+        <key type="s" name="appbutton-backlight-color">
+            <default>'rgb(255, 255, 255)'</default>
+            <summary>App Buttons backlight color</summary>
+        </key>
+        <key type="b" name="appbutton-backlight-dominant-color">
             <default>false</default>
             <summary>App Buttons Dominant color backlight</summary>
         </key>
         <key type="i" name="appbutton-backlight-intensity">
-            <default>2</default>
+            <default>1</default>
             <summary>App Buttons backlight intensity</summary>
         </key>
         <!-- customize page: indicator -->

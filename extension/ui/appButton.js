@@ -344,7 +344,8 @@ var AppButton = GObject.registerClass(
                 'changed::appbutton-icon-vertical-padding',
                 'changed::appbutton-spacing',
                 'changed::appbutton-roundness',
-                'changed::appbutton-backlight',
+                'changed::appbutton-backlight-color',
+                'changed::appbutton-backlight-dominant-color',
                 'changed::appbutton-backlight-intensity',
                 'changed::indicator-dominant-color-active',
                 'changed::indicator-dominant-color-inactive',
@@ -385,7 +386,8 @@ var AppButton = GObject.registerClass(
                 this._config.iconVerticalPadding !== oldConfig.iconVerticalPadding ||
                 this._config.roundness !== oldConfig.roundness ||
                 this._config.spacing !== oldConfig.spacing ||
-                this._config.backlight !== oldConfig.backlight ||
+                this._config.backlightColor !== oldConfig.backlightColor ||
+                this._config.backlightDominantColor !== oldConfig.backlightDominantColor ||
                 this._config.backlightIntensity !== oldConfig.backlightIntensity
             )) {
                 this._updateStyle();
@@ -473,14 +475,28 @@ var AppButton = GObject.registerClass(
                 iconVerticalPadding: this._settings.get_int('appbutton-icon-vertical-padding'),
                 roundness: this._settings.get_int('appbutton-roundness'),
                 spacing: this._settings.get_int('appbutton-spacing'),
-                backlight: this._settings.get_boolean('appbutton-backlight'),
+                backlightColor: this._settings.get_string('appbutton-backlight-color'),
                 backlightIntensity: this._settings.get_int('appbutton-backlight-intensity'),
+                backlightDominantColor: this._settings.get_boolean('appbutton-backlight-dominant-color'),
                 indicatorDominantColor: (
                     this._settings.get_boolean('indicator-dominant-color-inactive') ||
                     this._settings.get_boolean('indicator-dominant-color-active')
                 ),
                 customIconPath: null
             };
+
+            // parse backlight color
+            if (this._config.backlightColor) {
+                const colorValues = this._config.backlightColor.replace('rgb(', '')
+                                                       .replace('rgba(', '')
+                                                       .replace(')', '')
+                                                       .split(',');
+                this._config.backlightColor = {
+                    r: colorValues[0].trim(),
+                    g: colorValues[1].trim(),
+                    b: colorValues[2].trim()
+                }
+            }
 
             this.configOverride.apply(this._config);
         }
@@ -978,7 +994,7 @@ var AppButton = GObject.registerClass(
         _updateDominantColor() {
 
             if (this.dominantColor || (
-                !this._config.backlight &&
+                !this._config.backlightDominantColor &&
                 !this._config.indicatorDominantColor
             )) {
                 return;
@@ -1052,7 +1068,7 @@ var AppButton = GObject.registerClass(
 
                     this._appIcon.add_style_pseudo_class('active');
 
-                    this._applyDominantColor();
+                    this._setBacklightColor();
                 }
 
                 return;
@@ -1063,9 +1079,20 @@ var AppButton = GObject.registerClass(
             this._connections?.removeScope(['showing','hiding']);
         }
 
-        _applyDominantColor() {
-            
-            if (!this.dominantColor || !this._config.backlight) {
+        _setBacklightColor() {
+
+            // check if intensity is 0
+            if (!this._config.backlightIntensity) {
+                return;
+            }
+
+            const backlightColor = (
+                this._config.backlightDominantColor && this.dominantColor ?
+                this.dominantColor :
+                this._config.backlightColor
+            );
+
+            if (!backlightColor) {
                 return;
             }
 
@@ -1076,16 +1103,16 @@ var AppButton = GObject.registerClass(
             const startIntensity = this._config.backlightIntensity - 1;
 
             appIconStyle += (`background-gradient-start: rgba(
-                ${this.dominantColor.r},
-                ${this.dominantColor.g},
-                ${this.dominantColor.b},
+                ${backlightColor.r},
+                ${backlightColor.g},
+                ${backlightColor.b},
                 ${startIntensity >= 0 ? '0.' + startIntensity : 0}
             );`);
 
             appIconStyle += (`background-gradient-end: rgba(
-                ${this.dominantColor.r},
-                ${this.dominantColor.g},
-                ${this.dominantColor.b},
+                ${backlightColor.r},
+                ${backlightColor.g},
+                ${backlightColor.b},
                 ${'0.' + this._config.backlightIntensity}
             );`);
 
