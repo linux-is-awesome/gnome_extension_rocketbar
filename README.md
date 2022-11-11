@@ -86,8 +86,8 @@ OPTIONAL: to get the latest UNSTABLE version type: git checkout develop
 
 ### Translations
 
-French by [@celestomm](https://github.com/celestomm)
-Dutch by [@Vistaus](https://github.com/Vistaus) 
+- French by [@celestomm](https://github.com/celestomm)
+- Dutch by [@Vistaus](https://github.com/Vistaus)
 
 To create a new translation:
 
