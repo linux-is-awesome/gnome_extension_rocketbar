@@ -1,0 +1,546 @@
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Heimen Stoffels <vistausss@fastmail.com>, 2022.
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-09-15 20:03+0300\n"
+"PO-Revision-Date: 2022-11-08 13:41+0100\n"
+"Last-Translator: Heimen Stoffels <vistausss@fastmail.com>\n"
+"Language-Team: Dutch\n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Lokalize 22.08.3\n"
+
+#: settings/aboutPage.js:13
+msgid "About"
+msgstr "Over"
+
+#: settings/aboutPage.js:26
+msgid " Version"
+msgstr " Versie"
+
+#: settings/aboutPage.js:27
+msgid "Release Notes"
+msgstr "Wijzigingslog"
+
+#: settings/aboutPage.js:30
+msgid "Useful Links"
+msgstr "Handige links"
+
+#: settings/aboutPage.js:31
+msgid "Report an issue"
+msgstr "Probleem melden"
+
+#: settings/aboutPage.js:32
+msgid "Share your ideas"
+msgstr "Ideeën delen"
+
+#: settings/aboutPage.js:35
+msgid "Credits"
+msgstr "Met dank aan"
+
+#: settings/behaviorPage.js:14
+msgid "Behavior"
+msgstr "Gedrag"
+
+#: settings/behaviorPage.js:29
+msgid "Notification Service"
+msgstr "Meldingsdienst"
+
+#: settings/behaviorPage.js:30
+msgid "Enable Unity Launcher API support"
+msgstr "Unity-starterondersteuning inschakelen"
+
+#: settings/behaviorPage.js:31
+msgid "Use Unity Launcher API DBus interface to count notifications for apps"
+msgstr ""
+"Gebruik de Unity dbus-api om het aantal meldingen van toepassingen bij te"
+" houden"
+
+#: settings/behaviorPage.js:32
+msgid "Count Window Demands Attention notifications for apps"
+msgstr "Voor venstertelling dienen meldingen te worden getoond"
+
+#: settings/behaviorPage.js:45 settings/generalPage.js:54
+msgid "Overview"
+msgstr "Overzicht"
+
+#: settings/behaviorPage.js:46
+msgid "Enable empty space clicks in Overview"
+msgstr "Klikken op lege ruimtes toestaan op overzicht"
+
+#: settings/behaviorPage.js:47
+msgid ""
+"Left button click to close the Overview, Right button click to show the App "
+"Grid"
+msgstr ""
+"Klik met de linkermuiskop om het overzicht te sluiten en met de"
+" rechtermuisknop om alle toepassingen te tonen"
+
+#: settings/behaviorPage.js:51
+msgid "Hot Corner"
+msgstr "Snelhoek"
+
+#: settings/behaviorPage.js:52
+msgid "Enable Fullscreen Hot Corner"
+msgstr "Snelhoek toestaan in schermvullende weergave"
+
+#: settings/behaviorPage.js:56
+msgid "Lock Screen"
+msgstr "Vergrendelscherm"
+
+#: settings/behaviorPage.js:57
+msgid "Force primary input source on Lock Screen"
+msgstr "Gebruik van primaire invoerbron afdwingen op vergrendelscherm"
+
+#: settings/behaviorPage.js:58 settings/generalPage.js:48
+msgid "Experimental feature"
+msgstr "Experimentele functie"
+
+#: settings/behaviorPage.js:68 ui/appButtonMenu.js:418
+msgid "New window"
+msgstr "Nieuw venster"
+
+#: settings/behaviorPage.js:69 ui/appButtonMenu.js:422
+msgid "Move windows"
+msgstr "Vensters verplaatsen"
+
+#: settings/behaviorPage.js:72 settings/customizePage.js:93
+#: settings/generalPage.js:39
+msgid "Taskbar"
+msgstr "Taakbalk"
+
+#: settings/behaviorPage.js:73
+msgid "Enable Drag and Drop"
+msgstr "Slepen-en-neerzetten inschakelen"
+
+#: settings/behaviorPage.js:74
+msgid "Reorder apps in the taskbar using Drag and Drop"
+msgstr "Orden toepassingen op de taakbalk middels slepen-en-neerzetten"
+
+#: settings/behaviorPage.js:75
+msgid "Enable Minimize action"
+msgstr "Minimaliseeractie inschakelen"
+
+#: settings/behaviorPage.js:76
+msgid "Allow to minimize single app windows by clicking apps in the taskbar"
+msgstr ""
+"Minimaliseer toepassingsvensters door de toepassing in kwestie aan te klikken"
+" op de taakbalk"
+
+#: settings/behaviorPage.js:77
+msgid "Require click to open context menus"
+msgstr "Vereist klik-om-te-openenmenu's"
+
+#: settings/behaviorPage.js:79
+msgid "Middle click to toggle app sound mute"
+msgstr "Middelklikken geluid te dempen/ontdempen"
+
+#: settings/behaviorPage.js:80
+msgid ""
+"By default Middle click is used to open new app windows and to close the "
+"first app window when Ctrl is pressed"
+msgstr ""
+"Standaard wordt de middelste muisknop gebruikt om nieuwe toepassingsvensters"
+" te openen en, met behulp van Ctrl, het eerste venster te sluiten"
+
+#: settings/behaviorPage.js:81
+msgid "Scroll to change app sound volume"
+msgstr "Scrollen om volume te wijzigen"
+
+#: settings/behaviorPage.js:84
+msgid "Scroll to cycle app windows"
+msgstr "Scrollen om van venster te wisselen"
+
+#: settings/behaviorPage.js:92
+msgid "Running apps activation behavior"
+msgstr "Opengedrag van actieve toepassingen"
+
+#: settings/behaviorPage.js:94
+msgid ""
+"Controls the behavior when an app is running but has no windows on the "
+"active workspace, supports isolated workspaces only, can be configured "
+"separately for each app via an app menu"
+msgstr ""
+"Bepaal het gedrag van een toepassing die actief is, maar geen openstaande"
+" vensters op het actieve werkblad heeft. Let op: er is alléén ondersteuning"
+" voor geïsoleerde werkbladen."
+
+#: settings/behaviorPage.js:103 settings/behaviorPage.js:151
+msgid "None"
+msgstr "Geen"
+
+#: settings/behaviorPage.js:104
+msgid "Change Sound Volume"
+msgstr "Volume wijzigen"
+
+#: settings/behaviorPage.js:105
+msgid "Switch Workspace"
+msgstr "Naar ander werkblad gaan"
+
+#: settings/behaviorPage.js:108
+msgid "Panel"
+msgstr "Bovenbalk"
+
+#: settings/behaviorPage.js:109
+msgid "Require click to activate menu buttons"
+msgstr "Klikken om menuknoppen te activeren"
+
+#: settings/behaviorPage.js:110
+msgid "Middle click to toggle sound mute"
+msgstr "Middelklikken geluid te dempen/ontdempen"
+
+#: settings/behaviorPage.js:111
+msgid "Press middle button on an empty space of the panel"
+msgstr "Druk met de middelste muisknop op een lege ruimte op de bovenbalk"
+
+#: settings/behaviorPage.js:112
+msgid "Scroll action"
+msgstr "Scrolactie"
+
+#: settings/behaviorPage.js:119
+msgid "Slowest"
+msgstr "Traagst"
+
+#: settings/behaviorPage.js:120
+msgid "Slow"
+msgstr "Traag"
+
+#: settings/behaviorPage.js:121
+msgid "Normal"
+msgstr "Normaal"
+
+#: settings/behaviorPage.js:122
+msgid "Fast"
+msgstr "Snel"
+
+#: settings/behaviorPage.js:123
+msgid "Faster"
+msgstr "Sneller"
+
+#: settings/behaviorPage.js:124
+msgid "Turbo"
+msgstr "Standje turbo"
+
+#: settings/behaviorPage.js:127 ui/appButtonMenu.js:299
+msgid "Sound Volume Control"
+msgstr "Volumeregeling"
+
+#: settings/behaviorPage.js:129
+msgid "Volume change speed"
+msgstr "Wijzigingssnelheid"
+
+#: settings/behaviorPage.js:133
+msgid "Volume change speed when Ctrl pressed"
+msgstr "De te wijzigen snelheid als Ctrl ingedrukt wordt gehouden"
+
+#: settings/behaviorPage.js:152
+msgid "Left Button"
+msgstr "Linkermuisknop"
+
+#: settings/behaviorPage.js:153
+msgid "Right Button"
+msgstr "Rechtermuisknop"
+
+#: settings/behaviorPage.js:154
+msgid "Middle Button"
+msgstr "Middelste muisknop"
+
+#: settings/behaviorPage.js:157
+msgid "Activities"
+msgstr "Activiteiten"
+
+#: settings/behaviorPage.js:159
+msgid "Click Activities to show the App Grid"
+msgstr "Klikken op activiteitenknop om alle toepassingen te tonen"
+
+#: settings/behaviorPage.js:166
+msgid "Switcher Popups"
+msgstr "Taakschakelaarpop-ups"
+
+#: settings/behaviorPage.js:167
+msgid "Override show delay"
+msgstr "Pas de wachttijd alvorens te tonen aan"
+
+#: settings/behaviorPage.js:170 settings/customizePage.js:207
+msgid "Show Delay"
+msgstr "Wachttijd alvorens te tonen"
+
+#: settings/behaviorPage.js:174
+msgid "Do not grab focus"
+msgstr "Focus niet verleggen"
+
+#: settings/customizePage.js:14 ui/appButtonMenu.js:319
+msgid "Customize"
+msgstr "Aanpassen"
+
+#: settings/customizePage.js:23
+msgid "No customizations available"
+msgstr "Er zijn geen aanpassingen beschikbaar"
+
+#: settings/customizePage.js:88
+msgid "Left"
+msgstr "Links"
+
+#: settings/customizePage.js:89
+msgid "Center"
+msgstr "Midden"
+
+#: settings/customizePage.js:90
+msgid "Right"
+msgstr "Rechts"
+
+#: settings/customizePage.js:95 settings/customizePage.js:162
+#: settings/customizePage.js:190
+msgid "Position"
+msgstr "Locatie"
+
+#: settings/customizePage.js:99
+msgid "Position Offset"
+msgstr "Locatieverschuiving"
+
+#: settings/customizePage.js:102
+msgid "Preserve Position"
+msgstr "Locatie vergrendelen"
+
+#: settings/customizePage.js:103
+msgid "Prevent position changes caused by other extensions in the panel"
+msgstr ""
+"Voorkomt dat de locatie gewijzigd wordt door andere uitbreidingen op de"
+" bovenbalk"
+
+#: settings/customizePage.js:109
+msgid "Backlight Color"
+msgstr "Achtergrondkleur"
+
+#: settings/customizePage.js:112
+msgid "App Buttons"
+msgstr "Toepassingsknoppen"
+
+#: settings/customizePage.js:114 ui/appButtonMenu.js:454
+msgid "Icon Size"
+msgstr "Pictogramgrootte"
+
+#: settings/customizePage.js:116
+msgid "Can be configured separately for each app via an app menu"
+msgstr "Dit kan per toepassing via het toepassingsmenu worden ingesteld"
+
+#: settings/customizePage.js:119
+msgid "Icon Horizontal Padding"
+msgstr "Horizontale pictogramopvulling"
+
+#: settings/customizePage.js:123
+msgid "Icon Vertical Padding"
+msgstr "Verticale pictogramopvulling"
+
+#: settings/customizePage.js:127 settings/customizePage.js:226
+msgid "Roundness"
+msgstr "Afronding"
+
+#: settings/customizePage.js:131
+msgid "Spacing"
+msgstr "Uitlijning"
+
+#: settings/customizePage.js:134
+msgid "Dominant Color Backlight"
+msgstr "Dominante achtergrondkleur"
+
+#: settings/customizePage.js:139
+msgid "Backlight Intensity"
+msgstr "Achtergrondsterkte"
+
+#: settings/customizePage.js:148
+msgid "Top"
+msgstr "Bovenaan"
+
+#: settings/customizePage.js:149
+msgid "Bottom"
+msgstr "Onderaan"
+
+#: settings/customizePage.js:152
+msgid "Indicators"
+msgstr "Indicators"
+
+#: settings/customizePage.js:153
+msgid "Active Dominant Color"
+msgstr "Actieve dominante kleur"
+
+#: settings/customizePage.js:155
+msgid "Active Color"
+msgstr "Actieve kleur"
+
+#: settings/customizePage.js:157
+msgid "Inactive Dominant Color"
+msgstr "Inactieve dominante kleur"
+
+#: settings/customizePage.js:159
+msgid "Inactive Color"
+msgstr "Inactieve kleur"
+
+#: settings/customizePage.js:166 settings/customizePage.js:194
+msgid "Size"
+msgstr "Grootte"
+
+#: settings/customizePage.js:170
+msgid "Limit"
+msgstr "Limiet"
+
+#: settings/customizePage.js:172
+msgid "The maximum number of indicators to display on top of app buttons"
+msgstr ""
+"Het maximumaantal indicators dat op toepassingsknoppen mag worden getoond"
+
+#: settings/customizePage.js:180
+msgid "Top Left"
+msgstr "Linksboven"
+
+#: settings/customizePage.js:181
+msgid "Top Right"
+msgstr "Rechtsboven"
+
+#: settings/customizePage.js:182
+msgid "Bottom Left"
+msgstr "Linksonder"
+
+#: settings/customizePage.js:183
+msgid "Bottom Right"
+msgstr "Rechtsonder"
+
+#: settings/customizePage.js:186
+msgid "Notification Badges"
+msgstr "Meldingsemblemen"
+
+#: settings/customizePage.js:187
+msgid "Color"
+msgstr "Kleur"
+
+#: settings/customizePage.js:188
+msgid "Border Color"
+msgstr "Randkleur"
+
+#: settings/customizePage.js:198
+msgid "Margin"
+msgstr "Marge"
+
+#: settings/customizePage.js:205
+msgid "Tooltips"
+msgstr "Tekstballonnen"
+
+#: settings/customizePage.js:214 settings/generalPage.js:29
+msgid "Notification Counter"
+msgstr "Meldingsteller"
+
+#: settings/customizePage.js:215
+msgid "Hide when empty"
+msgstr "Verbergen indien geen meldingen"
+
+#: settings/customizePage.js:216
+msgid "Center clock"
+msgstr "Klok centreren"
+
+#: settings/customizePage.js:218
+msgid "Max Count"
+msgstr "Maximumaantal"
+
+#: settings/customizePage.js:222
+msgid "Font Size"
+msgstr "Tekstgrootte"
+
+#: settings/customizePage.js:230
+msgid "Top Margin"
+msgstr "Bovenste marge"
+
+#: settings/customizePage.js:234
+msgid "Empty Color"
+msgstr "Ongekleurd"
+
+#: settings/customizePage.js:236
+msgid "Not Empty Color"
+msgstr "Meldingskleur"
+
+#: settings/customizePage.js:237
+msgid "Text Color"
+msgstr "Tekstkleur"
+
+#: settings/customizePage.js:239
+msgid "Do Not Disturb - Empty Color"
+msgstr "Niet storen - Ongekleurd"
+
+#: settings/customizePage.js:241
+msgid "Do Not Disturb - Not Empty Color"
+msgstr "Niet storen - Meldingskleur"
+
+#: settings/customizePage.js:242
+msgid "Do Not Disturb - Text Color"
+msgstr "Niet storen - Tekstkleur"
+
+#: settings/generalPage.js:14
+msgid "General"
+msgstr "Algemeen"
+
+#: settings/generalPage.js:30 settings/generalPage.js:40
+msgid "Enabled"
+msgstr "Ingeschakeld"
+
+#: settings/generalPage.js:42
+msgid "Show Favorites"
+msgstr "Favorieten tonen"
+
+#: settings/generalPage.js:43
+msgid "Isolate Workspaces"
+msgstr "Werkbladen isoleren"
+
+#: settings/generalPage.js:44
+msgid "Enable Indicators"
+msgstr "Indicators tonen"
+
+#: settings/generalPage.js:45
+msgid "Enable Notification Badges"
+msgstr " Meldingsemblemen tonen"
+
+#: settings/generalPage.js:46
+msgid "Enable Tooltips"
+msgstr "Tekstballonnen tonen"
+
+#: settings/generalPage.js:47
+msgid "Enable Sound Volume Control"
+msgstr "Volumeregeling gebruiken"
+
+#: settings/generalPage.js:55
+msgid "Kill the Dash"
+msgstr "Geen paneel gebruiken"
+
+#: settings/generalPage.js:56
+msgid ""
+"Hide the Dash from Overview and prevent it from rerendering behind the scene"
+msgstr "Verbergt het toepassingenpaneel op het overzicht"
+
+#: ui/appButtonMenu.js:190
+msgid "Pin"
+msgstr "Vastmaken"
+
+#: ui/appButtonMenu.js:415
+msgid "Activation Behavior"
+msgstr "Opengedrag"
+
+#: ui/appButtonMenu.js:432
+msgid "Icon"
+msgstr "Pictogram"
+
+#: ui/appButtonMenu.js:435
+msgid "Import"
+msgstr "Importeren"
+
+#: ui/appButtonMenu.js:446
+msgid "Reset to default"
+msgstr "Standaardwaarden herstellen"
+
+#: ui/appButtonMenu.js:460
+msgid "Reset all to default"
+msgstr "Herstel alle standaardwaarden"
