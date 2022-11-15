@@ -37,7 +37,8 @@
 
 .rocketbar__popup-menu {
     /* shrink menu width as much as possible */
-    max-width: 0;
+    max-width: 0px;
+    min-width: 300px;
 }
 .rocketbar__popup-menu
 .popup-separator-menu-item {
@@ -46,6 +47,10 @@
 .rocketbar__popup-menu
 .rocketbar__popup-menu_section-title {
     margin-top: 10px;
+}
+.rocketbar__popup-menu
+.popup-menu-icon {
+    margin-left: 10px;
 }
 
 /* date menu */
