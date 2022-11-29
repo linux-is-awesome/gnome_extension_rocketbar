@@ -142,6 +142,10 @@
             <default>500</default>
             <summary>Tooltips show delay</summary>
         </key>
+        <key type="i" name="tooltip-max-width">
+            <default>500</default>
+            <summary>Tooltips max width</summary>
+        </key>
         <!-- customize page: notification-counter -->
         <key type="b" name="notification-counter-hide-empty">
             <default>false</default>

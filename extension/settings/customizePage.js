@@ -206,6 +206,10 @@ var CustomizePage = GObject.registerClass(
                 this.createSpinButton(
                     _('Show Delay'), 'tooltip-show-delay',
                     { min: 100, max: 2000, step: 100 }
+                ),
+                this.createSpinButton(
+                    _('Max Width'), 'tooltip-max-width',
+                    { min: 200, max: 1000, step: 50 }
                 )
             ]);
         }

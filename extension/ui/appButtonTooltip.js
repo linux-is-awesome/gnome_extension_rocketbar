@@ -61,6 +61,8 @@ var AppButtonTooltip = class {
 
         this._appButton = appButton;
 
+        this._maxWidth = settings.get_int('tooltip-max-width');
+
         const showDelay = settings.get_int('tooltip-show-delay');
 
         this._showTimeout = Timeout.default(showDelay).run(() => {
@@ -124,7 +126,8 @@ var AppButtonTooltip = class {
         // create tooltip text
 
         this._tooltipText = new St.Label({
-            name: 'appButton-tooltip-text'
+            name: 'appButton-tooltip-text',
+            style: `max-width: ${this._maxWidth}px;`
         });
 
         this._tooltip.add_actor(this._tooltipText);
