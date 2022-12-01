@@ -8,7 +8,7 @@ const Main = imports.ui.main;
 // custom modules import
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
-const { NotificationHandler } = Me.imports.utils.notificationService;
+const { NotificationHandler } = Me.imports.services.notificationService;
 const { Timeout } = Me.imports.utils.timeout;
 const { Connections } = Me.imports.utils.connections;
 

@@ -64,7 +64,6 @@ function disable() {
     shellTweaks = null;
     settings = null;
     connections = null;
-
 }
 
 function _handleSettings() {

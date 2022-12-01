@@ -1,3 +1,5 @@
+/* exported LauncherAPI */
+
 const Gio = imports.gi.Gio;
 
 var LauncherAPI = class {
