@@ -150,6 +150,15 @@ var CustomizePage = GObject.registerClass(
             ];
 
             return this.addGroup(_('Indicators'), [
+                this.createPicklist(
+                    _('Position'), 'indicator-position',
+                    positionOptions
+                ),
+                this.createSpinButton(
+                    _('Limit'), 'indicator-display-limit',
+                    { min: 1, max: 5 },
+                    _('The maximum number of indicators to display on top of app buttons')
+                ),
                 this.createSwitch(_('Active Dominant Color'), 'indicator-dominant-color-active'),
                 ...this.addVisibilityControl([
                     this.createColorButton(_('Active Color'), 'indicator-color-active')
@@ -158,19 +167,41 @@ var CustomizePage = GObject.registerClass(
                 ...this.addVisibilityControl([
                     this.createColorButton(_('Inactive Color'), 'indicator-color-inactive')
                 ], { 'indicator-dominant-color-inactive': value => !value }),
-                this.createPicklist(
-                    _('Position'), 'indicator-position',
-                    positionOptions
+
+                this.createSpinButton(
+                    _('Inactive Width'), 'indicator-width-inactive',
+                    { min: 1, max: 100 }
                 ),
                 this.createSpinButton(
-                    _('Size'), 'indicator-size',
-                    { min: 2, max: 10 }
+                    _('Active Width'), 'indicator-width-active',
+                    { min: 1, max: 100 }
                 ),
                 this.createSpinButton(
-                    _('Limit'), 'indicator-display-limit',
-                    { min: 1, max: 5 },
-                    _('The maximum number of indicators to display on top of app buttons')
-                )
+                    _('Inactive Height'), 'indicator-height-inactive',
+                    { min: 1, max: 100 }
+                ),
+                this.createSpinButton(
+                    _('Active Height'), 'indicator-height-active',
+                    { min: 1, max: 100 }
+                ),
+                this.createSpinButton(
+                    _('Inactive Roundness'), 'indicator-roundness-inactive',
+                    { min: 0, max: 100 }
+                ),
+                this.createSpinButton(
+                    _('Active Roundness'), 'indicator-roundness-active',
+                    { min: 0, max: 100 }
+                ),
+                ...this.addVisibilityControl([
+                    this.createSpinButton(
+                        _('Inactive Spacing'), 'indicator-spacing-inactive',
+                        { min: 0, max: 50 }
+                    ),
+                    this.createSpinButton(
+                        _('Active Spacing'), 'indicator-spacing-active',
+                        { min: 0, max: 50 }
+                    )
+                ], { 'indicator-display-limit': value => value > 1 })
             ]);
         }
 

@@ -108,9 +108,37 @@
             <default>'top'</default>
             <summary>Indicators position</summary>
         </key>
-        <key type="i" name="indicator-size">
+        <key type="i" name="indicator-width-inactive">
             <default>4</default>
-            <summary>Indicators size</summary>
+            <summary>Inactive Indicators width</summary>
+        </key>
+        <key type="i" name="indicator-width-active">
+            <default>4</default>
+            <summary>Active Indicators width</summary>
+        </key>
+        <key type="i" name="indicator-height-inactive">
+            <default>4</default>
+            <summary>Inactive Indicators width</summary>
+        </key>
+        <key type="i" name="indicator-height-active">
+            <default>4</default>
+            <summary>Active Indicators height</summary>
+        </key>
+        <key type="i" name="indicator-roundness-inactive">
+            <default>4</default>
+            <summary>Inactive Indicators roundness</summary>
+        </key>
+        <key type="i" name="indicator-roundness-active">
+            <default>4</default>
+            <summary>Active Indicators roundness</summary>
+        </key>
+        <key type="i" name="indicator-spacing-inactive">
+            <default>2</default>
+            <summary>Inactive Indicators spacing</summary>
+        </key>
+        <key type="i" name="indicator-spacing-active">
+            <default>2</default>
+            <summary>Active Indicators spacing</summary>
         </key>
         <key type="i" name="indicator-display-limit">
             <default>3</default>

@@ -11,11 +11,12 @@ const IconGrid = imports.ui.iconGrid;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { AppButtonIndicator } = Me.imports.ui.appButtonIndicator;
+const { AppButtonNotificationBadge } = Me.imports.ui.appButtonNotificationBadge;
 const { AppButtonMenu } = Me.imports.ui.appButtonMenu;
 const { AppButtonTooltip } = Me.imports.ui.appButtonTooltip;
 const { DominantColorExtractor } = Me.imports.utils.dominantColorExtractor;
-const { NotificationHandler } = Me.imports.utils.notificationService;
-const { AppSoundVolumeControl } = Me.imports.utils.soundVolumeControl;
+const { NotificationHandler } = Me.imports.services.notificationService;
+const { AppSoundVolumeControl } = Me.imports.services.soundVolumeService;
 const { Connections } = Me.imports.utils.connections;
 const { ScrollHandler } = Me.imports.utils.scrollHandler;
 const { Timeout } = Me.imports.utils.timeout;
@@ -347,15 +348,6 @@ var AppButton = GObject.registerClass(
                 'changed::appbutton-backlight-color',
                 'changed::appbutton-backlight-dominant-color',
                 'changed::appbutton-backlight-intensity',
-                'changed::indicator-dominant-color-active',
-                'changed::indicator-dominant-color-inactive',
-                'changed::indicator-color-active',
-                'changed::indicator-color-inactive',
-                'changed::indicator-position',
-                'changed::indicator-size',
-                'changed::indicator-display-limit',
-                'changed::indicator-dominant-color-inactive',
-                'changed::indicator-dominant-color-active',
                 'changed::notification-badge-color',
                 'changed::notification-badge-border-color',
                 'changed::notification-badge-position',
@@ -394,13 +386,21 @@ var AppButton = GObject.registerClass(
             }
 
             // enable/disable indicators
-            if (!this._config.enableIndicators && !this._config.enableNotificationBadges) {
+            if (!this._config.enableIndicators) {
                 this._indicator?.destroy();
                 this._indicator = null;
             } else if (!this._indicator) {
                 this._indicator = new AppButtonIndicator(this, this._layout, this._settings);
+            }
+
+            // enable/disable notification badge
+            if (!this._config.enableNotificationBadges) {
+                this._notificationBadge?.destroy();
+                this._notificationBadge = null;
+            } else if (!this._notificationBadge) {
+                this._notificationBadge = new AppButtonNotificationBadge(this, this._layout, this._settings);
             } else {
-                this._indicator.updateConfig();
+                this._notificationBadge.updateConfig();
             }
 
             // enable/disable drag and drop
@@ -536,6 +536,11 @@ var AppButton = GObject.registerClass(
             // destroy indicator
             this._indicator?.destroy();
             this._indicator = null;
+
+            // destroy notification badge
+            this._notificationBadge?.destroy();
+            this._notificationBadge = null;
+
 
             // destroy tooltip if exists
             this._tooltip?.destroy();
@@ -1355,7 +1360,7 @@ var AppButton = GObject.registerClass(
 
             this.notifications = count;
 
-            this._indicator?.rerender();
+            this._notificationBadge?.rerender();
 
             this._tooltip?.rerender();
         }

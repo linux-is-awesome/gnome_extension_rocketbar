@@ -1,7 +1,17 @@
 /* exported AppButtonIndicator */
 
+//#region imports
+
 const { Clutter, St } = imports.gi;
 const IconGrid = imports.ui.iconGrid;
+
+// custom modules import
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
+const { Config } = Me.imports.utils.config;
+const { Connections } = Me.imports.utils.connections;
+
+//#endregion imports
 
 var AppButtonIndicator = class {
 
@@ -11,11 +21,12 @@ var AppButtonIndicator = class {
         this._layout = layout;
         this._settings = settings;
         this._indicators = null;
-        this._notificationBadge = null;
         this._isActive = false;
         this._dominantColor = null;
 
-        this.updateConfig();
+        this._handleSettings();
+
+        this._createConnections();
     }
 
     //#region public methods
@@ -24,47 +35,13 @@ var AppButtonIndicator = class {
 
         this._layout = null;
 
+        this._connections?.destroy();
+
         this._destroyIndicators();
-        this._updateNotificationBadge();
-    }
-
-    updateConfig() {
-        const oldConfig = this._config;
-
-        this._setConfig();
-
-        if (!oldConfig ||
-                oldConfig.enableIndicators !== this._config.enableIndicators ||
-                oldConfig.enableNotificationBadges !== this._config.enableNotificationBadges ||
-                oldConfig.maxIndicators !== this._config.maxIndicators) {
-            this.rerender();
-        }
-
-        if (!oldConfig) {
-            return;
-        }
-        
-        if (oldConfig.dominantColor !== this._config.dominantColor ||
-                oldConfig.activeDominantColor !== this._config.activeDominantColor ||
-                oldConfig.color !== this._config.color ||
-                oldConfig.activeColor !== this._config.activeColor ||
-                oldConfig.position !== this._config.position ||
-                oldConfig.size !== this._config.size) {
-            this._updateIndicatorsStyle();
-        }
-
-        if (oldConfig.notificationBadgeColor !== this._config.notificationBadgeColor ||
-                oldConfig.notificationBadgeBorderColor !== this._config.notificationBadgeBorderColor ||
-                oldConfig.notificationBadgePosition !== this._config.notificationBadgePosition ||
-                oldConfig.notificationBadgeSize !== this._config.notificationBadgeSize ||
-                oldConfig.notificationBadgeMargin !== this._config.notificationBadgeMargin) {
-            this._updateNotificationBadgeStyle();
-        }
     }
 
     rerender() {
         this._updateIndicators();
-        this._updateNotificationBadge();
     }
 
     updateStyle() {
@@ -75,24 +52,73 @@ var AppButtonIndicator = class {
 
     //#region private methods
 
+    _createConnections() {
+        this._connections = new Connections();
+        this._connections.addScope(this._settings, [
+            'changed::indicator-width-inactive',
+            'changed::indicator-width-active',
+            'changed::indicator-height-inactive',
+            'changed::indicator-height-active',
+            'changed::indicator-roundness-inactive',
+            'changed::indicator-roundness-active',
+            'changed::indicator-spacing-inactive',
+            'changed::indicator-spacing-active',
+            'changed::indicator-dominant-color-active',
+            'changed::indicator-dominant-color-inactive',
+            'changed::indicator-color-active',
+            'changed::indicator-color-inactive',
+            'changed::indicator-position',
+            'changed::indicator-display-limit'], () => this._handleSettings());
+    }
+
+    _handleSettings() {
+
+        if (this._config) {
+            this._config.update();
+        } else {
+            this._setConfig();
+        }
+
+        this._config.handleChanged(['maxIndicators'], () => this.rerender());
+
+        if (!this._config.hasOld()) {
+            return;
+        }
+
+        this._config.handleChanged([
+            'width',
+            'activeWidth',
+            'height',
+            'activeHeight',
+            'roundness',
+            'activeRoundness',
+            'spacing',
+            'activeSpacing',
+            'dominantColor',
+            'activeDominantColor',
+            'color',
+            'activeColor',
+            'position'
+        ], () => this._updateIndicatorsStyle());
+    }
+
     _setConfig() {
-        this._config = {
-            enableIndicators: this._settings.get_boolean('appbutton-enable-indicators'),
-            enableNotificationBadges: this._settings.get_boolean('appbutton-enable-notification-badges'),
+        this._config = new Config(() => ({
+            width: this._settings.get_int('indicator-width-inactive'),
+            activeWidth: this._settings.get_int('indicator-width-active'),
+            height: this._settings.get_int('indicator-height-inactive'),
+            activeHeight: this._settings.get_int('indicator-height-active'),
+            roundness: this._settings.get_int('indicator-roundness-inactive'),
+            activeRoundness: this._settings.get_int('indicator-roundness-active'),
+            spacing: this._settings.get_int('indicator-spacing-inactive'),
+            activeSpacing: this._settings.get_int('indicator-spacing-active'),
             color: this._settings.get_string('indicator-color-inactive'),
             activeColor: this._settings.get_string('indicator-color-active'),
             position: this._settings.get_string('indicator-position'),
             dominantColor: this._settings.get_boolean('indicator-dominant-color-inactive'),
             activeDominantColor: this._settings.get_boolean('indicator-dominant-color-active'),
-            size: this._settings.get_int('indicator-size'),
-            maxIndicators: this._settings.get_int('indicator-display-limit'),
-            // notification badge
-            notificationBadgeColor: this._settings.get_string('notification-badge-color'),
-            notificationBadgeBorderColor: this._settings.get_string('notification-badge-border-color'),
-            notificationBadgePosition: this._settings.get_string('notification-badge-position'),
-            notificationBadgeSize: this._settings.get_int('notification-badge-size'),
-            notificationBadgeMargin: this._settings.get_int('notification-badge-margin')
-        };
+            maxIndicators: this._settings.get_int('indicator-display-limit')
+        }));
     }
 
     _updateIndicators() {
@@ -103,15 +129,15 @@ var AppButtonIndicator = class {
         this._isActive = this._appButton.isActive;
 
         // no need to display indicators
-        if (!this._config.enableIndicators || !this._appButton.windows) {
+        if (!this._appButton.windows) {
             this._destroyIndicators();
             return;
         }
 
         // count the maximum number of indicators to display
         let maxIndicators = (
-            this._appButton.windows > this._config.maxIndicators ?
-            this._config.maxIndicators :
+            this._appButton.windows > this._config.values.maxIndicators ?
+            this._config.values.maxIndicators :
             this._appButton.windows
         );
 
@@ -187,14 +213,16 @@ var AppButtonIndicator = class {
             return;
         }
 
+        const config = this._config.values;
+
         this._dominantColor = (
-            (this._config.dominantColor || this._config.activeDominantColor) && this._appButton.dominantColor ?
+            (config.dominantColor || config.activeDominantColor) && this._appButton.dominantColor ?
             `rgb(${this._appButton.dominantColor.r}, ${this._appButton.dominantColor.g}, ${this._appButton.dominantColor.b})` :
             null
         );
 
         const position = (
-            this._config.position === 'top' ?
+            config.position === 'top' ?
             Clutter.ActorAlign.START :
             Clutter.ActorAlign.END
         );
@@ -207,16 +235,24 @@ var AppButtonIndicator = class {
 
     _getIndicatorStyle(index) {
 
+        const config = this._config.values;
+
         const backgroundColor = (
-            this._isActive ? (this._config.activeDominantColor && this._dominantColor ? this._dominantColor : this._config.activeColor) :
-                             (this._config.dominantColor && this._dominantColor ? this._dominantColor : this._config.color) 
+            this._isActive ? (config.activeDominantColor && this._dominantColor ? this._dominantColor : config.activeColor) :
+                             (config.dominantColor && this._dominantColor ? this._dominantColor : config.color) 
         );
+
+        const [ width, height, roundness, spacing ] = (
+            this._isActive ? [ config.activeWidth, config.activeHeight, config.activeRoundness, config.activeSpacing ] :
+                             [ config.width, config.height, config.roundness, config.spacing ]
+        );
+
 
         let result = (
             `background-color: ${backgroundColor};` +
-            `width: ${this._config.size}px;` +
-            `height: ${this._config.size}px;` +
-            `border-radius: ${this._config.size}px;`
+            `width: ${width}px;` +
+            `height: ${height}px;` +
+            `border-radius: ${roundness}px;`
         );
 
         const indicatorsLength = this._indicators?.length || 0; 
@@ -228,7 +264,7 @@ var AppButtonIndicator = class {
 
         // add margins when multiple idicators exist
 
-        const margin = this._config.size + (this._config.size / 2);
+        const margin = width + spacing;
 
         if (index === 0 || index < (indicatorsLength - 1)) {
             const marginOffset = indicatorsLength - 1 - index;
@@ -279,130 +315,6 @@ var AppButtonIndicator = class {
                 indicator = null;
             }
         });
-    }
-
-    _updateNotificationBadge() {
-
-        const oldNotificationCount = this._notificationCount || 0;
-
-        this._notificationCount = this._appButton.notifications;
-
-        const show = (
-            this._config.enableNotificationBadges &&
-            this._layout &&
-            this._notificationCount > 0
-        );
-
-        if (!show) {
-
-            if (this._notificationBadge) {
-                this._notificationBadge.remove_all_transitions();
-
-                // destroy without animation
-                if (!this._layout) {
-                    this._notificationBadge.destroy();
-                    this._notificationBadge = null;
-                    return;
-                }
-
-                // reasign badge instance
-                let oldNotificationBadge = this._notificationBadge;
-                this._notificationBadge = null;
-
-                // animate and destroy
-                oldNotificationBadge.ease({
-                    opacity: 0,
-                    scale_x: 0.75,
-                    scale_y: 0.75,
-                    duration: 200,
-                    mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-                    onComplete: () => {
-                        oldNotificationBadge.destroy();
-                    }
-                });
-            }
-            
-            return;
-        }
-
-        if (this._notificationBadge) {
-            
-            // zoom out the badge when new notifications comes up
-            if (oldNotificationCount < this._notificationCount) {
-                IconGrid.zoomOutActor(this._notificationBadge);
-            }
-
-            return;
-        }
-
-        this._notificationBadge = new St.Bin({
-            name: 'taskbar-appButton-notification-badge',
-            x_expand: true,
-            y_expand: true,
-            x_align: Clutter.ActorAlign.END,
-            y_align: Clutter.ActorAlign.END,
-            opacity: 0,
-            scale_x: 0.75,
-            scale_y: 0.75
-        });
-
-        this._updateNotificationBadgeStyle();
-
-        this._layout.add_actor(this._notificationBadge);
-
-        this._notificationBadge.set_pivot_point(0.5, 0.5);
-
-        this._notificationBadge.ease({
-            opacity: 255,
-            scale_x: 1,
-            scale_y: 1,
-            duration: 300,
-            mode: Clutter.AnimationMode.EASE_OUT_QUAD
-        });
-    }
-
-    _updateNotificationBadgeStyle() {
-
-        if (!this._notificationBadge) {
-            return;
-        }
-
-        this._notificationBadge.style = (
-            `background-color: ${this._config.notificationBadgeColor};` +
-            `width: ${this._config.notificationBadgeSize}px;` +
-            `height: ${this._config.notificationBadgeSize}px;` +
-            `border-radius: ${this._config.notificationBadgeSize}px;` +
-            `border: 1px solid ${this._config.notificationBadgeBorderColor};`
-        );
-
-        // set position
-
-        this._notificationBadge.style += (
-            this._config.notificationBadgePosition === 'top_left' ||
-                this._config.notificationBadgePosition === 'top_right' ?
-            `margin-top: ${this._config.notificationBadgeMargin}px;` :
-            `margin-bottom: ${this._config.notificationBadgeMargin}px;`
-        ) + (
-            this._config.notificationBadgePosition === 'top_left' ||
-                this._config.notificationBadgePosition === 'bottom_left' ?
-            `margin-left: ${this._config.notificationBadgeMargin}px;` :
-            `margin-right: ${this._config.notificationBadgeMargin}px;`
-        );
-
-        this._notificationBadge.y_align = (
-            this._config.notificationBadgePosition === 'top_left' ||
-                this._config.notificationBadgePosition === 'top_right' ?
-            Clutter.ActorAlign.START :
-            Clutter.ActorAlign.END
-        );
-
-        this._notificationBadge.x_align = (
-            this._config.notificationBadgePosition === 'top_left' ||
-                this._config.notificationBadgePosition === 'bottom_left' ?
-            Clutter.ActorAlign.START :
-            Clutter.ActorAlign.END
-        );
-
     }
 
     //#endregion private methods

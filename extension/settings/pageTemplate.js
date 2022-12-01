@@ -281,6 +281,9 @@ var SettingsPageTemplate = GObject.registerClass(
                         case 's':
                             value = this._settings.get_string(settingsKey);
                             break;
+                        case 'i':
+                            value = this._settings.get_int(settingsKey);
+                            break;
                     }
 
                     if (keyHandler(value)) {
