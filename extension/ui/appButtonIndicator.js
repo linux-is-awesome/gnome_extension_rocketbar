@@ -3,7 +3,6 @@
 //#region imports
 
 const { Clutter, St } = imports.gi;
-const IconGrid = imports.ui.iconGrid;
 
 // custom modules import
 const ExtensionUtils = imports.misc.extensionUtils;
