@@ -140,6 +140,14 @@
             <default>2</default>
             <summary>Active Indicators spacing</summary>
         </key>
+        <key type="i" name="indicator-margin-inactive">
+            <default>0</default>
+            <summary>Inactive Indicators margin</summary>
+        </key>
+        <key type="i" name="indicator-margin-active">
+            <default>0</default>
+            <summary>Active Indicators margin</summary>
+        </key>
         <key type="i" name="indicator-display-limit">
             <default>3</default>
             <summary>Max number of indicators to display for running apps</summary>

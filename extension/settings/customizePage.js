@@ -201,7 +201,15 @@ var CustomizePage = GObject.registerClass(
                         _('Active Spacing'), 'indicator-spacing-active',
                         { min: 0, max: 50 }
                     )
-                ], { 'indicator-display-limit': value => value > 1 })
+                ], { 'indicator-display-limit': value => value > 1 }),
+                this.createSpinButton(
+                    _('Inactive Margin'), 'indicator-margin-inactive',
+                    { min: 0, max: 10 }
+                ),
+                this.createSpinButton(
+                    _('Active Margin'), 'indicator-margin-active',
+                    { min: 0, max: 10 }
+                )
             ]);
         }
 
