@@ -12,8 +12,13 @@
 /* tooltip */
 
 .rocketbar__tooltip {
+    padding: 3px;
+}
+.rocketbar__tooltip
+.dash-label {
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+    text-align: left;
 }
 .rocketbar__tooltip
 .rocketbar__tooltip_counter {

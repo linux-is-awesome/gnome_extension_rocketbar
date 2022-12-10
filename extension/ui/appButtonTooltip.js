@@ -2,7 +2,7 @@
 
 //#region imports
 
-const { Clutter, St } = imports.gi;
+const { Clutter, St, GObject } = imports.gi;
 const Main = imports.ui.main;
 
 // custom modules import
@@ -12,6 +12,79 @@ const { Timeout } = Me.imports.utils.timeout;
 const { IconProvider } = Me.imports.utils.iconProvider;
 
 //#endregion imports
+
+class WindowPreview {
+
+    constructor(window) {
+        this.actor = new St.Button({
+            x_align: Clutter.ActorAlign.START,
+            y_align: Clutter.ActorAlign.CENTER,
+            reactive: true
+        });
+
+        this.actor.connect('clicked', () => Main.activateWindow(window));
+                                         
+        const mutterWindow = window.get_compositor_private();
+
+        let [width, height] = mutterWindow.get_size();
+
+        let scale = Math.min(1.0, 200 / width, 200 / height);
+
+        this.actor.style = `width: ${width * scale}px; height: ${height * scale}px;`;
+
+        const windowClone = new Clutter.Clone({
+            source: window.get_compositor_private(),
+            reactive: false
+        });
+
+        this.actor.set_child(windowClone);
+    }
+
+}
+
+class WindowPreviewList {
+
+    constructor(appButton) {
+        this._appButton = appButton;
+
+        this._initialize();
+    }
+
+    isEmpty() {
+        return !this.actor;
+    }
+
+    _initialize() {
+
+        this._createLayout();
+    }
+
+    _createLayout() {
+
+        this.actor = new St.ScrollView({
+            hscrollbar_policy: St.PolicyType.NEVER,
+            vscrollbar_policy: St.PolicyType.NEVER,
+            enable_mouse_scrolling: true
+        });
+
+        this._container = new St.BoxLayout({
+            x_align: Clutter.ActorAlign.START,
+            y_align: Clutter.ActorAlign.CENTER,
+            style: 'margin-top: 5px; margin-bottom: 5px;'
+        });
+
+        this.actor.add_actor(this._container);
+
+        const workspaceIndex = global.workspace_manager.get_active_workspace_index();
+
+        const appWindows = this._appButton.app.get_windows().filter(window => window.get_workspace().index() === workspaceIndex);
+        
+        for (let window of appWindows) {
+            this._container.add_actor(new WindowPreview(window).actor);
+        }
+    }
+
+}
 
 class TooltipCounter {
 
@@ -57,17 +130,19 @@ var AppButtonTooltip = class {
 
     //#region public methods
 
-    constructor(appButton, settings) {
+    constructor(appButton, settings, showCallback = () => {}) {
 
         this._appButton = appButton;
+        this._settings = settings;
+        this._showCallback = showCallback;
 
         this._maxWidth = settings.get_int('tooltip-max-width');
+        
+        this._setConfig();
 
-        const showDelay = settings.get_int('tooltip-show-delay');
-
-        this._showTimeout = Timeout.default(showDelay).run(() => {
+        this._showTimeout = Timeout.default(this._config.showDelay).run(() => {
             this._showTimeout = null;
-            this._show();
+            this.show();
         });
     }
 
@@ -75,86 +150,180 @@ var AppButtonTooltip = class {
         this._update();
     }
 
+    show() {
+
+        this._hideTimeout?.destroy();
+        this._hideTimeout = null;
+
+        if (!this._tooltip) {
+            this._createTooltip();
+            this._update();
+        }
+
+        this._tooltipActor.remove_all_transitions();
+
+        this._tooltipActor.ease({
+            opacity: 255,
+            translation_y: 0,
+            duration: 300,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD
+        });
+
+        this._showCallback(true);
+    }
+
+    hide() {
+
+        if (!this._tooltip) {
+            this.destroy();
+            return;
+        }
+
+        this._hideTimeout = Timeout.default(this._config.hideDelay).run(() => {
+
+            this._hideTimeout = null;
+
+            this.destroy(true);
+        });
+    }
+
     destroy(animation) {
 
         this._showTimeout?.destroy();
+        this._hideTimeout?.destroy();
+        this._showTimeout = null;
+        this._hideTimeout = null;
 
         if (!this._tooltip) {
+            this._showCallback(false);
             return;
         }
 
-        this._tooltip.remove_all_transitions();
+        this._tooltipActor.remove_all_transitions();
 
-        if (animation) {
-            this._tooltip.ease({
-                opacity: 0,
-                duration: 200,
-                mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-                onComplete: () => this._tooltip.destroy()
-            });
+        if (!animation) {
+
+            this._tooltip.destroy();
+            this._tooltip = null;
+
+            this._showCallback(false);
+
             return;
         }
 
-        this._tooltip.destroy();
+        this._tooltipActor.ease({
+            opacity: 0,
+            translation_y: -this._config.popupOffset,
+            duration: 300,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            onComplete: () => this.destroy()
+        });
     }
 
     //#endregion public methods
 
     //#region private methods
 
-    _show() {
-
-        this._createTooltip();
-
-        this._update();
-
-        this._tooltip.ease({
-            opacity: 255,
-            duration: 300,
-            mode: Clutter.AnimationMode.EASE_OUT_QUAD
-        });
+    _setConfig() {
+        this._config = {
+            showDelay: this._settings.get_int('tooltip-show-delay'),
+            hideDelay: 200,
+            windowPreview: true,
+            popupOffset: 5
+        }
     }
 
     _createTooltip() {
 
-        this._tooltip = new St.BoxLayout({
+        this._tooltip = new St.Bin({
             name: 'appButton-tooltip',
-            style_class: 'dash-label rocketbar__tooltip',
+            style_class: 'rocketbar__tooltip'
+        });
+
+        this._tooltipActor = new St.BoxLayout({
+            name: 'appButton-tooltip-actor',
+            style_class: 'dash-label',
+            reactive: true,
+            track_hover: true,
+            translation_y: -this._config.popupOffset,
             opacity: 0
         });
+
+        this._tooltip.set_child(this._tooltipActor);
 
         // create tooltip text
 
         this._tooltipText = new St.Label({
             name: 'appButton-tooltip-text',
-            style: `max-width: ${this._maxWidth}px;`
+            style: `max-width: 200px;` //TODO
+            //style: `max-width: ${this._maxWidth}px;`
         });
 
-        this._tooltip.add_actor(this._tooltipText);
+        this._tooltipActor.add_actor(this._tooltipText);
+
+        // create window previews
+
+        if (this._config.windowPreview && this._appButton.windows) {
+            this._tooltipActor.set_vertical(true);
+            this._tooltipActor.style = 'border-radius: 8px;'
+            this._tooltipActor.add_actor(new WindowPreviewList(this._appButton).actor);
+        }
+
+        // create counters
+
+        this._createCounters();
+
+        // handle hover
+
+        if (this._appButton.windows) {
+            this._tooltipActor.connect('notify::hover', () => this._hover());
+        }
+
+        // all ui elements created!
+
+        Main.layoutManager.addChrome(this._tooltip);
+    }
+
+    _createCounters() {
+
+        const counters = new St.BoxLayout({
+            name: 'appButton-tooltip-counters',
+            x_align: Clutter.ActorAlign.CENTER
+        });
 
         // create windows counter
 
         this._windowsCounter = new TooltipCounter('window-symbolic', 2);
 
-        this._tooltip.add_actor(this._windowsCounter.actor);
+        counters.add_actor(this._windowsCounter.actor);
 
         // create notifications counter
 
         this._notificationsCounter = new TooltipCounter('notification-symbolic', 1);
 
-        this._tooltip.add_actor(this._notificationsCounter.actor);
+        counters.add_actor(this._notificationsCounter.actor);
 
         // create sound icons
 
         this._soundOutputVolume = new TooltipCounter('audio-speakers-symbolic');
         this._soundInputVolume = new TooltipCounter('audio-input-microphone-symbolic');
 
-        this._tooltip.add_actor(this._soundOutputVolume.actor);
-        this._tooltip.add_actor(this._soundInputVolume.actor);
+        counters.add_actor(this._soundOutputVolume.actor);
+        counters.add_actor(this._soundInputVolume.actor);
 
-        // all ui elements created!
+        this._tooltipActor.add_actor(counters);
+    }
 
-        Main.layoutManager.addChrome(this._tooltip);
+    _hover() {
+
+        if (this._tooltipActor.hover) {
+            this._hideTimeout?.destroy();
+            this._hideTimeout = null;
+            return;
+        }
+
+        // TODO
+        this.hide()
     }
 
     _update() {
@@ -231,9 +400,9 @@ var AppButtonTooltip = class {
 
         // if app button is on top of the screen
         if (y < 100) {
-            y = y + appButtonHeight + yOffset;
+            y = y + appButtonHeight;
         } else {
-            y = y - tooltipHeight - yOffset;
+            y = y - tooltipHeight;
         }
 
         x = Math.clamp(x + xOffset, 0, global.stage.width - tooltipWidth);
