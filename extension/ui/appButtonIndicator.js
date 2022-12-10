@@ -62,6 +62,8 @@ var AppButtonIndicator = class {
             'changed::indicator-roundness-active',
             'changed::indicator-spacing-inactive',
             'changed::indicator-spacing-active',
+            'changed::indicator-margin-inactive',
+            'changed::indicator-margin-active',
             'changed::indicator-dominant-color-active',
             'changed::indicator-dominant-color-inactive',
             'changed::indicator-color-active',
@@ -97,7 +99,9 @@ var AppButtonIndicator = class {
             'activeDominantColor',
             'color',
             'activeColor',
-            'position'
+            'position',
+            'margin',
+            'activeMargin'
         ], () => this._updateIndicatorsStyle());
     }
 
@@ -111,6 +115,8 @@ var AppButtonIndicator = class {
             activeRoundness: this._settings.get_int('indicator-roundness-active'),
             spacing: this._settings.get_int('indicator-spacing-inactive'),
             activeSpacing: this._settings.get_int('indicator-spacing-active'),
+            margin: this._settings.get_int('indicator-margin-inactive'),
+            activeMargin: this._settings.get_int('indicator-margin-active'),
             color: this._settings.get_string('indicator-color-inactive'),
             activeColor: this._settings.get_string('indicator-color-active'),
             position: this._settings.get_string('indicator-position'),
@@ -192,8 +198,13 @@ var AppButtonIndicator = class {
             y_expand: true,
             x_align: Clutter.ActorAlign.CENTER,
             y_align: Clutter.ActorAlign.START,
-            opacity: 0
+            opacity: 0,
+            translation_y: this._config.values.activeHeight * 2,
+            scale_x: 0,
+            scale_y: 0
         });
+
+        indicator.set_pivot_point(0.5, 0.5);
 
         this._indicators.push(indicator);
 
@@ -201,6 +212,9 @@ var AppButtonIndicator = class {
 
         indicator.ease({
             opacity: 255,
+            scale_x: 1,
+            scale_y: 1,
+            translation_y: 0,
             duration: 300,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD
         });
@@ -241,9 +255,9 @@ var AppButtonIndicator = class {
                              (config.dominantColor && this._dominantColor ? this._dominantColor : config.color) 
         );
 
-        const [ width, height, roundness, spacing ] = (
-            this._isActive ? [ config.activeWidth, config.activeHeight, config.activeRoundness, config.activeSpacing ] :
-                             [ config.width, config.height, config.roundness, config.spacing ]
+        const [ width, height, roundness, spacing, margin ] = (
+            this._isActive ? [ config.activeWidth, config.activeHeight, config.activeRoundness, config.activeSpacing, config.activeMargin ] :
+                             [ config.width, config.height, config.roundness, config.spacing, config.margin ]
         );
 
 
@@ -251,7 +265,8 @@ var AppButtonIndicator = class {
             `background-color: ${backgroundColor};` +
             `width: ${width}px;` +
             `height: ${height}px;` +
-            `border-radius: ${roundness}px;`
+            `border-radius: ${roundness}px;` +
+            `margin-${config.position}: ${margin}px;`
         );
 
         const indicatorsLength = this._indicators?.length || 0; 
@@ -263,15 +278,15 @@ var AppButtonIndicator = class {
 
         // add margins when multiple idicators exist
 
-        const margin = width + spacing;
+        const actualSpacing = width + spacing;
 
         if (index === 0 || index < (indicatorsLength - 1)) {
-            const marginOffset = indicatorsLength - 1 - index;
-            result += `margin-right: ${margin * marginOffset}px;`;
+            const offset = indicatorsLength - 1 - index;
+            result += `margin-right: ${actualSpacing * offset}px;`;
         }
 
         if (index > 0) {
-            result += `margin-left: ${margin * index}px;`;
+            result += `margin-left: ${actualSpacing * index}px;`;
         }
 
         return result;
@@ -307,7 +322,10 @@ var AppButtonIndicator = class {
 
         indicator.ease({
             opacity: 0,
-            duration: 200,
+            scale_x: 0,
+            scale_y: 0,
+            translation_y: this._config.values.activeHeight * 2,
+            duration: 300,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
             onComplete: () => {
                 indicator.destroy();
