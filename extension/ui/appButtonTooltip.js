@@ -128,6 +128,8 @@ class TooltipCounter {
 
 var AppButtonTooltip = class {
 
+    static _lastTooltip = null;
+
     //#region public methods
 
     constructor(appButton, settings, showCallback = () => {}) {
@@ -140,7 +142,13 @@ var AppButtonTooltip = class {
         
         this._setConfig();
 
-        this._showTimeout = Timeout.default(this._config.showDelay).run(() => {
+        const showDelay = (
+            AppButtonTooltip._lastTooltip ?
+            this._config.hideDelay :
+            this._config.showDelay
+        );
+
+        this._showTimeout = Timeout.default(showDelay).run(() => {
             this._showTimeout = null;
             this.show();
         });
@@ -160,13 +168,26 @@ var AppButtonTooltip = class {
             this._update();
         }
 
+        // replacing last tooltip
+        if (AppButtonTooltip._lastTooltip && AppButtonTooltip._lastTooltip !== this) {
+            AppButtonTooltip._lastTooltip.destroy();
+        } else if (!AppButtonTooltip._lastTooltip) {
+            this._tooltipActor.translation_y = -this._config.popupOffset;
+            this._tooltipActor.opacity = 0;
+        }
+
+        AppButtonTooltip._lastTooltip = this;
+
         this._tooltipActor.remove_all_transitions();
 
         this._tooltipActor.ease({
             opacity: 255,
             translation_y: 0,
             duration: 300,
-            mode: Clutter.AnimationMode.EASE_OUT_QUAD
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            onComplete: () => {
+                this._tooltipActor.reactive = true;
+            }
         });
 
         this._showCallback(true);
@@ -203,10 +224,14 @@ var AppButtonTooltip = class {
 
         if (!animation) {
 
+            this._showCallback(false);
+
+            if (AppButtonTooltip._lastTooltip === this) {
+                AppButtonTooltip._lastTooltip = null;
+            }
+
             this._tooltip.destroy();
             this._tooltip = null;
-
-            this._showCallback(false);
 
             return;
         }
@@ -244,9 +269,7 @@ var AppButtonTooltip = class {
             name: 'appButton-tooltip-actor',
             style_class: 'dash-label',
             reactive: true,
-            track_hover: true,
-            translation_y: -this._config.popupOffset,
-            opacity: 0
+            track_hover: true
         });
 
         this._tooltip.set_child(this._tooltipActor);
@@ -407,7 +430,30 @@ var AppButtonTooltip = class {
 
         x = Math.clamp(x + xOffset, 0, global.stage.width - tooltipWidth);
 
-        this._tooltip.set_position(x, y);
+        if (!AppButtonTooltip._lastTooltip) {
+            this._tooltip.set_position(x, y);
+            return;
+        }
+
+        this._tooltip.y = y;
+        this._tooltip.x = AppButtonTooltip._lastTooltip._tooltip.x;
+        this._tooltip.width = AppButtonTooltip._lastTooltip._tooltip.width;
+
+        // ease only when required
+
+        if (this._tooltip.x !== x) {
+            this._tooltip.ease({
+                x: x,
+                duration: 400
+            });
+        }
+
+        if (this._tooltip.width !== tooltipWidth) {
+            this._tooltip.ease({
+                width: tooltipWidth,
+                duration: 300
+            });
+        }
     }
 
     //#endregion private methods
