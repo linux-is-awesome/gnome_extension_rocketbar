@@ -577,6 +577,8 @@ var AppButton = GObject.registerClass(
 
             Main.overview.beginItemDrag(this);
 
+            this._tooltip?.destroy(true);
+
             this._triggerState('drag-start');
         }
 
@@ -664,7 +666,7 @@ var AppButton = GObject.registerClass(
             }
 
             // hide the tooltip if any
-            this._toggleTooltip(false);
+            this._tooltip?.destroy(true);
 
             const button = (
                 event.type() === Clutter.EventType.BUTTON_RELEASE ?
@@ -1253,10 +1255,7 @@ var AppButton = GObject.registerClass(
 
         _focus() {
 
-            let isFocused = (
-                this.has_key_focus() ||
-                this._menu?.isOpen
-            );
+            let isFocused = this._hasFocus();
 
             // show tooltip when focused and menu is not open
             this._toggleTooltip(isFocused && !this._menu?.isOpen);
@@ -1338,18 +1337,30 @@ var AppButton = GObject.registerClass(
                 return;
             }
 
-            if (show) {
-
-                if (this._tooltip) {
-                    return;
-                }
-
-                this._tooltip = new AppButtonTooltip(this, this._settings);
+            if (!show) {
+                this._tooltip?.hide();
                 return;
             }
 
-            this._tooltip?.destroy(true);
-            this._tooltip = null;
+            if (this._tooltip) {
+                this._tooltip.show();
+                return;
+            }
+
+            this._tooltip = new AppButtonTooltip(this, this._settings, shown => {
+
+                if (shown) {
+                    this._appIcon.add_style_pseudo_class('focus');
+                    return;
+                }
+
+                if (!this._hasFocus()) {
+                    this._appIcon.remove_style_pseudo_class('focus');
+                }
+
+                this._tooltip = null;
+
+            });
         }
 
         _setNotifications(count) {
@@ -1367,6 +1378,13 @@ var AppButton = GObject.registerClass(
 
         _isValid() {
             return this.mapped && this.get_stage() !== null;
+        }
+
+        _hasFocus() {
+            return (
+                this.has_key_focus() ||
+                this._menu?.isOpen
+            );
         }
 
         _triggerState(state) {
