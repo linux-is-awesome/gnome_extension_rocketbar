@@ -15,14 +15,21 @@ const { IconProvider } = Me.imports.utils.iconProvider;
 
 class WindowPreview {
 
-    constructor(window) {
+    constructor(window, callback) {
+
+        this._callback = callback;
+
         this.actor = new St.Button({
             x_align: Clutter.ActorAlign.START,
             y_align: Clutter.ActorAlign.CENTER,
-            reactive: true
+            reactive: true,
+            style_class: 'rocketbar__window-preview'
         });
 
-        this.actor.connect('clicked', () => Main.activateWindow(window));
+        this.actor.connect('clicked', () => {
+            Main.activateWindow(window);
+            callback();
+        });
                                          
         const mutterWindow = window.get_compositor_private();
 
@@ -38,25 +45,24 @@ class WindowPreview {
         });
 
         this.actor.set_child(windowClone);
+
+        if (window.has_focus()) {
+            this.actor.add_style_pseudo_class('focus');
+        }
     }
 
 }
 
 class WindowPreviewList {
 
-    constructor(appButton) {
+    constructor(appButton, settings, callback) {
+
         this._appButton = appButton;
-
-        this._initialize();
-    }
-
-    isEmpty() {
-        return !this.actor;
-    }
-
-    _initialize() {
+        this._settings = settings;
+        this._callback = callback;
 
         this._createLayout();
+        this._handleWindows();
     }
 
     _createLayout() {
@@ -74,16 +80,18 @@ class WindowPreviewList {
         });
 
         this.actor.add_actor(this._container);
+    }
+
+    _handleWindows() {
 
         const workspaceIndex = global.workspace_manager.get_active_workspace_index();
 
         const appWindows = this._appButton.app.get_windows().filter(window => window.get_workspace().index() === workspaceIndex);
-        
+
         for (let window of appWindows) {
-            this._container.add_actor(new WindowPreview(window).actor);
+            this._container.add_actor(new WindowPreview(window, this._callback).actor);
         }
     }
-
 }
 
 class TooltipCounter {
@@ -274,6 +282,8 @@ var AppButtonTooltip = class {
 
         this._tooltip.set_child(this._tooltipActor);
 
+        this._tooltipActor.connect('notify::hover', () => this._hover());
+
         // create tooltip text
 
         this._tooltipText = new St.Label({
@@ -287,20 +297,19 @@ var AppButtonTooltip = class {
         // create window previews
 
         if (this._config.windowPreview && this._appButton.windows) {
+
+            this._tooltip.add_style_class_name('has-window-preview');
             this._tooltipActor.set_vertical(true);
-            this._tooltipActor.style = 'border-radius: 8px;'
-            this._tooltipActor.add_actor(new WindowPreviewList(this._appButton).actor);
+
+            this._tooltipActor.add_actor(new WindowPreviewList(
+                this._appButton, this._settings,
+                () => this.destroy(true)
+            ).actor);
         }
 
         // create counters
 
         this._createCounters();
-
-        // handle hover
-
-        if (this._appButton.windows) {
-            this._tooltipActor.connect('notify::hover', () => this._hover());
-        }
 
         // all ui elements created!
 
@@ -338,6 +347,10 @@ var AppButtonTooltip = class {
     }
 
     _hover() {
+
+        if (!this._appButton.windows) {
+            return;
+        }
 
         if (this._tooltipActor.hover) {
             this._hideTimeout?.destroy();

@@ -20,6 +20,10 @@
     box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
     text-align: left;
 }
+.rocketbar__tooltip.has-window-preview
+.dash-label {
+    border-radius: 8px;
+}
 .rocketbar__tooltip
 .rocketbar__tooltip_counter {
     margin-left: 8px;
@@ -33,6 +37,19 @@
 .rocketbar__tooltip
 .rocketbar__tooltip_counter StLabel {
     margin-left: 5px;
+}
+
+/* window preview */
+
+.rocketbar__window-preview {
+    border: 3px transparent;
+    border-radius: 4px;
+}
+.rocketbar__window-preview:focus {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+.rocketbar__window-preview:hover {
+    border-color: rgba(255, 255, 255, 0.5);
 }
 
 /* popup menu */
