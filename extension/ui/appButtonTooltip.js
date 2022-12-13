@@ -2,7 +2,7 @@
 
 //#region imports
 
-const { Clutter, St, GObject, Shell } = imports.gi;
+const { Clutter, St, Shell } = imports.gi;
 const Main = imports.ui.main;
 
 // custom modules import
@@ -220,7 +220,9 @@ class TooltipCounter {
 
         this.actor = new St.BoxLayout({
             name: 'appButton-tooltip-counter',
-            style_class: 'rocketbar__tooltip_counter'
+            style_class: 'rocketbar__tooltip_counter',
+            opacity: 0,
+            visible: false
         });
 
         this.actor.add_actor(new St.Icon({
@@ -241,12 +243,19 @@ class TooltipCounter {
 
         this._label.text = count.toString();
 
+        this.actor.remove_all_transitions();
+
         if (count < this._minCount) {
             this.actor.hide();
+            this.actor.opacity = 0;
             return;
         }
 
         this.actor.show();
+        this.actor.ease({
+            opacity: 255,
+            duration: 500
+        });       
     }
 }
 
@@ -420,7 +429,7 @@ var AppButtonTooltip = class {
 
         const counters = new St.BoxLayout({
             name: 'appButton-tooltip-counters',
-            x_align: Clutter.ActorAlign.CENTER
+            x_align: Clutter.ActorAlign.FILL
         });
 
         // create windows counter
