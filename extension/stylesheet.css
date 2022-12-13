@@ -16,13 +16,9 @@
 }
 .rocketbar__tooltip
 .dash-label {
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px rgba(150, 150, 150, 0.1);
     box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
     text-align: left;
-}
-.rocketbar__tooltip.has-window-preview
-.dash-label {
-    border-radius: 8px;
 }
 .rocketbar__tooltip
 .rocketbar__tooltip_counter {
@@ -38,18 +34,33 @@
 .rocketbar__tooltip_counter StLabel {
     margin-left: 5px;
 }
+.rocketbar__tooltip.has-window-preview
+.dash-label {
+    border-radius: 8px;
+    padding: 0;
+    overflow: hidden;
+}
+.rocketbar__tooltip.has-window-preview
+.rocketbar__tooltip_counter {
+    margin-top: 3px;
+    margin-bottom: 6px;
+}
 
 /* window preview */
 
 .rocketbar__window-preview {
-    border: 3px transparent;
-    border-radius: 4px;
+    border-radius: 8px;
+    padding: 12px;
+    padding-top: 6px;
 }
 .rocketbar__window-preview:focus {
-    border-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 0.1);
 }
 .rocketbar__window-preview:hover {
-    border-color: rgba(255, 255, 255, 0.5);
+    background-color: rgba(255, 255, 255, 0.2);
+}
+.rocketbar__window-preview StLabel {
+    margin-bottom: 3px;
 }
 
 /* popup menu */

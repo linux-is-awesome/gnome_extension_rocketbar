@@ -2,7 +2,7 @@
 
 //#region imports
 
-const { Clutter, St, GObject } = imports.gi;
+const { Clutter, St, GObject, Shell } = imports.gi;
 const Main = imports.ui.main;
 
 // custom modules import
@@ -15,82 +15,198 @@ const { IconProvider } = Me.imports.utils.iconProvider;
 
 class WindowPreview {
 
-    constructor(window, callback) {
-
-        this._callback = callback;
+    constructor(window, settings, callback) {
 
         this.actor = new St.Button({
             x_align: Clutter.ActorAlign.START,
-            y_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.FILL,
+            button_mask: St.ButtonMask.ONE | St.ButtonMask.TWO | St.ButtonMask.THREE,
             reactive: true,
             style_class: 'rocketbar__window-preview'
         });
 
-        this.actor.connect('clicked', () => {
-            Main.activateWindow(window);
-            callback();
+        const layout = new St.BoxLayout({
+            vertical: true
         });
-                                         
+
+        this.actor.set_child(layout);  
+
         const mutterWindow = window.get_compositor_private();
 
         let [width, height] = mutterWindow.get_size();
 
-        let scale = Math.min(1.0, 200 / width, 200 / height);
+        const scale = Math.min(1, 200 / height, 200 / width);
 
-        this.actor.style = `width: ${width * scale}px; height: ${height * scale}px;`;
 
-        const windowClone = new Clutter.Clone({
-            source: window.get_compositor_private(),
-            reactive: false
+        layout.add_actor(new St.Label({
+            name: 'window-preview-text',
+            text: window.title,
+            style: `max-width: ${width * scale}px;`
+        }));
+
+
+        const windowClone = new St.Bin({
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER,
+            x_expand: true,
+            y_expand: true,
+            style: 'min-width: 200px; min-height: 112px;' // TODO: config aspect ratio!
         });
+        
+        windowClone.set_child(this.getClone(window));
 
-        this.actor.set_child(windowClone);
+        layout.add_actor(windowClone);
 
         if (window.has_focus()) {
             this.actor.add_style_pseudo_class('focus');
         }
+
+        this.actor.connect('clicked', () => {
+
+            const event = Clutter.get_current_event();
+
+            const button = (
+                event.type() === Clutter.EventType.BUTTON_RELEASE ?
+                event.get_button() :
+                null
+            );
+
+            const isMiddleButton = button === Clutter.BUTTON_MIDDLE;
+
+            if (isMiddleButton) {
+                const parent = this.actor.get_parent();
+
+                if (parent.get_children().length === 1) {
+                    //TODO
+                    callback();
+                    windowClone.get_child()?.destroy();
+                } else {
+                    this.actor.destroy();
+                }
+
+                parent.get_parent().get_parent().get_parent().queue_relayout();
+
+                window?.delete(global.get_current_time());
+                
+                return;
+            }
+
+            Main.activateWindow(window);
+
+            callback();
+        });
+    }
+
+    getClone(metaWindow) {
+
+        const clone = new Shell.WindowPreview({
+            style: `box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);`,
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER,
+            //offscreen_redirect: Clutter.OffscreenRedirect.AUTOMATIC_FOR_OPACITY
+        });
+
+        const mutterWindow = metaWindow.get_compositor_private();
+
+        let [width, height] = mutterWindow.get_size();
+
+        const scale = Math.min(1, 112 / height, 200 / width);
+
+        const windowContainer = new Clutter.Actor({
+            width: width * scale,
+            height: height * scale
+        });
+
+        clone.window_container = windowContainer;
+
+        windowContainer.layout_manager = new Shell.WindowPreviewLayout();
+
+        windowContainer.layout_manager.add_window(metaWindow);
+
+        clone.add_child(windowContainer);
+
+        return clone;
     }
 
 }
 
-class WindowPreviewList {
+class WindowPreviewContainer {
 
-    constructor(appButton, settings, callback) {
+    constructor(appButton, settings, clickHandler) {
 
         this._appButton = appButton;
         this._settings = settings;
-        this._callback = callback;
+        this._clickHandler = clickHandler;
 
-        this._createLayout();
-        this._handleWindows();
+        this._createActor();
     }
 
-    _createLayout() {
+    update() {
+
+        // currently we don't need to support recreating windows previews
+        if (this._layout.get_children().length) {
+            return;
+        }
+
+        this._handleAppWindows();
+    }
+
+    _createActor() {
 
         this.actor = new St.ScrollView({
-            hscrollbar_policy: St.PolicyType.NEVER,
-            vscrollbar_policy: St.PolicyType.NEVER,
-            enable_mouse_scrolling: true
+            name: 'appButton-tooltip-window-preview-container',
+            enable_mouse_scrolling: true,
+            clip_to_allocation: true,
+            reactive: false
         });
 
-        this._container = new St.BoxLayout({
+        this.actor.set_policy(St.PolicyType.EXTERNAL, St.PolicyType.NEVER);
+
+        this._layout = new St.BoxLayout({
+            name: 'appButton-tooltip-window-preview-container-layout',
             x_align: Clutter.ActorAlign.START,
-            y_align: Clutter.ActorAlign.CENTER,
-            style: 'margin-top: 5px; margin-bottom: 5px;'
+            y_align: Clutter.ActorAlign.CENTER
         });
 
-        this.actor.add_actor(this._container);
+        this.actor.add_actor(this._layout);
     }
 
-    _handleWindows() {
+    _handleAppWindows() {
+        let actorWidth = 0;
 
+        const appWindows = this._getAppWindows();
+
+        if (!appWindows.length) {
+            return;
+        }
+
+        for (let i = 0, l = appWindows.length; i < l; ++i) {
+
+            const windowPreviewActor = new WindowPreview(appWindows[i], this._settings, this._clickHandler).actor;
+
+            this._layout.add_actor(windowPreviewActor);
+
+            // calculate size for the actor
+
+            // TODO: this should be configurable
+            if (i > 2) {
+                continue;
+            }
+
+            const [previewWidth, previewHeight] = windowPreviewActor.get_size();
+
+            actorWidth += previewWidth;
+        }
+
+        // we set the initial max-width here
+        // there is no need to update it later for now
+        this.actor.style = `max-width: ${actorWidth}px;`;
+    }
+
+    _getAppWindows() {
         const workspaceIndex = global.workspace_manager.get_active_workspace_index();
 
-        const appWindows = this._appButton.app.get_windows().filter(window => window.get_workspace().index() === workspaceIndex);
-
-        for (let window of appWindows) {
-            this._container.add_actor(new WindowPreview(window, this._callback).actor);
-        }
+        return this._appButton.app.get_windows().filter(window => window.get_workspace().index() === workspaceIndex);
     }
 }
 
@@ -145,8 +261,6 @@ var AppButtonTooltip = class {
         this._appButton = appButton;
         this._settings = settings;
         this._showCallback = showCallback;
-
-        this._maxWidth = settings.get_int('tooltip-max-width');
         
         this._setConfig();
 
@@ -176,7 +290,6 @@ var AppButtonTooltip = class {
             this._update();
         }
 
-        // replacing last tooltip
         if (AppButtonTooltip._lastTooltip && AppButtonTooltip._lastTooltip !== this) {
             AppButtonTooltip._lastTooltip.destroy();
         } else if (!AppButtonTooltip._lastTooltip) {
@@ -192,10 +305,7 @@ var AppButtonTooltip = class {
             opacity: 255,
             translation_y: 0,
             duration: 300,
-            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-            onComplete: () => {
-                this._tooltipActor.reactive = true;
-            }
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD
         });
 
         this._showCallback(true);
@@ -259,6 +369,7 @@ var AppButtonTooltip = class {
 
     _setConfig() {
         this._config = {
+            maxWidth: this._settings.get_int('tooltip-max-width'),
             showDelay: this._settings.get_int('tooltip-show-delay'),
             hideDelay: 200,
             windowPreview: true,
@@ -284,27 +395,16 @@ var AppButtonTooltip = class {
 
         this._tooltipActor.connect('notify::hover', () => this._hover());
 
-        // create tooltip text
+        // create window previews or tooltip text
 
-        this._tooltipText = new St.Label({
-            name: 'appButton-tooltip-text',
-            style: `max-width: 200px;` //TODO
-            //style: `max-width: ${this._maxWidth}px;`
-        });
+        if (!this._createWindowsPreviews()) {
 
-        this._tooltipActor.add_actor(this._tooltipText);
+            this._tooltipText = new St.Label({
+                name: 'appButton-tooltip-text',
+                style: `max-width: ${this._config.maxWidth}px;`
+            });
 
-        // create window previews
-
-        if (this._config.windowPreview && this._appButton.windows) {
-
-            this._tooltip.add_style_class_name('has-window-preview');
-            this._tooltipActor.set_vertical(true);
-
-            this._tooltipActor.add_actor(new WindowPreviewList(
-                this._appButton, this._settings,
-                () => this.destroy(true)
-            ).actor);
+            this._tooltipActor.add_actor(this._tooltipText);
         }
 
         // create counters
@@ -364,6 +464,7 @@ var AppButtonTooltip = class {
 
     _update() {
 
+        // TODO: check that tooltip is not destroying
         if (!this._tooltip) {
             return;
         }
@@ -373,10 +474,17 @@ var AppButtonTooltip = class {
         this._updateNotificationsCount();
         this._updateSoundVolumeIndicators();
 
-        this._setPosition();
+        this._windowPreviewContainer?.update();
+
+        this._setPositionAndSize();
     }
 
     _updateAppTitle() {
+
+        if (!this._tooltipText) {
+            return;
+        }
+
         this._tooltipText.text = (
             this._appButton.activeWindow ?
             this._appButton.activeWindow.title :
@@ -414,11 +522,36 @@ var AppButtonTooltip = class {
 
     }
 
-    _setPosition() {
+    _createWindowsPreviews() {
+
+        if (!this._config.windowPreview || !this._appButton.windows) {
+            return false;
+        }
+
+        this._windowPreviewContainer = new WindowPreviewContainer(
+            this._appButton, this._settings,
+            () => this.destroy(true)
+        );
+
+        this._tooltipActor.add_actor(this._windowPreviewContainer.actor);
+
+        this._tooltip.add_style_class_name('has-window-preview');
+        this._tooltipActor.set_vertical(true);
+
+        return true;
+    }
+
+    _setPositionAndSize() {
 
         if (!this._tooltip) {
             return;
         }
+
+        const [lastX, lastWidth, lastHeight] = [
+            AppButtonTooltip._lastTooltip?._tooltip?.x,
+            AppButtonTooltip._lastTooltip?._tooltip?.width,
+            AppButtonTooltip._lastTooltip?._tooltip?.height
+        ];
 
         let [x, y] = this._appButton.get_transformed_position();
 
@@ -427,12 +560,13 @@ var AppButtonTooltip = class {
             this._appButton.allocation.get_height()
         ];
 
-        const [tooltipWidth, tooltipHeight] = this._tooltip.get_size();
+        // reset width and height to make the tooltip handle it's size correctly
+        this._tooltip.width = -1;
+        this._tooltip.height = -1;
+
+        let [tooltipWidth, tooltipHeight] = this._tooltip.get_size();
 
         const xOffset = Math.floor((appButtonWidth - tooltipWidth) / 2);
-        
-        // define a static vertical offset
-        const yOffset = 3;
 
         // if app button is on top of the screen
         if (y < 100) {
@@ -449,8 +583,19 @@ var AppButtonTooltip = class {
         }
 
         this._tooltip.y = y;
-        this._tooltip.x = AppButtonTooltip._lastTooltip._tooltip.x;
-        this._tooltip.width = AppButtonTooltip._lastTooltip._tooltip.width;
+        this._tooltip.x = lastX;
+        this._tooltip.width = lastWidth;
+
+        const heightDiff = (
+            lastHeight > this._tooltip.height ?
+            this._tooltip.height / lastHeight :
+            lastHeight / this._tooltip.height
+        );
+
+        // check if the height difference is not too much to allow animate it
+        if (heightDiff > 0.5) {
+            this._tooltip.height = lastHeight;
+        }
 
         // ease only when required
 
@@ -461,9 +606,11 @@ var AppButtonTooltip = class {
             });
         }
 
-        if (this._tooltip.width !== tooltipWidth) {
+        if (this._tooltip.width !== tooltipWidth ||
+                this._tooltip.height !== tooltipHeight) {
             this._tooltip.ease({
                 width: tooltipWidth,
+                height: tooltipHeight,
                 duration: 300
             });
         }

@@ -72,10 +72,10 @@ var Taskbar = GObject.registerClass(
             super._init({
                 name: 'taskbar', 
                 style_class: 'hfade',
+                clip_to_allocation: true,
                 reactive: false // allow to handle scroll events on the panel
             });
             this.set_policy(St.PolicyType.EXTERNAL, St.PolicyType.NEVER);
-            this.clip_to_allocation = true;
 
             // hide default app button in the panel
             Main.panel.statusArea.appMenu.container.hide();
