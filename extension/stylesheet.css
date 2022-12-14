@@ -52,6 +52,7 @@
     border-radius: 8px;
     padding: 12px;
     padding-top: 6px;
+    transition-duration: 0.1s;
 }
 .rocketbar__window-preview:focus {
     background-color: rgba(255, 255, 255, 0.1);
