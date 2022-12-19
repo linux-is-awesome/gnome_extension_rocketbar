@@ -174,7 +174,24 @@ var Component = class {
         }
         this.#positionHandlerId = this.connect(() => {
             if (this.#setPosition(this.#defaultPosition) &&
-                typeof callback === Type.Function) callback();
+                typeof callback === Type.Function) callback(this);
+        });
+        return this;
+    }
+
+    /**
+     * @param {Function} callback required
+     * @returns {Component} self
+     */
+    setRenderedCallback(callback) {
+        if (typeof callback !== Type.Function) return this;
+        if (this.isRendered) {
+            callback(this);
+            return this;
+        }
+        const handlerId = this.connect(Event.Mapped, () => {
+            this.disconnect(handlerId);
+            callback(this);
         });
         return this;
     }
@@ -212,7 +229,7 @@ var Component = class {
         if (!this.#isComponent(parent)) return;
         const broadcastCallback = parent.#broadcastCallback;
         if (typeof broadcastCallback === Type.Function &&
-            broadcastCallback(event, params)) return;
+            broadcastCallback({ event, params, target: parent, sender: this })) return;
         parent.broadcast(event, params);
     }
 
