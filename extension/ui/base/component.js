@@ -10,8 +10,8 @@ var Component = class {
     /** @type {St.Widget} */
     #actor = null;
 
-    /** @type {Function} */
-    #broadcastCallback = null;
+    /** @type {Function} { event, params, target, sender } => {...} */
+    #notifyCallback = null;
 
     /** @type {Number} */
     #defaultPosition = 0;
@@ -32,13 +32,13 @@ var Component = class {
 
     /** @type {Component} may return an instance of St.Widget instead */
     get parent() {
-        if (!this.isRendered) return null;
+        if (!this.isMapped) return null;
         const actorParent = this.#actor.get_parent();
         return this.#isComponent(actorParent._delegate) ?? actorParent;
     }
 
     /** @type {Boolean} */
-    get isRendered() {
+    get isMapped() {
         return this.isValid && this.#actor.mapped === true && this.#actor.get_stage() !== null;
     }
 
@@ -84,12 +84,15 @@ var Component = class {
             parent = parent.#actor;
         }
         if (parent instanceof St.Widget === false) return this;
+        this.#defaultPosition = position;
         const currentParent = this.parentActor;
         const isParentChanged = currentParent !== parent;
-        this.#defaultPosition = position;
-        if (isParentChanged) currentParent?.remove_child(this.#actor);
+        if (isParentChanged) {
+            currentParent?.remove_child(this.#actor);
+            this.#setMappedHandler();
+        }
         if (parent instanceof St.Bin) {
-            parent.set_child(this.#actor);
+            if (isParentChanged) parent.set_child(this.#actor);
             return this;
         }
         if (isParentChanged) parent.insert_child_at_index(this.#actor, position);
@@ -121,9 +124,9 @@ var Component = class {
      * @param {Number} height
      * @returns {Component} self
      */
-    setSize(width, height) {
+    setSize(width = -1, height = -1) {
         if (typeof width === Type.Number && typeof height === Type.Number) {
-            this.#actor.set_size(width, height);
+            this.#actor?.set_size(width, height);
         }
         return this;
     }
@@ -134,8 +137,8 @@ var Component = class {
      * @returns {Component} self
      */
     setAlign(x, y) {
-        this.#actor.set_x_align(x);
-        this.#actor.set_y_align(y);
+        this.#actor?.set_x_align(x);
+        this.#actor?.set_y_align(y);
         return this;
     }
 
@@ -145,8 +148,8 @@ var Component = class {
      * @returns {Component} self
      */
     setExpand(x, y) {
-        this.#actor.set_x_expand(x === true);
-        this.#actor.set_y_expand(y === true);
+        this.#actor?.set_x_expand(x === true);
+        this.#actor?.set_y_expand(y === true);
         return this;
     }
 
@@ -167,31 +170,12 @@ var Component = class {
      * @returns {Component} self
      */
     setPositionLock(state, callback) {
-        if (!state) {
-            if (this.#positionHandlerId) this.disconnect(this.#positionHandlerId);
-            this.#positionHandlerId = null;
-            return this;
-        }
-        this.#positionHandlerId = this.connect(() => {
+        if (this.#positionHandlerId) this.disconnect(this.#positionHandlerId);
+        this.#positionHandlerId = null;
+        if (!state) return;
+        this.#positionHandlerId = this.connect(Event.Position, () => {
             if (this.#setPosition(this.#defaultPosition) &&
                 typeof callback === Type.Function) callback(this);
-        });
-        return this;
-    }
-
-    /**
-     * @param {Function} callback required
-     * @returns {Component} self
-     */
-    setRenderedCallback(callback) {
-        if (typeof callback !== Type.Function) return this;
-        if (this.isRendered) {
-            callback(this);
-            return this;
-        }
-        const handlerId = this.connect(Event.Mapped, () => {
-            this.disconnect(handlerId);
-            callback(this);
         });
         return this;
     }
@@ -203,9 +187,9 @@ var Component = class {
      */
     connect(event, callback) {
         if (typeof event !== Type.String) return null;
-        if (event === Event.Broadcast) {
-            this.#broadcastCallback = callback;
-            return event;
+        if (event === Event.ComponentNotify) {
+            this.#notifyCallback = callback;
+            return null;
         }
         return this.#actor?.connect(event, callback);
     }
@@ -222,15 +206,36 @@ var Component = class {
     /**
      * @param {String} event required, a custom event
      * @param {Object} params optional
+     * @returns {Component} self
      */
-    broadcast(event, params) {
-        if (typeof event !== Type.String) return;
+    notifyParents(event, params) {
+        if (typeof event !== Type.String) return this;
         const parent = this.parent;
-        if (!this.#isComponent(parent)) return;
-        const broadcastCallback = parent.#broadcastCallback;
-        if (typeof broadcastCallback === Type.Function &&
-            broadcastCallback({ event, params, target: parent, sender: this })) return;
-        parent.broadcast(event, params);
+        if (!this.#isComponent(parent)) return this;
+        const notifyCallback = parent.#notifyCallback;
+        if (typeof notifyCallback === Type.Function &&
+            notifyCallback({ event, params, target: parent, sender: this })) return this;
+        return parent.notifyParents(event, params);
+    }
+
+    /**
+     * @param {String} event required, a custom event
+     * @param {Object} params optional
+     * @returns {Component} self
+     */
+    notifyChildren(event, params) {
+        if (typeof event !== Type.String) return this;
+        const children = this.#actor?.get_children();
+        if (!children?.length) return this;
+        for (let i = 0, l = children.length; i < l; ++i) {
+            /** @type {Component} */
+            const child = children[i]._delegate;
+            if (!this.#isComponent(child)) continue;
+            const notifyCallback = child.#notifyCallback;
+            if (typeof notifyCallback === Type.Function &&
+                notifyCallback({ event, params, target: child, sender: this })) return this;
+        }
+        return this;
     }
 
     #destroy() {
@@ -246,7 +251,9 @@ var Component = class {
     #setPosition(position) {
         if (typeof position !== Type.Number) return false;
         const parentActor = this.parentActor;
-        if (!parentActor || position > parentActor.get_n_children()) return false;
+        if (!parentActor) return false;
+        const maxPosition = parentActor.get_n_children();
+        if (position > maxPosition) position = maxPosition;
         const actorAtIndex = parentActor.get_child_at_index(position);
         if (actorAtIndex === this.#actor) return false;
         const componentAtIndex = this.#isComponent(actorAtIndex?._delegate);
@@ -261,6 +268,14 @@ var Component = class {
      */
     #isComponent(source) {
         return source instanceof Component ? source : null;
+    }
+
+    #setMappedHandler() {
+        const handlerId = this.connect(Event.Mapped, () => {
+            this.disconnect(handlerId);
+            if (typeof this.#notifyCallback !== Type.Function) return;
+            this.#notifyCallback({ event: Event.Mapped, target: this, sender: this });
+        });
     }
 
 }

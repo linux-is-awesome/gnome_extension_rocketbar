@@ -2,12 +2,12 @@
  * @enum {string}
  */
 var Event = {
-    Broadcast: 'broadcast',
+    ComponentNotify: 'component-notify',
     Hover: 'notify::hover',
     FocusIn: 'key-focus-in',
     FocusOut: 'key-focus-out',
     Destroy: 'destroy',
-    PositionChanged: 'notify::position',
+    Position: 'notify::position',
     Mapped: 'notify::mapped'
 }
 
