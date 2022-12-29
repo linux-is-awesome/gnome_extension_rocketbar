@@ -1,4 +1,4 @@
-/* exported ShellTweaks */
+/* exported Tweaks */
 
 //#region imports
 
@@ -12,7 +12,7 @@ const { WorkspaceSwitcherPopup } = imports.ui.workspaceSwitcherPopup;
 // custom modules import
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
-const { AppButtonMenu } = Me.imports.ui.appButtonMenu;
+const { AppMenu } = imports.ui.appMenu;
 const { SoundVolumeControl } = Me.imports.services.soundVolumeService;
 const { Connections } = Me.imports.utils.connections;
 const { ScrollHandler } = Me.imports.utils.scrollHandler;
@@ -20,7 +20,7 @@ const { Timeout } = Me.imports.utils.timeout;
 
 //#endregion imports
 
-var ShellTweaks = class {
+var Tweaks = class {
 
     constructor(settings) {
 
@@ -532,11 +532,11 @@ var ShellTweaks = class {
 
         Main.panel.menuManager._changeMenu = newMenu => {
 
-            const isNewAppButtonMenu = (newMenu && newMenu instanceof AppButtonMenu);
+            const isNewAppButtonMenu = (newMenu && newMenu instanceof AppMenu);
 
             const isActiveAppButtonMenu = (
                 Main.panel.menuManager.activeMenu &&
-                Main.panel.menuManager.activeMenu instanceof AppButtonMenu
+                Main.panel.menuManager.activeMenu instanceof AppMenu
             );
 
             if (this._config.panelMenuRequireClick && !isActiveAppButtonMenu) {

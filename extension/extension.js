@@ -1,13 +1,13 @@
 const ExtensionUtils = imports.misc.extensionUtils;
 
-let modules = null;
+let instance = null;
 
 var init = () => ExtensionUtils.initTranslations(),
     enable = () => {
-        const { Modules } = ExtensionUtils.getCurrentExtension().imports.main.modules;
-        modules = new Modules();
+        const { Main } = ExtensionUtils.getCurrentExtension().imports.core.main;
+        instance = new Main();
     },
     disable = () => {
-        modules?.destroy();
-        modules = null;
+        instance?.destroy();
+        instance = null;
     };
