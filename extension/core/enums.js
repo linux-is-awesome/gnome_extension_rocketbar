@@ -12,7 +12,7 @@ var Event = {
     DragEnd: 'drag-end',
     ButtonPress: 'button-press-event',
     Touch: 'touch-event'
-}
+};
 
 /**
  * @enum {string} Standard javascript types
@@ -21,4 +21,4 @@ var Type = {
     Function: 'function',
     String: 'string',
     Number: 'number'
-}
+};

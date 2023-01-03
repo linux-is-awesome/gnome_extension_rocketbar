@@ -1,10 +1,10 @@
 /* exported ComponentEvent, Component */
 
-const Extension = imports.misc.extensionUtils.getCurrentExtension();
+const Extension = imports.ui.extensionSystem.rocketbar;
 
 const Dnd = imports.ui.dnd;
 const { St } = imports.gi;
-const { Type, Event } = Extension.imports.ui.base.enums;
+const { Type, Event } = Extension.imports.core.enums;
 
 const DRAG_TIMEOUT_THRESHOLD = 200;
 
@@ -103,7 +103,7 @@ var Component = class {
      */
     constructor(actor) {
         if (actor instanceof St.Widget === false) {
-            throw `Unable to construct the component, ${actor} is not an instance of St.Widget.`;
+            throw new Error(`Unable to construct the component, ${actor} is not an instance of St.Widget.`);
         }
         this.#actor = actor;
         this.#actor._delegate = this;
@@ -156,7 +156,7 @@ var Component = class {
      */
     addChild(child, position = 0) {
         if (!this.#isComponent(child)) {
-            throw `Unable to add the child, ${child} is not an instance of Component.`;
+            throw new Error(`Unable to add the child, ${child} is not an instance of Component.`);
         }
         child.setParent(this.#actor, position);
         return this;
@@ -362,13 +362,13 @@ var Component = class {
         this.#dragHandlerIds = null;
         if (!enabled || !this.#actor) return;
         this.#dragMonitor = {};
-        this.#dragHandlerIds = [];
+        this.#dragHandlerIds = new Set();
         this.#draggable = Dnd.makeDraggable(this.#actor, { manualMode: true, timeoutThreshold: DRAG_TIMEOUT_THRESHOLD });
         this.#draggable.connect(Event.DragBegin, () => this.#dragBegin());
         this.#draggable.connect(Event.DragEnd, () => this.#dragEnd());
         this.#dragMonitor.dragMotion = event => this.#dragMotion(event);
-        this.#dragHandlerIds.push(this.#actor.connect(Event.ButtonPress, this.#draggable._onButtonPress.bind(this.#draggable)));
-        this.#dragHandlerIds.push(this.#actor.connect(Event.Touch, this.#draggable._onTouchEvent.bind(this.#draggable)));
+        this.#dragHandlerIds.add(this.#actor.connect(Event.ButtonPress, this.#draggable._onButtonPress.bind(this.#draggable)));
+        this.#dragHandlerIds.add(this.#actor.connect(Event.Touch, this.#draggable._onTouchEvent.bind(this.#draggable)));
     }
 
     #dragMotion(event) {
