@@ -1,7 +1,10 @@
+/* exported Event, Type */
+
 /**
- * @enum {string} Standard GObject events to handle
+ * @enum {String} Standard GObject events to handle
  */
 var Event = {
+    Visible: 'notify::visible',
     Hover: 'notify::hover',
     FocusIn: 'key-focus-in',
     FocusOut: 'key-focus-out',
@@ -15,7 +18,7 @@ var Event = {
 };
 
 /**
- * @enum {string} Standard javascript types
+ * @enum {String} Standard javascript types
  */
 var Type = {
     Function: 'function',

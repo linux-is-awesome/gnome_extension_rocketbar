@@ -9,11 +9,12 @@ const { Type, Event } = Extension.imports.core.enums;
 const DRAG_TIMEOUT_THRESHOLD = 200;
 
 /** 
- * @enum {string}
+ * @enum {String}
  */
 var ComponentEvent = {
     Notify: 'component::notify',
     Mapped: 'component::mapped',
+    Destroy: 'component::destroy',
     PositionLock: 'component::position-lock',
     AcceptDrop: 'component::accept-drop',
     DragOver: 'component::drag-over',
@@ -24,6 +25,9 @@ var ComponentEvent = {
 }
 
 var Component = class {
+
+    /** @type {Boolean} */
+    #isValid = true;
 
     /** @type {St.Widget} */
     #actor = null;
@@ -74,7 +78,7 @@ var Component = class {
 
     /** @type {Boolean} */
     get isValid() {
-        return this.#actor instanceof St.Widget;
+        return this.#isValid && this.#actor instanceof St.Widget;
     }
 
     /** @param {Number} value 0..999 */
@@ -175,9 +179,8 @@ var Component = class {
      * @returns {Component} self
      */
     setSize(width = -1, height = -1) {
-        if (typeof width === Type.Number && typeof height === Type.Number) {
-            this.#actor?.set_size(width, height);
-        }
+        if (typeof width === Type.Number &&
+            typeof height === Type.Number) this.#actor?.set_size(width, height);
         return this;
     }
 
@@ -267,6 +270,15 @@ var Component = class {
     }
 
     /**
+     * @param {String} event required, a custom event
+     * @param {Object} params optional
+     * @returns {Object} result
+     */
+    notifySelf(event, params) {
+        return this.#notifySelf(event, params);
+    }
+
+    /**
      * @param {Object} source required
      * @param {St.Widget} actor optional
      * @param {Number} x optional
@@ -305,9 +317,11 @@ var Component = class {
     }
 
     #destroy() {
+        this.#isValid = false;
+        this.#actor?.remove_all_transitions();
         this.#setDragEvents(false);
+        this.#notifySelf(ComponentEvent.Destroy);
         if (!this.#actor) return;
-        this.#actor.remove_all_transitions();
         this.#actor._delegate = null;
         this.#actor = null;
     }
@@ -402,7 +416,7 @@ var Component = class {
     }
 
     /**
-     * @param {String} event required, a custom event
+     * @param {String} event required
      * @param {Object} target required, this by default
      * @param {Object} params optional
      * @param {Component} sender optional, this by default

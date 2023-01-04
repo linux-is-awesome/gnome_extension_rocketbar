@@ -22,7 +22,9 @@ var Signals = class {
      */
     add(source, scope) {
         if (!this.#isValid(source, scope)) return this;
-        for (let i = 0, l = scope.length; i < l; ++i) this.#add(source, scope[i]);
+        const connections = this.#connections.get(source) || new Map();
+        for (let i = 0, l = scope.length; i < l; ++i) this.#add(connections, scope[i]);
+        if (connections.size) this.#connections.set(source, connections);
         return this;
     }
 
@@ -60,22 +62,20 @@ var Signals = class {
     }
 
     /**
-     * @param {Object} source 
+     * @param {Map<String, Array>} connections
      * @param {Array<Object>} scope [target, [event,...], callback]
      */
-    #add(source, scope) {
-        if (!this.#isValid(source, scope)) return; 
+    #add(connections, scope) {
+        if (!Array.isArray(scope) || !scope.length) return; 
         const [target, events, callback] = scope;
         if (typeof target?.connect !== Type.Function ||
             typeof callback !== Type.Function ||
             !Array.isArray(events) || !events.length) return;
-        let connections = this.#connections.get(source) || new Map();
         for (let i = 0, l = events.length; i < l; ++i) {
             const event = events[i];
             if (typeof event !== Type.String || connections.has(event)) continue;
             connections.set(event, [target, target.connect(event, callback)]);
         }
-        this.#connections.set(source, connections);
     }
 
     /**
