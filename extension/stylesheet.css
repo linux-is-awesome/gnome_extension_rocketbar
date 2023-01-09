@@ -96,4 +96,5 @@
 .rocketbar__notification-counter {
     font-weight: bold;
     text-align: center;
+    transition-duration: 0.1s;
 }
