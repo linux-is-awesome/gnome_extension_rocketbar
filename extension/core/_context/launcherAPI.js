@@ -10,7 +10,7 @@ const DBUS_SIGNAL_SOURCE = 'com.canonical.Unity.LauncherEntry';
 
 var LauncherAPI = class {
 
-    /** @type {Number} */
+    /** @type {number} */
     #connectionId = null;
 
     constructor() {
@@ -27,8 +27,8 @@ var LauncherAPI = class {
     }
 
     /**
-     * @param {Function} callback
-     * @returns {Number} handler id
+     * @param {(...args) => void} callback
+     * @returns {number}
      */
     connect(callback) {
         if (typeof callback !== Type.Function) return null;
@@ -39,7 +39,7 @@ var LauncherAPI = class {
     }
 
     /**
-     * @param {Number} id
+     * @param {number} id
      */
     disconnect(id) {
         if (typeof id !== Type.Number) return;

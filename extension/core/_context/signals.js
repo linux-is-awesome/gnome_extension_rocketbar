@@ -6,7 +6,7 @@ const { Type } = Extension.imports.core.enums;
 
 var Signals = class {
 
-    /** @type {Map<Object, Map<String, Array>>} */
+    /** @type {Map<*, Map<string, [target: *, id: number|string]>>} */
     #connections = new Map();
 
     destroy() {
@@ -16,22 +16,22 @@ var Signals = class {
     }
 
     /**
-     * @param {Object} source 
-     * @param {Array<Array<Object>>} scope [[target, [event,...], callback],...]
-     * @returns {Signals} self
+     * @param {*} source 
+     * @param {[[target: *, events: string[], callback: (...args) => *]]} scope
+     * @returns {this}
      */
     add(source, scope) {
         if (!this.#isValid(source, scope)) return this;
-        const connections = this.#connections.get(source) || new Map();
+        const connections = this.#connections.get(source) ?? new Map();
         for (let i = 0, l = scope.length; i < l; ++i) this.#add(connections, scope[i]);
         if (connections.size) this.#connections.set(source, connections);
         return this;
     }
 
     /**
-     * @param {Object} source 
-     * @param {Array<String>} events
-     * @returns {Signals} self
+     * @param {*} source 
+     * @param {string[]} events
+     * @returns {this}
      */
     remove(source, events) {
         if (!this.#isValid(source, events)) return this;
@@ -49,8 +49,8 @@ var Signals = class {
     }
 
     /**
-     * @param {Object} source 
-     * @returns {Signals} self
+     * @param {*} source 
+     * @returns {this}
      */
     removeAll(source) {
         if (!this.#connections || !source) return this;
@@ -62,8 +62,8 @@ var Signals = class {
     }
 
     /**
-     * @param {Map<String, Array>} connections
-     * @param {Array<Object>} scope [target, [event,...], callback]
+     * @param {Map<string, [target: *, id: number|string]>} connections
+     * @param {[target: *, events: string[], callback: (...args) => *]} scope
      */
     #add(connections, scope) {
         if (!Array.isArray(scope) || !scope.length) return; 
@@ -79,7 +79,7 @@ var Signals = class {
     }
 
     /**
-     * @param {Map<String, Array>} connections
+     * @param {Map<string, [target: *, id: number|string]>} connections
      */
     #disconnectAll(connections) {
         for (const [_, [target, id]] of connections) {
@@ -89,9 +89,9 @@ var Signals = class {
     }
 
     /**
-     * @param {Object} source 
+     * @param {*} source 
      * @param {Array} scope
-     * @returns {Boolean}
+     * @returns {boolean}
      */
     #isValid(source, scope) {
         return this.#connections && source && Array.isArray(scope) && scope.length > 0;

@@ -1,7 +1,7 @@
 /* exported Event, Type */
 
 /**
- * @enum {String} Standard GObject events to handle
+ * @enum {string} Standard GObject events to handle
  */
 var Event = {
     Visible: 'notify::visible',
@@ -14,11 +14,12 @@ var Event = {
     DragBegin: 'drag-begin',
     DragEnd: 'drag-end',
     ButtonPress: 'button-press-event',
-    Touch: 'touch-event'
+    Touch: 'touch-event',
+    FontName: 'notify::gtk-font-name'
 };
 
 /**
- * @enum {String} Standard javascript types
+ * @enum {string} Standard javascript types
  */
 var Type = {
     Function: 'function',

@@ -9,7 +9,7 @@ const { Type, Event } = Extension.imports.core.enums;
 const DRAG_TIMEOUT_THRESHOLD = 200;
 
 /** 
- * @enum {String}
+ * @enum {string}
  */
 var ComponentEvent = {
     Notify: 'component::notify',
@@ -26,7 +26,7 @@ var ComponentEvent = {
 
 var Component = class {
 
-    /** @type {Boolean} */
+    /** @type {boolean} */
     #isValid = true;
 
     /** @type {St.Widget} */
@@ -35,22 +35,22 @@ var Component = class {
     /** @type {Dnd._Draggable} */
     #draggable = null;
 
-    /** @type {Function} { event, params, target, sender } => {...} */
+    /** @type {(args: { event: string, params: *, target: *, sender: * }) => *} */
     #notifyCallback = null;
 
-    /** @type {Number} */
+    /** @type {number} */
     #defaultPosition = 0;
 
-    /** @type {Number} */
+    /** @type {number} */
     #positionHandlerId = null;
 
-    /** @type {Boolean} */
+    /** @type {boolean} */
     #dropEvents = false;
 
-    /** @type {Object} */
+    /** @type {*} */
     #dragMonitor = null;
 
-    /** @type {Array<Number>} */
+    /** @type {Array<number>} */
     #dragHandlerIds = null;
 
     /** @type {St.Widget} */
@@ -71,39 +71,39 @@ var Component = class {
         return this.#isComponent(actorParent?._delegate) ?? actorParent;
     }
 
-    /** @type {Boolean} */
+    /** @type {boolean} */
     get isMapped() {
         return this.isValid && this.#actor.mapped === true && this.#actor.get_stage() !== null;
     }
 
-    /** @type {Boolean} */
+    /** @type {boolean} */
     get isValid() {
         return this.#isValid && this.#actor instanceof St.Widget;
     }
 
-    /** @param {Number} value 0..999 */
+    /** @param {number} value 0..999 */
     set position(value) {
         if (!this.#setPosition(value)) return;
         this.#defaultPosition = value;
     }
 
-    /** @param {Boolean} enabled */
+    /** @param {boolean} enabled */
     set positionLock(enabled) {
         this.#setPositionLock(enabled);
     }
 
-    /** @param {Boolean} enabled */
+    /** @param {boolean} enabled */
     set dropEvents(enabled) {
         this.#dropEvents = enabled;
     }
 
-    /** @param {Boolean} enabled */
+    /** @param {boolean} enabled */
     set dragEvents(enabled) {
         this.#setDragEvents(enabled);
     }
 
     /**
-     * @param {St.Widget} actor required
+     * @param {St.Widget} actor
      */
     constructor(actor) {
         if (actor instanceof St.Widget === false) {
@@ -119,7 +119,7 @@ var Component = class {
     }
 
     /**
-     * @param {Function} callback required
+     * @param {(component: this) => this} callback
      */
     configure(callback) {
         if (typeof callback === Type.Function) callback(this);
@@ -127,9 +127,9 @@ var Component = class {
     }
 
     /**
-     * @param {St.Widget} parent required, Component instances are supported as well
-     * @param {Number} position optional, 0..999
-     * @returns {Component} self
+     * @param {St.Widget} parent Component instances are supported as well
+     * @param {number} [position] 0..999
+     * @returns {this}
      */
     setParent(parent, position = 0) {
         if (typeof position !== Type.Number) return this;
@@ -154,9 +154,9 @@ var Component = class {
     }
 
     /**
-     * @param {Component} child required
-     * @param {Number} position optional, 0..999
-     * @returns {Component} self
+     * @param {Component} child
+     * @param {number} [position] 0..999
+     * @returns {this}
      */
     addChild(child, position = 0) {
         if (!this.#isComponent(child)) {
@@ -167,16 +167,16 @@ var Component = class {
     }
 
     /**
-     * @returns {Component} self
+     * @returns {this}
      */
     resetSize() {
         return this.setSize(-1, -1);
     }
 
     /**
-     * @param {Number} width
-     * @param {Number} height
-     * @returns {Component} self
+     * @param {number} width
+     * @param {number} height
+     * @returns {this}
      */
     setSize(width = -1, height = -1) {
         if (typeof width === Type.Number &&
@@ -187,7 +187,7 @@ var Component = class {
     /**
      * @param {Clutter.ActorAlign} x
      * @param {Clutter.ActorAlign} y
-     * @returns {Component} self
+     * @returns {this}
      */
     setAlign(x, y) {
         this.#actor?.set_x_align(x);
@@ -196,9 +196,9 @@ var Component = class {
     }
 
     /**
-     * @param {Boolean} x
-     * @param {Boolean} y
-     * @returns {Component} self
+     * @param {boolean} x
+     * @param {boolean} y
+     * @returns {this}
      */
     setExpand(x, y) {
         this.#actor?.set_x_expand(x === true);
@@ -207,25 +207,23 @@ var Component = class {
     }
 
     /**
-     * @param {String} event required
-     * @param {Function} callback required
-     * @returns {Number|String} handler id
+     * @param {string} event
+     * @param {(...args) => *} callback
+     * @returns {number|string}
      */
     connect(event, callback) {
         if (typeof event !== Type.String ||
             typeof callback !== Type.Function) return null;
-        switch (event) {
-            case ComponentEvent.Notify:
-                this.#notifyCallback = callback;
-                return event;
-            default:
+        if (event === ComponentEvent.Notify) {
+            this.#notifyCallback = callback;
+            return event;
         }
         return this.#actor?.connect(event, callback);
     }
 
     /**
-     * @param {Number|String} id required
-     * @returns {Component} self
+     * @param {number|string} id
+     * @returns {this}
      */
     disconnect(id) {
         if (typeof id === Type.Number) {
@@ -233,28 +231,25 @@ var Component = class {
             return this;
         }
         if (typeof id !== Type.String) return this;
-        switch (id) {
-            case ComponentEvent.Notify:
-                this.#notifyCallback = null;
-                break;
-            default:
+        if (id === ComponentEvent.Notify) {
+            this.#notifyCallback = null;
         }
         return this;
     }
 
     /**
-     * @param {String} event required, a custom event
-     * @param {Object} params optional
-     * @returns {Component} self
+     * @param {string} event a custom event
+     * @param {*} [params]
+     * @returns {this}
      */
     notifyParents(event, params) {
-        return this.#notifyParents(this, event, params);
+        return this.#notifyParents(event, params);
     }
 
     /**
-     * @param {String} event required, a custom event
-     * @param {Object} params optional
-     * @returns {Component} self
+     * @param {string} event a custom event
+     * @param {*} [params]
+     * @returns {this}
      */
     notifyChildren(event, params) {
         if (typeof event !== Type.String) return this;
@@ -270,20 +265,20 @@ var Component = class {
     }
 
     /**
-     * @param {String} event required, a custom event
-     * @param {Object} params optional
-     * @returns {Object} result
+     * @param {string} event a custom event
+     * @param {*} [params]
+     * @returns {this}
      */
     notifySelf(event, params) {
-        return this.#notifySelf(event, params);
+        return this.#notifySelf(event, this, params);
     }
 
     /**
-     * @param {Object} source required
-     * @param {St.Widget} actor optional
-     * @param {Number} x optional
-     * @param {Number} y optional
-     * @returns {Boolean} result
+     * @param {*} source
+     * @param {St.Widget} [actor]
+     * @param {number} [x]
+     * @param {number} [y]
+     * @returns {boolean}
      */
     acceptDrop(source, actor, x, y) {
         if (!this.#dropEvents) return false;
@@ -291,11 +286,11 @@ var Component = class {
     }
 
     /**
-     * @param {Object} source required
-     * @param {St.Widget} actor optional
-     * @param {Number} x optional
-     * @param {Number} y optional
-     * @returns {Boolean} result
+     * @param {*} source
+     * @param {St.Widget} [actor]
+     * @param {number} [x]
+     * @param {number} [y]
+     * @returns {Dnd.DragMotionResult}
      */
     handleDragOver(source, actor, x, y) {
         if (!this.#dropEvents) return Dnd.DragMotionResult.CONTINUE;
@@ -303,14 +298,14 @@ var Component = class {
     }
 
     /**
-     * @returns {St.Widget} result
+     * @returns {St.Widget}
      */
     getDragActor() {
         return this.#notifySelf(ComponentEvent.DragActorRequest) ?? this.#actor;
     }
 
     /**
-     * @returns {St.Widget} this component's actor
+     * @returns {St.Widget}
      */
     getDragActorSource() {
         return this.#actor;
@@ -334,7 +329,7 @@ var Component = class {
     }
 
     /**
-     * @param {Boolean} enabled required
+     * @param {boolean} enabled
      */
     #setPositionLock(enabled) {
         if (this.#positionHandlerId) this.#actor?.disconnect(this.#positionHandlerId);
@@ -347,8 +342,8 @@ var Component = class {
     }
 
     /**
-     * @param {Number} position required, 0..999
-     * @returns {Boolean}
+     * @param {number} position 0..999
+     * @returns {boolean}
      */
     #setPosition(position) {
         if (typeof position !== Type.Number) return false;
@@ -365,7 +360,7 @@ var Component = class {
     }
 
     /**
-     * @param {Boolean} enabled required
+     * @param {boolean} enabled
      */
     #setDragEvents(enabled) {
         if (this.#dragMonitor) Dnd.removeDragMonitor(this.#dragMonitor);
@@ -385,6 +380,10 @@ var Component = class {
         this.#dragHandlerIds.add(this.#actor.connect(Event.Touch, this.#draggable._onTouchEvent.bind(this.#draggable)));
     }
 
+    /**
+     * @param {{ x: number, y: number, source: *, dragActor: *,  targetActor: * }} event
+     * @returns {Dnd.DragMotionResult}
+     */
     #dragMotion(event) {
         return this.#notifySelf(ComponentEvent.DragMotion, this, event) ?? Dnd.DragMotionResult.CONTINUE;
     }
@@ -402,33 +401,33 @@ var Component = class {
     }
 
     /**
-     * @param {Component} sender required
-     * @param {String} event required, a custom event
-     * @param {Object} params optional
-     * @returns {Component} self
+     * @param {string} event a custom event
+     * @param {*} [params]
+     * @param {Component} [sender=this]
+     * @returns {this}
      */
-    #notifyParents(sender, event, params) {
+    #notifyParents(event, params, sender = this) {
         if (typeof event !== Type.String) return this;
         const parent = this.parent;
         if (!this.#isComponent(parent)) return this;
         if (parent.#notifySelf(event, parent, params, sender)) return this;
-        return parent.#notifyParents(sender, event, params);
+        return parent.#notifyParents(event, params, sender);
     }
 
     /**
-     * @param {String} event required
-     * @param {Object} target required, this by default
-     * @param {Object} params optional
-     * @param {Component} sender optional, this by default
-     * @returns {Object} result
+     * @param {string} event a custom event
+     * @param {*} [target=this]
+     * @param {*} [params]
+     * @param {Component} [sender=this]
+     * @returns {*}
      */
-    #notifySelf(event, target, params, sender) {
+    #notifySelf(event, target = this, params, sender = this) {
         if (typeof this.#notifyCallback !== Type.Function) return null;
-        return this.#notifyCallback({ event, target: target ?? this, params, sender: sender ?? this });
+        return this.#notifyCallback({ event, target, params, sender });
     }
 
     /**
-     * @param {Object} source 
+     * @param {*} source 
      * @returns {Component|null}
      */
     #isComponent(source) {

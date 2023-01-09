@@ -23,8 +23,8 @@ var Icons = class {
     }
 
     /**
-     * @param {String} name
-     * @param {Number} size
+     * @param {string} name
+     * @param {number} size
      * @returns {Gio.Icon}
      */
     get(name, size) {
@@ -34,8 +34,8 @@ var Icons = class {
     }
 
     /**
-     * @param {String} name
-     * @param {Number} size
+     * @param {string} name
+     * @param {number} size
      * @returns {Gtk.IconInfo}
      */
     getInfo(name, size) {
@@ -45,7 +45,7 @@ var Icons = class {
     }
 
     /**
-     * @param {String} path
+     * @param {string} path
      * @returns {Gio.Icon}
      */
     getCustom(path) {
@@ -56,8 +56,8 @@ var Icons = class {
     }
 
     /**
-     * @param {String} path
-     * @returns {Boolean}
+     * @param {string} path
+     * @returns {boolean}
      */
     #isIconPath(path) {
         if (typeof path !== Type.String || !path.length) return false;
