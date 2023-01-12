@@ -91,6 +91,16 @@ var ShellTweaks = class {
 
     _handleSettings() {
 
+        if (Main.screenShield && Main.screenShield._lockDialogGroup && !Main.screenShield._lockDialogGroup._ease) {
+            Main.screenShield._lockDialogGroup._ease = Main.screenShield._lockDialogGroup.ease;
+            Main.screenShield._lockDialogGroup.ease = (params) => {
+                if (params) {
+                    params.delay = 50;
+                }
+                Main.screenShield._lockDialogGroup._ease(params);
+            };
+        }
+
         this._setConfig();
 
         if (this._config.overviewKillDash) {
