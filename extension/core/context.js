@@ -1,19 +1,24 @@
 /* exported Context */
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Extension = imports.ui.extensionSystem.rocketbar;
+import { Modules } from './context/modules.js';
+import { Async } from './context/async.js';
+import { Signals } from './context/signals.js';
+import { Icons } from './context/icons.js';
+import { LauncherAPI } from './context/launcherAPI.js';
 
-const { Signals } = Extension.imports.core._context.signals;
-const { Icons } = Extension.imports.core._context.icons;
-const { LauncherAPI } = Extension.imports.core._context.launcherAPI;
-
-var Context = class {
+export class Context {
 
     /** @type {Context} */
     static #instance = null;
 
-    /** @type {Gio.Settings} */
-    #settings = null;
+    /** @type {{path: string, metadata: Object.<string, string>, settings: Gio.Settings}} */
+    #extensionInfo = null;
+
+    /** @type {Modules} */
+    #modules = null;
+
+    /** @type {Async} */
+    #async = null;
 
     /** @type {Signals} */
     #signals = null;
@@ -24,12 +29,25 @@ var Context = class {
     /** @type {LauncherAPI} */
     #launcherAPI = new LauncherAPI();
 
+    static get path() {
+        return Context.#getInstance().#extensionInfo?.path;
+    }
+
+    static get metadata() {
+        return Context.#getInstance().#extensionInfo?.metadata;
+    }
+
     /** @type {Gio.Settings} */
     static get settings() {
+        return Context.#getInstance().#extensionInfo?.settings;
+    }
+
+    /** @type {Async} */
+    static get async() {
         const instance = Context.#getInstance();
-        if (instance.#settings) return instance.#settings;
-        instance.#settings = ExtensionUtils.getSettings();
-        return instance.#settings;
+        if (instance.#async) return instance.#async;
+        instance.#async = new Async();
+        return instance.#async;
     }
 
     /** @type {Signals} */
@@ -58,16 +76,27 @@ var Context = class {
         return new Context();
     }
 
-    constructor() {
+    /**
+     * @param {{path: string, metadata: Object.<string, string>, settings: Gio.Settings}} extensionInfo 
+     */
+    constructor(extensionInfo) {
+        this.#extensionInfo = extensionInfo;
         if (Context.#instance instanceof Context) return;
         Context.#instance = this;
+        this.#modules = new Modules();
     }
 
     destroy() {
-        this.#settings?.run_dispose();
+        this.#modules?.destroy();
+        this.#modules = null;
         this.#signals?.destroy();
+        this.#signals = null;
         this.#icons?.destroy();
+        this.#icons = null;
         this.#launcherAPI?.destroy();
+        this.#launcherAPI = null;
+        this.#extensionInfo?.settings?.run_dispose();
+        this.#extensionInfo = null;
         if (Context.#instance !== this) return;
         Context.#instance = null;
     }

@@ -3,7 +3,7 @@
 /**
  * @enum {string} Standard GObject events to handle
  */
-var Event = {
+export const Event = {
     Visible: 'notify::visible',
     Hover: 'notify::hover',
     FocusIn: 'key-focus-in',
@@ -21,8 +21,9 @@ var Event = {
 /**
  * @enum {string} Standard javascript types
  */
-var Type = {
+export const Type = {
     Function: 'function',
     String: 'string',
-    Number: 'number'
+    Number: 'number',
+    Boolean: 'boolean'
 };

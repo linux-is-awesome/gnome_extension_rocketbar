@@ -1,12 +1,10 @@
 /* exported AnimationDuration, AnimationType, Animation */
 
-const Extension = imports.ui.extensionSystem.rocketbar;
-
-const { St, Clutter } = imports.gi;
-const { Component } = Extension.imports.ui.base.component;
+import St from 'gi://St';
+import { Component } from './component.js';
 
 /** @enum {number} */
-var AnimationDuration = {
+export const AnimationDuration = {
     Faster: 100,
     Fast: 200,
     Normal: 300,
@@ -15,7 +13,7 @@ var AnimationDuration = {
 };
 
 /** @enum {*} */
-var AnimationType = {
+export const AnimationType = {
     ScaleMax: { scale_x: 1, scale_y: 1 },
     ScaleMin: { scale_x: 0, scale_y: 0 },
     OpacityMax: { opacity: 255 },
@@ -28,11 +26,10 @@ var AnimationType = {
  * @param {*} [params]
  * @returns {Promise}
  */
-var Animation = (actor, duration = 0, params = {}) => {
+export const Animation = (actor, duration = 0, params = {}) => {
     if (actor instanceof Component) {
         actor = actor.actor;
     }
     if (actor instanceof St.Widget === false) return null;
-    if (!duration) return new Promise(resolve => resolve());
     return new Promise(resolve => actor.ease({ ...params, duration, onComplete: resolve }));
 };

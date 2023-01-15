@@ -1,32 +1,19 @@
 /* exported Config */
 
-const Extension = imports.ui.extensionSystem.rocketbar;
-
-const { GLib } = imports.gi;
-const { Context } = Extension.imports.core.context;
-const { Type } = Extension.imports.core.enums;
-
-/**
- * @param {GLib.Variant} value 
- * @returns {string|number|boolean}
- */
-const translateValue = (value) => ({
-    s: () => value.get_string()?.toString()?.replace(/,[^,]+$/, ''),
-    b: () => value.get_boolean(),
-    i: () => value.get_int32()
-})[value?.get_type_string()]?.call();
+import { Context } from '../core/context.js';
+import { Type } from '../core/enums.js';
 
 /**
  * @typedef {string} settingsKey
  * @typedef {string|number|boolean} value
  * 
- * @param {*} source
+ * @param {*} client
  * @param {Object.<string, string> & {fieldName: settingsKey}} fields
  * @param {(settingsKey: string) => void} [callback]
  * @returns {Object.<string, string|number|boolean> & {fieldName: value}}
  */
-var Config = (source, fields, callback) => {
-    if (!source || !fields) return null;
+export const Config = (client, fields, callback) => {
+    if (!client || !fields) return null;
     /** @type {Gio.Settings} */
     const settings = Context.settings;
     /** @type {Object.<string, string|number|boolean>} */
@@ -39,12 +26,12 @@ var Config = (source, fields, callback) => {
         const settingsKey = fields[fieldName];
         if (typeof settingsKey !== Type.String) continue;
         valueMapping.set(settingsKey, fieldName);
-        values[fieldName] = translateValue(settings.get_value(settingsKey));
+        values[fieldName] = settings.get_value(settingsKey)?.unpack();
         signals.push(`changed::${settingsKey}`);
     }
     if (!signals.length) return values;
-    Context.signals.add(source, [[settings, signals, (_, key) => {
-        values[valueMapping.get(key)] = translateValue(settings.get_value(key));
+    Context.signals.add(client, [[settings, signals, (_, key) => {
+        values[valueMapping.get(key)] = settings.get_value(key)?.unpack();
         if (typeof callback === Type.Function) callback(key);
     }]]);
     return values;

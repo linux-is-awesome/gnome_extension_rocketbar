@@ -1,348 +1,249 @@
 /* exported NotificationHandler */
 
-//#region imports
+import { Main } from '../core/legacy.js';
+import { Context } from '../core/context.js'
+import { Type } from '../core/enums.js'
+import { Config } from '../utils/config.js';
 
-const Main = imports.ui.main;
-const { FdoNotificationDaemonSource, GtkNotificationDaemonAppSource } = imports.ui.notificationDaemon;
-const { WindowAttentionSource } = imports.ui.windowAttentionHandler;
+// TODO: replace!
+//const { Timeout } = Extension.imports.utils.timeout;
 
-// custom modules import
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { Timeout } = Me.imports.utils.timeout;
-const { Connections } = Me.imports.utils.connections;
-const { LauncherAPI } = Me.imports.utils.launcherAPI;
+/** @enum {string} */
+const ConfigFields = {
+    enableLauncherApi: 'notification-service-enable-unity-dbus',
+    countAttentionSources: 'notification-service-count-attention-sources'
+};
 
-//#endregion imports
+/** @enum {string} */
+const MessageTrayEvent = {
+    SourceAdded: 'source-added',
+    SourceRemoved: 'source-removed',
+    QueueChanged: 'queue-changed'
+};
 
-class UnityDBusConnector {
+/** @enum {string} */
+const NotificationSource = {
+    FdoNotification: 'FdoNotificationDaemonSource',
+    GtkNotification: 'GtkNotificationDaemonAppSource',
+    WindowAttention: 'WindowAttentionSource'
+};
 
-    // store the counters in a static variable
-    // to restore them after unlocking user's session
-    static _countByAppId = null; // Map
+class LauncherApiConnector {
 
+    /** @type {Map<string, number>} */
+    static #countByAppId = null;
+
+    /** @type {() => void} */
+    #callback = null;
+
+    /** @type {Map<string, number>} */
+    get count() {
+        return LauncherApiConnector.#countByAppId;
+    }
+
+    /**
+     * @param {() => void} callback
+     */
     constructor(callback) {
-        this._callback = callback;
-
-        if (!UnityDBusConnector._countByAppId) {
-            UnityDBusConnector._countByAppId = new Map();
-        } else {
-            this._callback();
-        }
-
-        this._dbusHandler = LauncherAPI.instance().subscribe(params => this._update(params));
+        this.#callback = callback;
+        if (!LauncherApiConnector.#countByAppId) {
+            LauncherApiConnector.#countByAppId = new Map();
+        } else this.#triggerCallback();
+        Context.launcherAPI.connect(this, params => this.#update(params));
     }
 
     destroy() {
-        LauncherAPI.instance().unsubscribe(this._dbusHandler);
+        Context.launcherAPI.disconnect(this);
+        this.#callback = null;
     }
 
-    getCount(callback) {
-
-        if (!UnityDBusConnector._countByAppId?.size || !callback) {
-            return;
-        }
-
-        UnityDBusConnector._countByAppId.forEach(callback);
-    }
-
-    _update(params) {
-
-        if (!params || !UnityDBusConnector._countByAppId) {
-            return;
-        }
-
+    /**
+     * @param {GLib.Variant} params
+     */
+    #update(params) {
+        if (!LauncherApiConnector.#countByAppId || !params) return;
         const [ appUri, props ] = params.deepUnpack();
-
         const appId = appUri?.replace(/(^\w+:|^)\/\//, '');
-
-        if (!appId || !props) {
-            return;
-        }
-
+        if (!appId || !props) return;
+        const countByAppId = LauncherApiConnector.#countByAppId;
         const count = props['count']?.get_int64() ?? 0;
         const countVisible = props['count-visible']?.get_boolean() ?? false;
+        if (count && countVisible) countByAppId.set(appId, count);
+        else if (!countByAppId.has(appId)) return;
+        else countByAppId.delete(appId);
+        this.#triggerCallback();
+    }
 
-        if (!count || !countVisible) {
-
-            // no need to trigger the callback as nothing has changed
-            if (!UnityDBusConnector._countByAppId.has(appId)) {
-                return;
-            }
-
-            UnityDBusConnector._countByAppId.delete(appId);
-        } else {
-            UnityDBusConnector._countByAppId.set(appId, count);
-        }
-
-        this._callback();
+    #triggerCallback() {
+        if (typeof this.#callback === Type.Function) this.#callback();
     }
 
 }
 
 class NotificationService {
 
-    constructor(settings) {
+    #notificationSourceAppId = (source) => ({
+        [NotificationSource.FdoNotification]: source.app?.id,
+        [NotificationSource.GtkNotification]: source._appId,
+        [NotificationSource.WindowAttention]: source._app?.id
+    })[source.constructor?.name];
 
-        this._settings = settings;
-        this._handlers = []; // [NotificationHandler...]
+    #sources = new Map();
 
-        this._resetCounts();
+    #handlers = new Set();
 
-        this._createSources();
+    #countByAppId = new Map();
 
-        this._handleSettings();
+    #totalCount = 0;
 
-        this._createConnections();
+    #launcherApiConnector = null;
+
+    #config = Config(this, ConfigFields, () => this.#handleConfig().#queueUpdate());
+
+    get isEmpty() {
+        return !this.#handlers?.size;
     }
 
-    addHandler(handler) {
-
-        if (!handler) {
-            return;
-        }
-
-        this._handlers.push(handler);
-
-        this._triggerHandler(handler);
-    }
-
-    removeHandler(handler) {
-
-        if (!handler) {
-            return;
-        }
-
-        const handlerIndex = this._handlers.indexOf(handler);
-
-        if (handlerIndex < 0) {
-            return;
-        }
-
-        this._handlers.splice(handlerIndex, 1);
-    }
-
-    isEmpty() {
-        return !this._handlers.length;
+    constructor() {
+        this.#handleConfig();
+        this.#initSources();
+        Context.signals.add(this, [
+            [Main.messageTray, [MessageTrayEvent.SourceAdded], (_, source) => this.#addSource(source)],
+            [Main.messageTray, [MessageTrayEvent.SourceRemoved], (_, source) => this.#removeSource(source)],
+            [Main.messageTray, [MessageTrayEvent.QueueChanged], () => this.#queueUpdate()]
+        ]);
     }
 
     destroy() {
-
-        this._stopUpdateCountQueue();
-
-        this._unityDBusConnector?.destroy();
-
-        this._connections.destroy();
+        Context.signals.removeAll(this);
+        this.#launcherApiConnector?.destroy();
+        this.#stopUpdate();
+        this.#handlers = null;
     }
 
-    _createConnections() {
-        this._connections = new Connections();
-        this._connections.add(Main.messageTray, 'source-added', (tray, source) => this._addSource(source));
-        this._connections.add(Main.messageTray, 'source-removed', (tray, source) => this._removeSource(source));
-        this._connections.add(Main.messageTray, 'queue-changed', () => this._queueUpdateCount());
-        // handle settings
-        this._connections.addScope(this._settings, [
-            'changed::notification-service-enable-unity-dbus',
-            'changed::notification-service-count-attention-sources'
-        ], () => {
-            this._handleSettings();
-            this._queueUpdateCount();
-        });
+    addHandler(handler) {
+        if (!this.#handlers || handler instanceof NotificationHandler === false) return;
+        this.#handlers.add(handler);
+        this.#triggerHandler(handler);
     }
 
-    _handleSettings() {
+    removeHandler(handler) {
+        if (!handler || !this.#handlers?.has(handler)) return;
+        this.#handlers.delete(handler);
+    }
 
-        this._setConfig();
-
-        if (this._config.enableUnityDBus && !this._unityDBusConnector) {
-            this._unityDBusConnector = new UnityDBusConnector(() => this._queueUpdateCount());
-        } else if (!this._config.enableUnityDBus && this._unityDBusConnector) {
-            this._unityDBusConnector.destroy();
-            this._unityDBusConnector = null;
+    #handleConfig() {
+        if (this.#config.enableLauncherApi && !this.#launcherApiConnector) {
+            this.#launcherApiConnector = new LauncherApiConnector(() => this.#queueUpdate());
+        } else if (!this.#config.enableLauncherApi && this.launcherApiConnector) {
+            this.#launcherApiConnector.destroy();
+            this.#launcherApiConnector = null;
         }
+        return this;
     }
 
-    _setConfig() {
-        this._config = {
-            enableUnityDBus: this._settings.get_boolean('notification-service-enable-unity-dbus'),
-            countAttentionSources: this._settings.get_boolean('notification-service-count-attention-sources')
-        };
+    #initSources() {
+        const sources = Main.messageTray?.getSources();
+        if (!sources?.length) return;
+        for (let i = 0, l = sources.length; i < l; ++i) this.#addSource(sources[i]);
     }
 
-    _createSources() {
-
-        this._sources = new Map(); // source => connection id
-
-        const messageTraySources = Main.messageTray.getSources();
-
-        if (!messageTraySources.length) {
-            return;
-        }
-
-        for (let i = 0, l = messageTraySources.length; i < l; ++i) {
-            this._addSource(messageTraySources[i]);
-        }
+    #addSource(source) {
+        if (this.#sources.has(source)) return;
+        if (typeof source?.connect !== Type.Function) return;
+        this.#sources.set(source, source.connect('notify::count', () => this.#queueUpdate()));
+        this.#queueUpdate();
     }
 
-    _addSource(source) {
-
-        if (!this._sources.has(source)) {
-            this._sources.set(source, source.connect('notify::count', () => this._queueUpdateCount()));
-        }
-
-        this._queueUpdateCount();
+    #removeSource(source) {
+        if (!this.#sources.has(source)) return;
+        if (typeof source.disconnect === Type.Function) source.disconnect(this.#sources.get(source));
+        this.#sources.delete(source);
+        this.#queueUpdate();
     }
 
-    _removeSource(source) {
-
-        if (this._sources.has(source)) {
-            source.disconnect(this._sources.get(source));
-            this._sources.delete(source);
-        }
- 
-        this._queueUpdateCount();
+    #queueUpdate() {
+        this.#stopUpdate();
+        //this._updateCountTimeout = Timeout.idle(500).run(() => {
+        //     this._updateCountTimeout = null;
+            this.#update();
+        //});
     }
 
-    _queueUpdateCount() {
-
-        this._stopUpdateCountQueue();
-
-        // slow down it a bit
-        // I believe we can wait for 500 ms to get notifications
-        this._updateCountTimeout = Timeout.idle(500).run(() => {
-            this._updateCountTimeout = null;
-            this._updateCount();
-        });
-    }
-
-    _stopUpdateCountQueue() {
+    #stopUpdate() {
         this._updateCountTimeout?.destroy();
         this._updateCountTimeout = null;
     }
 
-    _updateCount() {
-
-        this._resetCounts();
-
-        let unityAppIds = new Set();
-
-        // let's use the Unity dbus connection
-        // as the source of truth to count notifications for apps
-        this._unityDBusConnector?.getCount((count, appId) => {
-            unityAppIds.add(appId);
-            this._countByAppId.set(appId, count);
-        });
-
-        const sources = [...this._sources.keys()];      
-
+    #update() {
+        if (!this.#handlers) return; 
+        this.#totalCount = 0;
+        const launcherApiCount = this.#launcherApiConnector?.count;
+        if (!launcherApiCount) this.#countByAppId.clear();
+        else this.#countByAppId = new Map([...launcherApiCount]);
+        const sources = [...this.#sources.keys()];
         for (let i = 0, l = sources.length; i < l; ++i) {
-
             const source = sources[i];
-            const sourceCount = source.count || 0;
-
-            this._totalCount += sourceCount;
-
-            // count notifications for apps
-
-            let appId = null;
-
-            if (source instanceof FdoNotificationDaemonSource) {
-                appId = source.app ? source.app.id : null;
-            } else if (source instanceof GtkNotificationDaemonAppSource) {
-                appId = source._appId;
-            } else if (source instanceof WindowAttentionSource && this._config.countAttentionSources) {
-                appId = source._app ? source._app.id : null;
-            } else {
-                continue;
-            }
-
-            if (!appId || unityAppIds.has(appId)) {
-                continue;
-            }
-
-            let countForApp = this._countByAppId.get(appId) || 0;
-
+            const sourceCount = source.count ?? 0;
+            this.#totalCount += sourceCount;
+            let appId = this.#notificationSourceAppId(source);
+            if (!appId || launcherApiCount?.has(appId)) continue;
+            let countForApp = this.#countByAppId.get(appId) ?? 0;
             countForApp += sourceCount;
-            
-            if (countForApp === 0) {
-                continue;
-            }
-
-            this._countByAppId.set(appId, countForApp);
+            if (!countForApp) continue;
+            this.#countByAppId.set(appId, countForApp);
         }
-
-        this._triggerHandlers();
+        console.log('Update notifications');
+        this.#triggerHandlers();
     }
 
-    _resetCounts() {
-        this._totalCount = 0;
-        this._countByAppId = new Map();
+    #triggerHandlers() {
+        for (const handler of this.#handlers) this.#triggerHandler(handler);
     }
 
-    _triggerHandlers() {
-        for (let i = 0, l = this._handlers.length; i < l; ++i) {
-            this._triggerHandler(this._handlers[i]);
-        }
-    }
-
-    _triggerHandler(handler) {
-
-        if (!handler.appId) {
-            handler.setCount(this._totalCount);
-            return;
-        }
-
-        handler.setCount(this._countByAppId.get(handler.appId) || 0);
+    #triggerHandler(handler) {
+        if (typeof handler.appId !== Type.String) handler.setCount(this.#totalCount);
+        else handler.setCount(this.#countByAppId.get(handler.appId) ?? 0);
     }
 }
 
-var NotificationHandler = class {
+export class NotificationHandler {
 
-    // static instance of NotificationService
-    static _service = null;
+    static #service = null;
 
-    /*
-     * callback: (count) => {} to notify handler target about notifications
-     * appId: optional string value to filter notifications by app Id, null to get total count
-     */
-    constructor(callback, settings, appId) {
-        
-        this.appId = appId;
+    #callback = null;
 
-        this._callback = callback;
+    #appId = null;
 
-        if (!NotificationHandler._service) {
-            NotificationHandler._service = new NotificationService(settings);
+    get appId() {
+        return this.#appId;
+    }
+
+    constructor(callback, appId) {
+        if (typeof callback !== Type.Function) return; 
+        this.#callback = callback;
+        if (typeof appId === Type.String) {
+            this.#appId = appId;
         }
-
-        NotificationHandler._service.addHandler(this);
+        if (!NotificationHandler.#service) {
+            NotificationHandler.#service = new NotificationService();
+        }
+        NotificationHandler.#service.addHandler(this);
     }
 
     destroy() {
-
         this.setCount(0);
-
-        this._callback = null;
-
-        if (!NotificationHandler._service) {
-            return;
-        }
-
-        NotificationHandler._service.removeHandler(this);
-
-        if (NotificationHandler._service.isEmpty()) {
-            NotificationHandler._service.destroy();
-            NotificationHandler._service = null;
-        }
+        this.#callback = null;
+        this.#appId = null; 
+        NotificationHandler.#service?.removeHandler(this);
+        if (!NotificationHandler.#service?.isEmpty) return;
+        NotificationHandler.#service.destroy();
+        NotificationHandler.#service = null;
     }
 
     setCount(count) {
-
-        if (!this._callback) {
-            return;
-        }
-
-        this._callback(count);
+        if (typeof this.#callback !== Type.Function) return; 
+        this.#callback(count);
     }
 
 }

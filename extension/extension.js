@@ -1,16 +1,33 @@
-const ExtensionUtils = imports.misc.extensionUtils;
+/* exported init */
 
-let instance = null;
+class Extension {
 
-var init = () => ExtensionUtils.initTranslations(),
-    enable = () => {
-        const extensionSystem = imports.ui.extensionSystem;
-        extensionSystem.rocketbar = ExtensionUtils.getCurrentExtension();
-        const { Main } = extensionSystem.rocketbar.imports.core.main;
-        instance = new Main();
-    },
-    disable = () => {
-        instance?.destroy();
-        instance = null;
-        delete imports.ui.extensionSystem.rocketbar;
-    };
+    #instance = null;
+
+    constructor() {
+        const extensionUtils = imports.misc.extensionUtils;
+        extensionUtils.initTranslations();
+    }
+
+    enable() {
+        const extensionInfo = this.#getExtensionInfo();
+        import('./core/context.js').then(({ Context }) => {
+            this.#instance = new Context(extensionInfo);
+        }).catch(e => console.error(`${extensionInfo.metadata.name} initialization failed.`, e));
+    }
+
+    disable() {
+        this.#instance?.destroy();
+        this.#instance = null;
+    }
+
+    #getExtensionInfo() {
+        const extensionUtils = imports.misc.extensionUtils;
+        const extension = extensionUtils.getCurrentExtension();
+        const settings = extensionUtils.getSettings();
+        return { ...extension, ...{ settings } };
+    }
+
+}
+
+var init = () => new Extension();

@@ -1,15 +1,16 @@
 /* exported NotificationCounter */
 
-const Extension = imports.ui.extensionSystem.rocketbar;
-
-const { GObject, St, Gtk, Clutter } = imports.gi;
-const { Context } = Extension.imports.core.context;
-const { Type, Event } = Extension.imports.core.enums;
-const { ComponentEvent } = Extension.imports.ui.base.component;
-const { Layout } = Extension.imports.ui.base.layout;
-const { Animation, AnimationDuration, AnimationType } = Extension.imports.ui.base.animation;
-const { NotificationHandler } = Extension.imports.services.notificationService;
-const { Config } = Extension.imports.utils.config;
+import GObject from 'gi://GObject';
+import St from 'gi://St';
+import Gtk from 'gi://Gtk';
+import Clutter from 'gi://Clutter';
+import { Context } from '../core/context.js';
+import { Event } from '../core/enums.js';
+import { ComponentEvent } from './base/component.js';
+import { Layout } from './base/layout.js';
+import { Animation, AnimationDuration, AnimationType } from './base/animation.js';
+import { NotificationHandler } from '../services/notificationService.js';
+import { Config } from '../utils/config.js';
 
 const MODULE_NAME = 'Rocketbar__NotificationCounter';
 const DATE_MENU_STYLE_CLASS = 'rocketbar__date-menu';
@@ -19,7 +20,6 @@ const COUNTER_STYLE_CLASS = 'rocketbar__notification-counter';
 const COUNTER_EMPTY_COLOR = 'transparent';
 const COUNTER_EMPTY_BORDER_SIZE = 2;
 const COUNTER_LONG_VALUE_PADDING = 3;
-
 
 /** @enum {string} */
 const DateMenuEvent = {
@@ -45,8 +45,8 @@ const ConfigFields = {
 class DateMenu extends Layout {
 
     /**
-     * @param {{ event: string }} data
-     * @returns {Function}
+     * @param {{event: string}} data
+     * @returns {void}
      */
     #notifyHandler = (data) => ({
         [ComponentEvent.Destroy]: this.#destroy
@@ -118,11 +118,11 @@ class DateMenu extends Layout {
 
 }
 
-var NotificationCounter = class extends Layout {
+export class NotificationCounter extends Layout {
 
     /**
-     * @param {{ event: string }} data
-     * @returns {Function}
+     * @param {{event: string}} data
+     * @returns {void}
      */
     #notifyHandler = (data) => ({
         [ComponentEvent.Destroy]: this.#destroy,
@@ -131,7 +131,7 @@ var NotificationCounter = class extends Layout {
     })[data?.event]?.call(this);
 
     /** @type {St.Label} */
-    #counter = null; 
+    #counter = null;
 
     /** @type {number} */
     #count = 0;
@@ -214,7 +214,7 @@ var NotificationCounter = class extends Layout {
     }
 
     /**
-     * @param {Number} count
+     * @param {number} count
      */
     #setCount(count) {
         if (!this.isValid) return; 

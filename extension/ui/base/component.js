@@ -1,17 +1,15 @@
 /* exported ComponentEvent, Component */
 
-const Extension = imports.ui.extensionSystem.rocketbar;
-
-const Dnd = imports.ui.dnd;
-const { St } = imports.gi;
-const { Type, Event } = Extension.imports.core.enums;
+import St from 'gi://St';
+import { Dnd } from '../../core/legacy.js'; 
+import { Type, Event } from '../../core/enums.js';
 
 const DRAG_TIMEOUT_THRESHOLD = 200;
 
 /** 
  * @enum {string}
  */
-var ComponentEvent = {
+export const ComponentEvent = {
     Notify: 'component::notify',
     Mapped: 'component::mapped',
     Destroy: 'component::destroy',
@@ -24,7 +22,7 @@ var ComponentEvent = {
     DragActorRequest: 'component::drag-actor-request'
 }
 
-var Component = class {
+export class Component {
 
     /** @type {boolean} */
     #isValid = true;
@@ -107,7 +105,7 @@ var Component = class {
      */
     constructor(actor) {
         if (actor instanceof St.Widget === false) {
-            throw new Error(`Unable to construct the component, ${actor} is not an instance of St.Widget.`);
+            throw new Error(`Unable to construct the component, ${actor} is not an instance of St.Widget`);
         }
         this.#actor = actor;
         this.#actor._delegate = this;
@@ -119,10 +117,20 @@ var Component = class {
     }
 
     /**
-     * @param {(component: this) => this} callback
+     * @param {(component: this) => void} callback
+     * @returns {this}
      */
     configure(callback) {
         if (typeof callback === Type.Function) callback(this);
+        return this;
+    }
+
+    /**
+     * @param {Object.<string, *>} params
+     * @returns {this}
+     */
+    setParams(params) {
+        this.#actor.set(params ?? {});
         return this;
     }
 
@@ -160,7 +168,7 @@ var Component = class {
      */
     addChild(child, position = 0) {
         if (!this.#isComponent(child)) {
-            throw new Error(`Unable to add the child, ${child} is not an instance of Component.`);
+            throw new Error(`Unable to add the child, ${child} is not an instance of Component`);
         }
         child.setParent(this.#actor, position);
         return this;
@@ -423,7 +431,12 @@ var Component = class {
      */
     #notifySelf(event, target = this, params, sender = this) {
         if (typeof this.#notifyCallback !== Type.Function) return null;
-        return this.#notifyCallback({ event, target, params, sender });
+        try {
+            return this.#notifyCallback({ event, target, params, sender });
+        } catch (e) {
+            logError(e, `Component notify failed for event ${event}`);
+            return null;
+        }
     }
 
     /**
