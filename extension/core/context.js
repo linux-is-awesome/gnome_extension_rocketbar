@@ -1,7 +1,7 @@
 /* exported Context */
 
 import { Modules } from './context/modules.js';
-import { Async } from './context/async.js';
+import { Jobs } from './context/jobs.js';
 import { Signals } from './context/signals.js';
 import { Icons } from './context/icons.js';
 import { LauncherAPI } from './context/launcherAPI.js';
@@ -11,14 +11,17 @@ export class Context {
     /** @type {Context} */
     static #instance = null;
 
+    // TODO
+    static #sessionCache = null;
+
     /** @type {{path: string, metadata: Object.<string, string>, settings: Gio.Settings}} */
     #extensionInfo = null;
 
     /** @type {Modules} */
     #modules = null;
 
-    /** @type {Async} */
-    #async = null;
+    /** @type {Jobs} */
+    #jobs = null;
 
     /** @type {Signals} */
     #signals = null;
@@ -42,12 +45,12 @@ export class Context {
         return Context.#getInstance().#extensionInfo?.settings;
     }
 
-    /** @type {Async} */
-    static get async() {
+    /** @type {Jobs} */
+    static get jobs() {
         const instance = Context.#getInstance();
-        if (instance.#async) return instance.#async;
-        instance.#async = new Async();
-        return instance.#async;
+        if (instance.#jobs) return instance.#jobs;
+        instance.#jobs = new Jobs();
+        return instance.#jobs;
     }
 
     /** @type {Signals} */
@@ -89,6 +92,8 @@ export class Context {
     destroy() {
         this.#modules?.destroy();
         this.#modules = null;
+        this.#jobs?.destroy();
+        this.#jobs = null;
         this.#signals?.destroy();
         this.#signals = null;
         this.#icons?.destroy();

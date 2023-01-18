@@ -2,11 +2,8 @@
 
 import { Main } from '../core/legacy.js';
 import { Context } from '../core/context.js'
-import { Type } from '../core/enums.js'
+import { Type, Delay } from '../core/enums.js'
 import { Config } from '../utils/config.js';
-
-// TODO: replace!
-//const { Timeout } = Extension.imports.utils.timeout;
 
 /** @enum {string} */
 const ConfigFields = {
@@ -98,6 +95,8 @@ class NotificationService {
 
     #launcherApiConnector = null;
 
+    #updateJob = Context.jobs.new(this, Delay.Background);
+
     #config = Config(this, ConfigFields, () => this.#handleConfig().#queueUpdate());
 
     get isEmpty() {
@@ -115,9 +114,9 @@ class NotificationService {
     }
 
     destroy() {
+        this.#updateJob?.destroy();
         Context.signals.removeAll(this);
         this.#launcherApiConnector?.destroy();
-        this.#stopUpdate();
         this.#handlers = null;
     }
 
@@ -163,16 +162,7 @@ class NotificationService {
     }
 
     #queueUpdate() {
-        this.#stopUpdate();
-        //this._updateCountTimeout = Timeout.idle(500).run(() => {
-        //     this._updateCountTimeout = null;
-            this.#update();
-        //});
-    }
-
-    #stopUpdate() {
-        this._updateCountTimeout?.destroy();
-        this._updateCountTimeout = null;
+        this.#updateJob.reset().then(() => this.#update());
     }
 
     #update() {

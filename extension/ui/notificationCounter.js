@@ -5,7 +5,7 @@ import St from 'gi://St';
 import Gtk from 'gi://Gtk';
 import Clutter from 'gi://Clutter';
 import { Context } from '../core/context.js';
-import { Event } from '../core/enums.js';
+import { Event, Delay } from '../core/enums.js';
 import { ComponentEvent } from './base/component.js';
 import { Layout } from './base/layout.js';
 import { Animation, AnimationDuration, AnimationType } from './base/animation.js';
@@ -126,7 +126,7 @@ export class NotificationCounter extends Layout {
      */
     #notifyHandler = (data) => ({
         [ComponentEvent.Destroy]: this.#destroy,
-        [ComponentEvent.Mapped]: this.#rerender,
+        [ComponentEvent.Mapped]: () => Context.jobs.new(this, Delay.Background).then(() => this.#rerender()),
         [DateMenuEvent.DndChanged]: this.#updateStyle
     })[data?.event]?.call(this);
 
@@ -162,6 +162,7 @@ export class NotificationCounter extends Layout {
     }
 
     #destroy() {
+        Context.jobs.removeAll(this);
         this.#counter?.remove_all_transitions();
         Context.signals.removeAll(this);
         this.#dateMenu?.destroy();
@@ -229,6 +230,7 @@ export class NotificationCounter extends Layout {
 
     #rerender() {
         if (!this.isMapped) return;
+        Context.jobs.removeAll(this);
         this.#counter.remove_all_transitions();
         Animation(this.#counter, AnimationDuration.Faster, AnimationType.ScaleMin).then(() => {
             if (!this.isValid) return;

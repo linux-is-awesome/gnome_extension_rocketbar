@@ -54,8 +54,8 @@ export class Signals {
         if (!this.#connections || !client) return this;
         const connections = this.#connections.get(client);
         if (!connections) return this;
-        this.#disconnectAll(connections);
         this.#connections.delete(client);
+        this.#disconnectAll(connections);
         return this;
     }
 

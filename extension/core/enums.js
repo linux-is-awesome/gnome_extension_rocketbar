@@ -27,3 +27,14 @@ export const Type = {
     Number: 'number',
     Boolean: 'boolean'
 };
+
+/**
+ * @enum {number}
+ */
+export const Delay = {
+    Redraw: -1,
+    Idle: 0,
+    Queue: 100,
+    Sleep: 300,
+    Background: 500
+};
