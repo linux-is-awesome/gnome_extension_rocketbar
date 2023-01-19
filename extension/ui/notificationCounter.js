@@ -191,6 +191,9 @@ export class NotificationCounter extends Layout {
         this.actor.add_child(this.#counter);
     }
 
+    /**
+     * @param {string} settingsKey 
+     */
     #handleConfig(settingsKey) {
         switch (settingsKey) {
             case ConfigFields.hideEmpty:
