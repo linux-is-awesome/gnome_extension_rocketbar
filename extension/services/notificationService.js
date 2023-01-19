@@ -15,7 +15,8 @@ const ConfigFields = {
 const MessageTrayEvent = {
     SourceAdded: 'source-added',
     SourceRemoved: 'source-removed',
-    QueueChanged: 'queue-changed'
+    QueueChanged: 'queue-changed',
+    CountChanged: 'notify::count'
 };
 
 /** @enum {string} */
@@ -28,14 +29,14 @@ const NotificationSource = {
 class LauncherApiConnector {
 
     /** @type {Map<string, number>} */
-    static #countByAppId = null;
+    #countByAppId = Context.getSessionCache(this.constructor.name);
 
     /** @type {() => void} */
     #callback = null;
 
     /** @type {Map<string, number>} */
     get count() {
-        return LauncherApiConnector.#countByAppId;
+        return this.#countByAppId;
     }
 
     /**
@@ -43,14 +44,13 @@ class LauncherApiConnector {
      */
     constructor(callback) {
         this.#callback = callback;
-        if (!LauncherApiConnector.#countByAppId) {
-            LauncherApiConnector.#countByAppId = new Map();
-        } else this.#triggerCallback();
         Context.launcherAPI.connect(this, params => this.#update(params));
+        if (this.#countByAppId?.size) this.#triggerCallback();
     }
 
     destroy() {
         Context.launcherAPI.disconnect(this);
+        this.#countByAppId = null;
         this.#callback = null;
     }
 
@@ -58,16 +58,15 @@ class LauncherApiConnector {
      * @param {GLib.Variant} params
      */
     #update(params) {
-        if (!LauncherApiConnector.#countByAppId || !params) return;
+        if (!this.#countByAppId || !params) return;
         const [ appUri, props ] = params.deepUnpack();
         const appId = appUri?.replace(/(^\w+:|^)\/\//, '');
         if (!appId || !props) return;
-        const countByAppId = LauncherApiConnector.#countByAppId;
         const count = props['count']?.get_int64() ?? 0;
         const countVisible = props['count-visible']?.get_boolean() ?? false;
-        if (count && countVisible) countByAppId.set(appId, count);
-        else if (!countByAppId.has(appId)) return;
-        else countByAppId.delete(appId);
+        if (count && countVisible) this.#countByAppId.set(appId, count);
+        else if (!this.#countByAppId.has(appId)) return;
+        else this.#countByAppId.delete(appId);
         this.#triggerCallback();
     }
 
@@ -171,7 +170,7 @@ class NotificationService {
     #addSource(source) {
         if (this.#sources.has(source)) return;
         if (typeof source?.connect !== Type.Function) return;
-        this.#sources.set(source, source.connect('notify::count', () => this.#queueUpdate()));
+        this.#sources.set(source, source.connect(MessageTrayEvent.CountChanged, () => this.#queueUpdate()));
         this.#queueUpdate();
     }
 

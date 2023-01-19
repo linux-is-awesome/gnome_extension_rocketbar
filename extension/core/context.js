@@ -8,11 +8,14 @@ import { LauncherAPI } from './context/launcherAPI.js';
 
 export class Context {
 
+    /**
+     * Persistent cache to keep some data until user session end/shell restart
+     * @type {Map<*, Map>}
+     */
+    static #sessionCache = null;
+
     /** @type {Context} */
     static #instance = null;
-
-    // TODO
-    static #sessionCache = null;
 
     /** @type {{path: string, metadata: Object.<string, string>, settings: Gio.Settings}} */
     #extensionInfo = null;
@@ -32,10 +35,12 @@ export class Context {
     /** @type {LauncherAPI} */
     #launcherAPI = new LauncherAPI();
 
+    /** @type {string} */
     static get path() {
         return Context.#getInstance().#extensionInfo?.path;
     }
 
+    /** @type {Object.<string, string>} */
     static get metadata() {
         return Context.#getInstance().#extensionInfo?.metadata;
     }
@@ -74,6 +79,19 @@ export class Context {
         return Context.#getInstance().#launcherAPI;
     }
 
+    /**
+     * @param {*} client
+     * @returns {Map}
+     */
+    static getSessionCache(client) {
+        if (!client) return null;
+        if (!Context.#sessionCache) {
+            Context.#sessionCache = new Map();
+        }
+        if (!Context.#sessionCache.has(client)) Context.#sessionCache.set(client, new Map());
+        return Context.#sessionCache.get(client);
+    }
+
     static #getInstance() {
         if (Context.#instance instanceof Context) return Context.#instance;
         return new Context();
@@ -102,8 +120,21 @@ export class Context {
         this.#launcherAPI = null;
         this.#extensionInfo?.settings?.run_dispose();
         this.#extensionInfo = null;
+        this.#cleanSessionCache();
         if (Context.#instance !== this) return;
         Context.#instance = null;
+    }
+
+    #cleanSessionCache() {
+        if (!Context.#sessionCache) return;
+        const clients = [...Context.#sessionCache.keys()];
+        for (let i = 0, l = clients.length; i < l; ++i) {
+            const client = clients[i];
+            if (Context.#sessionCache.get(client)?.size) continue;
+            Context.#sessionCache.delete(client);
+        }
+        if (Context.#sessionCache.size) return;
+        Context.#sessionCache = null;
     }
 
 }
