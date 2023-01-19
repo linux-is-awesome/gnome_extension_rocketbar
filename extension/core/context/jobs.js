@@ -6,14 +6,19 @@ import { Type, Delay } from '../enums.js';
 
 class Job {
 
+    /** @type {number} */
     #id = null;
 
+    /** @type {Promise} */
     #job = null;
 
+    /** @type {number} */
     #delay = null;
 
+    /** @type {(job: this) => void} */
     #destroyCallback = null;
 
+    /** @type {Promise} */
     get #currentJob() {
         if (this.#job) return this.#job;
         if (typeof this.#destroyCallback !== Type.Function ||
@@ -22,24 +27,13 @@ class Job {
         return this.#job;
     }
 
+    /**
+     * @param {(job: Job) => void} destroyCallback 
+     * @param {number} [delay] 
+     */
     constructor(destroyCallback, delay = Delay.Idle) {
         this.#destroyCallback = destroyCallback;
         this.#delay = delay;
-    }
-
-    then(callback) {
-        this.#job = this.#currentJob?.then(callback);
-        return this;
-    }
-
-    catch(callback) {
-        this.#job = this.#currentJob?.catch(callback);
-        return this;
-    }
-
-    finally(callback) {
-        this.#job = this.#currentJob?.finally(callback);
-        return this;
     }
 
     destroy() {
@@ -49,12 +43,45 @@ class Job {
         this.#destroyCallback = null;
     }
 
+    /**
+     * @param {() => void} callback
+     * @returns {this}
+     */
+    then(callback) {
+        this.#job = this.#currentJob?.then(callback);
+        return this;
+    }
+
+    /**
+     * @param {(error) => void} callback
+     * @returns {this}
+     */
+    catch(callback) {
+        this.#job = this.#currentJob?.catch(callback);
+        return this;
+    }
+
+    /**
+     * @param {() => void} callback
+     * @returns {this}
+     */
+    finally(callback) {
+        this.#job = this.#currentJob?.finally(callback);
+        return this;
+    }
+
+    /**
+     * @returns {this}
+     */
     reset() {
         this.#job = null;
         if (this.#id) this.#dequeue();
         return this;
     }
 
+    /**
+     * @param {() => void} callback
+     */
     #queue(callback) {
         const handler = () => this.#dequeue() ?? callback();
         switch (this.#delay) {
@@ -84,45 +111,62 @@ class Job {
 
 export class Jobs {
 
+    /** @type {Map<*, Set<Job>>} */
     #jobs = new Map();
 
     destroy() {
         if (!this.#jobs) return;
         const jobs = this.#jobs;
         this.#jobs = null;
-        for (const [_, sourceJobs] of jobs)
-            for (const job of sourceJobs) job.destroy();
-        
+        for (const [_, clientJobs] of jobs) {
+            for (const job of clientJobs) job.destroy();
+        }
     }
 
-    new(source, delay = Delay.Idle) {
+    /**
+     * @param {*} client
+     * @param {number} [delay]
+     * @returns {Job}
+     */
+    new(client, delay = Delay.Idle) {
         if (!this.#jobs) return null; 
-        return this.#add(source, new Job(job => this.#remove(source, job), delay));
+        return this.#add(client, new Job(job => this.#remove(client, job), delay));
     }
 
-    removeAll(source) {
-        if (!source) return this;
-        const jobs = this.#jobs?.get(source);
+    /**
+     * @param {*} client
+     * @returns {this}
+     */
+    removeAll(client) {
+        if (!client) return this;
+        const jobs = this.#jobs?.get(client);
         if (!jobs) return this;
-        this.#jobs.delete(source);
+        this.#jobs.delete(client);
         for (const job of jobs) job.destroy();
+        return this;
     }
 
-    #add(source, job) {
-        const jobs = this.#jobs.get(source) ?? new Set();
+    /**
+     * @param {*} client
+     * @param {Job} job
+     * @returns {Job}
+     */
+    #add(client, job) {
+        const jobs = this.#jobs.get(client) ?? new Set();
         jobs.add(job);
-        this.#jobs.set(source, jobs);
-        console.log('DEBUG: Add new job: src size', this.#jobs.size, 'jobs size', jobs.size);
+        this.#jobs.set(client, jobs);
         return job;
     }
 
-    #remove(source, job) {
-        const jobs = this.#jobs?.get(source);
-        console.log('DEBUG: Remove job init: src size', this.#jobs?.size, 'jobs size', jobs?.size);
+    /**
+     * @param {*} client
+     * @param {Job} job
+     */
+    #remove(client, job) {
+        const jobs = this.#jobs?.get(client);
         if (!jobs) return;
         if (jobs.has(job)) jobs.delete(job);
-        if (!jobs.size) this.#jobs.delete(source);
-        console.log('DEBUG: Remove job: src size', this.#jobs.size, 'jobs size', jobs?.size);
+        if (!jobs.size) this.#jobs.delete(client);
     }
 
 }

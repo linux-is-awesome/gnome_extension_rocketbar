@@ -94,4 +94,5 @@ export class Signals {
     #isValid(client, scope) {
         return this.#connections && client && Array.isArray(scope) && scope.length > 0;
     }
+
 }

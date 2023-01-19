@@ -79,26 +79,38 @@ class LauncherApiConnector {
 
 class NotificationService {
 
+    /**
+     * @param {MessageTray.Source} source
+     * @returns {string|null}
+     */
     #notificationSourceAppId = (source) => ({
         [NotificationSource.FdoNotification]: source.app?.id,
         [NotificationSource.GtkNotification]: source._appId,
         [NotificationSource.WindowAttention]: source._app?.id
     })[source.constructor?.name];
 
+    /** @type {Map<MessageTray.Source, number>} */
     #sources = new Map();
 
+    /** @type {Set<NotificationHandler>} */
     #handlers = new Set();
 
+    /** @type {Map<string, number>} */
     #countByAppId = new Map();
 
+    /** @type {number} */
     #totalCount = 0;
 
+    /** @type {LauncherApiConnector} */
     #launcherApiConnector = null;
 
+    /** @type {Job} */
     #updateJob = Context.jobs.new(this, Delay.Background);
 
+    /** @type {Object.<string, string|number|boolean>} */
     #config = Config(this, ConfigFields, () => this.#handleConfig().#queueUpdate());
 
+    /** @type {boolean} */
     get isEmpty() {
         return !this.#handlers?.size;
     }
@@ -120,12 +132,18 @@ class NotificationService {
         this.#handlers = null;
     }
 
+    /**
+     * @param {NotificationHandler} handler 
+     */
     addHandler(handler) {
         if (!this.#handlers || handler instanceof NotificationHandler === false) return;
         this.#handlers.add(handler);
         this.#triggerHandler(handler);
     }
 
+    /**
+     * @param {NotificationHandler} handler 
+     */
     removeHandler(handler) {
         if (!handler || !this.#handlers?.has(handler)) return;
         this.#handlers.delete(handler);
@@ -147,6 +165,9 @@ class NotificationService {
         for (let i = 0, l = sources.length; i < l; ++i) this.#addSource(sources[i]);
     }
 
+    /**
+     * @param {MessageTray.Source} source
+     */
     #addSource(source) {
         if (this.#sources.has(source)) return;
         if (typeof source?.connect !== Type.Function) return;
@@ -154,6 +175,9 @@ class NotificationService {
         this.#queueUpdate();
     }
 
+    /**
+     * @param {MessageTray.Source} source
+     */
     #removeSource(source) {
         if (!this.#sources.has(source)) return;
         if (typeof source.disconnect === Type.Function) source.disconnect(this.#sources.get(source));
@@ -166,7 +190,7 @@ class NotificationService {
     }
 
     #update() {
-        if (!this.#handlers) return; 
+        if (!this.#handlers) return;
         this.#totalCount = 0;
         const launcherApiCount = this.#launcherApiConnector?.count;
         if (!launcherApiCount) this.#countByAppId.clear();
@@ -183,7 +207,6 @@ class NotificationService {
             if (!countForApp) continue;
             this.#countByAppId.set(appId, countForApp);
         }
-        console.log('Update notifications');
         this.#triggerHandlers();
     }
 
@@ -191,24 +214,36 @@ class NotificationService {
         for (const handler of this.#handlers) this.#triggerHandler(handler);
     }
 
+    /**
+     * @param {NotificationHandler} handler 
+     */
     #triggerHandler(handler) {
         if (typeof handler.appId !== Type.String) handler.setCount(this.#totalCount);
         else handler.setCount(this.#countByAppId.get(handler.appId) ?? 0);
     }
+
 }
 
 export class NotificationHandler {
 
+    /** @type {NotificationService} */
     static #service = null;
 
+    /** @type {(count: number) => void} */
     #callback = null;
 
+    /** @type {string|null} */
     #appId = null;
 
+    /** @type {string|null} */
     get appId() {
         return this.#appId;
     }
 
+    /**
+     * @param {(count: number) => void} callback
+     * @param {string} [appId]
+     */
     constructor(callback, appId) {
         if (typeof callback !== Type.Function) return; 
         this.#callback = callback;
@@ -231,6 +266,9 @@ export class NotificationHandler {
         NotificationHandler.#service = null;
     }
 
+    /**
+     * @param {number} count
+     */
     setCount(count) {
         if (typeof this.#callback !== Type.Function) return; 
         this.#callback(count);
