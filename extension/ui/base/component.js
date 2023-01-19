@@ -2,11 +2,12 @@
 
 import St from 'gi://St';
 import { Dnd } from '../../core/legacy.js'; 
+import { Context } from '../../core/context.js';
 import { Type, Event } from '../../core/enums.js';
 
 const DRAG_TIMEOUT_THRESHOLD = 200;
 
-/** 
+/**
  * @enum {string}
  */
 export const ComponentEvent = {
@@ -47,9 +48,6 @@ export class Component {
 
     /** @type {*} */
     #dragMonitor = null;
-
-    /** @type {Array<number>} */
-    #dragHandlerIds = null;
 
     /** @type {St.Widget} */
     get actor() {
@@ -372,20 +370,20 @@ export class Component {
      */
     #setDragEvents(enabled) {
         if (this.#dragMonitor) Dnd.removeDragMonitor(this.#dragMonitor);
-        this.#dragHandlerIds?.forEach(handlerId => this.#actor?.disconnect(handlerId));
+        if (this.#draggable) Context.signals.removeAll(this.#draggable);
         this.#draggable?.disconnectAll();
         this.#draggable = null;
         this.#dragMonitor = null;
-        this.#dragHandlerIds = null;
         if (!enabled || !this.#actor) return;
         this.#dragMonitor = {};
-        this.#dragHandlerIds = new Set();
         this.#draggable = Dnd.makeDraggable(this.#actor, { manualMode: true, timeoutThreshold: DRAG_TIMEOUT_THRESHOLD });
         this.#draggable.connect(Event.DragBegin, () => this.#dragBegin());
         this.#draggable.connect(Event.DragEnd, () => this.#dragEnd());
         this.#dragMonitor.dragMotion = event => this.#dragMotion(event);
-        this.#dragHandlerIds.add(this.#actor.connect(Event.ButtonPress, this.#draggable._onButtonPress.bind(this.#draggable)));
-        this.#dragHandlerIds.add(this.#actor.connect(Event.Touch, this.#draggable._onTouchEvent.bind(this.#draggable)));
+        Context.signals.add(this.#draggable, [
+            [this.#actor, [Event.ButtonPress], this.#draggable._onButtonPress.bind(this.#draggable)],
+            [this.#actor, [Event.Touch], this.#draggable._onTouchEvent.bind(this.#draggable)]
+        ]);
     }
 
     /**
