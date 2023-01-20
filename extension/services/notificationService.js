@@ -79,6 +79,16 @@ class LauncherApiConnector {
 class NotificationService {
 
     /**
+     * Known Issue: FdoNotification source may not have appId in some case.
+     *              As an example: Thunderbird notifications when using SysTray-X addon.
+     *              As a workaround for such cases pid can be used to count app notifications.
+     *              This requires passing pid along with appId to the NotificationHandler.
+     *              Unfortunatly I haven't found a simple way to get appId using pid while updating counts
+     *              without hurting Shell performance (i.e. GLib.spawn_command_line_sync)
+     *              or adding too much complexity to the code.
+     * 
+     * TODO: Count app notifications by pid when appId is not provided.
+     *              
      * @param {MessageTray.Source} source
      * @returns {string|null}
      */
@@ -223,6 +233,9 @@ class NotificationService {
 
 }
 
+/**
+ * TODO: Pass pid along with appId to the handler.
+ */
 export class NotificationHandler {
 
     /** @type {NotificationService} */
