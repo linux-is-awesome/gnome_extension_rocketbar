@@ -108,6 +108,18 @@ export class Context {
     }
 
     destroy() {
+        try {
+            this.#destroy();
+        } catch(e) {
+            console.error(`${this.#extensionInfo?.metadata?.name} unable to destroy context.`, e);
+        } finally {
+            this.#extensionInfo = null;
+            if (Context.#instance !== this) return;
+            Context.#instance = null;
+        }
+    }
+
+    #destroy() {
         this.#modules?.destroy();
         this.#modules = null;
         this.#jobs?.destroy();
@@ -119,10 +131,7 @@ export class Context {
         this.#launcherAPI?.destroy();
         this.#launcherAPI = null;
         this.#extensionInfo?.settings?.run_dispose();
-        this.#extensionInfo = null;
         this.#cleanSessionCache();
-        if (Context.#instance !== this) return;
-        Context.#instance = null;
     }
 
     #cleanSessionCache() {
