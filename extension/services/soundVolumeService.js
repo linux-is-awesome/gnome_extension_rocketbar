@@ -26,6 +26,11 @@ const SoundVolumeIcon = {
     High: 3
 }
 
+/** @enum {string} */
+const MixerControlEvent = {
+    DefaultSinkChanged: 'default-sink-changed'
+}
+
 class SoundStream {
 
     /** @type {Gvc.MixerStream} */
@@ -51,7 +56,7 @@ class SoundStream {
 
     /** @type {string} */
     get name() {
-        return this.#stream?.port?.human_port ?? this.#stream?.name;
+        return this.#stream?.get_port()?.human_port ?? this.#stream?.name;
     }
 
     /** @type {number} positive float values 0..0.1...0.8..0.9..1 */
@@ -104,8 +109,8 @@ class SoundVolumeControl {
 
     /**
      * @param {SoundStream} stream
-     * @param {boolean} isMuted
-     * @param {string} name
+     * @param {boolean} [isMuted]
+     * @param {string} [name]
      */
     showOSD(stream, isMuted, name) {
         if (stream instanceof SoundStream === false) return;
@@ -123,7 +128,7 @@ class SoundVolumeControl {
         if (stream.isPlaying) return;
         if (this.#volumeChangeNotifyDelay) return;
         this.#volumeChangeNotifyDelay = Context.jobs.new(this, SOUND_VOLUME_CHANGE_NOTIFY_DELAY).then(() => {
-            this.#volumeChangeNotifyDelay.destroy();
+            this.#volumeChangeNotifyDelay?.destroy();
             this.#volumeChangeNotifyDelay = null;
         });
         this.#volumeCancellable?.cancel();
@@ -151,8 +156,9 @@ class DefaultSoundVolumeControl extends SoundVolumeControl {
     #stream = null;
 
     constructor() {
+        super();
         const mixer = Volume.getMixerControl();
-        Context.signals.add(this, [[mixer, ['default-sink-changed'], (mixer, streamId) => this.#setStream(mixer, streamId)]]);
+        Context.signals.add(this, [[mixer, [MixerControlEvent.DefaultSinkChanged], (...args) => this.#setStream(...args)]]);
         this.#setStream(mixer);
     }
 
