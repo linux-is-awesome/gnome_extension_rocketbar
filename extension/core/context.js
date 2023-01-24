@@ -1,5 +1,6 @@
 /* exported Context */
 
+import { Main } from './legacy.js';
 import { Modules } from './context/modules.js';
 import { Jobs } from './context/jobs.js';
 import { Signals } from './context/signals.js';
@@ -79,6 +80,10 @@ export class Context {
         return Context.#getInstance().#launcherAPI;
     }
 
+    static get isSessionLocked() {
+        return Main.sessionMode?.isLocked || Main.layoutManager?.screenShieldGroup?.visible;
+    }
+
     /**
      * @param {*} client
      * @returns {Map}
@@ -136,6 +141,10 @@ export class Context {
 
     #cleanSessionCache() {
         if (!Context.#sessionCache) return;
+        if (!Context.isSessionLocked) {
+            Context.#sessionCache = null;
+            return;
+        }
         const clients = [...Context.#sessionCache.keys()];
         for (let i = 0, l = clients.length; i < l; ++i) {
             const client = clients[i];

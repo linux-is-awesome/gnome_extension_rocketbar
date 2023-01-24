@@ -463,7 +463,7 @@ class LockscreenTweak extends Tweak {
 
     destroy() {
         if (!this.#backup) return;
-        if (!Main.sessionMode?.isLocked) this.#disable();
+        if (!Context.isSessionLocked) this.#disable();
         this.#backup = null;
     }
 
