@@ -17,7 +17,9 @@ export const Event = {
     Touch: 'touch-event',
     FontName: 'notify::gtk-font-name',
     FocusWindow: 'notify::focus-window',
-    Scroll: 'scroll-event'
+    Scroll: 'scroll-event',
+    Clicked: 'clicked',
+    Captured: 'captured_event'
 };
 
 /**

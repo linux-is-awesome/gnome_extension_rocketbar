@@ -9,6 +9,23 @@ import { Config } from '../utils/config.js';
 import { Type, Event, Delay } from './enums.js';
 import { DefaultSoundVolumeControlClient } from '../services/soundVolumeService.js';
 
+const HIDDEN_OVERVIEW_DASH_HEIGHT = 40;
+const PANEL_STATUS_AREA_ACTIVITIES = 'activities'; 
+const DEFAULT_INPUT_SOURCE = '0';
+
+/** @enum {string} */
+const MouseButton = {
+    Left: 'left_button',
+    Right: 'right_button',
+    Middle: 'middle_button'
+};
+
+/** @enum {string} */
+const PanelScrollAction = {
+    ChangeSoundVolume: 'change_sound_volume',
+    SwitchWorkspace: 'switch_workspace'
+};
+
 /** @enum {string} */
 const ConfigFields = {
     overviewKillDash: 'overview-kill-dash',
@@ -36,6 +53,7 @@ class Tweak {
 
 class KillOverviewDashTweak extends Tweak {
 
+    /** @type {() => void} */
     #backup = null;
 
     toggle({ overviewKillDash }) {
@@ -65,7 +83,7 @@ class KillOverviewDashTweak extends Tweak {
         Main.overview.dash.showAppsButton?.hide();
         Main.overview.dash._background?.hide();
         Main.overview.dash._separator = null;
-        Main.overview.dash.height = 40;
+        Main.overview.dash.height = HIDDEN_OVERVIEW_DASH_HEIGHT;
     }
 
     #disable() {
@@ -83,6 +101,7 @@ class KillOverviewDashTweak extends Tweak {
 
 class OverviewClicksTweak extends Tweak {
 
+    /** @type {Clutter.ClickAction} */
     #clickAction = null;
 
     toggle({ enableOverviewClickHandler }) {
@@ -106,7 +125,7 @@ class OverviewClicksTweak extends Tweak {
 
     #enable() {
         this.#clickAction = new Clutter.ClickAction();
-        this.#clickAction.connect('clicked', event => {
+        this.#clickAction.connect(Event.Clicked, event => {
             switch (event?.get_button()) {
                 case Clutter.BUTTON_PRIMARY:
                     return Main.overview.toggle();
@@ -129,22 +148,23 @@ class OverviewClicksTweak extends Tweak {
 
 class ActivitiesClicksTweak extends Tweak {
 
+    /** @type {Object.<string, number>} */
     #buttonMapping = {
-        left_button: Clutter.BUTTON_PRIMARY,
-        right_button: Clutter.BUTTON_SECONDARY,
-        middle_button: Clutter.BUTTON_MIDDLE
+        [MouseButton.Left]: Clutter.BUTTON_PRIMARY,
+        [MouseButton.Right]: Clutter.BUTTON_SECONDARY,
+        [MouseButton.Middle]: Clutter.BUTTON_MIDDLE
     };
 
+    /** @type {number} */
     #button = null;
 
     toggle({ activitiesShowAppsButton }) {
         if (!this.#canToggle()) return;
-        if (!activitiesShowAppsButton || activitiesShowAppsButton === 'none') return this.destroy();
         this.#button = this.#buttonMapping[activitiesShowAppsButton];
-        const activitiesButton = Main.panel.statusArea['activities'];
+        const activitiesButton = Main.panel.statusArea[PANEL_STATUS_AREA_ACTIVITIES];
         if (!this.#button || !activitiesButton) return this.destroy();
         if (Context.signals.hasClient(this)) return;
-        Context.signals.add(this, [[activitiesButton, ['captured_event'], (_, event) => this.#handleEvent(event)]]);
+        Context.signals.add(this, [[activitiesButton, [Event.Captured], (_, event) => this.#handleEvent(event)]]);
     }
 
     destroy() {
@@ -174,6 +194,7 @@ class ActivitiesClicksTweak extends Tweak {
 
 class HotCornerTweak extends Tweak {
 
+    /** @type {() => void} */
     #backup = null;
 
     toggle({ enableFullscreenHotCorner }) {
@@ -215,6 +236,7 @@ class HotCornerTweak extends Tweak {
 
 }
 
+// TODO: implement NightLight customization options
 class NightLightTweak extends Tweak {
 
     #settings = new Gio.Settings({
@@ -236,14 +258,20 @@ class NightLightTweak extends Tweak {
         if (Main.layoutManager?.screenShieldGroup?.visible) return;
         if (!this.#settings?.get_boolean('night-light-enabled')) return;
         this.#settings.set_boolean('night-light-enabled', false);
-        Context.jobs.new(this, Delay.Queue).then(() => this.#settings?.set_boolean('night-light-enabled', true));
+        Context.jobs.new(this, Delay.Queue).then(() => {
+            this.#settings?.set_boolean('night-light-enabled', true)
+            Context.jobs.removeAll(this);
+        });
     }
 
 }
 
 class SwitcherPopupsTweak extends Tweak {
 
+    /** @type {number} */
     #backupDelay = SwitcherPopup.POPUP_DELAY_TIMEOUT;
+
+    /** @type {(...args) => *} */
     #backupFunction = null;
 
     toggle(config) {
@@ -284,6 +312,7 @@ class SwitcherPopupsTweak extends Tweak {
 
 }
 
+// TODO: implement alter scroll action option
 class PanelScrollTweak extends Tweak {
 
     /** @type {DefaultSoundVolumeControlClient} */
@@ -300,17 +329,18 @@ class PanelScrollTweak extends Tweak {
         [Clutter.ScrollDirection.RIGHT]: Meta.MotionDirection.RIGHT
     };
 
+    /** @type {WorkspaceSwitcherPopup} */
     get #workspaceSwitcherPopup() {
         if (Main.wm._workspaceSwitcherPopup) return Main.wm._workspaceSwitcherPopup;
         Main.wm._workspaceSwitcherPopup = new WorkspaceSwitcherPopup();
-        Main.wm._workspaceSwitcherPopup.connect('destroy', () => Main.wm._workspaceSwitcherPopup = null);
+        Main.wm._workspaceSwitcherPopup.connect(Event.Destroy, () => Main.wm._workspaceSwitcherPopup = null);
         return Main.wm._workspaceSwitcherPopup;
     }
 
     toggle(config) {
         if (!this.#canToggle()) return;
         const { panelScrollAction } = config;
-        if (!panelScrollAction || panelScrollAction === 'none') return this.destroy();
+        if (!Object.values(PanelScrollAction).includes(panelScrollAction)) return this.destroy();
         this.#toggleSoundVolumeControlClient(config);
         if (Context.signals.hasClient(this)) return;
         Context.signals.add(this, [[Main.panel, [Event.Scroll], (_, event) => this.#handleScroll(event, config)]]);
@@ -332,7 +362,7 @@ class PanelScrollTweak extends Tweak {
     }
 
     #toggleSoundVolumeControlClient({ panelScrollAction }) {
-        if (panelScrollAction === 'change_sound_volume') {
+        if (panelScrollAction === PanelScrollAction.ChangeSoundVolume) {
             if (this.#soundVolumeControlClient) return;
             this.#soundVolumeControlClient = new DefaultSoundVolumeControlClient();
             return;
@@ -348,13 +378,13 @@ class PanelScrollTweak extends Tweak {
         let { panelScrollAction } = config;
         const { soundVolumeStep, soundVolumeStepCtrl } = config;
         if (scrollDirection === Clutter.ScrollDirection.LEFT || scrollDirection === Clutter.ScrollDirection.RIGHT) {
-            panelScrollAction = 'switch_workspace';
+            panelScrollAction = PanelScrollAction.SwitchWorkspace;
         }
         switch (panelScrollAction) {
-            case 'switch_workspace':
+            case PanelScrollAction.SwitchWorkspace:
                 this.#switchWorkspace(scrollDirection);
                 break;
-            case 'change_sound_volume':
+            case PanelScrollAction.ChangeSoundVolume:
                 const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) !== 0;
                 let step = isCtrlPressed ? soundVolumeStepCtrl : soundVolumeStep;
                 step = scrollDirection === Clutter.ScrollDirection.DOWN ? -step : step;
@@ -391,7 +421,7 @@ class PanelMiddleClickTweak extends Tweak {
         if (!this.#canToggle({ enablePanelMiddleButtonHandler })) return;
         if (!enablePanelMiddleButtonHandler) return this.destroy();
         this.#soundVolumeControlClient = new DefaultSoundVolumeControlClient();
-        Context.signals.add(this, [[Main.panel, ['button-press-event'], (_, event) => this.#handleEvent(event)]]);
+        Context.signals.add(this, [[Main.panel, [Event.ButtonPress], (_, event) => this.#handleEvent(event)]]);
     }
 
     #canToggle({ enablePanelMiddleButtonHandler }) {
@@ -419,6 +449,7 @@ class PanelMiddleClickTweak extends Tweak {
 
 class PanelMenuManagerTweak extends Tweak {
 
+    /** @type {(...args) => void} */
     #backup = null;
 
     toggle(config) {
@@ -453,6 +484,7 @@ class PanelMenuManagerTweak extends Tweak {
 
 class LockscreenTweak extends Tweak {
 
+    /** @type {Map} */
     #backup = Context.getSessionCache(this.constructor.name);
 
     toggle({ lockscreenPrimaryInput, lockscreenAnimationDelay }) {
@@ -504,7 +536,7 @@ class LockscreenTweak extends Tweak {
             }
             if (!forcePrimaryInput) return;
             forcePrimaryInput = false;
-            const primaryInput = inputSourceManager.inputSources['0'];
+            const primaryInput = inputSourceManager.inputSources[DEFAULT_INPUT_SOURCE];
             primaryInput?.activate();
         };
         return (params) => {
@@ -554,6 +586,7 @@ class WindowSwitchScrollFixTweak extends Tweak {
 
 export class Tweaks {
 
+    /** @type {Object.<string, string|number|boolean>} */
     #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
 
     /** @type {Object.<string, Tweak>} */
@@ -599,6 +632,9 @@ export class Tweaks {
         this.#tweaks = null;
     }
 
+    /**
+     * @param {string} settingsKey 
+     */
     #handleConfig(settingsKey) {
         if (!this.#tweaks) return;
         if (typeof settingsKey === Type.String) {
