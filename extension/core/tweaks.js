@@ -453,10 +453,9 @@ class LockscreenTweak extends Tweak {
     #backup = Context.getSessionCache(this.constructor.name);
 
     toggle({ lockscreenPrimaryInput, lockscreenAnimationDelay }) {
-        if (!this.#backup) return; 
-        const lockDialogGroup = Main.screenShield?._lockDialogGroup;
-        if (!lockDialogGroup) return this.#backup.clear();
+        if (!this.#canToggle()) return;
         if (!lockscreenPrimaryInput && !lockscreenAnimationDelay) return this.#disable();
+        const lockDialogGroup = Main.screenShield._lockDialogGroup;
         const origin = this.#backup.get('origin');
         if (typeof origin !== Type.Function) this.#backup.set('origin', lockDialogGroup.ease.bind(lockDialogGroup));
         lockDialogGroup.ease = this.#getCustomEaseFunction(lockscreenPrimaryInput, lockscreenAnimationDelay);
@@ -468,6 +467,13 @@ class LockscreenTweak extends Tweak {
         this.#backup = null;
     }
 
+    #canToggle() {
+        if (!this.#backup) return false;
+        if (!Main.screenShield?._lockDialogGroup) return false;
+        if (typeof Keyboard.getInputSourceManager !== Type.Function) return false;
+        return true;
+    }
+
     #disable() {
         const origin = this.#backup.get('origin');
         if (typeof origin !== Type.Function) return;
@@ -477,16 +483,30 @@ class LockscreenTweak extends Tweak {
 
     #getCustomEaseFunction(forcePrimaryInput, animationDelay) {
         const origin = this.#backup.get('origin');
+        const inputSourceManager = Keyboard.getInputSourceManager();
         return (params) => {
             if (!params) return origin();
             params.delay = animationDelay;
-            if (!forcePrimaryInput) return origin(params);
             const onComplete = params.onComplete;
             params.onComplete = () => {
                 if (onComplete) onComplete();
-                if (!forcePrimaryInput || !Main.sessionMode?.isLocked) return;
+                if (!inputSourceManager) return;
+                if (!Main.screenShield.actor.visible) {
+                    if (!inputSourceManager._sourcesPerWindowChanged ||
+                        !inputSourceManager._setPerWindowInputSource) return;
+                    inputSourceManager._sourcesPerWindowChanged();
+                    if (inputSourceManager._sourcesPerWindow) inputSourceManager._setPerWindowInputSource();
+                    return;
+                }
+                if (inputSourceManager._focusWindowNotifyId) {
+                    Main.overview?.disconnectObject(inputSourceManager);
+                    global.display.disconnect(inputSourceManager._focusWindowNotifyId);
+                    inputSourceManager._focusWindowNotifyId = 0;
+                    inputSourceManager._sourcesPerWindow = false;
+                }
+                if (!forcePrimaryInput) return;
                 forcePrimaryInput = false;
-                const primaryInput = Keyboard.getInputSourceManager()?.inputSources['0'];
+                const primaryInput = inputSourceManager.inputSources['0'];
                 primaryInput?.activate();
             };
             origin(params);
