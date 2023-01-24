@@ -6,9 +6,8 @@ import Gio from 'gi://Gio';
 import { Main, HotCorner, Keyboard, SwitcherPopup, WorkspaceSwitcherPopup, AppMenu } from './legacy.js';
 import { Context } from './context.js';
 import { Config } from '../utils/config.js';
-import { Type, Delay } from './enums.js';
+import { Type, Event, Delay } from './enums.js';
 import { DefaultSoundVolumeControlClient } from '../services/soundVolumeService.js';
-import { ScrollHandler } from '../utils/scrollHandler.js';
 
 /** @enum {string} */
 const ConfigFields = {
@@ -290,11 +289,16 @@ class PanelScrollTweak extends Tweak {
     /** @type {DefaultSoundVolumeControlClient} */
     #soundVolumeControlClient = null;
 
-    /** @type {ScrollHandler} */
-    #scrollHandler = null;
-
     /** @type {Job} */
     #switchWorkspaceDelay = null;
+
+    /** @type {Object.<string, number>} */
+    #moveDirection = {
+        [Clutter.ScrollDirection.UP]: Meta.MotionDirection.LEFT,
+        [Clutter.ScrollDirection.DOWN]: Meta.MotionDirection.RIGHT,
+        [Clutter.ScrollDirection.LEFT]: Meta.MotionDirection.LEFT,
+        [Clutter.ScrollDirection.RIGHT]: Meta.MotionDirection.RIGHT
+    };
 
     get #workspaceSwitcherPopup() {
         if (Main.wm._workspaceSwitcherPopup) return Main.wm._workspaceSwitcherPopup;
@@ -308,16 +312,15 @@ class PanelScrollTweak extends Tweak {
         const { panelScrollAction } = config;
         if (!panelScrollAction || panelScrollAction === 'none') return this.destroy();
         this.#toggleSoundVolumeControlClient(config);
-        if (this.#scrollHandler) return;
-        this.#scrollHandler = new ScrollHandler(Main.panel, event => this.#handleScroll(event, config));
+        if (Context.signals.hasClient(this)) return;
+        Context.signals.add(this, [[Main.panel, [Event.Scroll], (_, event) => this.#handleScroll(event, config)]]);
     }
 
     destroy() {
-        if (!this.#scrollHandler) return;
-        this.#scrollHandler?.destroy();
+        if (!Context.signals.hasClient(this)) return;
+        Context.signals.removeAll(this);
         this.#soundVolumeControlClient?.destroy();
         this.#switchWorkspaceDelay?.destroy();
-        this.#scrollHandler = null;
         this.#soundVolumeControlClient = null;
         this.#switchWorkspaceDelay = null;
     }
@@ -340,15 +343,19 @@ class PanelScrollTweak extends Tweak {
 
     #handleScroll(event, config) {
         if (!event || !config) return Clutter.EVENT_PROPAGATE;
-        const { scrollDirection, isCtrlPressed } = event;
-        if (scrollDirection !== Clutter.ScrollDirection.DOWN &&
-            scrollDirection !== Clutter.ScrollDirection.UP) return Clutter.EVENT_PROPAGATE;
-        const { panelScrollAction, soundVolumeStep, soundVolumeStepCtrl } = config;
+        const scrollDirection = event.get_scroll_direction();
+        if (!this.#moveDirection[scrollDirection]) return Clutter.EVENT_PROPAGATE;
+        let { panelScrollAction } = config;
+        const { soundVolumeStep, soundVolumeStepCtrl } = config;
+        if (scrollDirection === Clutter.ScrollDirection.LEFT || scrollDirection === Clutter.ScrollDirection.RIGHT) {
+            panelScrollAction = 'switch_workspace';
+        }
         switch (panelScrollAction) {
             case 'switch_workspace':
                 this.#switchWorkspace(scrollDirection);
                 break;
             case 'change_sound_volume':
+                const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) !== 0;
                 let step = isCtrlPressed ? soundVolumeStepCtrl : soundVolumeStep;
                 step = scrollDirection === Clutter.ScrollDirection.DOWN ? -step : step;
                 this.#soundVolumeControlClient?.addVolume(step);
@@ -364,12 +371,8 @@ class PanelScrollTweak extends Tweak {
             this.#switchWorkspaceDelay?.destroy();
             this.#switchWorkspaceDelay = null;
         });
-        const moveDirection = (
-            scrollDirection === Clutter.ScrollDirection.UP ?
-            Meta.MotionDirection.LEFT : Meta.MotionDirection.RIGHT
-        );
         const activeWorkspace = global.workspace_manager?.get_active_workspace();
-        const nextWorkspace = activeWorkspace?.get_neighbor(moveDirection);
+        const nextWorkspace = activeWorkspace?.get_neighbor(this.#moveDirection[scrollDirection]);
         if (!nextWorkspace) return;
         if (Main.overview?.visible) return Main.wm.actionMoveWorkspace(nextWorkspace);
         Main.osdWindowManager?.hideAll();
@@ -484,30 +487,33 @@ class LockscreenTweak extends Tweak {
     #getCustomEaseFunction(forcePrimaryInput, animationDelay) {
         const origin = this.#backup.get('origin');
         const inputSourceManager = Keyboard.getInputSourceManager();
+        const onCompleteHandler = () => {
+            if (!inputSourceManager) return;
+            if (!Main.screenShield.actor?.visible) {
+                if (!inputSourceManager._sourcesPerWindowChanged ||
+                    !inputSourceManager._setPerWindowInputSource) return;
+                inputSourceManager._sourcesPerWindowChanged();
+                if (inputSourceManager._sourcesPerWindow) inputSourceManager._setPerWindowInputSource();
+                return;
+            }
+            if (inputSourceManager._focusWindowNotifyId) {
+                Main.overview?.disconnectObject(inputSourceManager);
+                global.display.disconnect(inputSourceManager._focusWindowNotifyId);
+                inputSourceManager._focusWindowNotifyId = 0;
+                inputSourceManager._sourcesPerWindow = false;
+            }
+            if (!forcePrimaryInput) return;
+            forcePrimaryInput = false;
+            const primaryInput = inputSourceManager.inputSources['0'];
+            primaryInput?.activate();
+        };
         return (params) => {
             if (!params) return origin();
             params.delay = animationDelay;
             const onComplete = params.onComplete;
             params.onComplete = () => {
                 if (onComplete) onComplete();
-                if (!inputSourceManager) return;
-                if (!Main.screenShield.actor.visible) {
-                    if (!inputSourceManager._sourcesPerWindowChanged ||
-                        !inputSourceManager._setPerWindowInputSource) return;
-                    inputSourceManager._sourcesPerWindowChanged();
-                    if (inputSourceManager._sourcesPerWindow) inputSourceManager._setPerWindowInputSource();
-                    return;
-                }
-                if (inputSourceManager._focusWindowNotifyId) {
-                    Main.overview?.disconnectObject(inputSourceManager);
-                    global.display.disconnect(inputSourceManager._focusWindowNotifyId);
-                    inputSourceManager._focusWindowNotifyId = 0;
-                    inputSourceManager._sourcesPerWindow = false;
-                }
-                if (!forcePrimaryInput) return;
-                forcePrimaryInput = false;
-                const primaryInput = inputSourceManager.inputSources['0'];
-                primaryInput?.activate();
+                onCompleteHandler();
             };
             origin(params);
         };
@@ -530,7 +536,7 @@ class WindowSwitchScrollFixTweak extends Tweak {
         if (this.#vdevice) return;
         const defaultSeat = Clutter.get_default_backend().get_default_seat();
         this.#vdevice = defaultSeat.create_virtual_device(Clutter.InputDeviceType.POINTER_DEVICE);
-        Context.signals.add(this, [[global.display, ['notify::focus-window'], () => this.#handleWindowFocus()]]);
+        Context.signals.add(this, [[global.display, [Event.FocusWindow], () => this.#handleWindowFocus()]]);
     }
 
     destroy() {
