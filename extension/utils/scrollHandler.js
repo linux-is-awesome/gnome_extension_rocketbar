@@ -2,7 +2,7 @@
 
 const { Clutter } = imports.gi;
 
-var ScrollHandler = class {
+export class ScrollHandler {
 
     constructor(actor, callback) {
 
@@ -40,7 +40,7 @@ var ScrollHandler = class {
 
         const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) != 0;
 
-        return this._callback([scrollDirection, isCtrlPressed]);
+        return this._callback({scrollDirection, isCtrlPressed});
     }
 
 }

@@ -1,651 +1,586 @@
 /* exported Tweaks */
 
-//#region imports
+import Clutter from 'gi://Clutter';
+import Meta from 'gi://Meta';
+import Gio from 'gi://Gio';
+import { Main, HotCorner, Keyboard, SwitcherPopup, WorkspaceSwitcherPopup, AppMenu } from './legacy.js';
+import { Context } from './context.js';
+import { Config } from '../utils/config.js';
+import { Type, Delay } from './enums.js';
+import { DefaultSoundVolumeControlClient } from '../services/soundVolumeService.js';
+import { ScrollHandler } from '../utils/scrollHandler.js';
 
-const { Clutter, Meta } = imports.gi;
-const Main = imports.ui.main;
-const HotCorner = imports.ui.layout.HotCorner;
-const Keyboard = imports.ui.status.keyboard
-const SwitcherPopup = imports.ui.switcherPopup;
-const { WorkspaceSwitcherPopup } = imports.ui.workspaceSwitcherPopup;
+/** @enum {string} */
+const ConfigFields = {
+    overviewKillDash: 'overview-kill-dash',
+    panelScrollAction: 'panel-scroll-action',
+    enablePanelMiddleButtonHandler: 'panel-enable-middle-button',
+    enableFullscreenHotCorner: 'hotcorner-enable-in-fullscreen',
+    enableOverviewClickHandler: 'overview-enable-empty-space-clicks',
+    activitiesShowAppsButton: 'activities-show-apps-button',
+    soundVolumeStep: 'sound-volume-control-change-speed',
+    soundVolumeStepCtrl: 'sound-volume-control-change-speed-ctrl',
+    appButtonMenuRequireClick: 'appbutton-menu-require-click',
+    panelMenuRequireClick: 'panel-menu-require-click',
+    lockscreenPrimaryInput: 'lockscreen-primary-input',
+    lockscreenAnimationDelay: 'lockscreen-animation-delay',
+    enableSwitcherPopupDelay: 'switcherpopup-enable-show-delay',
+    switcherPopupDelay: 'switcherpopup-show-delay',
+    enableSwitcherPopupHandler: 'switcherpopup-enable-handler'
+};
 
-// custom modules import
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { AppMenu } = imports.ui.appMenu;
-const { SoundVolumeControl } = Me.imports.services.soundVolumeService;
-const { Connections } = Me.imports.utils.connections;
-const { ScrollHandler } = Me.imports.utils.scrollHandler;
-const { Timeout } = Me.imports.utils.timeout;
+class Tweak {
+    /** @param {Object.<string, string|number|boolean>} _ */
+    toggle(_ = {}) {};
+    destroy() {};
+}
 
-//#endregion imports
+class KillOverviewDashTweak extends Tweak {
 
-var Tweaks = class {
+    #backup = null;
 
-    constructor(settings) {
-
-        this._settings = settings;
-
-        // enable tweaks with a small delay
-        this._initTimeout = Timeout.idle().run(() => {
-
-            this._initTimeout = null;
-
-            this._handleSettings();
-
-            this._createConnections();
-
-        });
+    toggle({ overviewKillDash }) {
+        if (!this.#canToggle({ overviewKillDash })) return;
+        if (overviewKillDash) this.#enable();
+        else this.#disable();
     }
 
     destroy() {
-
-        // clear init timeout if exists
-        this._initTimeout?.destroy();
-
-        // remove connections
-        this._connections?.destroy();
-
-        this._removePanelScrollHandler();
-
-        this._removePanelMiddleButtonHandler();
-
-        this._disableFullscreenHotCorner();
-
-        this._disableActivitiesClickHandler();
-
-        this._removeOverviewClickHandler();
-
-        this._restoreOverviewDash();
-
-        this._restorePanelMenuManagerBehavior();
-
-        this._destroySoundVolumeControl();
-
-        this._restoreSwitcherPopupDelay();
-
-        this._removeSwitcherPopupHandler();
-
-        this._handleLockScreen();
+        if (!this.#backup) return;
+        this.#disable();
     }
 
-    _createConnections() {
-        this._connections = new Connections();
-        this._connections.addScope(this._settings, [
-            'changed::sound-volume-control-change-speed',
-            'changed::sound-volume-control-change-speed-ctrl',
-            'changed::lockscreen-primary-input'], () => this._setConfig());
-        this._connections.addScope(this._settings, [
-            'changed::overview-kill-dash',
-            'changed::panel-scroll-action',
-            'changed::panel-enable-middle-button',
-            'changed::hotcorner-enable-in-fullscreen',
-            'changed::activities-show-apps-button',
-            'changed::overview-enable-empty-space-clicks',
-            'changed::appbutton-menu-require-click',
-            'changed::panel-menu-require-click',
-            'changed::switcherpopup-enable-show-delay',
-            'changed::switcherpopup-show-delay',
-            'changed::switcherpopup-enable-handler'], () => this._handleSettings());
+    #canToggle({ overviewKillDash }) {
+        if (!Main._deferredWorkData || !Main.overview?.dash?._workId) return false;
+        if (overviewKillDash && this.#backup) return false;
+        if (!overviewKillDash && !this.#backup) return false;
+        return true;
     }
 
-    _handleSettings() {
+    #enable() {
+        const deferredWorkData = Main._deferredWorkData[Main.overview.dash._workId];
+        if (!deferredWorkData) return;
+        this.#backup = deferredWorkData.callback;
+        deferredWorkData.callback = () => {};
+        Main.overview.dash._box?.get_children()?.forEach(appIcon => appIcon.destroy());
+        Main.overview.dash.showAppsButton?.hide();
+        Main.overview.dash._background?.hide();
+        Main.overview.dash._separator = null;
+        Main.overview.dash.height = 40;
+    }
 
-        this._setConfig();
+    #disable() {
+        const deferredWorkData = Main._deferredWorkData[Main.overview.dash._workId];
+        if (!deferredWorkData) return;
+        Main.overview.dash.showAppsButton?.show();
+        Main.overview.dash._background?.show();
+        Main.overview.dash.set_size(-1, -1);
+        Main.overview.dash.setMaxSize(-1, -1);
+        deferredWorkData.callback = this.#backup;
+        this.#backup = null;
+    }
 
-        if (this._config.overviewKillDash) {
-            this._killOverviewDash();
-        } else {
-            this._restoreOverviewDash();
-        }
+}
 
-        if (this._config.panelScrollAction === 'change_sound_volume' ||
-                this._config.enablePanelMiddleButtonHandler) {
+class OverviewClicksTweak extends Tweak {
 
-            if (!this._soundVolumeControl) {
-                this._soundVolumeControl = new SoundVolumeControl();
+    #clickAction = null;
+
+    toggle({ enableOverviewClickHandler }) {
+        if (!this.#canToggle({ enableOverviewClickHandler })) return;
+        if (enableOverviewClickHandler) this.#enable();
+        else this.#disable();
+    }
+
+    destroy() {
+        if (!this.#clickAction) return;
+        this.#disable();
+    }
+
+    #canToggle({ enableOverviewClickHandler }) {
+        if (typeof Main.overview?.toggle !== Type.Function) return false;
+        if (typeof Main.overview?._overview?._controls?._toggleAppsPage !== Type.Function) return false;
+        if (enableOverviewClickHandler && this.#clickAction) return false;
+        if (!enableOverviewClickHandler && !this.#clickAction) return false;
+        return true;
+    }
+
+    #enable() {
+        this.#clickAction = new Clutter.ClickAction();
+        this.#clickAction.connect('clicked', event => {
+            switch (event?.get_button()) {
+                case Clutter.BUTTON_PRIMARY:
+                    return Main.overview.toggle();
+                case Clutter.BUTTON_SECONDARY:
+                    return Main.overview._overview._controls._toggleAppsPage();
+                default: return;
             }
-
-        } else {
-            this._destroySoundVolumeControl();
-        }
-
-        if (this._config.panelScrollAction !== 'none') {
-            this._addPanelScrollHandler();
-        } else {
-            this._removePanelScrollHandler();
-        }
-
-        if (this._config.enablePanelMiddleButtonHandler) {
-            this._addPanelMiddleButtonHandler();
-        } else {
-            this._removePanelMiddleButtonHandler();
-        }
-
-        if (this._config.enableFullscreenHotCorner) {
-            this._enableFullscreenHotCorner();
-        } else {
-            this._disableFullscreenHotCorner();
-        }
-
-        if (this._config.activitiesShowAppsButton &&
-                this._config.activitiesShowAppsButton !== 'none') {
-            this._enableActivitiesClickHandler();
-        } else {
-            this._disableActivitiesClickHandler();
-        }
-
-        if (this._config.enableOverviewClickHandler) {
-            this._addOverviewClickHandler();
-        } else {
-            this._removeOverviewClickHandler();
-        }
-
-        if (this._config.appButtonMenuRequireClick ||
-                this._config.panelMenuRequireClick) {
-            this._overridePanelMenuManagerBehavior();
-        } else {
-            this._restorePanelMenuManagerBehavior();
-        }
-
-        if (this._config.enableSwitcherPopupDelay) {
-            this._setSwitcherPopupDelay();
-        } else {
-            this._restoreSwitcherPopupDelay();
-        }
-
-        if (this._config.enableSwitcherPopupHandler) {
-            this._addSwitcherPopupHandler();
-        } else {
-            this._removeSwitcherPopupHandler();
-        }
-
+        });
+        Main.overview._overview._controls.reactive = true;
+        Main.overview._overview._controls.add_action(this.#clickAction);
     }
 
-    _setConfig() {
-        this._config = {
-            overviewKillDash: this._settings.get_boolean('overview-kill-dash'),
-            panelScrollAction: this._settings.get_string('panel-scroll-action'),
-            enablePanelMiddleButtonHandler: this._settings.get_boolean('panel-enable-middle-button'),
-            enableFullscreenHotCorner: this._settings.get_boolean('hotcorner-enable-in-fullscreen'),
-            enableOverviewClickHandler: this._settings.get_boolean('overview-enable-empty-space-clicks'),
-            activitiesShowAppsButton: this._settings.get_string('activities-show-apps-button'),
-            soundVolumeStep: this._settings.get_int('sound-volume-control-change-speed'),
-            soundVolumeStepCtrl: this._settings.get_int('sound-volume-control-change-speed-ctrl'),
-            appButtonMenuRequireClick: this._settings.get_boolean('appbutton-menu-require-click'),
-            panelMenuRequireClick: this._settings.get_boolean('panel-menu-require-click'),
-            lockscreenPrimaryInput: this._settings.get_boolean('lockscreen-primary-input'),
-            enableSwitcherPopupDelay: this._settings.get_boolean('switcherpopup-enable-show-delay'),
-            switcherPopupDelay: this._settings.get_int('switcherpopup-show-delay'),
-            enableSwitcherPopupHandler: this._settings.get_boolean('switcherpopup-enable-handler')
-        };
+    #disable() {
+        Main.overview._overview._controls.reactive = false;
+        Main.overview._overview._controls.remove_action(this.#clickAction);
+        this.#clickAction = null;
     }
 
-    _destroySoundVolumeControl() {
-        this._soundVolumeControl?.destroy();
-        this._soundVolumeControl = null;
+}
+
+class ActivitiesClicksTweak extends Tweak {
+
+    #buttonMapping = {
+        left_button: Clutter.BUTTON_PRIMARY,
+        right_button: Clutter.BUTTON_SECONDARY,
+        middle_button: Clutter.BUTTON_MIDDLE
+    };
+
+    #button = null;
+
+    toggle({ activitiesShowAppsButton }) {
+        if (!this.#canToggle()) return;
+        if (!activitiesShowAppsButton || activitiesShowAppsButton === 'none') return this.destroy();
+        this.#button = this.#buttonMapping[activitiesShowAppsButton];
+        const activitiesButton = Main.panel.statusArea['activities'];
+        if (!this.#button || !activitiesButton) return this.destroy();
+        if (Context.signals.hasClient(this)) return;
+        Context.signals.add(this, [[activitiesButton, ['captured_event'], (_, event) => this.#handleEvent(event)]]);
     }
 
-    //#region panel scroll handling
-
-    _addPanelScrollHandler() {
-
-        if (this._panelScrollHandler) {
-            return;
-        }
-
-        this._panelScrollHandler = new ScrollHandler(
-            Main.panel,
-            (params) => this._handlePanelScroll(params)
-        );
+    destroy() {
+        Context.signals.removeAll(this);
+        this.#button = null;
     }
 
-    _removePanelScrollHandler() {
-
-        if (!this._panelScrollHandler) {
-            return;
-        }
-
-        this._panelScrollHandler.destroy();
-        this._panelScrollHandler = null;
+    #canToggle() {
+        if (!Main.panel?.statusArea) return false;
+        if (typeof Main.overview?.shouldToggleByCornerOrButton !== Type.Function) return false;
+        if (typeof Main.overview?._overview?._controls?._toggleAppsPage !== Type.Function) return false;
+        return true;
     }
 
-    _handlePanelScroll(params) {
-
-        const [scrollDirection, isCtrlPressed] = params;
-
-        if (this._config.panelScrollAction === 'switch_workspace') {
-
-            this._switchWorkspace(scrollDirection);
-
-        } else if (this._config.panelScrollAction === 'change_sound_volume') {
-
-            const soundVolumeStep = (
-                isCtrlPressed ?
-                this._config.soundVolumeStepCtrl :
-                this._config.soundVolumeStep
-            );
-
-            this._soundVolumeControl?.addVolume(
-                scrollDirection === Clutter.ScrollDirection.UP ?
-                soundVolumeStep :
-                -soundVolumeStep
-            );
-
-        } else {
-            return Clutter.EVENT_PROPAGATE;
-        }
-
+    #handleEvent(event) {
+        if (event?.type() !== Clutter.EventType.BUTTON_RELEASE) return Clutter.EVENT_PROPAGATE;
+        const eventButton = event.get_button();
+        if (eventButton !== this.#button) return Clutter.EVENT_PROPAGATE;
+        if (!Main.overview.shouldToggleByCornerOrButton()) return Clutter.EVENT_PROPAGATE;
+        if (Main.overview.visible &&
+            Main.overview._overview._controls.dash?.showAppsButton?.checked) return Clutter.EVENT_PROPAGATE;
+        Main.overview._overview._controls._toggleAppsPage();
         return Clutter.EVENT_STOP;
     }
 
-    _switchWorkspace(scrollDirection) {
+}
 
-        if (this._switchWorkspaceTimeout) {
+class HotCornerTweak extends Tweak {
+
+    #backup = null;
+
+    toggle({ enableFullscreenHotCorner }) {
+        if (!this.#canToggle({ enableFullscreenHotCorner })) return;
+        if (enableFullscreenHotCorner) this.#enable();
+        else this.#disable();
+    }
+
+    destroy() {
+        if (!this.#backup) return;
+        this.#disable();
+    }
+
+    #canToggle({ enableFullscreenHotCorner }) {
+        if (!HotCorner.prototype._toggleOverview) return false;
+        if (typeof Main.overview?.toggle !== Type.Function) return false;
+        if (typeof Main.overview?.shouldToggleByCornerOrButton !== Type.Function) return false;
+        if (enableFullscreenHotCorner && this.#backup) return false;
+        if (!enableFullscreenHotCorner && !this.#backup) return false;
+        return true;
+    }
+
+    #enable() {
+        this.#backup = HotCorner.prototype._toggleOverview;
+        HotCorner.prototype._toggleOverview = function () {
+            if (!Main.overview.shouldToggleByCornerOrButton()) return;
+            Main.overview.toggle();
+            if (!Main.overview.animationInProgress) return;
+            this._ripples?.playAnimation(this._x, this._y);
+        };
+        Main.layoutManager?._updateHotCorners();
+    }
+
+    #disable() {
+        HotCorner.prototype._toggleOverview = this.#backup;
+        Main.layoutManager?._updateHotCorners();
+        this.#backup = null;
+    }
+
+}
+
+class NightLightTweak extends Tweak {
+
+    #settings = new Gio.Settings({
+        schema_id: 'org.gnome.settings-daemon.plugins.color'
+    });
+
+    toggle() {
+        this.#settings?.set_uint('night-light-temperature', 5000);
+        this.#restore();
+    }
+
+    destroy() {
+        Context.jobs.removeAll(this);
+        this.#settings?.run_dispose();
+        this.#settings = null;
+    }
+
+    #restore() {
+        if (Main.layoutManager?.screenShieldGroup?.visible) return;
+        if (!this.#settings?.get_boolean('night-light-enabled')) return;
+        this.#settings.set_boolean('night-light-enabled', false);
+        Context.jobs.new(this, Delay.Queue).then(() => this.#settings?.set_boolean('night-light-enabled', true));
+    }
+
+}
+
+class SwitcherPopupsTweak extends Tweak {
+
+    #backupDelay = SwitcherPopup.POPUP_DELAY_TIMEOUT;
+    #backupFunction = null;
+
+    toggle(config) {
+        const { enableSwitcherPopupHandler, enableSwitcherPopupDelay, switcherPopupDelay } = config;
+        if (enableSwitcherPopupHandler && !this.#backupFunction) this.#setPopupHandler();
+        else if (!enableSwitcherPopupHandler && this.#backupFunction) this.#removePopupHandler();
+        if (typeof this.#backupDelay !== Type.Number) return;
+        if (enableSwitcherPopupDelay && typeof switcherPopupDelay === Type.Number) {
+            SwitcherPopup.POPUP_DELAY_TIMEOUT = switcherPopupDelay;
+        } else SwitcherPopup.POPUP_DELAY_TIMEOUT = this.#backupDelay;
+    }
+
+    destroy() {
+        if (this.#backupFunction) this.#removePopupHandler();
+        if (typeof this.#backupDelay === Type.Number) {
+            SwitcherPopup.POPUP_DELAY_TIMEOUT = this.#backupDelay;
+        }
+        this.#backupFunction = null;
+        this.#backupDelay = null;
+    }
+
+    #setPopupHandler() {
+        this.#backupFunction = Main.pushModal;
+        Main.pushModal = (actor, params) => {
+            if (actor instanceof SwitcherPopup.SwitcherPopup === false) return this.#backupFunction(actor, params);
+            const originSetKeyFocus = global.stage.set_key_focus;
+            global.stage.set_key_focus = () => {};
+            const result = this.#backupFunction(actor, params);
+            global.stage.set_key_focus = originSetKeyFocus;
+            return result;
+        };
+    }
+
+    #removePopupHandler() {
+        Main.pushModal = this.#backupFunction;
+        this.#backupFunction = null;
+    }
+
+}
+
+class PanelScrollTweak extends Tweak {
+
+    /** @type {DefaultSoundVolumeControlClient} */
+    #soundVolumeControlClient = null;
+
+    /** @type {ScrollHandler} */
+    #scrollHandler = null;
+
+    /** @type {Job} */
+    #switchWorkspaceDelay = null;
+
+    get #workspaceSwitcherPopup() {
+        if (Main.wm._workspaceSwitcherPopup) return Main.wm._workspaceSwitcherPopup;
+        Main.wm._workspaceSwitcherPopup = new WorkspaceSwitcherPopup();
+        Main.wm._workspaceSwitcherPopup.connect('destroy', () => Main.wm._workspaceSwitcherPopup = null);
+        return Main.wm._workspaceSwitcherPopup;
+    }
+
+    toggle(config) {
+        if (!this.#canToggle()) return;
+        const { panelScrollAction } = config;
+        if (!panelScrollAction || panelScrollAction === 'none') return this.destroy();
+        this.#toggleSoundVolumeControlClient(config);
+        if (this.#scrollHandler) return;
+        this.#scrollHandler = new ScrollHandler(Main.panel, event => this.#handleScroll(event, config));
+    }
+
+    destroy() {
+        if (!this.#scrollHandler) return;
+        this.#scrollHandler?.destroy();
+        this.#soundVolumeControlClient?.destroy();
+        this.#switchWorkspaceDelay?.destroy();
+        this.#scrollHandler = null;
+        this.#soundVolumeControlClient = null;
+        this.#switchWorkspaceDelay = null;
+    }
+
+    #canToggle() {
+        if (!Main.panel) return false;
+        if (typeof Main.wm?.actionMoveWorkspace !== Type.Function) return false;
+        return true;
+    }
+
+    #toggleSoundVolumeControlClient({ panelScrollAction }) {
+        if (panelScrollAction === 'change_sound_volume') {
+            if (this.#soundVolumeControlClient) return;
+            this.#soundVolumeControlClient = new DefaultSoundVolumeControlClient();
             return;
         }
+        this.#soundVolumeControlClient?.destroy();
+        this.#soundVolumeControlClient = null;
+    }
 
-        this._switchWorkspaceTimeout = Timeout.default(300).run(() => {
-            this._switchWorkspaceTimeout = null;
-        });
-
-        let moveDirection = (
-            scrollDirection === Clutter.ScrollDirection.UP ?
-            Meta.MotionDirection.LEFT :
-            Meta.MotionDirection.RIGHT
-        );
-
-        const activeWorkspace = global.workspace_manager.get_active_workspace();
-        const nextWorkspace = activeWorkspace.get_neighbor(moveDirection);
-
-        if (!Main.overview.visible) {
-
-            if (Main.wm._workspaceSwitcherPopup == null) {
-                Main.wm._workspaceSwitcherPopup = new WorkspaceSwitcherPopup();
-                Main.wm._workspaceSwitcherPopup.connect('destroy', () => {
-                    Main.wm._workspaceSwitcherPopup = null;
-                });
-            }
-
-            Main.osdWindowManager.hideAll();
-
-            Main.wm._workspaceSwitcherPopup.display(nextWorkspace.index());
+    #handleScroll(event, config) {
+        if (!event || !config) return Clutter.EVENT_PROPAGATE;
+        const { scrollDirection, isCtrlPressed } = event;
+        if (scrollDirection !== Clutter.ScrollDirection.DOWN &&
+            scrollDirection !== Clutter.ScrollDirection.UP) return Clutter.EVENT_PROPAGATE;
+        const { panelScrollAction, soundVolumeStep, soundVolumeStepCtrl } = config;
+        switch (panelScrollAction) {
+            case 'switch_workspace':
+                this.#switchWorkspace(scrollDirection);
+                break;
+            case 'change_sound_volume':
+                let step = isCtrlPressed ? soundVolumeStepCtrl : soundVolumeStep;
+                step = scrollDirection === Clutter.ScrollDirection.DOWN ? -step : step;
+                this.#soundVolumeControlClient?.addVolume(step);
+                break;
+            default: return Clutter.EVENT_PROPAGATE;
         }
+        return Clutter.EVENT_STOP;
+    }
 
+    #switchWorkspace(scrollDirection) {
+        if (this.#switchWorkspaceDelay) return;
+        this.#switchWorkspaceDelay = Context.jobs.new(this, Delay.Sleep).then(() => {
+            this.#switchWorkspaceDelay?.destroy();
+            this.#switchWorkspaceDelay = null;
+        });
+        const moveDirection = (
+            scrollDirection === Clutter.ScrollDirection.UP ?
+            Meta.MotionDirection.LEFT : Meta.MotionDirection.RIGHT
+        );
+        const activeWorkspace = global.workspace_manager?.get_active_workspace();
+        const nextWorkspace = activeWorkspace?.get_neighbor(moveDirection);
+        if (!nextWorkspace) return;
+        if (Main.overview?.visible) return Main.wm.actionMoveWorkspace(nextWorkspace);
+        Main.osdWindowManager?.hideAll();
+        this.#workspaceSwitcherPopup.display(nextWorkspace.index());
         Main.wm.actionMoveWorkspace(nextWorkspace);
     }
 
-    //#endregion panel scroll handling
+}
 
-    //#region panel middle button handling
+class PanelMiddleClickTweak extends Tweak {
 
-    _addPanelMiddleButtonHandler() {
+    /** @type {DefaultSoundVolumeControlClient} */
+    #soundVolumeControlClient = null;
 
-        if (this._panelMiddleButtonHandler) {
-            return;
-        }
-
-        this._panelMiddleButtonHandler = Main.panel.connect(
-            'button-press-event',
-            (actor, event) => this._handlePanelMiddleButton(event)
-        );
+    toggle({ enablePanelMiddleButtonHandler }) {
+        if (!this.#canToggle({ enablePanelMiddleButtonHandler })) return;
+        if (!enablePanelMiddleButtonHandler) return this.destroy();
+        this.#soundVolumeControlClient = new DefaultSoundVolumeControlClient();
+        Context.signals.add(this, [[Main.panel, ['button-press-event'], (_, event) => this.#handleEvent(event)]]);
     }
 
-    _removePanelMiddleButtonHandler() {
-
-        if (!this._panelMiddleButtonHandler) {
-            return;
-        }
-
-        Main.panel.disconnect(this._panelMiddleButtonHandler);
-
-        this._panelMiddleButtonHandler = null;
+    #canToggle({ enablePanelMiddleButtonHandler }) {
+        if (!Main.panel) return false;
+        if (enablePanelMiddleButtonHandler && this.#soundVolumeControlClient) return false;
+        if (!enablePanelMiddleButtonHandler && !this.#soundVolumeControlClient) return false;
+        return true;
     }
 
-    _handlePanelMiddleButton(event) {
+    destroy() {
+        if (!this.#soundVolumeControlClient) return;
+        Context.signals.removeAll(this);
+        this.#soundVolumeControlClient?.destroy();
+        this.#soundVolumeControlClient = null;
+    }
 
-        // handle middle button press on empty space only
-        if (!event || event.get_source() !== Main.panel ||
-                event.get_button() !== Clutter.BUTTON_MIDDLE) {
-            return Clutter.EVENT_PROPAGATE;
-        }
-
-        // mute/unmute sound volume
-
-        this._soundVolumeControl?.toggleMute();
-
+    #handleEvent(event) {
+        if (event?.get_source() !== Main.panel ||
+            event.get_button() !== Clutter.BUTTON_MIDDLE) return Clutter.EVENT_PROPAGATE;
+        this.#soundVolumeControlClient?.toggleMute();
         return Clutter.EVENT_STOP;
     }
 
-    //#endregion middle button handling
+}
 
-    //#region hot corner tweaks
+class PanelMenuManagerTweak extends Tweak {
 
-    _enableFullscreenHotCorner() {
+    #backup = null;
 
-        if (this._originalToggleOverview) {
-            return;
-        }
+    toggle(config) {
+        if (typeof Main.panel?.menuManager?._changeMenu !== Type.Function) return;
+        const { appButtonMenuRequireClick, panelMenuRequireClick } = config;
+        if (!appButtonMenuRequireClick && !panelMenuRequireClick) return this.destroy();
+        if (this.#backup) return;
+        this.#backup = Main.panel.menuManager._changeMenu;
+        Main.panel.menuManager._changeMenu = this.#getCustomFunction(config);
+    }
 
-        // backup the original function
-        this._originalToggleOverview = HotCorner.prototype._toggleOverview;
+    destroy() {
+        if (!this.#backup) return;
+        Main.panel.menuManager._changeMenu = this.#backup;
+        this.#backup = null;
+    }
 
-        // override the function
-        HotCorner.prototype._toggleOverview = function() {
-
-            if (!Main.overview.shouldToggleByCornerOrButton()) {
-                return;
-            }
-            
-            Main.overview.toggle();
-            
-            if (!Main.overview.animationInProgress) {
-                return;
-            }
-            
-            this._ripples.playAnimation(this._x, this._y);
+    #getCustomFunction(config) {
+        return newMenu => {
+            if (!this.#backup || !config) return;
+            const { appButtonMenuRequireClick, panelMenuRequireClick } = config;
+            const isNewAppMenu = newMenu instanceof AppMenu;
+            const isActiveAppMenu = Main.panel.menuManager.activeMenu instanceof AppMenu;
+            if (panelMenuRequireClick && !isActiveAppMenu) return;
+            if (appButtonMenuRequireClick && (isActiveAppMenu || isNewAppMenu)) return;
+            if (!appButtonMenuRequireClick && panelMenuRequireClick && !isNewAppMenu) return;
+            this.#backup(newMenu);
         };
-
-        Main.layoutManager._updateHotCorners();
     }
 
-    _disableFullscreenHotCorner() {
+}
 
-        if (!this._originalToggleOverview) {
-            return;
-        }
+class LockscreenTweak extends Tweak {
 
-        HotCorner.prototype._toggleOverview = this._originalToggleOverview;
-        Main.layoutManager._updateHotCorners();
+    #backup = Context.getSessionCache(this.constructor.name);
 
-        this._originalToggleOverview = null;
+    toggle({ lockscreenPrimaryInput, lockscreenAnimationDelay }) {
+        if (!this.#backup) return; 
+        const lockDialogGroup = Main.screenShield?._lockDialogGroup;
+        if (!lockDialogGroup) return this.#backup.clear();
+        if (!lockscreenPrimaryInput && !lockscreenAnimationDelay) return this.#disable();
+        const origin = this.#backup.get('origin');
+        if (typeof origin !== Type.Function) this.#backup.set('origin', lockDialogGroup.ease.bind(lockDialogGroup));
+        lockDialogGroup.ease = this.#getCustomEaseFunction(lockscreenPrimaryInput, lockscreenAnimationDelay);
     }
 
-    //#endregion hot corner tweaks
+    destroy() {
+        if (!this.#backup) return;
+        if (!Main.sessionMode?.isLocked) this.#disable();
+        this.#backup = null;
+    }
 
-    //#region activities button tweaks
+    #disable() {
+        const origin = this.#backup.get('origin');
+        if (typeof origin !== Type.Function) return;
+        Main.screenShield._lockDialogGroup.ease = origin;
+        this.#backup.clear();
+    }
 
-    _enableActivitiesClickHandler() {
-
-        if (this._activitiesClickHandler) {
-            return;
-        }
-
-        const activitiesButton = Main.panel.statusArea['activities'];
-
-        this._activitiesClickHandler = activitiesButton.connect('captured_event', (actor, event) => {
-
-            if (!event || event.type() !== Clutter.EventType.BUTTON_RELEASE) {
-                return Clutter.EVENT_PROPAGATE;
-            }
-
-            const eventButton = event.get_button();
-
-            const buttonMapping = {
-                'left_button': Clutter.BUTTON_PRIMARY,
-                'right_button': Clutter.BUTTON_SECONDARY,
-                'middle_button': Clutter.BUTTON_MIDDLE
+    #getCustomEaseFunction(forcePrimaryInput, animationDelay) {
+        const origin = this.#backup.get('origin');
+        return (params) => {
+            if (!params) return origin();
+            params.delay = animationDelay;
+            if (!forcePrimaryInput) return origin(params);
+            const onComplete = params.onComplete;
+            params.onComplete = () => {
+                if (onComplete) onComplete();
+                if (!forcePrimaryInput || !Main.sessionMode?.isLocked) return;
+                forcePrimaryInput = false;
+                const primaryInput = Keyboard.getInputSourceManager()?.inputSources['0'];
+                primaryInput?.activate();
             };
-
-            if (!eventButton || !this._config.activitiesShowAppsButton ||
-                    buttonMapping[this._config.activitiesShowAppsButton] !== eventButton) {
-                return Clutter.EVENT_PROPAGATE;
-            }
-
-            if (Main.overview.shouldToggleByCornerOrButton() &&
-                    !(Main.overview.visible && Main.overview._overview._controls.dash.showAppsButton.checked)) {
-
-                Main.overview._overview._controls._toggleAppsPage();
-
-                return Clutter.EVENT_STOP;
-            }
-
-            return Clutter.EVENT_PROPAGATE;
-        });
-    }
-
-    _disableActivitiesClickHandler() {
-
-        if (!this._activitiesClickHandler) {
-            return;
-        }
-
-        const activitiesButton = Main.panel.statusArea['activities'];
-
-        activitiesButton.disconnect(this._activitiesClickHandler);
-
-        this._activitiesClickHandler = null;
-    }
-
-    //#endregion activities button tweaks
-
-    //#region overview tweaks
-
-    _addOverviewClickHandler() {
-
-        if (this._overviewClickHandler) {
-            return;
-        }
-
-        // backup the overview reactivity
-        this._overviewOldReactivity = Main.overview._overview._controls.reactive;
-
-        // make the overview reactive
-        Main.overview._overview._controls.reactive = true;
-
-        // create a click handler
-        this._overviewClickHandler = new Clutter.ClickAction();
-        this._overviewClickHandler.connect('clicked', action => {
-
-            // just toggle overview when primary button clicked
-            if (action.get_button() == Clutter.BUTTON_PRIMARY) {
-                Main.overview.toggle();
-                return;
-            }
-            
-            // toggle apps page when secondary button clicked
-            if (action.get_button() === Clutter.BUTTON_SECONDARY) {
-                Main.overview._overview._controls._toggleAppsPage()
-            }
-
-        });
-
-        // add click action to the overview
-        Main.overview._overview._controls.add_action(this._overviewClickHandler);
-    }
-
-    _removeOverviewClickHandler() {
-
-        if (!this._overviewClickHandler) {
-            return;
-        }
-
-        // restore overview reactivity
-        Main.overview._overview._controls.reactive = this._overviewOldReactivity;
-        this._overviewOldReactivity = null;
-
-        // remove custom click action from the overview
-        Main.overview._overview._controls.remove_action(this._overviewClickHandler);
-        this._overviewClickHandler = null;
-    }
-
-    _killOverviewDash() {
-
-        if (!Main.overview.dash._workId || this._dashDeferredWorkBackup ) {
-            return;
-        }
-
-        if (!Main._deferredWorkData[Main.overview.dash._workId]) {
-            return;
-        }
-
-        this._dashDeferredWorkBackup = Main._deferredWorkData[Main.overview.dash._workId];
-
-         // prevent deferred work from running dash redisplay
-        Main._deferredWorkData[Main.overview.dash._workId] = {
-            actor: this._dashDeferredWorkBackup.actor,
-            callback: () => {}
-        }
-
-        // leave a gap below the Workspace Thumbnail
-        Main.overview.dash.height = 40;
-
-        Main.overview.dash.showAppsButton.hide();
-        Main.overview.dash._background.hide();
-
-        // remove all app icons from the dash
-        Main.overview.dash._box.get_children().forEach(appIcon => appIcon.destroy());
-
-        Main.overview.dash._separator = null;
-    }
-
-    _restoreOverviewDash() {
-
-        if (!this._dashDeferredWorkBackup || !Main.overview.dash._workId) {
-            return;
-        }
-
-        Main.overview.dash.showAppsButton.show();
-        Main.overview.dash._background.show();
-
-        // restore size of the dash
-        Main.overview.dash.height = -1;
-        Main.overview.dash.setMaxSize(-1, -1);
-
-        // restore deferred work
-        Main._deferredWorkData[Main.overview.dash._workId] = this._dashDeferredWorkBackup;
-
-        this._dashDeferredWorkBackup = null;
-    }
-
-    //#endregion overview tweaks
-
-    //#region panel menu manager tweaks
-
-    _overridePanelMenuManagerBehavior() {
-
-        if (this._panelMenuManagerChangeMenu) {
-            return;
-        }
-
-        this._panelMenuManagerChangeMenu = Main.panel.menuManager._changeMenu;
-
-        Main.panel.menuManager._changeMenu = newMenu => {
-
-            const isNewAppButtonMenu = (newMenu && newMenu instanceof AppMenu);
-
-            const isActiveAppButtonMenu = (
-                Main.panel.menuManager.activeMenu &&
-                Main.panel.menuManager.activeMenu instanceof AppMenu
-            );
-
-            if (this._config.panelMenuRequireClick && !isActiveAppButtonMenu) {
-                return;
-            }
-
-            if (this._config.appButtonMenuRequireClick &&
-                    (isActiveAppButtonMenu || isNewAppButtonMenu)) {
-                return;
-            }
-
-            if (!this._config.appButtonMenuRequireClick &&
-                    this._config.panelMenuRequireClick && !isNewAppButtonMenu) {
-                return;
-            }
-
-            this._panelMenuManagerChangeMenu(newMenu);
-
+            origin(params);
         };
     }
 
-    _restorePanelMenuManagerBehavior() {
-    
-        if (!this._panelMenuManagerChangeMenu) {
+}
+
+/**
+ * https://gitlab.gnome.org/GNOME/mutter/-/issues/401
+ * 
+ * https://github.com/pop-os/pop/issues/2331
+ * 
+ * ...
+ */
+class WindowSwitchScrollFixTweak extends Tweak {
+
+    #vdevice = null;
+
+    toggle() {
+        if (this.#vdevice) return;
+        const defaultSeat = Clutter.get_default_backend().get_default_seat();
+        this.#vdevice = defaultSeat.create_virtual_device(Clutter.InputDeviceType.POINTER_DEVICE);
+        Context.signals.add(this, [[global.display, ['notify::focus-window'], () => this.#handleWindowFocus()]]);
+    }
+
+    destroy() {
+        if (!this.#vdevice) return;
+        Context.signals.removeAll(this);
+        this.#vdevice = null;
+    }
+
+    #handleWindowFocus() {
+        const [x, y] = global.get_pointer();
+        this.#vdevice?.notify_absolute_motion(global.get_current_time(), x, y);
+    }
+
+}
+
+export class Tweaks {
+
+    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
+
+    /** @type {Object.<string, Tweak>} */
+    #tweaks = {
+        [KillOverviewDashTweak.name]: new KillOverviewDashTweak(),
+        [OverviewClicksTweak.name]: new OverviewClicksTweak(),
+        [ActivitiesClicksTweak.name]: new ActivitiesClicksTweak(),
+        [HotCornerTweak.name]: new HotCornerTweak(),
+        [NightLightTweak.name]: new NightLightTweak(),
+        [SwitcherPopupsTweak.name]: new SwitcherPopupsTweak(),
+        [PanelMenuManagerTweak.name]: new PanelMenuManagerTweak(),
+        [PanelScrollTweak.name]: new PanelScrollTweak(),
+        [PanelMiddleClickTweak.name]: new PanelMiddleClickTweak(),
+        [LockscreenTweak.name]: new LockscreenTweak(),
+        [WindowSwitchScrollFixTweak.name]: new WindowSwitchScrollFixTweak()
+    };
+
+    /** @type {Object.<string, string>} */
+    #mapping = {
+        [ConfigFields.overviewKillDash]: KillOverviewDashTweak.name,
+        [ConfigFields.enableOverviewClickHandler]: OverviewClicksTweak.name,
+        [ConfigFields.activitiesShowAppsButton]: ActivitiesClicksTweak.name,
+        [ConfigFields.enableFullscreenHotCorner]: HotCornerTweak.name,
+        [ConfigFields.enableSwitcherPopupHandler]: SwitcherPopupsTweak.name,
+        [ConfigFields.enableSwitcherPopupDelay]: SwitcherPopupsTweak.name,
+        [ConfigFields.switcherPopupDelay]: SwitcherPopupsTweak.name,
+        [ConfigFields.panelMenuRequireClick]: PanelMenuManagerTweak.name,
+        [ConfigFields.appButtonMenuRequireClick]: PanelMenuManagerTweak.name,
+        [ConfigFields.panelScrollAction]: PanelScrollTweak.name,
+        [ConfigFields.enablePanelMiddleButtonHandler]: PanelMiddleClickTweak.name,
+        [ConfigFields.lockscreenPrimaryInput]: LockscreenTweak.name,
+        [ConfigFields.lockscreenAnimationDelay]: LockscreenTweak.name
+    };
+
+    constructor() {
+        this.#handleConfig();
+    }
+
+    destroy() {
+        if (!this.#tweaks) return;
+        Context.signals.removeAll(this);
+        for (const key in this.#tweaks) this.#tweaks[key].destroy();
+        this.#tweaks = null;
+    }
+
+    #handleConfig(settingsKey) {
+        if (!this.#tweaks) return;
+        if (typeof settingsKey === Type.String) {
+            const tweak = this.#mapping[settingsKey];
+            this.#tweaks[tweak]?.toggle(this.#config);
             return;
         }
-
-        Main.panel.menuManager._changeMenu = this._panelMenuManagerChangeMenu;
-
-        this._panelMenuManagerChangeMenu = null;
+        for (const key in this.#tweaks) this.#tweaks[key].toggle(this.#config);
     }
-
-    //#endregion panel menu manager tweaks
-
-    //#region lockscreen
-
-    _handleLockScreen() {
-
-        if (!Main.sessionMode.isLocked || !this._config.lockscreenPrimaryInput) {
-            return;
-        }
-
-        const primaryInput = Keyboard.getInputSourceManager()?.inputSources['0'];
-
-        primaryInput?.activate();
-    }
-
-    //#endregion lockscreen
-
-    //#region switcher popups
-
-    _setSwitcherPopupDelay() {
-
-        if (!this._switcherPopupDefaultDelay) {
-            this._switcherPopupDefaultDelay = SwitcherPopup.POPUP_DELAY_TIMEOUT;
-        }
-
-        SwitcherPopup.POPUP_DELAY_TIMEOUT = this._config.switcherPopupDelay;
-    }
-
-    _restoreSwitcherPopupDelay() {
-
-        if (!this._switcherPopupDefaultDelay) {
-            return;
-        }
-
-        SwitcherPopup.POPUP_DELAY_TIMEOUT = this._switcherPopupDefaultDelay;
-
-        this._switcherPopupDefaultDelay = null;
-    }
-
-    _addSwitcherPopupHandler() {
-
-        if (this._originalMainPushModal) {
-            return;
-        }
-    
-        this._originalMainPushModal = Main.pushModal;
-
-        Main.pushModal = (actor, params) => {
-
-            if (actor && actor instanceof SwitcherPopup.SwitcherPopup) {
-
-                const originalSetKeyFocus = global.stage.set_key_focus;
-
-                global.stage.set_key_focus = () => {};
-
-                const result = this._originalMainPushModal(actor, params);
-
-                global.stage.set_key_focus = originalSetKeyFocus;
-
-                return result;
-            }
-
-            return this._originalMainPushModal(actor, params);
-        };
-    }
-
-    _removeSwitcherPopupHandler() {
-
-        if (!this._originalMainPushModal) {
-            return;
-        }
-
-        Main.pushModal = this._originalMainPushModal;
-
-        this._originalMainPushModal = null;
-    }
-
-    //#endregion switcher popups
 
 }

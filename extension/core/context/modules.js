@@ -3,6 +3,7 @@
 import { Context } from '../context.js';
 import { Config } from '../../utils/config.js';
 import { Type } from '../enums.js';
+import { Tweaks } from '../tweaks.js';
 import { NotificationCounter } from '../../ui/notificationCounter.js';
 
 /** @enum {string} */
@@ -15,6 +16,8 @@ export class Modules {
 
     /** @type {Object.<string, *>} */
     #modules = {
+        /** @type {Tweaks} */
+        Tweaks: this.#constructModule(Tweaks),
         /** @type {NotificationCounter} */
         NotificationCounter: null
     };
@@ -28,9 +31,8 @@ export class Modules {
 
     destroy() {
         Context.signals.removeAll(this);
-        this.#config = null;
         if (!this.#modules) return;
-        for (const moduleName in this.#modules) this.#modules[moduleName]?.destroy();
+        for (const moduleName in this.#modules) this.#destroyModule(this.#modules[moduleName]);
         this.#modules = null;
     }
 
@@ -58,9 +60,20 @@ export class Modules {
         try {
             return new module();
         } catch (e) {
-            console.error(`${Context.metadata.name} unable to construct module ${module?.name}.`, e);
+            console.error(`${Context.metadata?.name} unable to construct module ${module?.name}.`, e);
         }
         return null;
+    }
+
+    /**
+     * @param {Object} module
+     */
+    #destroyModule(module) {
+        try {
+            module?.destroy();
+        } catch (e) {
+            console.error(`${Context.metadata?.name} unable to destroy module ${module?.constructor?.name}.`, e);
+        }
     }
 
 }
