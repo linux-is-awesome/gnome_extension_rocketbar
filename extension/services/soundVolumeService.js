@@ -97,14 +97,9 @@ class SoundVolumeControl {
     /** @type {Gio.Cancellable} */
     #volumeCancellable = null;
 
-    /** @type {Job} */
-    #volumeChangeNotifyDelay = null;
-
     destroy() {
         this.#volumeCancellable?.cancel();
-        this.#volumeChangeNotifyDelay?.destroy();
         this.#volumeCancellable = null;
-        this.#volumeChangeNotifyDelay = null;
     }
 
     /**
@@ -125,12 +120,8 @@ class SoundVolumeControl {
      */
     notifyVolumeChange(stream) {
         if (stream instanceof SoundStream === false) return;
-        if (stream.isPlaying) return;
-        if (this.#volumeChangeNotifyDelay) return;
-        this.#volumeChangeNotifyDelay = Context.jobs.new(this, SOUND_VOLUME_CHANGE_NOTIFY_DELAY).then(() => {
-            this.#volumeChangeNotifyDelay?.destroy();
-            this.#volumeChangeNotifyDelay = null;
-        });
+        if (stream.isPlaying || Context.jobs.hasClient(this)) return;
+        Context.jobs.new(this, SOUND_VOLUME_CHANGE_NOTIFY_DELAY).destroy(() => null);
         this.#volumeCancellable?.cancel();
         this.#volumeCancellable = new Gio.Cancellable();
         const player = global.display.get_sound_player();

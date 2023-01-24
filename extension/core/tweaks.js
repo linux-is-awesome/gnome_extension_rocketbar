@@ -78,7 +78,7 @@ class KillOverviewDashTweak extends Tweak {
         const deferredWorkData = Main._deferredWorkData[Main.overview.dash._workId];
         if (!deferredWorkData) return;
         this.#backup = deferredWorkData.callback;
-        deferredWorkData.callback = () => {};
+        deferredWorkData.callback = () => null;
         Main.overview.dash._box?.get_children()?.forEach(appIcon => appIcon.destroy());
         Main.overview.dash.showAppsButton?.hide();
         Main.overview.dash._background?.hide();
@@ -258,10 +258,7 @@ class NightLightTweak extends Tweak {
         if (Main.layoutManager?.screenShieldGroup?.visible) return;
         if (!this.#settings?.get_boolean('night-light-enabled')) return;
         this.#settings.set_boolean('night-light-enabled', false);
-        Context.jobs.new(this, Delay.Queue).then(() => {
-            this.#settings?.set_boolean('night-light-enabled', true)
-            Context.jobs.removeAll(this);
-        });
+        Context.jobs.new(this, Delay.Queue).destroy(() => this.#settings?.set_boolean('night-light-enabled', true));
     }
 
 }
@@ -298,7 +295,7 @@ class SwitcherPopupsTweak extends Tweak {
         Main.pushModal = (actor, params) => {
             if (actor instanceof SwitcherPopup.SwitcherPopup === false) return this.#backupFunction(actor, params);
             const originSetKeyFocus = global.stage.set_key_focus;
-            global.stage.set_key_focus = () => {};
+            global.stage.set_key_focus = () => null;
             const result = this.#backupFunction(actor, params);
             global.stage.set_key_focus = originSetKeyFocus;
             return result;
@@ -317,9 +314,6 @@ class PanelScrollTweak extends Tweak {
 
     /** @type {DefaultSoundVolumeControlClient} */
     #soundVolumeControlClient = null;
-
-    /** @type {Job} */
-    #switchWorkspaceDelay = null;
 
     /** @type {Object.<string, number>} */
     #moveDirection = {
@@ -348,11 +342,10 @@ class PanelScrollTweak extends Tweak {
 
     destroy() {
         if (!Context.signals.hasClient(this)) return;
+        Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
         this.#soundVolumeControlClient?.destroy();
-        this.#switchWorkspaceDelay?.destroy();
         this.#soundVolumeControlClient = null;
-        this.#switchWorkspaceDelay = null;
     }
 
     #canToggle() {
@@ -396,11 +389,8 @@ class PanelScrollTweak extends Tweak {
     }
 
     #switchWorkspace(scrollDirection) {
-        if (this.#switchWorkspaceDelay) return;
-        this.#switchWorkspaceDelay = Context.jobs.new(this, Delay.Sleep).then(() => {
-            this.#switchWorkspaceDelay?.destroy();
-            this.#switchWorkspaceDelay = null;
-        });
+        if (Context.jobs.hasClient(this)) return;
+        Context.jobs.new(this, Delay.Sleep).destroy(() => null);
         const activeWorkspace = global.workspace_manager?.get_active_workspace();
         const nextWorkspace = activeWorkspace?.get_neighbor(this.#moveDirection[scrollDirection]);
         if (!nextWorkspace) return;

@@ -126,7 +126,7 @@ export class NotificationCounter extends Layout {
      */
     #notifyHandler = (data) => ({
         [ComponentEvent.Destroy]: this.#destroy,
-        [ComponentEvent.Mapped]: () => Context.jobs.new(this, Delay.Background).then(() => this.#rerender()),
+        [ComponentEvent.Mapped]: () => Context.jobs.new(this, Delay.Background).destroy(() => this.#rerender()),
         [DateMenuEvent.DndChanged]: this.#updateStyle
     })[data?.event]?.call(this);
 

@@ -18,11 +18,15 @@ class Job {
     /** @type {(job: this) => void} */
     #destroyCallback = null;
 
+    /** @type {boolean} */
+    get #isValid() {
+        return typeof this.#destroyCallback === Type.Function && typeof this.#delay === Type.Number;
+    }
+
     /** @type {Promise} */
     get #currentJob() {
         if (this.#job) return this.#job;
-        if (typeof this.#destroyCallback !== Type.Function ||
-            typeof this.#delay !== Type.Number) return null;
+        if (!this.#isValid) return null;
         this.#job = new Promise(resolve => this.#queue(resolve));
         return this.#job;
     }
@@ -36,11 +40,18 @@ class Job {
         this.#delay = delay;
     }
 
-    destroy() {
+    /**
+     * @param {() => void} callback after destroy callback function
+     * @returns {this|null}
+     */
+    destroy(callback) {
+        if (!this.#isValid) return;
+        if (typeof callback === Type.Function) return this.then(() => this.destroy() ?? callback());
         this.reset();
         if (typeof this.#destroyCallback === Type.Function) this.#destroyCallback(this);
         this.#delay = null;
         this.#destroyCallback = null;
+        return null;
     }
 
     /**
@@ -131,6 +142,14 @@ export class Jobs {
     new(client, delay = Delay.Idle) {
         if (!this.#jobs) return null; 
         return this.#add(client, new Job(job => this.#remove(client, job), delay));
+    }
+
+    /**
+     * @param {*} client
+     * @return {boolean}
+     */
+    hasClient(client) {
+        return this.#jobs?.has(client);
     }
 
     /**
