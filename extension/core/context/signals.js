@@ -60,6 +60,14 @@ export class Signals {
     }
 
     /**
+     * @param {*} client
+     * @return {boolean}
+     */
+    hasClient(client) {
+        return this.#connections?.has(client);
+    }
+
+    /**
      * @param {Map<string, [target: *, id: number|string]>} connections
      * @param {[target: *, events: string[], callback: (...args) => *]} scope
      */
