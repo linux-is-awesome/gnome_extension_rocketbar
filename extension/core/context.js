@@ -84,6 +84,10 @@ export class Context {
         return Main.sessionMode?.isLocked || Main.layoutManager?.screenShieldGroup?.visible;
     }
 
+    static get isSessionStartingUp() {
+        return Main.layoutManager?._startingUp;
+    }
+
     /**
      * @param {*} client
      * @returns {Map}

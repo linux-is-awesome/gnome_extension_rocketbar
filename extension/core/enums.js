@@ -19,7 +19,8 @@ export const Event = {
     FocusWindow: 'notify::focus-window',
     Scroll: 'scroll-event',
     Clicked: 'clicked',
-    Captured: 'captured_event'
+    Captured: 'captured_event',
+    StartupComplete: 'startup-complete'
 };
 
 /**

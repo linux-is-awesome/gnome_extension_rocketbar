@@ -4,6 +4,7 @@ import GObject from 'gi://GObject';
 import St from 'gi://St';
 import Gtk from 'gi://Gtk';
 import Clutter from 'gi://Clutter';
+import { Main } from '../core/legacy.js';
 import { Context } from '../core/context.js';
 import { Event, Delay } from '../core/enums.js';
 import { ComponentEvent } from './base/component.js';
@@ -54,7 +55,7 @@ class DateMenu extends Layout {
     })[data?.event]?.call(this);
 
     /** @type {DateMenuButton} */
-    #dateMenu = imports.ui.main.panel.statusArea.dateMenu;
+    #dateMenu = Main.panel?.statusArea?.dateMenu;
 
     /** @type {string} */
     #clockDisplayStyleClass = null;
@@ -159,7 +160,12 @@ export class NotificationCounter extends Layout {
         this.#createCounter();
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
         Context.signals.add(this, [[Gtk.Settings.get_default(), [Event.FontName], () => this.#rerender()]]);
-        this.#dateMenu.addChild(this, CLOCK_DISPLAY_POSITION);
+        this.#setParent();
+    }
+
+    #setParent() {
+        if (!Context.isSessionStartingUp) return this.#dateMenu.addChild(this, CLOCK_DISPLAY_POSITION);
+        Context.signals.add(this, [[Main.layoutManager, [Event.StartupComplete], () => this.#setParent()]]);
     }
 
     #destroy() {
