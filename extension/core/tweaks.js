@@ -12,6 +12,9 @@ import { DefaultSoundVolumeControlClient } from '../services/soundVolumeService.
 const HIDDEN_OVERVIEW_DASH_HEIGHT = 40;
 const PANEL_STATUS_AREA_ACTIVITIES = 'activities'; 
 const DEFAULT_INPUT_SOURCE = '0';
+const NIGHT_LIGHT_SETTINGS_SCHEMA_ID = 'org.gnome.settings-daemon.plugins.color';
+const NIGHT_LIGHT_ENABLED_SETTINGS_KEY = 'night-light-enabled';
+const NIGHT_LIGHT_TEMPERATURE_SETTINGS_KEY = 'night-light-temperature';
 
 /** @enum {string} */
 const MouseButton = {
@@ -239,12 +242,10 @@ class HotCornerTweak extends Tweak {
 // TODO: implement NightLight customization options
 class NightLightTweak extends Tweak {
 
-    #settings = new Gio.Settings({
-        schema_id: 'org.gnome.settings-daemon.plugins.color'
-    });
+    #settings = new Gio.Settings({ schema_id: NIGHT_LIGHT_SETTINGS_SCHEMA_ID });
 
     toggle() {
-        this.#settings?.set_uint('night-light-temperature', 5000);
+        this.#settings?.set_uint(NIGHT_LIGHT_TEMPERATURE_SETTINGS_KEY, 5000);
         this.#restore();
     }
 
@@ -255,10 +256,10 @@ class NightLightTweak extends Tweak {
     }
 
     #restore() {
-        if (Main.layoutManager?.screenShieldGroup?.visible) return;
-        if (!this.#settings?.get_boolean('night-light-enabled')) return;
-        this.#settings.set_boolean('night-light-enabled', false);
-        Context.jobs.new(this, Delay.Queue).destroy(() => this.#settings?.set_boolean('night-light-enabled', true));
+        if (Context.isSessionLocked) return;
+        if (!this.#settings?.get_boolean(NIGHT_LIGHT_ENABLED_SETTINGS_KEY)) return;
+        this.#settings?.set_boolean(NIGHT_LIGHT_ENABLED_SETTINGS_KEY, false);
+        Context.jobs.new(this, Delay.Queue).destroy(() => this.#settings?.set_boolean(NIGHT_LIGHT_ENABLED_SETTINGS_KEY, true));
     }
 
 }
