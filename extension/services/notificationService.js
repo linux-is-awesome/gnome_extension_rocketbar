@@ -26,56 +26,6 @@ const NotificationSource = {
     WindowAttention: 'WindowAttentionSource'
 };
 
-class LauncherApiConnector {
-
-    /** @type {Map<string, number>} */
-    #countByAppId = Context.getSessionCache(this.constructor.name);
-
-    /** @type {() => void} */
-    #callback = null;
-
-    /** @type {Map<string, number>} */
-    get count() {
-        return this.#countByAppId;
-    }
-
-    /**
-     * @param {() => void} callback
-     */
-    constructor(callback) {
-        this.#callback = callback;
-        Context.launcherAPI.connect(this, params => this.#update(params));
-        if (this.#countByAppId?.size) this.#triggerCallback();
-    }
-
-    destroy() {
-        Context.launcherAPI.disconnect(this);
-        this.#countByAppId = null;
-        this.#callback = null;
-    }
-
-    /**
-     * @param {GLib.Variant} params
-     */
-    #update(params) {
-        if (!this.#countByAppId || !params) return;
-        const [ appUri, props ] = params.deepUnpack();
-        const appId = appUri?.replace(/(^\w+:|^)\/\//, '');
-        if (!appId || !props) return;
-        const count = props['count']?.get_int64() ?? 0;
-        const countVisible = props['count-visible']?.get_boolean() ?? false;
-        if (count && countVisible) this.#countByAppId.set(appId, count);
-        else if (!this.#countByAppId.has(appId)) return;
-        else this.#countByAppId.delete(appId);
-        this.#triggerCallback();
-    }
-
-    #triggerCallback() {
-        if (typeof this.#callback === Type.Function) this.#callback();
-    }
-
-}
-
 class NotificationService {
 
     /**
@@ -110,14 +60,11 @@ class NotificationService {
     /** @type {number} */
     #totalCount = 0;
 
-    /** @type {LauncherApiConnector} */
-    #launcherApiConnector = null;
-
     /** @type {Job} */
     #updateJob = Context.jobs.new(this, Delay.Background);
 
     /** @type {Object.<string, string|number|boolean>} */
-    #config = Config(this, ConfigFields, () => this.#handleConfig().#queueUpdate());
+    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
 
     /** @type {boolean} */
     get isEmpty() {
@@ -137,7 +84,6 @@ class NotificationService {
     destroy() {
         this.#updateJob?.destroy();
         Context.signals.removeAll(this);
-        this.#launcherApiConnector?.destroy();
         this.#handlers = null;
     }
 
@@ -158,14 +104,14 @@ class NotificationService {
         this.#handlers.delete(handler);
     }
 
-    #handleConfig() {
-        if (this.#config.enableLauncherApi && !this.#launcherApiConnector) {
-            this.#launcherApiConnector = new LauncherApiConnector(() => this.#queueUpdate());
-        } else if (!this.#config.enableLauncherApi && this.launcherApiConnector) {
-            this.#launcherApiConnector.destroy();
-            this.#launcherApiConnector = null;
-        }
-        return this;
+    /**
+     * @param {string} settingsKey 
+     */
+    #handleConfig(settingsKey) {
+        if (settingsKey === ConfigFields.countAttentionSources) return this.#queueUpdate();
+        if (this.#config.enableLauncherApi) Context.launcherApi?.connect(this, () => this.#queueUpdate());
+        else Context.launcherApi?.disconnect(this);
+        this.#queueUpdate();
     }
 
     #initSources() {
@@ -201,9 +147,10 @@ class NotificationService {
     #update() {
         if (!this.#handlers) return;
         this.#totalCount = 0;
-        const launcherApiCount = this.#launcherApiConnector?.count;
+        const launcherApiCount = Context.launcherApi?.notifications;
         if (!launcherApiCount) this.#countByAppId.clear();
         else this.#countByAppId = new Map([...launcherApiCount]);
+        console.log('Launcher API notifications', [...this.#countByAppId]);
         const sources = [...this.#sources.keys()];
         for (let i = 0, l = sources.length; i < l; ++i) {
             const source = sources[i];

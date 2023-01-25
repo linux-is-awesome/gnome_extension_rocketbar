@@ -5,7 +5,7 @@ import { Modules } from './context/modules.js';
 import { Jobs } from './context/jobs.js';
 import { Signals } from './context/signals.js';
 import { Icons } from './context/icons.js';
-import { LauncherAPI } from './context/launcherAPI.js';
+import { LauncherApiClient } from '../services/launcherApiService.js';
 
 export class Context {
 
@@ -33,8 +33,8 @@ export class Context {
     /** @type {Icons} */
     #icons = null;
 
-    /** @type {LauncherAPI} */
-    #launcherAPI = new LauncherAPI();
+    /** @type {LauncherApiClient} */
+    #launcherApi = null;
 
     /** @type {string} */
     static get path() {
@@ -75,9 +75,9 @@ export class Context {
         return instance.#icons;
     }
 
-    /** @type {LauncherAPI} */
-    static get launcherAPI() {
-        return Context.#getInstance().#launcherAPI;
+    /** @type {LauncherApiClient} */
+    static get launcherApi() {
+        return Context.#getInstance().#launcherApi;
     }
 
     static get isSessionLocked() {
@@ -109,6 +109,7 @@ export class Context {
         this.#extensionInfo = extensionInfo;
         if (Context.#instance instanceof Context) return;
         Context.#instance = this;
+        this.#launcherApi = new LauncherApiClient();
         this.#modules = new Modules();
     }
 
@@ -133,8 +134,8 @@ export class Context {
         this.#signals = null;
         this.#icons?.destroy();
         this.#icons = null;
-        this.#launcherAPI?.destroy();
-        this.#launcherAPI = null;
+        this.#launcherApi?.destroy();
+        this.#launcherApi = null;
         this.#extensionInfo?.settings?.run_dispose();
         this.#cleanSessionCache();
     }
