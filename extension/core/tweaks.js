@@ -10,7 +10,6 @@ import { Type, Event, Delay } from './enums.js';
 import { DefaultSoundVolumeControlClient } from '../services/soundVolumeService.js';
 
 const HIDDEN_OVERVIEW_DASH_HEIGHT = 40;
-const PANEL_STATUS_AREA_ACTIVITIES = 'activities'; 
 const DEFAULT_INPUT_SOURCE = '0';
 const NIGHT_LIGHT_SETTINGS_SCHEMA_ID = 'org.gnome.settings-daemon.plugins.color';
 const NIGHT_LIGHT_ENABLED_SETTINGS_KEY = 'night-light-enabled';
@@ -164,10 +163,9 @@ class ActivitiesClicksTweak extends Tweak {
     toggle({ activitiesShowAppsButton }) {
         if (!this.#canToggle()) return;
         this.#button = this.#buttonMapping[activitiesShowAppsButton];
-        const activitiesButton = Main.panel.statusArea[PANEL_STATUS_AREA_ACTIVITIES];
-        if (!this.#button || !activitiesButton) return this.destroy();
+        if (!this.#button) return this.destroy();
         if (Context.signals.hasClient(this)) return;
-        Context.signals.add(this, [[activitiesButton, [Event.Captured], (_, event) => this.#handleEvent(event)]]);
+        Context.signals.add(this, [[Main.panel.statusArea.activities, [Event.Captured], (_, event) => this.#handleEvent(event)]]);
     }
 
     destroy() {
@@ -176,7 +174,7 @@ class ActivitiesClicksTweak extends Tweak {
     }
 
     #canToggle() {
-        if (!Main.panel?.statusArea) return false;
+        if (!Main.panel?.statusArea?.activities) return false;
         if (typeof Main.overview?.shouldToggleByCornerOrButton !== Type.Function) return false;
         if (typeof Main.overview?._overview?._controls?._toggleAppsPage !== Type.Function) return false;
         return true;
