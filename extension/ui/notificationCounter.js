@@ -17,6 +17,7 @@ const DATE_MENU_STYLE_CLASS = 'rocketbar__date-menu';
 const DND_SETTINGS_FIELD = 'show-banners';
 const CLOCK_DISPLAY_POSITION = 1;
 const COUNTER_STYLE_CLASS = 'rocketbar__notification-counter';
+const COUNTER_STYLE_PSEUDO_CLASS = 'transition';
 const COUNTER_EMPTY_COLOR = 'transparent';
 const COUNTER_EMPTY_BORDER_SIZE = 2;
 const COUNTER_LONG_VALUE_PADDING = 3;
@@ -235,6 +236,7 @@ export class NotificationCounter extends Layout {
         if (!this.isMapped) return;
         Context.jobs.removeAll(this);
         this.#counter.remove_all_transitions();
+        this.#counter.remove_style_pseudo_class(COUNTER_STYLE_PSEUDO_CLASS);
         Animation(this.#counter, AnimationDuration.Faster, AnimationType.ScaleMin).then(() => {
             if (!this.isValid) return;
             this.#counter.text = this.#count.toString();
@@ -246,6 +248,7 @@ export class NotificationCounter extends Layout {
             this.#counter.show();
             this.#updateStyle();
             this.#updateClockMargin();
+            this.#counter.add_style_pseudo_class(COUNTER_STYLE_PSEUDO_CLASS);
             Animation(this.#counter, AnimationDuration.Fast, { ...AnimationType.ScaleMax, ...AnimationType.OpacityMax });
         });
     }

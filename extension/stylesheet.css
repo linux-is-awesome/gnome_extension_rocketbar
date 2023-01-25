@@ -97,3 +97,6 @@
     font-weight: bold;
     text-align: center;
 }
+.rocketbar__notification-counter:transition {
+    transition-duration: 0.3s;
+}
