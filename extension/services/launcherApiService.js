@@ -107,11 +107,10 @@ export class LauncherApiClient {
     }
 
     destroy() {
-        if (Context.isSessionLocked) this.#service?.disconnect();
-        else {
+        if (!Context.isSessionLocked) {
             this.#service?.destroy();
             Context.getSessionCache(this.constructor.name).clear();
-        }
+        } else this.#service?.disconnect();
         this.#service = null;
         this.#clients = null;
     }
