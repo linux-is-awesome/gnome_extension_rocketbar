@@ -165,7 +165,7 @@ class ActivitiesClicksTweak extends Tweak {
         this.#button = this.#buttonMapping[activitiesShowAppsButton];
         if (!this.#button) return this.destroy();
         if (Context.signals.hasClient(this)) return;
-        Context.signals.add(this, [[Main.panel.statusArea.activities, [Event.Captured], (_, event) => this.#handleEvent(event)]]);
+        Context.signals.add(this, [Main.panel.statusArea.activities, Event.Captured, (_, event) => this.#handleEvent(event)]);
     }
 
     destroy() {

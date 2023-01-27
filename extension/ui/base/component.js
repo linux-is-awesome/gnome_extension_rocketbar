@@ -347,7 +347,7 @@ export class Component {
     }
 
     /**
-     * @param {number} position 0..999
+     * @param {number} position -1..0...999
      * @returns {boolean}
      */
     #setPosition(position) {
@@ -355,7 +355,7 @@ export class Component {
         const parentActor = this.parentActor;
         if (!parentActor) return false;
         const maxPosition = parentActor.get_n_children();
-        if (position > maxPosition) position = maxPosition;
+        if (position < 0 || position > maxPosition) position = maxPosition;
         const actorAtIndex = parentActor.get_child_at_index(position);
         if (actorAtIndex === this.#actor) return false;
         const componentAtIndex = this.#isComponent(actorAtIndex?._delegate);

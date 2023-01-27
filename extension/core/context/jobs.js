@@ -82,11 +82,14 @@ class Job {
     }
 
     /**
+     * @param {number} [delay]
      * @returns {this}
      */
-    reset() {
+    reset(delay) {
         this.#job = null;
         if (this.#id) this.#dequeue();
+        if (typeof delay !== Type.Number) return this;
+        this.#delay = delay;
         return this;
     }
 
@@ -140,7 +143,7 @@ export class Jobs {
      * @returns {Job}
      */
     new(client, delay = Delay.Idle) {
-        if (!this.#jobs) return null; 
+        if (!this.#jobs) return null;
         return this.#add(client, new Job(job => this.#remove(client, job), delay));
     }
 

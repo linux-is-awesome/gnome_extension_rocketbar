@@ -15,7 +15,7 @@ export class Signals {
 
     /**
      * @param {*} client
-     * @param {*[]} scope
+     * @param {*[]} scope [target, event, callback,..., event, callback], [target,...]
      * @returns {this}
      */
     add(client, ...scope) {
