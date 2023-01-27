@@ -336,7 +336,7 @@ class PanelScrollTweak extends Tweak {
         if (!Object.values(PanelScrollAction).includes(panelScrollAction)) return this.destroy();
         this.#toggleSoundVolumeControlClient(config);
         if (Context.signals.hasClient(this)) return;
-        Context.signals.add(this, [[Main.panel, [Event.Scroll], (_, event) => this.#handleScroll(event, config)]]);
+        Context.signals.add(this, [Main.panel, Event.Scroll, (_, event) => this.#handleScroll(event, config)]);
     }
 
     destroy() {
@@ -410,7 +410,7 @@ class PanelMiddleClickTweak extends Tweak {
         if (!this.#canToggle({ enablePanelMiddleButtonHandler })) return;
         if (!enablePanelMiddleButtonHandler) return this.destroy();
         this.#soundVolumeControlClient = new DefaultSoundVolumeControlClient();
-        Context.signals.add(this, [[Main.panel, [Event.ButtonPress], (_, event) => this.#handleEvent(event)]]);
+        Context.signals.add(this, [Main.panel, Event.ButtonPress, (_, event) => this.#handleEvent(event)]);
     }
 
     #canToggle({ enablePanelMiddleButtonHandler }) {
@@ -557,7 +557,7 @@ class WindowSwitchScrollFixTweak extends Tweak {
         if (this.#vdevice) return;
         const defaultSeat = Clutter.get_default_backend().get_default_seat();
         this.#vdevice = defaultSeat.create_virtual_device(Clutter.InputDeviceType.POINTER_DEVICE);
-        Context.signals.add(this, [[global.display, [Event.FocusWindow], () => this.#handleWindowFocus()]]);
+        Context.signals.add(this, [global.display, Event.FocusWindow, () => this.#handleWindowFocus()]);
     }
 
     destroy() {

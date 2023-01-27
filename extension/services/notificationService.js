@@ -75,9 +75,10 @@ class NotificationService {
         this.#handleConfig();
         this.#initSources();
         Context.signals.add(this, [
-            [Main.messageTray, [MessageTrayEvent.SourceAdded], (_, source) => this.#addSource(source)],
-            [Main.messageTray, [MessageTrayEvent.SourceRemoved], (_, source) => this.#removeSource(source)],
-            [Main.messageTray, [MessageTrayEvent.QueueChanged], () => this.#queueUpdate()]
+            Main.messageTray,
+            MessageTrayEvent.SourceAdded, (_, source) => this.#addSource(source),
+            MessageTrayEvent.SourceRemoved, (_, source) => this.#removeSource(source),
+            MessageTrayEvent.QueueChanged, () => this.#queueUpdate()
         ]);
     }
 

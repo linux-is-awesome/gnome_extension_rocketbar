@@ -4,43 +4,43 @@ import { Type } from '../enums.js';
 
 export class Signals {
 
-    /** @type {Map<*, Map<string, [target: *, id: number|string]>>} */
+    /** @type {Map<*, Set>} */
     #connections = new Map();
 
     destroy() {
         if (!this.#connections) return;
-        for (const [_, connections] of this.#connections) this.#disconnectAll(connections);
+        for (const [client, connections] of this.#connections) this.#disconnectAll(client, connections);
         this.#connections = null;
     }
 
     /**
      * @param {*} client
-     * @param {[[target: *, events: string[], callback: (...args) => *]]} scope
+     * @param {*[]} scope
      * @returns {this}
      */
-    add(client, scope) {
+    add(client, ...scope) {
         if (!this.#isValid(client, scope)) return this;
-        const connections = this.#connections.get(client) ?? new Map();
-        for (let i = 0, l = scope.length; i < l; ++i) this.#add(connections, scope[i]);
+        const connections = this.#connections.get(client) ?? new Set();
+        if (scope.length === 1) this.#add(client, connections, scope[0]);
+        else for (let i = 0, l = scope.length; i < l; ++i) this.#add(client, connections, scope[i]);
         if (connections.size) this.#connections.set(client, connections);
         return this;
     }
 
     /**
      * @param {*} client
-     * @param {string[]} events
+     * @param {*[]} targets
      * @returns {this}
      */
-    remove(client, events) {
-        if (!this.#isValid(client, events)) return this;
+    remove(client, ...targets) {
+        if (!this.#isValid(client, targets)) return this;
         const connections = this.#connections.get(client);
         if (!connections) return this;
-        for (let i = 0, l = events.length; i < l; ++i) {
-            const event = events[i];
-            if (!connections.has(event)) continue; 
-            const [target, id] = connections.get(event);
-            if (typeof target?.disconnect === Type.Function) target.disconnect(id);
-            connections.delete(event);
+        for (let i = 0, l = targets.length; i < l; ++i) {
+            const target = targets[i];
+            if (!connections.has(target)) continue; 
+            if (typeof target?.disconnectObject === Type.Function) target.disconnectObject(client);
+            connections.delete(target);
         }
         if (!connections.size) this.#connections.delete(client);
         return this;
@@ -55,7 +55,7 @@ export class Signals {
         const connections = this.#connections.get(client);
         if (!connections) return this;
         this.#connections.delete(client);
-        this.#disconnectAll(connections);
+        this.#disconnectAll(client, connections);
         return this;
     }
 
@@ -68,29 +68,25 @@ export class Signals {
     }
 
     /**
-     * @param {Map<string, [target: *, id: number|string]>} connections
-     * @param {[target: *, events: string[], callback: (...args) => *]} scope
+     * @param {*} client
+     * @param {Set} connections
+     * @param {*[]} scope
      */
-    #add(connections, scope) {
+    #add(client, connections, scope) {
         if (!Array.isArray(scope) || !scope.length) return; 
-        const [target, events, callback] = scope;
-        if (typeof target?.connect !== Type.Function ||
-            typeof callback !== Type.Function ||
-            !Array.isArray(events) || !events.length) return;
-        for (let i = 0, l = events.length; i < l; ++i) {
-            const event = events[i];
-            if (typeof event !== Type.String || connections.has(event)) continue;
-            connections.set(event, [target, target.connect(event, callback)]);
-        }
+        const [target] = scope.splice(0, 1);
+        if (typeof target?.connectObject !== Type.Function) return;
+        target.connectObject(...scope, client);
+        connections.add(target);
     }
 
     /**
-     * @param {Map<string, [target: *, id: number|string]>} connections
+     * @param {Set} connections
      */
-    #disconnectAll(connections) {
-        for (const [_, [target, id]] of connections) {
-            if (typeof target?.disconnect !== Type.Function) continue;
-            target.disconnect(id);
+    #disconnectAll(client, connections) {
+        for (const target of connections) {
+            if (typeof target?.disconnectObject !== Type.Function) continue;
+            target.disconnectObject(client);
         }
     }
 

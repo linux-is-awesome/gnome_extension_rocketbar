@@ -18,21 +18,23 @@ export const Config = (client, fields, callback) => {
     const settings = Context.settings;
     /** @type {Object.<string, string|number|boolean>} */
     const values = {};
-    /** @type {Array<string>} */
+    /** @type {Array<string|((...args) => void)>} */
     const signals = [];
     /** @type {Map<string, string>}*/
     const valueMapping = new Map();
+    /** @type {(...args) => void} */
+    const valueHandler = (_, key) => {
+        values[valueMapping.get(key)] = settings.get_value(key)?.unpack();
+        if (typeof callback === Type.Function) callback(key);
+    }
     for (const fieldName in fields) {
         const settingsKey = fields[fieldName];
         if (typeof settingsKey !== Type.String) continue;
         valueMapping.set(settingsKey, fieldName);
         values[fieldName] = settings.get_value(settingsKey)?.unpack();
-        signals.push(`changed::${settingsKey}`);
+        signals.push(`changed::${settingsKey}`, valueHandler);
     }
     if (!signals.length) return values;
-    Context.signals.add(client, [[settings, signals, (_, key) => {
-        values[valueMapping.get(key)] = settings.get_value(key)?.unpack();
-        if (typeof callback === Type.Function) callback(key);
-    }]]);
+    Context.signals.add(client, [settings, ...signals]);
     return values;
 };

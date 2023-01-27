@@ -85,10 +85,9 @@ class DateMenu extends Layout {
     #addSignals() {
         const target = this.#dateMenu?._indicator;
         if (!target) return;
-        Context.signals.add(this, [
-            [target, [Event.Visible], indicator => indicator?.hide()],
-            [target._settings, [`changed::${DND_SETTINGS_FIELD}`], () => this.notifyChildren(DateMenuEvent.DndChanged)]
-        ]);
+        Context.signals.add(this,
+            [target, Event.Visible, indicator => indicator?.hide()],
+            [target._settings, `changed::${DND_SETTINGS_FIELD}`, () => this.notifyChildren(DateMenuEvent.DndChanged)]);
     }
 
     #setParent() {
@@ -159,13 +158,13 @@ export class NotificationCounter extends Layout {
         super(MODULE_NAME);
         this.#createCounter();
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
-        Context.signals.add(this, [[Gtk.Settings.get_default(), [Event.FontName], () => this.#rerender()]]);
+        Context.signals.add(this, [Gtk.Settings.get_default(), Event.FontName, () => this.#rerender()]);
         this.#setParent();
     }
 
     #setParent() {
         if (!Context.isSessionStartingUp) return this.#dateMenu.addChild(this, CLOCK_DISPLAY_POSITION);
-        Context.signals.add(this, [[Main.layoutManager, [Event.StartupComplete], () => this.#setParent()]]);
+        Context.signals.add(this, [Main.layoutManager, Event.StartupComplete, () => this.#setParent()]);
     }
 
     #destroy() {

@@ -2,7 +2,6 @@
 
 import St from 'gi://St';
 import { Dnd } from '../../core/legacy.js'; 
-import { Context } from '../../core/context.js';
 import { Type, Event } from '../../core/enums.js';
 
 const DRAG_TIMEOUT_THRESHOLD = 200;
@@ -370,7 +369,7 @@ export class Component {
      */
     #setDragEvents(enabled) {
         if (this.#dragMonitor) Dnd.removeDragMonitor(this.#dragMonitor);
-        if (this.#draggable) Context.signals.removeAll(this.#draggable);
+        if (this.#draggable) this.#actor.disconnectObject(this.#draggable);
         this.#draggable?.disconnectAll();
         this.#draggable = null;
         this.#dragMonitor = null;
@@ -380,10 +379,10 @@ export class Component {
         this.#draggable.connect(Event.DragBegin, () => this.#dragBegin());
         this.#draggable.connect(Event.DragEnd, () => this.#dragEnd());
         this.#dragMonitor.dragMotion = event => this.#dragMotion(event);
-        Context.signals.add(this.#draggable, [
-            [this.#actor, [Event.ButtonPress], this.#draggable._onButtonPress.bind(this.#draggable)],
-            [this.#actor, [Event.Touch], this.#draggable._onTouchEvent.bind(this.#draggable)]
-        ]);
+        this.#actor.connectObject(
+            Event.ButtonPress, this.#draggable._onButtonPress.bind(this.#draggable),
+            Event.Touch, this.#draggable._onTouchEvent.bind(this.#draggable),
+        this.#draggable);
     }
 
     /**

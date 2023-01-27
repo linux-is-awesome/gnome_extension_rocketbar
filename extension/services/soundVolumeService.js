@@ -149,7 +149,7 @@ class DefaultSoundVolumeControl extends SoundVolumeControl {
     constructor() {
         super();
         const mixer = Volume.getMixerControl();
-        Context.signals.add(this, [[mixer, [MixerControlEvent.DefaultSinkChanged], (...args) => this.#setStream(...args)]]);
+        Context.signals.add(this, [mixer, MixerControlEvent.DefaultSinkChanged, (...args) => this.#setStream(...args)]);
         this.#setStream(mixer);
     }
 
