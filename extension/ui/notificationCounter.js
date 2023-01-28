@@ -163,7 +163,7 @@ export class NotificationCounter extends Layout {
     }
 
     #setParent() {
-        if (!Context.isSessionStartingUp) return this.#dateMenu.addChild(this, CLOCK_DISPLAY_POSITION);
+        if (!Context.isSessionStartingUp) return this.setParent(this.#dateMenu, CLOCK_DISPLAY_POSITION);
         Context.signals.add(this, [Main.layoutManager, Event.StartupComplete, () => this.#setParent()]);
     }
 
