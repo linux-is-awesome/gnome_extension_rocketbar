@@ -151,7 +151,6 @@ class NotificationService {
         const launcherApiCount = Context.launcherApi?.notifications;
         if (!launcherApiCount) this.#countByAppId.clear();
         else this.#countByAppId = new Map([...launcherApiCount]);
-        console.log('Launcher API notifications', [...this.#countByAppId]);
         const sources = [...this.#sources.keys()];
         for (let i = 0, l = sources.length; i < l; ++i) {
             const source = sources[i];
