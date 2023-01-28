@@ -81,6 +81,7 @@ export class Signals {
     }
 
     /**
+     * @param {*} client
      * @param {Set} connections
      */
     #disconnectAll(client, connections) {
