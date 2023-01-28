@@ -1,7 +1,7 @@
 /* exported LauncherApiClient */
 
 import Gio from 'gi://Gio';
-import { Context } from '../core/context.js'
+import { Context } from '../core/context.js';
 import { Type } from '../core/enums.js';
 import { Config } from '../utils/config.js';
 

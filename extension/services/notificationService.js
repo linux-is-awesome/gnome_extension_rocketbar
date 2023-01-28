@@ -1,8 +1,8 @@
 /* exported NotificationHandler */
 
 import { Main } from '../core/legacy.js';
-import { Context } from '../core/context.js'
-import { Type, Delay } from '../core/enums.js'
+import { Context } from '../core/context.js';
+import { Type, Delay } from '../core/enums.js';
 import { Config } from '../utils/config.js';
 
 /** @enum {string} */
