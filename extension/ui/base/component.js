@@ -123,31 +123,35 @@ export class Component {
     }
 
     /**
-     * @param {Object.<string, *>} params
+     * @param {Object.<string, *>} props
      * @returns {this}
      */
-    setParams(params) {
-        this.#actor.set(params ?? {});
+    setProps(props) {
+        this.#actor.set(props ?? {});
         return this;
     }
 
     /**
      * @param {St.Widget} parent Component instances are supported as well
-     * @param {number} [position] 0..999
+     * @param {number} [position] -1..0..999
      * @returns {this}
      */
     setParent(parent, position = 0) {
         if (typeof position !== Type.Number) return this;
         if (this.#isComponent(parent)) {
-            parent = parent.#actor;
+            parent = parent.actor;
         }
         if (parent instanceof St.Widget === false) return this;
         this.#defaultPosition = position;
-        const currentParent = this.parentActor;
-        const isParentChanged = currentParent !== parent;
+        const oldParent = this.parentActor;
+        const isParentChanged = oldParent !== parent;
         if (isParentChanged) {
-            currentParent?.remove_child(this.#actor);
+            oldParent?.remove_actor(this.#actor);
             this.#setMappedHandler();
+        }
+        if (parent instanceof St.ScrollView) {
+            if (isParentChanged) parent.add_actor(this.#actor);
+            return this;
         }
         if (parent instanceof St.Bin) {
             if (isParentChanged) parent.set_child(this.#actor);
@@ -155,19 +159,6 @@ export class Component {
         }
         if (isParentChanged) parent.insert_child_at_index(this.#actor, position);
         else this.#setPosition(position);
-        return this;
-    }
-
-    /**
-     * @param {Component} child
-     * @param {number} [position] 0..999
-     * @returns {this}
-     */
-    addChild(child, position = 0) {
-        if (!this.#isComponent(child)) {
-            throw new Error(`Unable to add the child, ${child} is not an instance of Component`);
-        }
-        child.setParent(this.#actor, position);
         return this;
     }
 
