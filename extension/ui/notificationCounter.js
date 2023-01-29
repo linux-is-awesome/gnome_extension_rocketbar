@@ -7,8 +7,7 @@ import Clutter from 'gi://Clutter';
 import { Main } from '../core/legacy.js';
 import { Context } from '../core/context.js';
 import { Event, Delay } from '../core/enums.js';
-import { ComponentEvent } from './base/component.js';
-import { Layout } from './base/layout.js';
+import { Component, ComponentEvent } from './base/component.js';
 import { Animation, AnimationDuration, AnimationType } from './base/animation.js';
 import { NotificationHandler } from '../services/notificationService.js';
 import { Config } from '../utils/config.js';
@@ -44,7 +43,7 @@ const ConfigFields = {
     textColorDnd: 'notification-counter-text-color-dnd'
 };
 
-class DateMenu extends Layout {
+class DateMenu extends Component {
 
     /**
      * @param {{event: string}} data
@@ -66,7 +65,7 @@ class DateMenu extends Layout {
     }
 
     constructor() {
-        super(`${MODULE_NAME}.${DateMenu.name}`);
+        super(new St.BoxLayout({ name: `${MODULE_NAME}.${DateMenu.name}` }));
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
         this.#initialize();
     }
@@ -119,7 +118,7 @@ class DateMenu extends Layout {
 
 }
 
-export class NotificationCounter extends Layout {
+export class NotificationCounter extends Component {
 
     /**
      * @param {{event: string}} data
@@ -155,7 +154,7 @@ export class NotificationCounter extends Layout {
     }
 
     constructor() {
-        super(MODULE_NAME);
+        super(new St.BoxLayout({ name: MODULE_NAME }));
         this.#createCounter();
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
         Context.signals.add(this, [Gtk.Settings.get_default(), Event.FontName, () => this.#rerender()]);
