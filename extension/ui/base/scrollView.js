@@ -3,7 +3,6 @@
 import St from 'gi://St';
 import { Type, Event } from '../../core/enums.js';
 import { Component } from './component.js';
-import { Layout } from './layout.js';
 
 /** @type {Object.<string, boolean|number>} */
 const DefaultProps = {
@@ -15,12 +14,17 @@ const DefaultProps = {
 
 export class ScrollView extends Component {
 
-    /** @type {Layout} */
-    #layout = new Layout();
+    /** @type {Component} */
+    #layout = new Component(new St.BoxLayout());
 
-    /** @type {Layout} */
+    /** @type {St.BoxLayout} */
     get actor() {
-        return this.isValid ? this.#layout?.actor : null;
+        return this.#layout?.actor;
+    }
+
+    /** @type {St.ScrollView} */
+    get area() {
+        return super.actor;
     }
 
     /**
@@ -31,7 +35,7 @@ export class ScrollView extends Component {
         this.#layout.connect(Event.Destroy, () => this.#layout = null);
         this.#layout.setParent(super.actor);
         if (typeof name !== Type.String) return;
-        this.#layout.actor.name = `${name}.Layout`;
+        this.#layout.setProps({ name: `${name}.Layout` });
     }
 
 }
