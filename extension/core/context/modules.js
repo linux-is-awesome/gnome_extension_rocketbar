@@ -47,7 +47,6 @@ export class Modules {
                 this.#modules[moduleName] = this.#constructModule(eval(moduleName));
                 continue;
             }
-            module.destroy();
             module?.destroy();
             this.#modules[moduleName] = null;
         }
