@@ -67,7 +67,7 @@ class NotificationService {
     #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
 
     /** @type {boolean} */
-    get isEmpty() {
+    get wantsDestroy() {
         return !this.#handlers?.size;
     }
 
@@ -220,7 +220,7 @@ export class NotificationHandler {
         this.#callback = null;
         this.#appId = null; 
         NotificationHandler.#service?.removeHandler(this);
-        if (!NotificationHandler.#service?.isEmpty) return;
+        if (!NotificationHandler.#service?.wantsDestroy) return;
         NotificationHandler.#service.destroy();
         NotificationHandler.#service = null;
     }
