@@ -48,6 +48,7 @@ export class Modules {
                 continue;
             }
             module.destroy();
+            module?.destroy();
             this.#modules[moduleName] = null;
         }
     }
