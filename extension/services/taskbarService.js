@@ -342,10 +342,9 @@ export class TaskbarClient {
             this.#app = app;
         }
         if (!TaskbarClient.#service) {
-            TaskbarClient.#service = new AppService();
+            TaskbarClient.#service = new TaskbarService();
         }
         TaskbarClient.#service.addClient(this);
-        this.#service.addClient(this);
     }
 
     destroy() {
