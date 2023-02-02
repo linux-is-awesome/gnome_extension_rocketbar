@@ -1,6 +1,7 @@
 /* exported Context */
 
 import { Main } from './legacy.js';
+import { LayoutManager } from './context/layout.js';
 import { Modules } from './context/modules.js';
 import { Jobs } from './context/jobs.js';
 import { Signals } from './context/signals.js';
@@ -20,6 +21,9 @@ export class Context {
 
     /** @type {{path: string, metadata: Object.<string, string>, settings: Gio.Settings}} */
     #extensionInfo = null;
+
+    /** @type {LayoutManager} */
+    #layoutManager = null;
 
     /** @type {Modules} */
     #modules = null;
@@ -49,6 +53,14 @@ export class Context {
     /** @type {Gio.Settings} */
     static get settings() {
         return Context.#getInstance().#extensionInfo?.settings;
+    }
+
+    /** @type {LayoutManager} */
+    static get layout() {
+        const instance = Context.#getInstance();
+        if (instance.#layoutManager) return instance.#layoutManager;
+        instance.#layoutManager = new LayoutManager();
+        return instance.#layoutManager;
     }
 
     /** @type {Jobs} */
