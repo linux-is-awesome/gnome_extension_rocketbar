@@ -144,12 +144,14 @@ export class Context {
     #destroy() {
         this.#modules?.destroy();
         this.#modules = null;
+        this.#layoutManager?.destroy();
+        this.#layoutManager = null;
+        this.#icons?.destroy();
+        this.#icons = null;
         this.#jobs?.destroy();
         this.#jobs = null;
         this.#signals?.destroy();
         this.#signals = null;
-        this.#icons?.destroy();
-        this.#icons = null;
         this.#launcherApi?.destroy();
         this.#launcherApi = null;
         this.#extensionInfo?.settings?.run_dispose();
