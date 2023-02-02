@@ -6,7 +6,7 @@ import Gtk from 'gi://Gtk';
 import Clutter from 'gi://Clutter';
 import { Main } from '../core/legacy.js';
 import { Context } from '../core/context.js';
-import { Event, Delay } from '../core/enums.js';
+import { Event } from '../core/enums.js';
 import { Component, ComponentEvent } from './base/component.js';
 import { Animation, AnimationDuration, AnimationType } from './base/animation.js';
 import { NotificationHandler } from '../services/notificationService.js';
@@ -59,6 +59,11 @@ class DateMenu extends Component {
     /** @type {string} */
     #clockDisplayStyleClass = null;
 
+    /** @type {St.BoxLayout} */
+    get #container() {
+        return this.#dateMenu?.get_children()[0];
+    }
+
     /** @type {boolean} */
     get isDndEnabled() {
         return this.#dateMenu?._indicator?._settings?.get_boolean(DND_SETTINGS_FIELD) === false;
@@ -90,7 +95,7 @@ class DateMenu extends Component {
     }
 
     #setParent() {
-        const container = this.#getContainer();
+        const container = this.#container;
         if (!container || !this.#dateMenu?._clockDisplay) return;
         const clockDisplayParent = this.#dateMenu._clockDisplay.get_parent();
         if (clockDisplayParent && clockDisplayParent !== container) return;
@@ -107,13 +112,7 @@ class DateMenu extends Component {
         this.#dateMenu?._indicator?._sync();
         if (!this.#dateMenu?._clockDisplay) return;
         if (this.#dateMenu._clockDisplay.get_parent()) return;
-        const container = this.#getContainer();
-        if (!container) return;
-        container.insert_child_at_index(this.#dateMenu._clockDisplay, CLOCK_DISPLAY_POSITION);
-    }
-
-    #getContainer() {
-        return this.#dateMenu?.get_children()[0];
+        this.#container?.insert_child_at_index(this.#dateMenu._clockDisplay, CLOCK_DISPLAY_POSITION);
     }
 
 }
@@ -126,7 +125,7 @@ export class NotificationCounter extends Component {
      */
     #notifyHandler = (data) => ({
         [ComponentEvent.Destroy]: this.#destroy,
-        [ComponentEvent.Mapped]: () => Context.jobs.new(this, Delay.Background).destroy(() => this.#rerender()),
+        [ComponentEvent.Mapped]: () => Context.layout.queueAfterInit(this, () => this.#rerender()),
         [DateMenuEvent.DndChanged]: this.#updateStyle
     })[data?.event]?.call(this);
 
@@ -158,16 +157,11 @@ export class NotificationCounter extends Component {
         this.#createCounter();
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
         Context.signals.add(this, [Gtk.Settings.get_default(), Event.FontName, () => this.#rerender()]);
-        this.#setParent();
-    }
-
-    #setParent() {
-        if (!Context.isSessionStartingUp) return this.setParent(this.#dateMenu, CLOCK_DISPLAY_POSITION);
-        Context.signals.add(this, [Main.layoutManager, Event.StartupComplete, () => this.#setParent()]);
+        Context.layout.requestInit(this, () => this.setParent(this.#dateMenu, CLOCK_DISPLAY_POSITION));
     }
 
     #destroy() {
-        Context.jobs.removeAll(this);
+        Context.layout.removeClient(this);
         this.#counter?.remove_all_transitions();
         Context.signals.removeAll(this);
         this.#dateMenu?.destroy();
@@ -237,8 +231,7 @@ export class NotificationCounter extends Component {
     }
 
     #rerender() {
-        if (!this.isMapped) return;
-        Context.jobs.removeAll(this);
+        if (!this.isMapped || Context.layout.hasClient(this)) return;
         this.#counter.remove_all_transitions();
         this.#counter.remove_style_pseudo_class(COUNTER_STYLE_PSEUDO_CLASS);
         Animation(this.#counter, AnimationDuration.Faster, AnimationType.ScaleMin).then(() => {
