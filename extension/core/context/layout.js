@@ -49,7 +49,7 @@ export class LayoutManager {
      * @param {*} client
      * @returns {boolean}
      */
-    hasClient(client) {
+    isQueued(client) {
         return this.#clients?.has(client); 
     }
 

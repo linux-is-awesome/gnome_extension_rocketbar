@@ -231,7 +231,7 @@ export class NotificationCounter extends Component {
     }
 
     #rerender() {
-        if (!this.isMapped || Context.layout.hasClient(this)) return;
+        if (!this.isMapped || Context.layout.isQueued(this)) return;
         this.#counter.remove_all_transitions();
         this.#counter.remove_style_pseudo_class(COUNTER_STYLE_PSEUDO_CLASS);
         Animation(this.#counter, AnimationDuration.Faster, AnimationType.ScaleMin).then(() => {
