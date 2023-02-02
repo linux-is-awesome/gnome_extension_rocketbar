@@ -350,9 +350,9 @@ export class TaskbarClient {
     destroy() {
         this.#callback = null;
         this.#app = null;
-        if (!this.#service) return;
-        TaskbarClient.#service?.removeClient(this);
-        if (!TaskbarClient.#service?.wantsDestroy) return;
+        if (!TaskbarClient.#service) return;
+        TaskbarClient.#service.removeClient(this);
+        if (!TaskbarClient.#service.wantsDestroy) return;
         TaskbarClient.#service.destroy();
         TaskbarClient.#service = null;
     }
