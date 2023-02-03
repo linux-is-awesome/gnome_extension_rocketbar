@@ -100,7 +100,7 @@ class DateMenu extends Component {
         const clockDisplayParent = this.#dateMenu._clockDisplay.get_parent();
         if (clockDisplayParent && clockDisplayParent !== container) return;
         if (clockDisplayParent) container.remove_child(this.#dateMenu._clockDisplay);
-        this.actor.insert_child_at_index(this.#dateMenu._clockDisplay, 0);
+        this.actor.add_child(this.#dateMenu._clockDisplay);
         this.setParent(container, CLOCK_DISPLAY_POSITION);
     }
 
@@ -157,7 +157,7 @@ export class NotificationCounter extends Component {
         this.#createCounter();
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
         Context.signals.add(this, [Gtk.Settings.get_default(), Event.FontName, () => this.#rerender()]);
-        Context.layout.requestInit(this, () => this.setParent(this.#dateMenu, CLOCK_DISPLAY_POSITION));
+        Context.layout.requestInit(this, () => this.setParent(this.#dateMenu));
     }
 
     #destroy() {
