@@ -136,7 +136,7 @@ export class Component {
      * @param {number} [position] -1..0..999
      * @returns {this}
      */
-    setParent(parent, position = 0) {
+    setParent(parent, position = -1) {
         if (typeof position !== Type.Number) return this;
         if (this.#isComponent(parent)) {
             parent = parent.actor;
@@ -345,8 +345,10 @@ export class Component {
         if (typeof position !== Type.Number) return false;
         const parentActor = this.parentActor;
         if (!parentActor) return false;
-        const maxPosition = parentActor.get_n_children();
-        if (position < 0 || position > maxPosition) position = maxPosition;
+        const maxPosition = parentActor.get_n_children() - 1;
+        if (position < 0 || position > maxPosition) {
+            position = maxPosition;
+        }
         const actorAtIndex = parentActor.get_child_at_index(position);
         if (actorAtIndex === this.#actor) return false;
         const componentAtIndex = this.#isComponent(actorAtIndex?._delegate);
