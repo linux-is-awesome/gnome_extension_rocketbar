@@ -103,10 +103,10 @@ class TaskbarService {
     #favorites = null;
 
     /** @type {Map<Shell.App, Set<Meta.Window>>} */
-    #apps = new Map(); // app => Set<window>
+    #apps = new Map();
 
     /** @type {Map<Meta.Window, Shell.App>} */
-    #windows = new Map(); // window => app
+    #windows = new Map();
 
     /** @type {Set<Shell.App>} */
     #changedApps = new Set();
@@ -135,16 +135,20 @@ class TaskbarService {
         return this.#windows;
     }
 
-    /** @type {boolean} */
-    get wantsDestroy() {
-        return !this.#clients.size;
+    /** @type {Meta.Workspace} */
+    get workspace() {
+        return this.#workspace;
     }
 
     constructor() {
-        Context.jobs.new(this).destroy(() => this.#initialize());
+        Context.jobs.new(this).destroy(() => this.#initialize()).catch();
     }
 
+    /**
+     * @returns {boolean}
+     */
     destroy() {
+        if (this.#clients?.size) return false;
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
         this.#workspace = null;
@@ -152,7 +156,8 @@ class TaskbarService {
         this.#favorites = null;
         this.#apps = null;
         this.#windows = null;
-        this.#notifyJob = null;
+        this.#clients = null;
+        return true;
     }
 
     /**
@@ -250,7 +255,7 @@ class TaskbarService {
      */
     #addWindowAsync(window) {
         if (!this.#isValidWindow(window)) return;
-        Context.jobs.new(window).destroy(() => this.#trackApp(this.#addWindow(window)));
+        Context.jobs.new(window).destroy(() => this.#trackApp(this.#addWindow(window))).catch();
     }
 
     /**
@@ -296,7 +301,7 @@ class TaskbarService {
     #trackAll(delay = Delay.Idle) {
         if (!this.#workspace) return;
         this.#changedApps.clear();
-        this.#notifyJob?.reset(delay).then(() => this.#notifyClients());
+        this.#resetJob(delay);
     }
 
     /**
@@ -305,7 +310,14 @@ class TaskbarService {
     #trackApp(app) {
         if (!this.#workspace || !app || this.#changedApps.has(app)) return;
         this.#changedApps.add(app);
-        this.#notifyJob?.reset(Delay.Queue).then(() => this.#notifyClients());
+        this.#resetJob(Delay.Queue);
+    }
+
+    /**
+     * @param {number} [delay]
+     */
+    #resetJob(delay = Delay.Idle) {
+        this.#notifyJob.reset(delay).then(() => this.#notifyClients()).catch();
     }
 
     #notifyClients() {
@@ -352,28 +364,71 @@ export class TaskbarClient {
         this.#app = null;
         if (!TaskbarClient.#service) return;
         TaskbarClient.#service.removeClient(this);
-        if (!TaskbarClient.#service.wantsDestroy) return;
-        TaskbarClient.#service.destroy();
+        if (!TaskbarClient.#service.destroy()) return;
         TaskbarClient.#service = null;
     }
 
     /**
-     * @param {*} filters
-     * @returns {Set<Meta.Window>|Map<Shell.App, Set<Meta.Window>>}
+     * @param {boolean} [currentWorkspace]
+     * @param {boolean} [skipTaskbar]
+     * @returns {Set<Meta.Window>|null}
      */
-    getWindows(filters) {
+    getWindows(currentWorkspace = false, skipTaskbar = false) {
         if (!TaskbarClient.#service) return null;
-        if (this.#app) return TaskbarClient.#service.apps.get(this.#app);
-        return TaskbarClient.#service.apps;
+        const windows = (
+            this.#app ? TaskbarClient.#service.apps.get(this.#app) :
+            new Set(TaskbarClient.#service.windows.keys())
+        );
+        if (!windows?.size) return null;
+        if (skipTaskbar && !currentWorkspace) return windows;
+        const workspace = TaskbarClient.#service.workspace;
+        const result = new Set();
+        for (const window of windows) {
+            if (!skipTaskbar && window.skip_taskbar) continue;
+            if (currentWorkspace && window.get_workspace() !== workspace) continue;
+            result.add(window);
+        }
+        return result;
     }
 
     /**
-     * @param {Set<Shell.App>} apps
+     * @param {boolean} [currentWorkspace]
+     * @param {boolean} [skipTaskbar]
+     * @returns {Set<Meta.App>|null}
      */
-    notify(apps) {
+    getApps(currentWorkspace = false, skipTaskbar = false) {
+        if (!TaskbarClient.#service) return null;
+        if (skipTaskbar && !currentWorkspace) return new Set(this.#app ? [this.#app] : TaskbarClient.#service.apps.keys());
+        const workspace = TaskbarClient.#service.workspace;
+        if (this.#app) {
+            const windows = TaskbarClient.#service.apps.get(this.#app);
+            if (!windows?.size) return null;
+            for (const window of windows) {
+                if (!skipTaskbar && window.skip_taskbar) continue;
+                if (currentWorkspace && window.get_workspace() !== workspace) continue;
+                return new Set([this.#app]);
+            }
+            return null;
+        }
+        const windows = TaskbarClient.#service.windows;
+        if (!windows?.size) return null;
+        const result = new Set();
+        for (const [window, app] of windows) {
+            if (result.has(app)) continue;
+            if (!skipTaskbar && window.skip_taskbar) continue;
+            if (currentWorkspace && window.get_workspace() !== workspace) continue;
+            result.add(app);
+        }
+        return result;
+    }
+
+    /**
+     * @param {Set<Shell.App>} changed
+     */
+    notify(changed) {
         if (typeof this.#callback !== Type.Function) return;
-        if (!this.#app) this.#callback(apps); 
-        else if (!apps || apps.has(this.#app)) this.#callback();
+        if (!this.#app) this.#callback(changed); 
+        else if (!changed || changed.has(this.#app)) this.#callback();
     }
 
 }

@@ -66,11 +66,6 @@ class NotificationService {
     /** @type {Object.<string, string|number|boolean>} */
     #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
 
-    /** @type {boolean} */
-    get wantsDestroy() {
-        return !this.#handlers?.size;
-    }
-
     constructor() {
         this.#handleConfig();
         this.#initSources();
@@ -82,10 +77,15 @@ class NotificationService {
         ]);
     }
 
+    /**
+     * @returns {boolean}
+     */
     destroy() {
+        if (this.#handlers?.size) return false;
         this.#updateJob?.destroy();
         Context.signals.removeAll(this);
         this.#handlers = null;
+        return true;
     }
 
     /**
@@ -218,10 +218,10 @@ export class NotificationHandler {
     destroy() {
         this.setCount(0);
         this.#callback = null;
-        this.#appId = null; 
-        NotificationHandler.#service?.removeHandler(this);
-        if (!NotificationHandler.#service?.wantsDestroy) return;
-        NotificationHandler.#service.destroy();
+        this.#appId = null;
+        if (!NotificationHandler.#service) return;
+        NotificationHandler.#service.removeHandler(this);
+        if (!NotificationHandler.#service.destroy()) return;
         NotificationHandler.#service = null;
     }
 
