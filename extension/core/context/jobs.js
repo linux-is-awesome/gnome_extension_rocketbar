@@ -2,6 +2,7 @@
 
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
+import { Context } from '../context.js';
 import { Type, Delay } from '../enums.js';
 
 class Job {
@@ -32,8 +33,8 @@ class Job {
     }
 
     /**
-     * @param {(job: Job) => void} destroyCallback 
-     * @param {number} [delay] 
+     * @param {(job: Job) => void} destroyCallback
+     * @param {number} [delay]
      */
     constructor(destroyCallback, delay = Delay.Idle) {
         this.#destroyCallback = destroyCallback;
@@ -64,11 +65,11 @@ class Job {
     }
 
     /**
-     * @param {(error) => void} callback
+     * @param {(error) => void} [callback]
      * @returns {this}
      */
     catch(callback) {
-        this.#job = this.#currentJob?.catch(callback);
+        this.#job = this.#currentJob?.catch(typeof callback === Type.Function ? callback : e => console.error(Context.metadata?.name, e));
         return this;
     }
 

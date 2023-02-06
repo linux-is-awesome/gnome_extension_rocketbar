@@ -42,7 +42,7 @@ export class LayoutManager {
             typeof callback !== Type.Function ||
             typeof this.#clients.get(client) === Type.Function) return;
         this.#clients.set(client, callback);
-        Context.jobs.removeAll(this).new(this, Delay.Background).destroy(() => this.#handleAfterInit());
+        Context.jobs.removeAll(this).new(this, Delay.Background).destroy(() => this.#handleAfterInit()).catch();
     }
 
     /**

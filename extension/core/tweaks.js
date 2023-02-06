@@ -257,7 +257,7 @@ class NightLightTweak extends Tweak {
         if (Context.isSessionLocked) return;
         if (!this.#settings?.get_boolean(NIGHT_LIGHT_ENABLED_SETTINGS_KEY)) return;
         this.#settings?.set_boolean(NIGHT_LIGHT_ENABLED_SETTINGS_KEY, false);
-        Context.jobs.new(this, Delay.Queue).destroy(() => this.#settings?.set_boolean(NIGHT_LIGHT_ENABLED_SETTINGS_KEY, true));
+        Context.jobs.new(this, Delay.Queue).destroy(() => this.#settings?.set_boolean(NIGHT_LIGHT_ENABLED_SETTINGS_KEY, true)).catch();
     }
 
 }
