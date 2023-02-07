@@ -361,7 +361,8 @@ class TaskbarService {
 
     #notifyClients() {
         if (!this.#clients?.size) return;
-        for (const client of this.#clients) client.triggerNotify(this.#trackedApps);
+        const clients = [...this.#clients];
+        for (let i = 0, l = clients.length; i < l; ++i) clients[i].triggerNotify(this.#trackedApps);
         if (this.#trackedApps) this.#trackedApps.clear();
         else this.#trackedApps = new Set();
     }
