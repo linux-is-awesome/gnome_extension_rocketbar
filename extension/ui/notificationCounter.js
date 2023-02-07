@@ -6,7 +6,7 @@ import Gtk from 'gi://Gtk';
 import Clutter from 'gi://Clutter';
 import { Main } from '../core/legacy.js';
 import { Context } from '../core/context.js';
-import { Event } from '../core/enums.js';
+import { Event, Property } from '../core/enums.js';
 import { Component, ComponentEvent } from './base/component.js';
 import { Animation, AnimationDuration, AnimationType } from './base/animation.js';
 import { NotificationHandler } from '../services/notificationService.js';
@@ -21,6 +21,7 @@ const COUNTER_STYLE_PSEUDO_CLASS = 'transition';
 const COUNTER_EMPTY_COLOR = 'transparent';
 const COUNTER_EMPTY_BORDER_SIZE = 2;
 const COUNTER_LONG_VALUE_PADDING = 3;
+const COUNTER_DEFAULT_TEXT = '0';
 
 /** @enum {string} */
 const DateMenuEvent = {
@@ -171,21 +172,21 @@ export class NotificationCounter extends Component {
     #createCounter() {
         const spacer = new St.Label({
             name: `${MODULE_NAME}.Spacer`,
-            text: '0',
+            text: COUNTER_DEFAULT_TEXT,
             opacity: 0,
             y_align: Clutter.ActorAlign.CENTER
         });
         this.#counter = new St.Label({
             name: `${MODULE_NAME}.Counter`,
             style_class: COUNTER_STYLE_CLASS,
-            text: '0',
+            text: COUNTER_DEFAULT_TEXT,
             opacity: 0,
             visible: false,
             x_align: Clutter.ActorAlign.CENTER,
             y_align: Clutter.ActorAlign.CENTER
         });
         this.#counter.set_pivot_point(0.5, 0.5);
-        this.#counter.bind_property('visible', spacer, 'visible', GObject.BindingFlags.SYNC_CREATE);
+        this.#counter.bind_property(Property.Visible, spacer, Property.Visible, GObject.BindingFlags.SYNC_CREATE);
         this.actor.add_child(spacer);
         this.actor.add_child(this.#counter);
     }
@@ -211,8 +212,7 @@ export class NotificationCounter extends Component {
                 this.#updateStyle();
                 this.#updateClockMargin();
                 break;
-            default:
-                this.#updateStyle();
+            default: this.#updateStyle();
         }
     }
 
