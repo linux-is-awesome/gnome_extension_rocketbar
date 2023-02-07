@@ -1,7 +1,7 @@
-/* exported Event, Type */
+/* exported Event, Type, Property, Delay */
 
 /**
- * @enum {string} Standard GObject events to handle
+ * @enum {string} Standard GObject and Shell events to handle
  */
 export const Event = {
     Visible: 'notify::visible',
@@ -28,6 +28,14 @@ export const Event = {
     InstalledAppsChanged: 'installed-changed',
     FavoritesChanged: 'changed'
 };
+
+/**
+ * @enum {string} Standard GObject properties
+ */
+export const Property = {
+    Visible: 'visible',
+    Hover: 'hover'
+}
 
 /**
  * @enum {string} Standard javascript types
