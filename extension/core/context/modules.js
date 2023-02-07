@@ -4,6 +4,7 @@ import { Context } from '../context.js';
 import { Config } from '../../utils/config.js';
 import { Type } from '../enums.js';
 import { Tweaks } from '../tweaks.js';
+import { Taskbar } from '../../ui/taskbar.js';
 import { NotificationCounter } from '../../ui/notificationCounter.js';
 
 /** @enum {string} */
@@ -18,6 +19,8 @@ export class Modules {
     #modules = {
         /** @type {Tweaks} */
         Tweaks: this.#constructModule(Tweaks),
+        /** @type {Taskbar} */
+        Taskbar: null,
         /** @type {NotificationCounter} */
         NotificationCounter: null
     };
