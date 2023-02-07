@@ -92,10 +92,12 @@ export class Context {
         return Context.#getInstance().#launcherApi;
     }
 
+    /** @type {boolean} */
     static get isSessionLocked() {
         return Main.sessionMode?.isLocked || Main.layoutManager?.screenShieldGroup?.visible;
     }
 
+    /** @type {boolean} */
     static get isSessionStartingUp() {
         return Main.layoutManager?._startingUp;
     }
@@ -113,6 +115,9 @@ export class Context {
         return Context.#sessionCache.get(client);
     }
 
+    /** 
+     * @returns {Context}
+     */
     static #getInstance() {
         if (Context.#instance instanceof Context) return Context.#instance;
         return new Context();
