@@ -20,7 +20,13 @@ export const Event = {
     Scroll: 'scroll-event',
     Clicked: 'clicked',
     Captured: 'captured_event',
-    StartupComplete: 'startup-complete'
+    StartupComplete: 'startup-complete',
+    AppStateChanged: 'app-state-changed',
+    SwitchWorkspace: 'switch-workspace',
+    WindowAdded: 'window_added',
+    WindowRemoved: 'window_removed',
+    InstalledAppsChanged: 'installed-changed',
+    FavoritesChanged: 'changed'
 };
 
 /**

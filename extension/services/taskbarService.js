@@ -5,7 +5,7 @@ import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import { AppFavorites } from '../core/legacy.js';
 import { Context } from '../core/context.js';
-import { Type, Delay } from '../core/enums.js';
+import { Event, Type, Delay } from '../core/enums.js';
 import { Config } from '../utils/config.js';
 
 /** @enum {string} */
@@ -18,18 +18,28 @@ class Favorites {
     /** @type {AppFavorites.AppFavorites} */
     #favorites = AppFavorites.getAppFavorites();
 
-    /** @type {Map<string, Shell.App>} */
+    /** @type {Set<Shell.App>} */
     #apps = null;
+
+    /** @type {Map<string, Shell.App>} */
+    #appsById = null;
 
     /** @type {() => void} */
     #callback = null;
 
     /** @type {Map<string, Shell.App>} */
-    get apps() {
-        if (this.#apps) return this.#apps;
-        this.#apps = new Map();
+    get appsById() {
+        if (this.#appsById) return this.#appsById;
+        this.#appsById = new Map();
         const appsById = this.#favorites.getFavoriteMap();
-        for (const appId in appsById) this.#apps.set(appId, appsById[appId]);
+        for (const appId in appsById) this.#appsById.set(appId, appsById[appId]);
+        return this.#appsById;
+    }
+
+    /** @type {Set<Shell.App>} */
+    get apps() {
+        if (this.#appsById && this.#apps) return this.#apps;
+        this.#apps = new Set(this.appsById.values());
         return this.#apps;
     }
 
@@ -40,8 +50,8 @@ class Favorites {
         if (typeof callback !== Type.Function) return;
         this.#callback = callback;
         Context.signals.add(this,
-            [Shell.AppSystem.get_default(), 'installed-changed', () => this.#handleInstalled()],
-            [this.#favorites, 'changed', () => this.#handleChanged()]);
+            [Shell.AppSystem.get_default(), Event.InstalledAppsChanged, () => this.#handleInstalled()],
+            [this.#favorites, Event.FavoritesChanged, () => this.#handleChanged()]);
         this.#callback();
     }
 
@@ -58,26 +68,25 @@ class Favorites {
      */
     move(app, position) {
         if (app instanceof Shell.App === false || !app.id) return;
-        const appIds = [...this.apps.keys()];
+        const appIds = [...this.appsById.keys()];
         const oldPosition = appIds.indexOf(app.id);
         if (position === oldPosition) return;
         this.#favorites.moveFavoriteToPos(app.id, position);
-        this.#apps = null;
     }
 
     #handleChanged() {
-        if (!this.#apps || typeof this.#callback !== Type.Function) return;
-        this.#apps = null;
+        if (!this.#appsById || typeof this.#callback !== Type.Function) return;
+        this.#appsById = null;
         this.#callback();
         console.log('Favorites: changed');
     }
 
     #handleInstalled() {
         if (typeof this.#callback !== Type.Function) return;
-        const oldAppIds = this.#apps ? [...this.#apps.keys()].toString() : '';
+        const oldAppIds = this.#appsById ? [...this.#appsById.keys()].toString() : '';
         const newAppIds = this.#favorites._getIds().toString();
         if (oldAppIds === newAppIds) return;
-        this.#apps = null;
+        this.#appsById = null;
         this.#callback();
         console.log('Favorites: installed changed');
     }
@@ -106,10 +115,10 @@ class TaskbarService {
     #apps = new Map();
 
     /** @type {Map<Meta.Window, Shell.App>} */
-    #windows = new Map();
+    #windows = Context.getSessionCache(this);
 
     /** @type {Set<Shell.App>} */
-    #changedApps = new Set();
+    #trackedApps = new Set();
 
     /** @type {Set<TaskbarClient>} */
     #clients = new Set();
@@ -181,8 +190,8 @@ class TaskbarService {
         this.#addWindows();
         this.#handleWorkspace();
         Context.signals.add(this,
-            [Shell.AppSystem.get_default(), 'app-state-changed', (_, app) => this.#handleAppState(app)],
-            [global.window_manager, 'switch-workspace', () => this.#handleWorkspace()]
+            [Shell.AppSystem.get_default(), Event.AppStateChanged, (_, app) => this.#handleAppState(app)],
+            [global.window_manager, Event.SwitchWorkspace, () => this.#handleWorkspace()]
         );
     }
 
@@ -198,11 +207,24 @@ class TaskbarService {
 
     #addWindows() {
         const windows = global.get_window_actors();
-        if (!windows.length) return; 
+        if (!windows.length) return this.#windows.clear();
+        const oldWindows = this.#windows.size ? [...this.#windows.keys()] : null;
+        const newWindows = new Set();
         for (let i = 0, l = windows.length; i < l; ++i) {
             const window = windows[i].metaWindow;
             if (!this.#isValidWindow(window)) continue;
+            if (oldWindows) newWindows.add(window);
             this.#addWindow(window);
+        }
+        if (!oldWindows) return;
+        if (!newWindows.size) return this.#windows.clear();
+        for (let i = 0, l = oldWindows.length; i < l; ++i) {
+            const window = oldWindows[i];
+            if (!newWindows.has(window)) {
+                this.#windows.delete(window);
+                continue;
+            }
+            this.#addAppWindow(this.#windows.get(window), window);
         }
     }
 
@@ -213,8 +235,8 @@ class TaskbarService {
         this.#workspace = currentWorkspace;
         Context.signals.add(this, [
             this.#workspace,
-            'window_added', (_, window) => this.#addWindowAsync(window), GObject.ConnectFlags.AFTER,
-            'window_removed', (_, window) => this.#removeWindow(window), GObject.ConnectFlags.AFTER
+            Event.WindowAdded, (_, window) => this.#addWindowAsync(window), GObject.ConnectFlags.AFTER,
+            Event.WindowRemoved, (_, window) => this.#removeWindowAsync(window), GObject.ConnectFlags.AFTER
         ]);
         this.#trackAll();
     }
@@ -224,7 +246,6 @@ class TaskbarService {
      */
     #handleAppState(app) {
         if (!this.#apps || app instanceof Shell.App === false) return;
-        console.log('Handle app state', app?.id, app?.state);
         switch (app.state) {
             case Shell.AppState.STARTING: return;
             case Shell.AppState.RUNNING:
@@ -234,9 +255,7 @@ class TaskbarService {
                 this.#apps.set(app, new Set(windows));
                 if (windows.length === 1) this.#windows.set(windows[0], app);
                 else for (let i = 0, l = windows.length; i < l; ++i) this.#windows.set(windows[i], app);
-                this.#trackApp(app);
-                console.log('Add App', app?.id, app?.state, windows.length);
-                return;
+                return this.#trackApp(app);
             default: if (!this.#apps.has(app)) return;
         }
         const windows = this.#apps.get(app);
@@ -244,7 +263,6 @@ class TaskbarService {
         if (!windows.size || !this.#windows.size) return this.#trackApp(app);
         for (const window of windows) this.#windows.delete(window);
         this.#trackApp(app);
-        console.log('Remove App', app?.id, app?.state, windows.size);
     }
 
     /**
@@ -254,32 +272,52 @@ class TaskbarService {
      * @param {Meta.Window} window
      */
     #addWindowAsync(window) {
-        if (!this.#isValidWindow(window)) return;
-        Context.jobs.new(window).destroy(() => this.#trackApp(this.#addWindow(window))).catch();
+        if (!this.#windows || !this.#isValidWindow(window)) return;
+        if (this.#windows.has(window)) return this.#trackApp(this.#windows.get(window));
+        Context.jobs.new(window).destroy(() => this.#addWindow(window)).catch();
     }
 
     /**
      * @param {Meta.Window} window
      */
     #addWindow(window) {
-        if (!this.#windows || this.#windows.has(window)) return null;
+        if (!this.#windows || this.#windows.has(window)) return;
         const app = this.#windowTracker?.get_window_app(window);
-        if (typeof app?.id !== Type.String) return null;
+        if (typeof app?.id !== Type.String) return;
         this.#windows.set(window, app);
+        this.#addAppWindow(app, window);
+        this.#trackApp(app);
+    }
+
+    /**
+     * @param {Shell.App} app
+     * @param {Meta.Window} window
+     */
+    #addAppWindow(app, window) {
         if (!this.#apps.has(app)) this.#apps.set(app, new Set([window]));
         else this.#apps.get(app).add(window);
-        console.log('Add App WINDOW', app?.id, app?.state, window.title);
-        return app;
+    }
+
+    /**
+     * Async execution is required in order to check existing app windows
+     * 
+     * @param {Meta.Window} window
+     */
+    #removeWindowAsync(window) {
+        if (!this.#windows || !this.#isValidWindow(window)) return;
+        Context.jobs.removeAll(window);
+        if (!this.#windows.has(window)) return;
+        Context.jobs.new(window).destroy(() => this.#removeWindow(window)).catch();
     }
 
     /**
      * @param {Meta.Window} window
      */
     #removeWindow(window) {
-        if (!this.#isValidWindow(window)) return;
-        Context.jobs.removeAll(window);
-        if (!this.#windows.has(window)) return;
+        if (!this.#windows?.has(window)) return;
         const app = this.#windows.get(window);
+        const appWindows = new WeakSet(app.get_windows() ?? []);
+        if (appWindows.has(window)) return this.#trackApp(app);
         this.#windows.delete(window);
         if (!this.#apps?.has(app)) return;
         const windows = this.#apps.get(app);
@@ -292,7 +330,7 @@ class TaskbarService {
      * @param {Meta.Window} window
      */
     #isValidWindow(window) {
-        return window instanceof Meta.Window && this.#windowTypes?.has(window.get_window_type());
+        return window instanceof Meta.Window && this.#windowTypes.has(window.get_window_type());
     }
 
     /**
@@ -300,7 +338,7 @@ class TaskbarService {
      */
     #trackAll(delay = Delay.Idle) {
         if (!this.#workspace) return;
-        this.#changedApps.clear();
+        this.#trackedApps = null;
         this.#resetJob(delay);
     }
 
@@ -308,8 +346,9 @@ class TaskbarService {
      * @param {Shell.App} app
      */
     #trackApp(app) {
-        if (!this.#workspace || !app || this.#changedApps.has(app)) return;
-        this.#changedApps.add(app);
+        if (!this.#workspace || !app || !this.#trackedApps ||
+            this.#trackedApps.has(app)) return;
+        this.#trackedApps.add(app);
         this.#resetJob(Delay.Queue);
     }
 
@@ -322,8 +361,9 @@ class TaskbarService {
 
     #notifyClients() {
         if (!this.#clients?.size) return;
-        for (const client of this.#clients) client.notify(this.#changedApps);
-        this.#changedApps.clear();
+        for (const client of this.#clients) client.triggerNotify(this.#trackedApps);
+        if (this.#trackedApps) this.#trackedApps.clear();
+        else this.#trackedApps = new Set();
     }
 
 }
@@ -333,18 +373,27 @@ export class TaskbarClient {
     /** @type {TaskbarService} */
     static #service = null;
 
+    /** @type {Shell.App} */
     #app = null;
 
-    /** @type {(apps: Set<Shell.App>|null) => void} */
+    /** @type {() => void} */
     #callback = null;
+
+    /** @type {Meta.Workspace} */
+    #workspace = null;
 
     /** @type {Favorites|null} */
     get favorites() {
         return TaskbarClient.#service?.favorites;
     }
 
+    /** @type {Meta.Workspace} */
+    get workspace() {
+        return TaskbarClient.#service?.workspace;
+    }
+
     /**
-     * @param {(apps: Set<Shell.App>|null) => void} callback
+     * @param {() => void} callback
      * @param {Shell.App} app
      */
     constructor(callback, app) {
@@ -373,19 +422,17 @@ export class TaskbarClient {
      * @param {boolean} [skipTaskbar]
      * @returns {Set<Meta.Window>|null}
      */
-    getWindows(currentWorkspace = false, skipTaskbar = false) {
+    queryWindows(currentWorkspace = false, skipTaskbar = false) {
         if (!TaskbarClient.#service) return null;
         const windows = (
             this.#app ? TaskbarClient.#service.apps.get(this.#app) :
             new Set(TaskbarClient.#service.windows.keys())
         );
         if (!windows?.size) return null;
-        if (skipTaskbar && !currentWorkspace) return windows;
-        const workspace = TaskbarClient.#service.workspace;
+        if (!this.#testQuery(currentWorkspace, skipTaskbar)) return windows;
         const result = new Set();
         for (const window of windows) {
-            if (!skipTaskbar && window.skip_taskbar) continue;
-            if (currentWorkspace && window.get_workspace() !== workspace) continue;
+            if (!this.#testWindow(window, currentWorkspace, skipTaskbar)) continue;
             result.add(window);
         }
         return result;
@@ -394,18 +441,17 @@ export class TaskbarClient {
     /**
      * @param {boolean} [currentWorkspace]
      * @param {boolean} [skipTaskbar]
-     * @returns {Set<Meta.App>|null}
+     * @returns {Set<Shell.App>|null}
      */
-    getApps(currentWorkspace = false, skipTaskbar = false) {
+    queryApps(currentWorkspace = false, skipTaskbar = false) {
         if (!TaskbarClient.#service) return null;
-        if (skipTaskbar && !currentWorkspace) return new Set(this.#app ? [this.#app] : TaskbarClient.#service.apps.keys());
-        const workspace = TaskbarClient.#service.workspace;
+        if (!this.#testQuery(currentWorkspace, skipTaskbar))
+            return new Set(this.#app ? [this.#app] : TaskbarClient.#service.apps.keys());
         if (this.#app) {
             const windows = TaskbarClient.#service.apps.get(this.#app);
             if (!windows?.size) return null;
             for (const window of windows) {
-                if (!skipTaskbar && window.skip_taskbar) continue;
-                if (currentWorkspace && window.get_workspace() !== workspace) continue;
+                if (!this.#testWindow(window, currentWorkspace, skipTaskbar)) continue;
                 return new Set([this.#app]);
             }
             return null;
@@ -415,20 +461,41 @@ export class TaskbarClient {
         const result = new Set();
         for (const [window, app] of windows) {
             if (result.has(app)) continue;
-            if (!skipTaskbar && window.skip_taskbar) continue;
-            if (currentWorkspace && window.get_workspace() !== workspace) continue;
+            if (!this.#testWindow(window, currentWorkspace, skipTaskbar)) continue;
             result.add(app);
         }
         return result;
     }
 
     /**
-     * @param {Set<Shell.App>} changed
+     * @param {Set<Shell.App>} apps
      */
-    notify(changed) {
+    triggerNotify(apps) {
         if (typeof this.#callback !== Type.Function) return;
-        if (!this.#app) this.#callback(changed); 
-        else if (!changed || changed.has(this.#app)) this.#callback();
+        if (!apps?.size || !this.#app || apps.has(this.#app)) this.#callback();
+    }
+
+    /**
+     * @param {boolean} currentWorkspace
+     * @param {boolean} skipTaskbar
+     * @returns {boolean}
+     */
+    #testQuery(currentWorkspace, skipTaskbar) {
+        if (skipTaskbar && !currentWorkspace) return false;
+        this.#workspace = this.workspace;
+        return true;
+    }
+
+    /**
+     * @param {Meta.Window} window
+     * @param {boolean} currentWorkspace
+     * @param {boolean} skipTaskbar
+     * @returns {boolean}
+     */
+    #testWindow(window, currentWorkspace, skipTaskbar) {
+        if (!skipTaskbar && window.skip_taskbar) return false;
+        if (currentWorkspace && window.get_workspace() !== this.#workspace) return false;
+        return true;
     }
 
 }
