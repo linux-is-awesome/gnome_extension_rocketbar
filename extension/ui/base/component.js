@@ -127,7 +127,7 @@ export class Component {
      * @returns {this}
      */
     setProps(props) {
-        this.#actor.set(props ?? {});
+        this.#actor?.set(props ?? {});
         return this;
     }
 
@@ -137,7 +137,7 @@ export class Component {
      * @returns {this}
      */
     setParent(parent, position = -1) {
-        if (typeof position !== Type.Number) return this;
+        if (!this.isValid || typeof position !== Type.Number) return this;
         if (this.#isComponent(parent)) {
             parent = parent.actor;
         }
