@@ -326,7 +326,7 @@ class PanelScrollTweak extends Tweak {
     get #workspaceSwitcherPopup() {
         if (Main.wm._workspaceSwitcherPopup) return Main.wm._workspaceSwitcherPopup;
         Main.wm._workspaceSwitcherPopup = new WorkspaceSwitcherPopup();
-        Main.wm._workspaceSwitcherPopup.connect(Event.Destroy, () => Main.wm._workspaceSwitcherPopup = null);
+        Main.wm._workspaceSwitcherPopup.connect(Event.Destroy, () => { Main.wm._workspaceSwitcherPopup = null; });
         return Main.wm._workspaceSwitcherPopup;
     }
 

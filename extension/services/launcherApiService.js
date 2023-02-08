@@ -39,7 +39,7 @@ class LauncherApiService {
         this.#dbusId = Gio.DBus.session.own_name(
             DBUS_NAME,
             Gio.BusNameOwnerFlags.ALLOW_REPLACEMENT | Gio.BusNameOwnerFlags.REPLACE,
-            null, () => this.#dbusId = null
+            null, () => { this.#dbusId = null; }
         );
         this.#signalId = Gio.DBus.session.signal_subscribe(
             null, DBUS_SIGNAL_SOURCE, null, null, null, Gio.DBusSignalFlags.NONE,

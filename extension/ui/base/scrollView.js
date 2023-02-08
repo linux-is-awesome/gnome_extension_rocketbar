@@ -32,7 +32,7 @@ export class ScrollView extends Component {
      */
     constructor(name = null) {
         super(new St.ScrollView({ name, ...DefaultProps }));
-        this.#layout.connect(Event.Destroy, () => this.#layout = null);
+        this.#layout.connect(Event.Destroy, () => { this.#layout = null; });
         this.#layout.setParent(super.actor);
         if (typeof name !== Type.String) return;
         this.#layout.setProps({ name: `${name}.Layout` });
