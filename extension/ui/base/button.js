@@ -14,6 +14,12 @@ const DefaultProps = {
     button_mask: St.ButtonMask.ONE | St.ButtonMask.TWO | St.ButtonMask.THREE
 };
 
+/** @enum {string} */
+export const ButtonEvent = {
+    Click: 'click',
+    Focus: 'focus'
+};
+
 export class Button extends Component {
 
     /** @type {St.Widget} */
@@ -30,7 +36,9 @@ export class Button extends Component {
      */
     constructor(display, name = null) {
         super(new St.Button({ name, ...DefaultProps }));
-        this.connect(Event.Clicked, () => this.#clicked());
+        this.connect(Event.Clicked, () => this.#click());
+        this.connect(Event.FocusIn, () => this.#focus());
+        this.connect(Event.FocusOut, () => this.#focus());
         if (display instanceof St.Widget === false) return;
         this.#display = display;
         this.actor.bind_property(Property.Hover, this.#display, Property.Hover, GObject.BindingFlags.SYNC_CREATE);
@@ -38,11 +46,17 @@ export class Button extends Component {
         this.#display.set({ name: `${name}.Display` });
     }
 
-    #clicked() {
+    #click() {
         const event = Clutter.get_current_event();
         if (!event) return;
         const button = event.type() === Clutter.EventType.BUTTON_RELEASE ? event.get_button() : null;
-        this.notifySelf(Event.Clicked, { event, button });
+        this.notifySelf(ButtonEvent.Click, { event, button });
+    }
+
+    #focus() {
+        if (this.actor.has_key_focus()) this.#display.add_style_pseudo_class('focus');
+        else this.#display.remove_style_pseudo_class('focus');
+        this.notifySelf(ButtonEvent.Focus);
     }
 
 }

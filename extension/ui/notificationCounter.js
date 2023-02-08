@@ -263,7 +263,7 @@ export class NotificationCounter extends Component {
     }
 
     #updateStyle() {
-        const [borderColor, borderSize, backgroundColor, textColor, padding] = this.#getStyleValues();
+        const { borderColor, borderSize, backgroundColor, textColor, padding } = this.#getStyleValues();
         const { fontSize, roundness, marginTop } = this.#config;
         this.#counter.set_style(
             `font-size: ${fontSize}px;` +
@@ -290,7 +290,7 @@ export class NotificationCounter extends Component {
         const borderSize = isEmpty ? COUNTER_EMPTY_BORDER_SIZE : 0;
         const backgroundColor = isEmpty ? COUNTER_EMPTY_COLOR : (isDnd ? this.#config.colorNotEmptyDnd : this.#config.colorNotEmpty);
         const textColor = isEmpty ? COUNTER_EMPTY_COLOR : (isDnd ? this.#config.textColorDnd : this.#config.textColor);
-        return [borderColor, borderSize, backgroundColor, textColor, padding];
+        return { borderColor, borderSize, backgroundColor, textColor, padding };
     }
 
 }
