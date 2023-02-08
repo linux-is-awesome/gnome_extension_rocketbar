@@ -75,6 +75,7 @@ export class Signals {
     #add(client, connections, scope) {
         if (!Array.isArray(scope) || !scope.length) return; 
         const [target] = scope.splice(0, 1);
+        if (connections.has(target)) return;
         if (typeof target?.connectObject !== Type.Function) return;
         target.connectObject(...scope, client);
         connections.add(target);
