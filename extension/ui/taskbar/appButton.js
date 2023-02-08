@@ -5,12 +5,51 @@ import Clutter from 'gi://Clutter';
 import Shell from 'gi://Shell';
 import { Main } from '../../core/legacy.js';
 import { Context } from '../../core/context.js';
-import { Event } from '../../core/enums.js';
+import { Event, Delay } from '../../core/enums.js';
 import { Button, ButtonEvent } from '../base/button.js';
 import { ComponentEvent } from '../base/component.js';
 import { TaskbarClient } from '../../services/taskbarService.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
+
+class CycleWindowsQueue {
+
+    /** @type {Meta.Window[]} */
+    #windows = null;
+
+    /** @type {boolean} */
+    #minimize = true;
+
+    /**
+     * @param {Meta.Window[]} windows
+     * @param {boolean} [reverse]
+     * @param {boolean} [minimize]
+     */
+    next(windows, reverse = false, minimize = true) {
+        if (!windows?.length) return;
+        if (!this.#windows || minimize !== this.#minimize) {
+            this.#windows = [...windows];
+        }
+        this.#minimize = minimize;
+        let nextWindow = windows[0];
+        if (!nextWindow.minimized) {
+            let windowIndex = this.#windows.indexOf(nextWindow);
+            if (reverse) windowIndex--; else windowIndex++;
+            if (windowIndex === this.#windows.length) {
+                windowIndex = 0;
+            } else if (windowIndex < 0) {
+                windowIndex = this.#windows.length - 1;
+            }
+            nextWindow = this.#windows[windowIndex];
+            if (!nextWindow) return;
+        }
+        if (!minimize || nextWindow.minimized ||
+            nextWindow !== this.#windows[0]) return Main.activateWindow(nextWindow);
+        for (let i = 0, l = windows.length; i < l; ++i) windows[i].minimize();
+        this.#windows = null;  
+    }
+
+}
 
 export class AppButton extends Button {
 
@@ -36,10 +75,13 @@ export class AppButton extends Button {
     /** @type {Set<Meta.Window>} */
     #windows = null;
 
+    /** @type {boolean} */
     #isActive = false;
 
+    /** @type {CycleWindowsQueue} */
     #cycleWindowsQueue = null;
 
+    /** @type {boolean} */
     get #canOpenNewWindow() {
         return this.#app?.can_open_new_window() && this.#app?.state === Shell.AppState.RUNNING;
     }
@@ -76,6 +118,7 @@ export class AppButton extends Button {
     }
 
     #destroy() {
+        Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
         if (!this.#service) return;
         this.#service?.destroy();
@@ -84,6 +127,7 @@ export class AppButton extends Button {
 
     #connectSignals() {
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
+        this.connect(Event.Scroll, (_, event) => this.#scroll(event));
         this.connect(Event.Hover, () => this.#hover());
         Context.signals.add(this, [global.display, Event.FocusWindow, () => this.#rerender()]);
     }
@@ -111,6 +155,18 @@ export class AppButton extends Button {
 
     #hover() {
         this.#resetCycleWindowsQueue();
+    }
+
+    #scroll(event) {
+        const scrollDirection = event?.get_scroll_direction();
+        if (scrollDirection !== Clutter.ScrollDirection.UP &&
+            scrollDirection !== Clutter.ScrollDirection.DOWN) return Clutter.EVENT_PROPAGATE;
+        if (!this.#windows?.size || Context.jobs.hasClient(this)) return Clutter.EVENT_STOP;
+        if (Main.overview?.visible) Main.overview.hide();
+        Context.jobs.new(this, Delay.Sleep).destroy(() => null);
+        this.#cycleWindows(scrollDirection === Clutter.ScrollDirection.UP, false);
+        return Clutter.EVENT_STOP;
+
     }
 
     #click(params) {
@@ -150,28 +206,14 @@ export class AppButton extends Button {
         sortedWindows[0].delete(global.get_current_time());
     }
 
-    #cycleWindows(reverse) {
+    #cycleWindows(reverse = false, minimize = true) {
         if (!this.#windows?.size) return;
         const sortedWindows = this.#sortedWindows;
         if (!this.#isActive || sortedWindows.length === 1) return Main.activateWindow(sortedWindows[0]);
-        let nextWindow = sortedWindows[0];
         if (!this.#cycleWindowsQueue) {
-            this.#cycleWindowsQueue = [...sortedWindows];
+            this.#cycleWindowsQueue = new CycleWindowsQueue();
         }
-        if (!nextWindow.minimized) {
-            let windowIndex = this.#cycleWindowsQueue.indexOf(nextWindow);
-            windowIndex = reverse ? windowIndex - 1 : windowIndex + 1;
-            if (windowIndex === this.#cycleWindowsQueue.length) {
-                windowIndex = 0;
-            } else if (windowIndex < 0) {
-                windowIndex = this.#cycleWindowsQueue.length - 1;
-            }
-            nextWindow = this.#cycleWindowsQueue[windowIndex];
-            if (!nextWindow) return;
-        }
-        if (nextWindow.minimized || nextWindow !== this.#cycleWindowsQueue[0]) return Main.activateWindow(nextWindow);
-        for (let i = 0, l = sortedWindows.length; i < l; ++i) sortedWindows[i].minimize();
-        this.#resetCycleWindowsQueue();    
+        this.#cycleWindowsQueue.next(sortedWindows, reverse, minimize);   
     }
 
     #resetCycleWindowsQueue() {
