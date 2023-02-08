@@ -18,7 +18,7 @@ export const AnimationType = {
     ScaleMin: { scale_x: 0, scale_y: 0 },
     OpacityMax: { opacity: 255 },
     OpacityMin: { opacity: 0 }
-}
+};
 
 /**
  * @param {St.Widget|Component} actor

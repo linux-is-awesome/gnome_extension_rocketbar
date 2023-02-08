@@ -20,7 +20,7 @@ export const ComponentEvent = {
     DragEnd: 'component::drag-end',
     DragMotion: 'component::drag-motion',
     DragActorRequest: 'component::drag-actor-request'
-}
+};
 
 export class Component {
 

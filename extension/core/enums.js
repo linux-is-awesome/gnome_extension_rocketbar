@@ -26,7 +26,9 @@ export const Event = {
     WindowAdded: 'window_added',
     WindowRemoved: 'window_removed',
     InstalledAppsChanged: 'installed-changed',
-    FavoritesChanged: 'changed'
+    FavoritesChanged: 'changed',
+    OverviewShowing: 'showing',
+    OverviewHiding: 'hiding'
 };
 
 /**
@@ -35,7 +37,7 @@ export const Event = {
 export const Property = {
     Visible: 'visible',
     Hover: 'hover'
-}
+};
 
 /**
  * @enum {string} Standard javascript types
