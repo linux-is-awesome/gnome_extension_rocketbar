@@ -2,9 +2,11 @@
 
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
+import Shell from 'gi://Shell';
 import { Main } from '../../core/legacy.js';
+import { Context } from '../../core/context.js';
 import { Event } from '../../core/enums.js';
-import { Button } from '../base/button.js';
+import { Button, ButtonEvent } from '../base/button.js';
 import { ComponentEvent } from '../base/component.js';
 import { TaskbarClient } from '../../services/taskbarService.js';
 
@@ -19,7 +21,7 @@ export class AppButton extends Button {
     #notifyHandler = (data) => ({
         [ComponentEvent.Destroy]: this.#destroy,
         [ComponentEvent.Mapped]: () => {},
-        [Event.Clicked]: () => this.#activate(data?.params)
+        [ButtonEvent.Click]: () => this.#click(data?.params)
     })[data?.event]?.call(this);
 
     /** @type {Shell.App} */
@@ -34,6 +36,25 @@ export class AppButton extends Button {
     /** @type {Set<Meta.Window>} */
     #windows = null;
 
+    #isActive = false;
+
+    #cycleWindowsQueue = null;
+
+    get #canOpenNewWindow() {
+        return this.#app?.can_open_new_window() && this.#app?.state === Shell.AppState.RUNNING;
+    }
+
+    get #sortedWindows() {
+        if (!this.#app || !this.#windows?.size) return null;
+        if (this.#windows.size === 1) return [...this.#windows];
+        const windows = this.#app.get_windows();
+        if (windows.length === this.#windows.size) return windows;
+        const result = [];
+        for (let i = 0, l = windows.length; i < l; ++i)
+            if (this.#windows.has(windows[i])) result.push(windows[i]);
+        return result;
+    }
+
     /** @type {Shell.App} */
     get app() {
         return this.#app;
@@ -47,13 +68,15 @@ export class AppButton extends Button {
         this.#layout.add_child(this.display);
         this.actor.set_child(this.#layout);
         this.#app = app;
-        this.#service = new TaskbarClient(() => this.#handleState(), app);
+        this.#service = new TaskbarClient(() => this.#handleAppState(), app);
         this.#connectSignals();
+        this.#handleAppState();
         // TODO
         this.#setIcon();
     }
 
     #destroy() {
+        Context.signals.removeAll(this);
         if (!this.#service) return;
         this.#service?.destroy();
         this.#service = null;
@@ -61,24 +84,98 @@ export class AppButton extends Button {
 
     #connectSignals() {
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
+        this.connect(Event.Hover, () => this.#hover());
+        Context.signals.add(this, [global.display, Event.FocusWindow, () => this.#rerender()]);
     }
 
-    #handleState() {
+    #handleAppState() {
         if (!this.isValid) return;
         const isFavorite = this.#service.favorites?.apps?.has(this.#app);
         this.#windows = this.#service.queryWindows(true, true);
         if (!isFavorite && !this.#windows?.size) this.destroy();
+        else this.#rerender();
+    }
+
+    #rerender() {
+        if (!this.isValid) return;
+        const hasFocusedWindow = (
+            global.display.focus_window && this.#windows ?
+            this.#windows.has(global.display.focus_window) : false);
+        if (this.#isActive === hasFocusedWindow) return;
+        this.#isActive = hasFocusedWindow;
     }
 
     #setIcon() {
         this.display.set_child(this.#app.create_icon_texture(20));
     }
 
-    #activate(params) {
+    #hover() {
+        this.#resetCycleWindowsQueue();
+    }
+
+    #click(params) {
         if (!params) return;
+        const { isOverview, isMiddleButton, isCtrlPressed } = this.#getClickDetails(params);
+        if (!isCtrlPressed && !isMiddleButton && isOverview) Main.overview?.hide();
+        if (isCtrlPressed && isMiddleButton) return this.#closeFirstWindow();
+        const newWindow = this.#canOpenNewWindow && (isCtrlPressed || isMiddleButton);
+        if (newWindow || !this.#windows?.size) return this.#openNewWindow();
+        if (this.#windows.size === 1 || isOverview) {
+            const window = this.#sortedWindows[0];
+            if (window.minimized || !window.has_focus() || isOverview) Main.activateWindow(window);
+            else window.minimize();
+            return;
+        }
+        this.#cycleWindows();
+    }
+
+    #getClickDetails(params) {
         const { event, button } = params;
-        if (!this.#windows?.size) this.#app.activate();
-        else Main.activateWindow([...this.#windows][0]);
+        const isOverview = Main.overview?.visible;
+        const isMiddleButton = button === Clutter.BUTTON_MIDDLE;
+        const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) !== 0;
+        return { isOverview, isMiddleButton, isCtrlPressed };
+    }
+
+    #openNewWindow() {
+        this.#resetCycleWindowsQueue();
+        if (this.#app.state !== Shell.AppState.RUNNING || !this.#canOpenNewWindow) return this.#app.activate();
+        this.#app.open_new_window(-1);
+    }
+
+    #closeFirstWindow() {
+        this.#resetCycleWindowsQueue();
+        const sortedWindows = this.#sortedWindows;
+        if (!sortedWindows?.length) return;
+        sortedWindows[0].delete(global.get_current_time());
+    }
+
+    #cycleWindows(reverse) {
+        if (!this.#windows?.size) return;
+        const sortedWindows = this.#sortedWindows;
+        if (!this.#isActive || sortedWindows.length === 1) return Main.activateWindow(sortedWindows[0]);
+        let nextWindow = sortedWindows[0];
+        if (!this.#cycleWindowsQueue) {
+            this.#cycleWindowsQueue = [...sortedWindows];
+        }
+        if (!nextWindow.minimized) {
+            let windowIndex = this.#cycleWindowsQueue.indexOf(nextWindow);
+            windowIndex = reverse ? windowIndex - 1 : windowIndex + 1;
+            if (windowIndex === this.#cycleWindowsQueue.length) {
+                windowIndex = 0;
+            } else if (windowIndex < 0) {
+                windowIndex = this.#cycleWindowsQueue.length - 1;
+            }
+            nextWindow = this.#cycleWindowsQueue[windowIndex];
+            if (!nextWindow) return;
+        }
+        if (nextWindow.minimized || nextWindow !== this.#cycleWindowsQueue[0]) return Main.activateWindow(nextWindow);
+        for (let i = 0, l = sortedWindows.length; i < l; ++i) sortedWindows[i].minimize();
+        this.#resetCycleWindowsQueue();    
+    }
+
+    #resetCycleWindowsQueue() {
+        this.#cycleWindowsQueue = null;
     }
 
 }
