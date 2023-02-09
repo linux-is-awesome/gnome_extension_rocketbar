@@ -9,8 +9,18 @@ import { Event, Delay } from '../../core/enums.js';
 import { Button, ButtonEvent } from '../base/button.js';
 import { ComponentEvent } from '../base/component.js';
 import { TaskbarClient } from '../../services/taskbarService.js';
+import { Config } from '../../utils/config.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
+
+/** @enum {string} */
+const ConfigFields = {
+    iconSize: 'appbutton-icon-size',
+    iconHPadding: 'appbutton-icon-padding',
+    iconVPadding: 'appbutton-icon-vertical-padding',
+    spacingAfter: 'appbutton-spacing',
+    roundness: 'appbutton-roundness'
+};
 
 class CycleWindowsQueue {
 
@@ -59,9 +69,12 @@ export class AppButton extends Button {
      */
     #notifyHandler = (data) => ({
         [ComponentEvent.Destroy]: this.#destroy,
-        [ComponentEvent.Mapped]: () => {},
+        [ComponentEvent.Mapped]: this.#handleMapped,
         [ButtonEvent.Click]: () => this.#click(data?.params)
     })[data?.event]?.call(this);
+
+    /** @type {boolean} */
+    #isActive = false;
 
     /** @type {Shell.App} */
     #app = null;
@@ -75,11 +88,11 @@ export class AppButton extends Button {
     /** @type {Set<Meta.Window>} */
     #windows = null;
 
-    /** @type {boolean} */
-    #isActive = false;
-
     /** @type {CycleWindowsQueue} */
     #cycleWindowsQueue = null;
+
+    /** @type {Object.<string, string|number|boolean>} */
+    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
 
     /** @type {boolean} */
     get #canOpenNewWindow() {
@@ -102,55 +115,89 @@ export class AppButton extends Button {
         return this.#app;
     }
 
+    /** @type {boolean} */
+    get isActive() {
+        return this.#isActive;
+    }
+
+    /** @param {boolean} value */
+    set isActive(value) {
+        super.isActive = !Main.overview?._shown && value;
+        if (this.#isActive === value) return;
+        this.#isActive = value;
+        if (!this.#isActive) Context.signals.remove(this, Main.overview);
+        else Context.signals.add(this, [
+            Main.overview,
+            Event.OverviewShowing, () => { this.isActive = this.#isActive; },
+            Event.OverviewHiding, () => { this.isActive = this.#isActive; }
+        ]);
+    }
+
     /**
      * @param {Shell.App} app
      */
     constructor(app) {
-        super(new St.Bin({ style_class: 'panel-button' }), MODULE_NAME);
+        super(new St.Bin(), MODULE_NAME);
         this.#layout.add_child(this.display);
         this.actor.set_child(this.#layout);
         this.#app = app;
         this.#service = new TaskbarClient(() => this.#handleAppState(), app);
         this.#connectSignals();
-        this.#handleAppState();
-        // TODO
-        this.#setIcon();
     }
 
     #destroy() {
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
-        if (!this.#service) return;
         this.#service?.destroy();
         this.#service = null;
+        this.#layout = null;
+        this.#windows = null;
     }
 
     #connectSignals() {
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
         this.connect(Event.Scroll, (_, event) => this.#scroll(event));
         this.connect(Event.Hover, () => this.#hover());
-        Context.signals.add(this, [global.display, Event.FocusWindow, () => this.#rerender()]);
+        Context.signals.add(this, [global.display, Event.FocusWindow, () => this.#handleFocusedWindow()]);
+    }
+
+    #handleMapped() {
+        this.#handleAppState();
+        this.#handleConfig();
     }
 
     #handleAppState() {
-        if (!this.isValid) return;
+        if (!this.isMapped) return;
         const isFavorite = this.#service.favorites?.apps?.has(this.#app);
         this.#windows = this.#service.queryWindows(true, true);
         if (!isFavorite && !this.#windows?.size) this.destroy();
-        else this.#rerender();
+        else this.#handleFocusedWindow();
     }
 
-    #rerender() {
-        if (!this.isValid) return;
-        const hasFocusedWindow = (
+    #handleFocusedWindow() {
+        if (!this.isMapped) return;
+        this.isActive = (
             global.display.focus_window && this.#windows ?
             this.#windows.has(global.display.focus_window) : false);
-        if (this.#isActive === hasFocusedWindow) return;
-        this.#isActive = hasFocusedWindow;
+    }
+
+    #handleConfig(settingsKey) {
+        this.#setIcon();
+        this.#updateStyle();
     }
 
     #setIcon() {
-        this.display.set_child(this.#app.create_icon_texture(20));
+        if (!this.isValid) return;
+        this.display.set_child(this.#app.create_icon_texture(this.#config.iconSize));
+    }
+
+    #updateStyle() {
+        this.overrideStyle({
+            spacingAfter: this.#config.spacingAfter,
+            roundness: this.#config.roundness,
+            width: this.#config.iconSize + this.#config.iconHPadding * 2,
+            height: this.#config.iconSize + this.#config.iconVPadding * 2
+        });
     }
 
     #hover() {
