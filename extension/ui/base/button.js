@@ -8,6 +8,7 @@ import { Component } from './component.js';
 import { Property } from '../../core/enums.js';
 
 const DEFAULT_STYLE_CLASS = 'panel-button rocketbar__button';
+const CSS_JOIN_SEPARATOR = ' ';
 
 /** @enum {string} */
 const PseudoClass = {
@@ -15,12 +16,32 @@ const PseudoClass = {
     Active: 'active'
 };
 
+/** @enum {string} */
+const CssFields = {
+    MarginLeft: 'margin-left',
+    MarginRight: 'margin-right',
+    BorderRadius: 'border-radius',
+    Height: 'height',
+    Width: 'width'
+}
+
 /** @type {Object.<string, boolean|number|string>} */
 const DefaultProps = {
     reactive: true,
     can_focus: true,
     button_mask: St.ButtonMask.ONE | St.ButtonMask.TWO | St.ButtonMask.THREE,
     style_class: DEFAULT_STYLE_CLASS
+};
+
+/** @type {Object.<string, number>} */
+const DefaultStyle = {
+    spacingBefore: 0,
+    spacingAfter: 1,
+    width: 0,
+    height: 0,
+    roundness: 99,
+    backlight: null,
+    backlightIntensity: 0
 };
 
 /** @enum {string} */
@@ -36,6 +57,12 @@ export class Button extends Component {
 
     /** @type {boolean} */
     #isActive = false;
+
+    /** @type {Map<string, string>} */
+    #css = null;
+
+    /** @type {DefaultStyle} */
+    #style = DefaultStyle;
 
     /** @type {St.Widget} */
     get display() {
@@ -68,13 +95,47 @@ export class Button extends Component {
     }
 
     /**
+     * @param {DefaultStyle} [style]
+     * @returns {this}
+     */
+    overrideStyle(style = DefaultStyle) {
+        if (style) this.#style = { ...this.#style, ...style };
+        else style = this.#style;
+        const css = new Map();
+        if (typeof style.spacingBefore === Type.Number) css.set(CssFields.MarginLeft, `${CssFields.MarginLeft}: ${style.spacingBefore}px;`);
+        if (typeof style.spacingAfter === Type.Number) css.set(CssFields.MarginRight, `${CssFields.MarginRight}: ${style.spacingAfter}px;`);
+        if (this.#display !== this.actor && css.size) {
+            this.actor.style = [...css.values()].join(CSS_JOIN_SEPARATOR);
+            css.clear();
+        }
+        if (typeof style.roundness === Type.Number) css.set(CssFields.BorderRadius, `${CssFields.BorderRadius}: ${style.roundness}px;`);
+        if (typeof style.height === Type.Number && style.height > 0) {
+            this.#display.set({ y_expand: false });
+            css.set(CssFields.Height, `${CssFields.Height}: ${style.height}px;`);
+        } else if (style.height === 0) {
+            this.#display.set({ y_expand: true });
+            this.#css?.delete(CssFields.Height);
+        }
+        if (typeof style.width === Type.Number && style.width > 0) {
+            this.#display.set({ x_expand: false });
+            css.set(CssFields.Width, `${CssFields.Width}: ${style.width}px;`);
+        } else if (style.width === 0) {
+            this.#display.set({ x_expand: true });
+            this.#css?.delete(CssFields.Width);
+        }
+        this.#css = this.#css ? new Map([...this.#css, ...css]) : css;
+        this.#display.style = [...this.#css.values()].join(CSS_JOIN_SEPARATOR);
+        return this;
+    }
+
+    /**
      * @param {St.Widget} display
      * @param {string} [name]
      */
     #setDisplay(display, name) {
         if (display instanceof St.Widget === false) return;
         this.#display = display;
-        this.#display.set({ style_class: DEFAULT_STYLE_CLASS });
+        this.#display.set({ style_class: DEFAULT_STYLE_CLASS, y_expand: true, x_expand: true });
         this.actor.set_style_class_name(null);
         this.actor.bind_property(Property.Hover, this.#display, Property.Hover, GObject.BindingFlags.SYNC_CREATE);
         if (typeof name !== Type.String) return;
