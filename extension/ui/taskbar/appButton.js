@@ -243,9 +243,10 @@ export class AppButton extends Button {
         if (isCtrlPressed && isMiddleButton) return this.#closeFirstWindow();
         const newWindow = this.#canOpenNewWindow && (isCtrlPressed || isMiddleButton);
         if (newWindow || !this.#windows?.size) return this.#openNewWindow();
-        if (this.#windows.size === 1 || isOverview) {
+        if (isOverview) return Main.activateWindow(this.#getPrimaryWindow(this.#sortedWindows));
+        if (this.#windows.size === 1) {
             const window = this.#sortedWindows[0];
-            if (window.minimized || !window.has_focus() || isOverview) Main.activateWindow(window);
+            if (window.minimized || !window.has_focus()) Main.activateWindow(window);
             else window.minimize();
             return;
         }
@@ -276,7 +277,8 @@ export class AppButton extends Button {
     #cycleWindows(reverse = false, minimize = true) {
         if (!this.#windows?.size) return;
         const sortedWindows = this.#sortedWindows;
-        if (!this.#isActive || sortedWindows.length === 1) return Main.activateWindow(sortedWindows[0]);
+        if (!this.#isActive) return Main.activateWindow(this.#getPrimaryWindow(sortedWindows));
+        if (sortedWindows.length === 1) return Main.activateWindow(sortedWindows[0]);
         if (!this.#cycleWindowsQueue) {
             this.#cycleWindowsQueue = new CycleWindowsQueue();
         }
@@ -285,6 +287,16 @@ export class AppButton extends Button {
 
     #resetCycleWindowsQueue() {
         this.#cycleWindowsQueue = null;
+    }
+
+    #getPrimaryWindow(windows) {
+        if (windows.length === 1) return windows[0];
+        const primaryMonitor = global.display.get_primary_monitor();
+        for (let i = 0, l = windows.length; i < l; ++i) {
+            const window = windows[i];
+            if (window.get_monitor() === primaryMonitor) return window;
+        }
+        return windows[0];
     }
 
 }
