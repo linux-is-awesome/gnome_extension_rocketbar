@@ -8,7 +8,8 @@ import { Component } from './component.js';
 import { Property } from '../../core/enums.js';
 
 const DEFAULT_STYLE_CLASS = 'panel-button rocketbar__button';
-const CSS_JOIN_SEPARATOR = ' ';
+const COLOR_REGEXP_STRING = /[^\d,]/g;
+const COLOR_STRING_SPLITTER = ',';
 
 /** @enum {string} */
 const PseudoClass = {
@@ -17,12 +18,13 @@ const PseudoClass = {
 };
 
 /** @enum {string} */
-const CssFields = {
+const CssField = {
     MarginLeft: 'margin-left',
     MarginRight: 'margin-right',
     BorderRadius: 'border-radius',
     Height: 'height',
-    Width: 'width'
+    Width: 'width',
+    BackgroundGradient: 'background-gradient-'
 }
 
 /** @type {Object.<string, boolean|number|string>} */
@@ -33,15 +35,16 @@ const DefaultProps = {
     style_class: DEFAULT_STYLE_CLASS
 };
 
-/** @type {Object.<string, number>} */
+/** @type {Object.<string, number|string>} */
 const DefaultStyle = {
     spacingBefore: 0,
     spacingAfter: 1,
     width: 0,
     height: 0,
     roundness: 99,
-    backlight: null,
-    backlightIntensity: 0
+    backlightColor: '',
+    backlightIntensity: 0,
+    backlightRatio: 1
 };
 
 /** @enum {string} */
@@ -60,9 +63,6 @@ export class Button extends Component {
 
     /** @type {Map<string, string>} */
     #css = null;
-
-    /** @type {DefaultStyle} */
-    #style = DefaultStyle;
 
     /** @type {St.Widget} */
     get display() {
@@ -99,32 +99,44 @@ export class Button extends Component {
      * @returns {this}
      */
     overrideStyle(style = DefaultStyle) {
-        if (style) this.#style = { ...this.#style, ...style };
-        else style = this.#style;
         const css = new Map();
-        if (typeof style.spacingBefore === Type.Number) css.set(CssFields.MarginLeft, `${CssFields.MarginLeft}: ${style.spacingBefore}px;`);
-        if (typeof style.spacingAfter === Type.Number) css.set(CssFields.MarginRight, `${CssFields.MarginRight}: ${style.spacingAfter}px;`);
+        const { spacingBefore, spacingAfter, roundness, height, width,
+                backlightColor, backlightIntensity, backlightRatio } = style;
+        if (typeof spacingBefore === Type.Number) css.set(CssField.MarginLeft, `${CssField.MarginLeft}:${spacingBefore}px;`);
+        if (typeof spacingAfter === Type.Number) css.set(CssField.MarginRight, `${CssField.MarginRight}:${spacingAfter}px;`);
         if (this.#display !== this.actor && css.size) {
-            this.actor.style = [...css.values()].join(CSS_JOIN_SEPARATOR);
+            this.actor.set_style([...css.values()].join());
             css.clear();
         }
-        if (typeof style.roundness === Type.Number) css.set(CssFields.BorderRadius, `${CssFields.BorderRadius}: ${style.roundness}px;`);
-        if (typeof style.height === Type.Number && style.height > 0) {
+        if (typeof roundness === Type.Number) css.set(CssField.BorderRadius, `${CssField.BorderRadius}:${roundness}px;`);
+        if (typeof height === Type.Number && height > 0) {
             this.#display.set({ y_expand: false });
-            css.set(CssFields.Height, `${CssFields.Height}: ${style.height}px;`);
-        } else if (style.height === 0) {
+            css.set(CssField.Height, `${CssField.Height}:${height}px;`);
+        } else if (height === 0) {
             this.#display.set({ y_expand: true });
-            this.#css?.delete(CssFields.Height);
+            this.#css?.delete(CssField.Height);
         }
-        if (typeof style.width === Type.Number && style.width > 0) {
+        if (typeof width === Type.Number && width > 0) {
             this.#display.set({ x_expand: false });
-            css.set(CssFields.Width, `${CssFields.Width}: ${style.width}px;`);
-        } else if (style.width === 0) {
+            css.set(CssField.Width, `${CssField.Width}:${width}px;`);
+        } else if (width === 0) {
             this.#display.set({ x_expand: true });
-            this.#css?.delete(CssFields.Width);
+            this.#css?.delete(CssField.Width);
+        }
+        if (typeof backlightColor === Type.String &&
+            typeof backlightIntensity === Type.Number && backlightIntensity > 0) {
+            const color = this.#parseColorString(backlightColor);
+            const ration = backlightRatio ?? DefaultStyle.backlightRatio;
+            const startColor = this.#colorToString(color, Math.max(backlightIntensity - ration, 0) / 10);
+            const endColor = this.#colorToString(color, backlightIntensity / 10);
+            css.set(CssField.BackgroundGradient, `${CssField.BackgroundGradient}direction:vertical;` +
+                                                 `${CssField.BackgroundGradient}start:rgba(${startColor});` +
+                                                 `${CssField.BackgroundGradient}end:rgba(${endColor});`);
+        } else if (backlightIntensity === 0) {
+            this.#css?.delete(CssField.BackgroundGradient);
         }
         this.#css = this.#css ? new Map([...this.#css, ...css]) : css;
-        this.#display.style = [...this.#css.values()].join(CSS_JOIN_SEPARATOR);
+        this.#display.set_style([...this.#css.values()].join(''));
         return this;
     }
 
@@ -153,6 +165,16 @@ export class Button extends Component {
         if (this.actor.has_key_focus()) this.#display.add_style_pseudo_class(PseudoClass.Focus);
         else this.#display.remove_style_pseudo_class(PseudoClass.Focus);
         this.notifySelf(ButtonEvent.Focus);
+    }
+
+    #parseColorString(colorString) {
+        const result = colorString.replace(COLOR_REGEXP_STRING, '').split(COLOR_STRING_SPLITTER);
+        result.length = 3;
+        return result;
+    }
+
+    #colorToString(color, opacity) {
+        return [...color, opacity].join(COLOR_STRING_SPLITTER);
     }
 
 }
