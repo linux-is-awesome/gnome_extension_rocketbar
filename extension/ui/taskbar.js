@@ -12,7 +12,7 @@ const MODULE_NAME = 'Rocketbar__Taskbar';
 export class Taskbar extends ScrollView {
 
     /** @type {Map<Meta.Workspace, Set<Shell.App>>} */
-    #runningApps = Context.getSessionCache(this);
+    #runningApps = Context.getSessionCache(this.constructor.name);
 
     /** @type {WeakMap<Shell.App, AppButton>} */
     #appButtons = new WeakMap();

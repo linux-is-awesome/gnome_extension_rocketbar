@@ -115,7 +115,7 @@ class TaskbarService {
     #apps = new Map();
 
     /** @type {Map<Meta.Window, Shell.App>} */
-    #windows = Context.getSessionCache(this);
+    #windows = Context.getSessionCache(this.constructor.name);
 
     /** @type {Set<Shell.App>} */
     #trackedApps = new Set();
