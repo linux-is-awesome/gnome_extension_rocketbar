@@ -185,6 +185,9 @@ export class AppButton extends Button {
             this.#windows.has(global.display.focus_window) : false);
     }
 
+    /**
+     * @param {string} settingsKey
+     */
     #handleConfig(settingsKey) {
         switch (settingsKey) {
             case ConfigFields.backlightColor:
@@ -224,6 +227,10 @@ export class AppButton extends Button {
         this.#resetCycleWindowsQueue();
     }
 
+    /**
+     * @param {Clutter.Event} event
+     * @returns {number}
+     */
     #scroll(event) {
         const scrollDirection = event?.get_scroll_direction();
         if (scrollDirection !== Clutter.ScrollDirection.UP &&
@@ -289,6 +296,10 @@ export class AppButton extends Button {
         this.#cycleWindowsQueue = null;
     }
 
+    /**
+     * @param {Meta.Window[]} windows
+     * @returns {Meta.Window}
+     */
     #getPrimaryWindow(windows) {
         if (windows.length === 1) return windows[0];
         const primaryMonitor = global.display.get_primary_monitor();

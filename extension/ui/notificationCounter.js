@@ -192,7 +192,7 @@ export class NotificationCounter extends Component {
     }
 
     /**
-     * @param {string} settingsKey 
+     * @param {string} settingsKey
      */
     #handleConfig(settingsKey) {
         switch (settingsKey) {
