@@ -19,7 +19,9 @@ const ConfigFields = {
     iconHPadding: 'appbutton-icon-padding',
     iconVPadding: 'appbutton-icon-vertical-padding',
     spacingAfter: 'appbutton-spacing',
-    roundness: 'appbutton-roundness'
+    roundness: 'appbutton-roundness',
+    backlightColor: 'appbutton-backlight-color',
+    backlightIntensity: 'appbutton-backlight-intensity'
 };
 
 class CycleWindowsQueue {
@@ -122,7 +124,9 @@ export class AppButton extends Button {
 
     /** @param {boolean} value */
     set isActive(value) {
+        const oldValue = super.isActive;
         super.isActive = !Main.overview?._shown && value;
+        if (super.isActive !== oldValue) this.#updateBacklight();
         if (this.#isActive === value) return;
         this.#isActive = value;
         if (!this.#isActive) Context.signals.remove(this, Main.overview);
@@ -162,8 +166,8 @@ export class AppButton extends Button {
     }
 
     #handleMapped() {
-        this.#handleAppState();
         this.#handleConfig();
+        this.#handleAppState();
     }
 
     #handleAppState() {
@@ -182,22 +186,38 @@ export class AppButton extends Button {
     }
 
     #handleConfig(settingsKey) {
-        this.#setIcon();
-        this.#updateStyle();
+        switch (settingsKey) {
+            case ConfigFields.backlightColor:
+            case ConfigFields.backlightIntensity:
+                return this.#updateBacklight();
+            case ConfigFields.iconSize:
+            default:
+                this.#setIcon();
+            case ConfigFields.iconHPadding:
+            case ConfigFields.iconVPadding:
+            case ConfigFields.roundness:
+            case ConfigFields.spacingAfter:
+                this.#updateStyle();
+        }
     }
 
     #setIcon() {
         if (!this.isValid) return;
+        this.display.get_child()?.destroy();
         this.display.set_child(this.#app.create_icon_texture(this.#config.iconSize));
     }
 
     #updateStyle() {
-        this.overrideStyle({
-            spacingAfter: this.#config.spacingAfter,
-            roundness: this.#config.roundness,
-            width: this.#config.iconSize + this.#config.iconHPadding * 2,
-            height: this.#config.iconSize + this.#config.iconVPadding * 2
-        });
+        const { spacingAfter, roundness, iconSize, iconHPadding, iconVPadding } = this.#config;
+        const width = iconSize + iconHPadding * 2;
+        const height = iconSize + iconVPadding * 2;
+        this.overrideStyle({ spacingAfter, roundness, width, height });
+    }
+
+    #updateBacklight() {
+        let { backlightColor, backlightIntensity } = this.#config;
+        if (!super.isActive) backlightIntensity = 0;
+        this.overrideStyle({ backlightColor, backlightIntensity });
     }
 
     #hover() {
