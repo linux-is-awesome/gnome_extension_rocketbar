@@ -170,21 +170,6 @@ export class AppButton extends Button {
         this.#handleAppState();
     }
 
-    #handleAppState() {
-        if (!this.isMapped) return;
-        const isFavorite = this.#service.favorites?.apps?.has(this.#app);
-        this.#windows = this.#service.queryWindows(true, true);
-        if (!isFavorite && !this.#windows?.size) this.destroy();
-        else this.#handleFocusedWindow();
-    }
-
-    #handleFocusedWindow() {
-        if (!this.isMapped) return;
-        this.isActive = (
-            global.display.focus_window && this.#windows ?
-            this.#windows.has(global.display.focus_window) : false);
-    }
-
     /**
      * @param {string} settingsKey
      */
@@ -221,6 +206,20 @@ export class AppButton extends Button {
         let { backlightColor, backlightIntensity } = this.#config;
         if (!super.isActive) backlightIntensity = 0;
         this.overrideStyle({ backlightColor, backlightIntensity });
+    }
+
+    #handleAppState() {
+        if (!this.isMapped) return;
+        const isFavorite = this.#service.favorites?.apps?.has(this.#app);
+        this.#windows = this.#service.queryWindows(true, true);
+        if (!isFavorite && !this.#windows?.size) this.destroy();
+        else this.#handleFocusedWindow();
+    }
+
+    #handleFocusedWindow() {
+        if (!this.isMapped) return;
+        this.isActive = this.#windows?.size && global.stage.get_key_focus() instanceof St.Widget === false ?
+                        this.#service.hasFocusedWindow(true, true) : false;
     }
 
     #hover() {

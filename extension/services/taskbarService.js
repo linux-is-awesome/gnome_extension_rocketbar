@@ -185,6 +185,14 @@ class TaskbarService {
         this.#clients.delete(client);
     }
 
+    /**
+     * @param {Meta.Window} window
+     * @returns {boolean}
+     */
+    isValidWindow(window) {
+        return this.#isValidWindow(window);
+    }
+
     #initialize() {
         this.#handleConfig();
         this.#addWindows();
@@ -374,6 +382,9 @@ export class TaskbarClient {
     /** @type {TaskbarService} */
     static #service = null;
 
+    /** @type {{window: Meta.Window, app: Shell.App}} */
+    static #focusedWindow = null;
+
     /** @type {Shell.App} */
     #app = null;
 
@@ -416,6 +427,7 @@ export class TaskbarClient {
         TaskbarClient.#service.removeClient(this);
         if (!TaskbarClient.#service.destroy()) return;
         TaskbarClient.#service = null;
+        TaskbarClient.#focusedWindow = null;
     }
 
     /**
@@ -430,7 +442,7 @@ export class TaskbarClient {
             new Set(TaskbarClient.#service.windows.keys())
         );
         if (!windows?.size) return null;
-        if (!this.#testQuery(currentWorkspace, skipTaskbar)) return windows;
+        if (this.#testQuery(currentWorkspace, skipTaskbar)) return windows;
         const result = new Set();
         for (const window of windows) {
             if (!this.#testWindow(window, currentWorkspace, skipTaskbar)) continue;
@@ -446,7 +458,7 @@ export class TaskbarClient {
      */
     queryApps(currentWorkspace = false, skipTaskbar = false) {
         if (!TaskbarClient.#service) return null;
-        if (!this.#testQuery(currentWorkspace, skipTaskbar))
+        if (this.#testQuery(currentWorkspace, skipTaskbar))
             return new Set(this.#app ? [this.#app] : TaskbarClient.#service.apps.keys());
         if (this.#app) {
             const windows = TaskbarClient.#service.apps.get(this.#app);
@@ -469,6 +481,31 @@ export class TaskbarClient {
     }
 
     /**
+     * @param {boolean} [currentWorkspace]
+     * @param {boolean} [skipTaskbar]
+     * @returns {boolean}
+     */
+    hasFocusedWindow(currentWorkspace = false, skipTaskbar = false) {
+        if (!TaskbarClient.#service || !this.#app ||
+            this.#app.state !== Shell.AppState.RUNNING) return false;
+        const current = global.display.focus_window;
+        const old = TaskbarClient.#focusedWindow;
+        if (!current && !old) return false;
+        if (!current && old) return this.#app === old.app && (
+            this.#testQuery(currentWorkspace, skipTaskbar) ||
+            this.#testWindow(old.window, currentWorkspace, skipTaskbar)
+        );
+        if (current === old?.window) return this.#app === old.app;
+        if (!this.#testQuery(currentWorkspace, skipTaskbar) &&
+            !this.#testWindow(current, currentWorkspace, skipTaskbar)) return false;
+        const isValidWindow = TaskbarClient.#service.isValidWindow(current);
+        if (isValidWindow && !new Set(this.#app.get_windows()).has(current)) return false;
+        else if (!isValidWindow && !new Set(this.#app.get_pids()).has(current.get_pid())) return false;
+        TaskbarClient.#focusedWindow = { window: current, app: this.#app };
+        return true;
+    }
+
+    /**
      * @param {Set<Shell.App>} apps
      */
     triggerNotify(apps) {
@@ -482,9 +519,9 @@ export class TaskbarClient {
      * @returns {boolean}
      */
     #testQuery(currentWorkspace, skipTaskbar) {
-        if (skipTaskbar && !currentWorkspace) return false;
+        if (skipTaskbar && !currentWorkspace) return true;
         this.#workspace = this.workspace;
-        return true;
+        return false;
     }
 
     /**
