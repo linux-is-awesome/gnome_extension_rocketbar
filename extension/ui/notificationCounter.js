@@ -2,7 +2,6 @@
 
 import GObject from 'gi://GObject';
 import St from 'gi://St';
-import Gtk from 'gi://Gtk';
 import Clutter from 'gi://Clutter';
 import { Main } from '../core/legacy.js';
 import { Context } from '../core/context.js';
@@ -157,7 +156,7 @@ export class NotificationCounter extends Component {
         super(new St.BoxLayout({ name: MODULE_NAME }));
         this.#createCounter();
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
-        Context.signals.add(this, [Gtk.Settings.get_default(), Event.FontName, () => this.#rerender()]);
+        Context.signals.add(this, [St.Settings.get(), Event.FontName, () => this.#rerender()]);
         Context.layout.requestInit(this, () => this.setParent(this.#dateMenu));
     }
 
