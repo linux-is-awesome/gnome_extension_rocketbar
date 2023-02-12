@@ -149,6 +149,11 @@ class TaskbarService {
         return this.#workspace;
     }
 
+    /** @type {Set<Shell.App>} */
+    get trackedApps() {
+        return this.#trackedApps;
+    }
+
     constructor() {
         Context.jobs.new(this).destroy(() => this.#initialize()).catch();
     }
@@ -402,6 +407,11 @@ export class TaskbarClient {
     /** @type {Meta.Workspace} */
     get workspace() {
         return TaskbarClient.#service?.workspace;
+    }
+
+    /** @type {boolean} */
+    get isPending() {
+        return this.#app && TaskbarClient.#service?.trackedApps?.has(this.#app);
     }
 
     /**

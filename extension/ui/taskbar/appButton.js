@@ -101,6 +101,7 @@ export class AppButton extends Button {
         return this.#app?.can_open_new_window() && this.#app?.state === Shell.AppState.RUNNING;
     }
 
+    /** @type {Meta.Window[]} */
     get #sortedWindows() {
         if (!this.#app || !this.#windows?.size) return null;
         if (this.#windows.size === 1) return [...this.#windows];
@@ -213,9 +214,16 @@ export class AppButton extends Button {
         const isFavorite = this.#service.favorites?.apps?.has(this.#app);
         this.#windows = this.#service.queryWindows(true, true);
         if (!isFavorite && !this.#windows?.size) this.destroy();
-        else this.#handleFocusedWindow();
+        else if (!this.#isActive) this.#handleFocusedWindow();
     }
 
+    /**
+     * Note: hasFocusedWindow function handles focused windows and ignores UI elements.
+     *       global.stage.get_key_focus() function is used for the following:
+     *       - to check if the focused element is not a window;
+     *       - to skip unnecessary execution of the hasFocusedWindow function;
+     *       - to remove active state from the button when another UI element gets focus.
+     */
     #handleFocusedWindow() {
         if (!this.isMapped) return;
         this.isActive = this.#windows?.size && global.stage.get_key_focus() instanceof St.Widget === false ?
@@ -243,14 +251,15 @@ export class AppButton extends Button {
     }
 
     #click(params) {
-        if (!params) return;
+        if (!params || this.#service.isPending) return;
         const { isOverview, isMiddleButton, isCtrlPressed } = this.#getClickDetails(params);
         if (!isCtrlPressed && !isMiddleButton && isOverview) Main.overview?.hide();
         if (isCtrlPressed && isMiddleButton) return this.#closeFirstWindow();
+        const windowsCount = this.#windows?.size;
         const newWindow = this.#canOpenNewWindow && (isCtrlPressed || isMiddleButton);
-        if (newWindow || !this.#windows?.size) return this.#openNewWindow();
+        if (newWindow || !windowsCount) return this.#openNewWindow();
         if (isOverview) return Main.activateWindow(this.#getPrimaryWindow(this.#sortedWindows));
-        if (this.#windows.size === 1) {
+        if (windowsCount === 1) {
             const window = this.#sortedWindows[0];
             if (window.minimized || !window.has_focus()) Main.activateWindow(window);
             else window.minimize();
