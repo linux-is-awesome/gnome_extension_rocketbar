@@ -3,6 +3,7 @@
 import GObject from 'gi://GObject';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
+import St from 'gi://St';
 import { AppFavorites } from '../core/legacy.js';
 import { Context } from '../core/context.js';
 import { Event, Type, Delay } from '../core/enums.js';
@@ -497,14 +498,21 @@ export class TaskbarClient {
      */
     hasFocusedWindow(currentWorkspace = false, skipTaskbar = false) {
         if (!TaskbarClient.#service || !this.#app ||
-            this.#app.state !== Shell.AppState.RUNNING) return false;
+            this.#app.state === Shell.AppState.STOPPED) return false;
         const current = global.display.focus_window;
         const old = TaskbarClient.#focusedWindow;
         if (!current && !old) return false;
-        if (!current && old) return this.#app === old.app && (
-            this.#testQuery(currentWorkspace, skipTaskbar) ||
-            this.#testWindow(old.window, currentWorkspace, skipTaskbar)
-        );
+        if (!current && old) {
+            if (old.window.minimized || !old.window.get_pid() ||
+                global.stage.get_key_focus() instanceof St.Widget) {
+                TaskbarClient.#focusedWindow = null;
+                return false;
+            }
+            return this.#app === old.app && (
+                this.#testQuery(currentWorkspace, skipTaskbar) ||
+                this.#testWindow(old.window, currentWorkspace, skipTaskbar)
+            );
+        }
         if (current === old?.window) return this.#app === old.app;
         if (!this.#testQuery(currentWorkspace, skipTaskbar) &&
             !this.#testWindow(current, currentWorkspace, skipTaskbar)) return false;
