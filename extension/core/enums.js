@@ -15,7 +15,7 @@ export const Event = {
     DragEnd: 'drag-end',
     ButtonPress: 'button-press-event',
     Touch: 'touch-event',
-    FontName: 'notify::gtk-font-name',
+    FontName: 'notify::font-name',
     FocusWindow: 'notify::focus-window',
     Scroll: 'scroll-event',
     Clicked: 'clicked',
