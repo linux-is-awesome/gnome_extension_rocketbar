@@ -14,7 +14,16 @@ import { Config } from '../../utils/config.js';
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
 
 /** @enum {string} */
+const ActivateBehavior = {
+    NewWindow: 'new_window',
+    MoveWindows: 'move_windows'
+}
+
+/** @enum {string} */
 const ConfigFields = {
+    isolateWorkspaces: 'taskbar-isolate-workspaces',
+    enableMinimizeAction: 'appbutton-enable-minimize-action',
+    activateRunningBehavior: 'appbutton-running-app-activate-behavior',
     iconSize: 'appbutton-icon-size',
     iconHPadding: 'appbutton-icon-padding',
     iconVPadding: 'appbutton-icon-vertical-padding',
@@ -37,7 +46,7 @@ class CycleWindowsQueue {
      * @param {boolean} [reverse]
      * @param {boolean} [minimize]
      */
-    next(windows, reverse = false, minimize = true) {
+    next(windows, minimize = true, reverse = false) {
         if (!windows?.length) return;
         if (!this.#windows || minimize !== this.#minimize) {
             this.#windows = [...windows];
@@ -179,6 +188,10 @@ export class AppButton extends Button {
      */
     #handleConfig(settingsKey) {
         switch (settingsKey) {
+            case ConfigFields.isolateWorkspaces:
+            case ConfigFields.enableMinimizeAction:
+            case ConfigFields.activateRunningBehavior:
+                return;
             case ConfigFields.backlightColor:
             case ConfigFields.backlightIntensity:
                 return this.#updateBacklight();
@@ -214,8 +227,9 @@ export class AppButton extends Button {
 
     #handleAppState() {
         if (!this.isMapped) return;
+        const { isolateWorkspaces } = this.#config;
         const isFavorite = this.#service.favorites?.apps?.has(this.#app);
-        this.#windows = this.#service.queryWindows(true, true);
+        this.#windows = this.#service.queryWindows(isolateWorkspaces, true);
         this.#windowsCount = this.#windows?.size ?? 0;
         if (!isFavorite && !this.#windowsCount) this.destroy();
         else if (!this.#isActive || !this.#windowsCount) this.#handleFocusedWindow();
@@ -241,7 +255,7 @@ export class AppButton extends Button {
         if (!this.#windowsCount || Context.jobs.hasClient(this)) return Clutter.EVENT_STOP;
         if (Main.overview?.visible) Main.overview.hide();
         Context.jobs.new(this, Delay.Sleep).destroy(() => null);
-        this.#cycleWindows(scrollDirection === Clutter.ScrollDirection.UP, false);
+        this.#cycleWindows(false, scrollDirection === Clutter.ScrollDirection.UP);
         return Clutter.EVENT_STOP;
 
     }
@@ -249,18 +263,28 @@ export class AppButton extends Button {
     #click(params) {
         if (!params || this.#service.isPending) return;
         const { isOverview, isMiddleButton, isCtrlPressed } = this.#getClickDetails(params);
-        if (!isCtrlPressed && !isMiddleButton && isOverview) Main.overview?.hide();
         if (isCtrlPressed && isMiddleButton) return this.#closeFirstWindow();
         const newWindow = this.#canOpenNewWindow && (isCtrlPressed || isMiddleButton);
-        if (newWindow || !this.#windowsCount) return this.#openNewWindow();
+        if (newWindow || this.#app.state !== Shell.AppState.RUNNING)
+            return this.#openNewWindow(!isCtrlPressed && !isMiddleButton && isOverview);
+        const { isolateWorkspaces, activateRunningBehavior, enableMinimizeAction } = this.#config;
+        if (!this.#windowsCount) {
+            if (!isolateWorkspaces) return this.#openNewWindow(isOverview); 
+            switch (activateRunningBehavior) {
+                case ActivateBehavior.MoveWindows: return this.#moveWindows();
+                case ActivateBehavior.NewWindow:
+                default: return this.#openNewWindow(isOverview);
+            }
+        }
         if (isOverview) return Main.activateWindow(this.#getPrimaryWindow(this.#sortedWindows));
         if (this.#windowsCount === 1) {
             const window = this.#sortedWindows[0];
-            if (window.minimized || !window.has_focus()) Main.activateWindow(window);
-            else window.minimize();
+            if (window.minimized || !window.has_focus() ||
+                isCtrlPressed || isMiddleButton) Main.activateWindow(window);
+            else if (enableMinimizeAction) window.minimize();
             return;
         }
-        this.#cycleWindows();
+        this.#cycleWindows(enableMinimizeAction);
     }
 
     #getClickDetails(params) {
@@ -271,8 +295,9 @@ export class AppButton extends Button {
         return { isOverview, isMiddleButton, isCtrlPressed };
     }
 
-    #openNewWindow() {
+    #openNewWindow(hideOverview = false) {
         this.#resetCycleWindowsQueue();
+        if (hideOverview) Main.overview?.hide();
         if (this.#app.state !== Shell.AppState.RUNNING || !this.#canOpenNewWindow) return this.#app.activate();
         this.#app.open_new_window(-1);
     }
@@ -284,7 +309,17 @@ export class AppButton extends Button {
         sortedWindows[0].delete(global.get_current_time());
     }
 
-    #cycleWindows(reverse = false, minimize = true) {
+    #moveWindows() {
+        const windows = this.#service.queryWindows(false, true);
+        if (!windows?.size) return;
+        const sortedWindows = this.#app.get_windows();
+        const workspace = this.#service.workspace
+        for (const window of windows) window.change_workspace(workspace);
+        if (Main.overview?.visible || !sortedWindows.length) return;
+        Main.activateWindow(sortedWindows[0]);
+    }
+
+    #cycleWindows(minimize = true, reverse = false) {
         if (!this.#windowsCount) return;
         const sortedWindows = this.#sortedWindows;
         if (!this.#isActive) return Main.activateWindow(this.#getPrimaryWindow(sortedWindows));
@@ -292,7 +327,7 @@ export class AppButton extends Button {
         if (!this.#cycleWindowsQueue) {
             this.#cycleWindowsQueue = new CycleWindowsQueue();
         }
-        this.#cycleWindowsQueue.next(sortedWindows, reverse, minimize);   
+        this.#cycleWindowsQueue.next(sortedWindows, minimize, reverse);   
     }
 
     #resetCycleWindowsQueue() {
