@@ -28,7 +28,8 @@ export const Event = {
     InstalledAppsChanged: 'installed-changed',
     FavoritesChanged: 'changed',
     OverviewShowing: 'showing',
-    OverviewHiding: 'hiding'
+    OverviewHiding: 'hiding',
+    ScaleFactor: 'notify::scale-factor'
 };
 
 /**

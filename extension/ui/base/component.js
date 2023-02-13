@@ -1,10 +1,13 @@
 /* exported ComponentEvent, Component */
 
 import St from 'gi://St';
+import Gio from 'gi://Gio';
 import { Dnd } from '../../core/legacy.js'; 
 import { Type, Event } from '../../core/enums.js';
 
 const DRAG_TIMEOUT_THRESHOLD = 200;
+const UI_SETTINGS_SCHEMA_ID = 'org.gnome.desktop.interface';
+const UI_SCALE_SETTINGS_KEY = 'text-scaling-factor';
 
 /**
  * @enum {string}
@@ -14,6 +17,7 @@ export const ComponentEvent = {
     Mapped: 'component::mapped',
     Destroy: 'component::destroy',
     PositionLock: 'component::position-lock',
+    Scale: 'component::scale',
     AcceptDrop: 'component::accept-drop',
     DragOver: 'component::drag-over',
     DragBegin: 'component::drag-begin',
@@ -47,6 +51,12 @@ export class Component {
 
     /** @type {*} */
     #dragMonitor = null;
+
+    /** @type {St.ThemeContext} */
+    #themeContext = null;
+
+    /** @type {Gio.Settings} */
+    #uiSettings = null;
 
     /** @type {St.Widget} */
     get actor() {
@@ -95,6 +105,24 @@ export class Component {
     /** @param {boolean} enabled */
     set dragEvents(enabled) {
         this.#setDragEvents(enabled);
+    }
+
+    /** @type {number} */
+    get globalScale() {
+        if (!this.#actor) return 0;
+        if (this.#themeContext) return this.#themeContext.scale_factor;
+        this.#themeContext = St.ThemeContext.get_for_stage(global.stage);
+        this.#themeContext.connectObject(Event.ScaleFactor, () => this.notifySelf(ComponentEvent.Scale), this.#actor);
+        return this.#themeContext.scale_factor;
+    }
+
+    /** @type {number} */
+    get uiScale() {
+        if (!this.#actor) return 0;
+        if (this.#uiSettings) return this.#uiSettings.get_double(UI_SCALE_SETTINGS_KEY);
+        this.#uiSettings = new Gio.Settings({ schema_id: UI_SETTINGS_SCHEMA_ID });
+        this.#uiSettings.connectObject(`changed::${UI_SCALE_SETTINGS_KEY}`, () => this.notifySelf(ComponentEvent.Scale), this.#actor);
+        return this.#uiSettings.get_double(UI_SCALE_SETTINGS_KEY);
     }
 
     /**
@@ -313,6 +341,10 @@ export class Component {
         this.#setDragEvents(false);
         this.#notifySelf(ComponentEvent.Destroy);
         if (!this.#actor) return;
+        this.#themeContext?.disconnectObject(this.#actor);
+        this.#uiSettings?.disconnectObject(this.#actor);
+        this.#themeContext = null;
+        this.#uiSettings = null;
         this.#actor._delegate = null;
         this.#actor = null;
     }
