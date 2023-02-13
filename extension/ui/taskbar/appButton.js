@@ -223,7 +223,7 @@ export class AppButton extends Button {
 
     #handleFocusedWindow() {
         if (!this.isMapped) return;
-        this.isActive = this.#windowsCount ? this.#service.hasFocusedWindow(true, true) : false;
+        this.isActive = this.#windowsCount ? this.#service.hasFocusedWindow() : false;
     }
 
     #hover() {

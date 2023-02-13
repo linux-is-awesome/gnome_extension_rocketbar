@@ -492,11 +492,9 @@ export class TaskbarClient {
     }
 
     /**
-     * @param {boolean} [currentWorkspace]
-     * @param {boolean} [skipTaskbar]
      * @returns {boolean}
      */
-    hasFocusedWindow(currentWorkspace = false, skipTaskbar = false) {
+    hasFocusedWindow() {
         if (!TaskbarClient.#service || !this.#app ||
             this.#app.state === Shell.AppState.STOPPED) return false;
         const current = global.display.focus_window;
@@ -508,14 +506,12 @@ export class TaskbarClient {
                 TaskbarClient.#focusedWindow = null;
                 return false;
             }
-            return this.#app === old.app && (
-                this.#testQuery(currentWorkspace, skipTaskbar) ||
-                this.#testWindow(old.window, currentWorkspace, skipTaskbar)
-            );
+            this.#workspace = this.workspace;
+            return this.#app === old.app && this.#testWindow(old.window);
         }
         if (current === old?.window) return this.#app === old.app;
-        if (!this.#testQuery(currentWorkspace, skipTaskbar) &&
-            !this.#testWindow(current, currentWorkspace, skipTaskbar)) return false;
+        this.#workspace = this.workspace;
+        if (!this.#testWindow(current)) return false;
         const isValidWindow = TaskbarClient.#service.isValidWindow(current);
         if (isValidWindow && !new Set(this.#app.get_windows()).has(current)) return false;
         else if (!isValidWindow && !new Set(this.#app.get_pids()).has(current.get_pid())) return false;
@@ -536,7 +532,7 @@ export class TaskbarClient {
      * @param {boolean} skipTaskbar
      * @returns {boolean}
      */
-    #testQuery(currentWorkspace, skipTaskbar) {
+    #testQuery(currentWorkspace = true, skipTaskbar = true) {
         if (skipTaskbar && !currentWorkspace) return true;
         this.#workspace = this.workspace;
         return false;
@@ -548,7 +544,7 @@ export class TaskbarClient {
      * @param {boolean} skipTaskbar
      * @returns {boolean}
      */
-    #testWindow(window, currentWorkspace, skipTaskbar) {
+    #testWindow(window, currentWorkspace = true, skipTaskbar = true) {
         if (!skipTaskbar && window.skip_taskbar) return false;
         if (currentWorkspace && window.get_workspace() !== this.#workspace) return false;
         return true;
