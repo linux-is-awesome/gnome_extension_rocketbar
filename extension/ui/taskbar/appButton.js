@@ -90,6 +90,9 @@ export class AppButton extends Button {
     /** @type {Set<Meta.Window>} */
     #windows = null;
 
+    /** @type {number} */
+    #windowsCount = 0;
+
     /** @type {CycleWindowsQueue} */
     #cycleWindowsQueue = null;
 
@@ -103,7 +106,7 @@ export class AppButton extends Button {
 
     /** @type {Meta.Window[]} */
     get #sortedWindows() {
-        if (!this.#app || !this.#windows?.size) return null;
+        if (!this.#app || !this.#windowsCount) return null;
         if (this.#windows.size === 1) return [...this.#windows];
         const windows = this.#app.get_windows();
         if (windows.length === this.#windows.size) return windows;
@@ -213,21 +216,14 @@ export class AppButton extends Button {
         if (!this.isMapped) return;
         const isFavorite = this.#service.favorites?.apps?.has(this.#app);
         this.#windows = this.#service.queryWindows(true, true);
-        if (!isFavorite && !this.#windows?.size) this.destroy();
-        else if (!this.#isActive) this.#handleFocusedWindow();
+        this.#windowsCount = this.#windows?.size ?? 0;
+        if (!isFavorite && !this.#windowsCount) this.destroy();
+        else if (!this.#isActive || !this.#windowsCount) this.#handleFocusedWindow();
     }
 
-    /**
-     * Note: hasFocusedWindow function handles focused windows and ignores UI elements.
-     *       global.stage.get_key_focus() function is used for the following:
-     *       - to check if the focused element is not a window;
-     *       - to skip unnecessary execution of the hasFocusedWindow function;
-     *       - to remove active state from the button when another UI element gets focus.
-     */
     #handleFocusedWindow() {
         if (!this.isMapped) return;
-        this.isActive = this.#windows?.size && global.stage.get_key_focus() instanceof St.Widget === false ?
-                        this.#service.hasFocusedWindow(true, true) : false;
+        this.isActive = this.#windowsCount ? this.#service.hasFocusedWindow(true, true) : false;
     }
 
     #hover() {
@@ -242,7 +238,7 @@ export class AppButton extends Button {
         const scrollDirection = event?.get_scroll_direction();
         if (scrollDirection !== Clutter.ScrollDirection.UP &&
             scrollDirection !== Clutter.ScrollDirection.DOWN) return Clutter.EVENT_PROPAGATE;
-        if (!this.#windows?.size || Context.jobs.hasClient(this)) return Clutter.EVENT_STOP;
+        if (!this.#windowsCount || Context.jobs.hasClient(this)) return Clutter.EVENT_STOP;
         if (Main.overview?.visible) Main.overview.hide();
         Context.jobs.new(this, Delay.Sleep).destroy(() => null);
         this.#cycleWindows(scrollDirection === Clutter.ScrollDirection.UP, false);
@@ -255,11 +251,10 @@ export class AppButton extends Button {
         const { isOverview, isMiddleButton, isCtrlPressed } = this.#getClickDetails(params);
         if (!isCtrlPressed && !isMiddleButton && isOverview) Main.overview?.hide();
         if (isCtrlPressed && isMiddleButton) return this.#closeFirstWindow();
-        const windowsCount = this.#windows?.size;
         const newWindow = this.#canOpenNewWindow && (isCtrlPressed || isMiddleButton);
-        if (newWindow || !windowsCount) return this.#openNewWindow();
+        if (newWindow || !this.#windowsCount) return this.#openNewWindow();
         if (isOverview) return Main.activateWindow(this.#getPrimaryWindow(this.#sortedWindows));
-        if (windowsCount === 1) {
+        if (this.#windowsCount === 1) {
             const window = this.#sortedWindows[0];
             if (window.minimized || !window.has_focus()) Main.activateWindow(window);
             else window.minimize();
@@ -290,7 +285,7 @@ export class AppButton extends Button {
     }
 
     #cycleWindows(reverse = false, minimize = true) {
-        if (!this.#windows?.size) return;
+        if (!this.#windowsCount) return;
         const sortedWindows = this.#sortedWindows;
         if (!this.#isActive) return Main.activateWindow(this.#getPrimaryWindow(sortedWindows));
         if (sortedWindows.length === 1) return Main.activateWindow(sortedWindows[0]);
