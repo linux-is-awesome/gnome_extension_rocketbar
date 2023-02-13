@@ -126,6 +126,7 @@ export class NotificationCounter extends Component {
     #notifyHandler = (data) => ({
         [ComponentEvent.Destroy]: this.#destroy,
         [ComponentEvent.Mapped]: () => Context.layout.queueAfterInit(this, () => this.#rerender()),
+        [ComponentEvent.Scale]: this.#rerender,
         [DateMenuEvent.DndChanged]: this.#updateStyle
     })[data?.event]?.call(this);
 
@@ -258,22 +259,24 @@ export class NotificationCounter extends Component {
         }
         const [width] = this.actor?.get_size();
         if (!width) return;
-        parent.set_style(`margin-left: ${width}px;`);
+        parent.set_style(`margin-left: ${width / this.globalScale}px;`);
     }
 
     #updateStyle() {
         const { borderColor, borderSize, backgroundColor, textColor, padding } = this.#getStyleValues();
         const { fontSize, roundness, marginTop } = this.#config;
+        const scale = this.uiScale;
+        const globalScale = this.globalScale;
         this.#counter.set_style(
-            `font-size: ${fontSize}px;` +
-            `padding: 0 ${padding}px;` +
-            `border: ${borderSize}px solid ${borderColor};` +
-            `border-radius: ${roundness}px;` +
+            `font-size: ${fontSize * scale}px;` +
+            `padding: 0 ${padding * scale}px;` +
+            `border: ${borderSize * scale}px solid ${borderColor};` +
+            `border-radius: ${roundness * scale}px;` +
             `background-color: ${backgroundColor};` +
             `color: ${textColor};`
         );
         let [_, height] = this.#counter.get_size();
-        height = height - borderSize * 4;
+        height = (height - borderSize * scale * globalScale * 4) / globalScale;
         this.#counter.style += (
             `height: ${height}px;` +
             `min-width: ${height}px;` +
