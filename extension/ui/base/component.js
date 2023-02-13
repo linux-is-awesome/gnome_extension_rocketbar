@@ -343,6 +343,7 @@ export class Component {
         if (!this.#actor) return;
         this.#themeContext?.disconnectObject(this.#actor);
         this.#uiSettings?.disconnectObject(this.#actor);
+        this.#uiSettings?.run_dispose();
         this.#themeContext = null;
         this.#uiSettings = null;
         this.#actor._delegate = null;
