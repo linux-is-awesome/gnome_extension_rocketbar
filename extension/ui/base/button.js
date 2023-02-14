@@ -1,4 +1,4 @@
-/* exported Button */
+/* exported ButtonEvent, Button */
 
 import GObject from 'gi://GObject';
 import Clutter from 'gi://Clutter';
@@ -25,7 +25,7 @@ const CssField = {
     Height: 'height',
     Width: 'width',
     BackgroundGradient: 'background-gradient-'
-}
+};
 
 /** @type {Object.<string, boolean|number|string>} */
 const DefaultProps = {
