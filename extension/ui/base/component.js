@@ -1,7 +1,8 @@
-/* exported ComponentEvent, Component */
+/* exported ComponentEvent, ComponentLocation, Component */
 
 import St from 'gi://St';
 import Gio from 'gi://Gio';
+import Meta from 'gi://Meta';
 import { Dnd } from '../../core/legacy.js'; 
 import { Type, Event } from '../../core/enums.js';
 
@@ -24,6 +25,14 @@ export const ComponentEvent = {
     DragEnd: 'component::drag-end',
     DragMotion: 'component::drag-motion',
     DragActorRequest: 'component::drag-actor-request'
+};
+
+/**
+ * @enum {number}
+ */
+export const ComponentLocation = {
+    Top: 0,
+    Bottom: 1
 };
 
 export class Component {
@@ -76,6 +85,40 @@ export class Component {
         return this.#isComponent(actorParent?._delegate) ?? actorParent;
     }
 
+    /** @type {ComponentLocation} */
+    get location() {
+        const monitorRect = this.monitorRect;
+        if (!monitorRect) return null;
+        const rect = this.rect;
+        const monitorCenter = (monitorRect.y + monitorRect.height) / 2;
+        console.log('monitorCenter - y', monitorCenter, rect.y);
+        if (rect.y < monitorCenter) return ComponentLocation.Top;
+        else ComponentLocation.Bottom;
+    }
+
+    /** @type {Meta.Rect} */
+    get monitorRect() {
+        const monitorIndex = this.monitorIndex;
+        if (monitorIndex < 0) return null;
+        return global.display.get_monitor_geometry(monitorIndex);
+    }
+
+    /** @type {number} */
+    get monitorIndex() {
+        const rect = this.rect;
+        if (!rect) return -1;
+        return global.display.get_monitor_index_for_rect(rect);
+    }
+
+    /** @type {Meta.Rect} */
+    get rect() {
+        if (!this.isMapped) return null;
+        const result = new Meta.Rectangle();
+        [result.x, result.y] = this.#actor.get_transformed_position();
+        [result.width, result.height] = this.#actor.get_transformed_size();
+        return result;
+    }
+
     /** @type {boolean} */
     get isMapped() {
         return this.isValid && this.#actor.mapped === true && this.#actor.get_stage() !== null;
@@ -84,6 +127,24 @@ export class Component {
     /** @type {boolean} */
     get isValid() {
         return this.#isValid && this.#actor instanceof St.Widget;
+    }
+
+    /** @type {number} */
+    get globalScale() {
+        if (!this.#actor) return 0;
+        if (this.#themeContext) return this.#themeContext.scale_factor;
+        this.#themeContext = St.ThemeContext.get_for_stage(global.stage);
+        this.#themeContext.connectObject(Event.ScaleFactor, () => this.notifySelf(ComponentEvent.Scale), this.#actor);
+        return this.#themeContext.scale_factor;
+    }
+
+    /** @type {number} */
+    get uiScale() {
+        if (!this.#actor) return 0;
+        if (this.#uiSettings) return this.#uiSettings.get_double(UI_SCALE_SETTINGS_KEY);
+        this.#uiSettings = new Gio.Settings({ schema_id: UI_SETTINGS_SCHEMA_ID });
+        this.#uiSettings.connectObject(`changed::${UI_SCALE_SETTINGS_KEY}`, () => this.notifySelf(ComponentEvent.Scale), this.#actor);
+        return this.#uiSettings.get_double(UI_SCALE_SETTINGS_KEY);
     }
 
     /** @param {number} value 0..999 */
@@ -107,24 +168,6 @@ export class Component {
         this.#setDragEvents(enabled);
     }
 
-    /** @type {number} */
-    get globalScale() {
-        if (!this.#actor) return 0;
-        if (this.#themeContext) return this.#themeContext.scale_factor;
-        this.#themeContext = St.ThemeContext.get_for_stage(global.stage);
-        this.#themeContext.connectObject(Event.ScaleFactor, () => this.notifySelf(ComponentEvent.Scale), this.#actor);
-        return this.#themeContext.scale_factor;
-    }
-
-    /** @type {number} */
-    get uiScale() {
-        if (!this.#actor) return 0;
-        if (this.#uiSettings) return this.#uiSettings.get_double(UI_SCALE_SETTINGS_KEY);
-        this.#uiSettings = new Gio.Settings({ schema_id: UI_SETTINGS_SCHEMA_ID });
-        this.#uiSettings.connectObject(`changed::${UI_SCALE_SETTINGS_KEY}`, () => this.notifySelf(ComponentEvent.Scale), this.#actor);
-        return this.#uiSettings.get_double(UI_SCALE_SETTINGS_KEY);
-    }
-
     /**
      * @param {St.Widget} actor
      */
@@ -139,15 +182,6 @@ export class Component {
 
     destroy() {
         this.#actor?.destroy();
-    }
-
-    /**
-     * @param {(component: this) => void} callback
-     * @returns {this}
-     */
-    configure(callback) {
-        if (typeof callback === Type.Function) callback(this);
-        return this;
     }
 
     /**
