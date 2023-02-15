@@ -9,6 +9,11 @@ export class LayoutManager {
     /** @type {Map<*, () => void>} */
     #clients = new Map();
 
+    /** @type {boolean} */
+    get isInitializing() {
+        return this.#clients?.size > 0;
+    }
+
     destroy() {
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
@@ -50,7 +55,7 @@ export class LayoutManager {
      * @returns {boolean}
      */
     isQueued(client) {
-        return this.#clients?.has(client); 
+        return typeof this.#clients?.get(client) === Type.Function; 
     }
 
     /**
@@ -67,26 +72,23 @@ export class LayoutManager {
     /**
      * TODO: return target parent based on input params
      */
-    requestParent(...args) {
-        // TODO
-    }
+    requestParent(...args) {}
 
     #initClients() {
-        if (!this.#clients?.size) return;
+        this.#processClients();
         Context.signals.removeAll(this);
-        for (const [client, callback] of this.#clients) {
-            this.#clients.set(client, null);
-            if (typeof callback === Type.Function) callback();
-        }
     }
 
     #handleAfterInit() {
+        this.#processClients();
+        this.#clients?.clear();
+    }
+
+    #processClients() {
         if (!this.#clients?.size) return;
-        const callbacks = [...this.#clients.values()];
-        this.#clients.clear();
-        for (let i = 0, l = callbacks.length; i < l; ++i) {
-            if (typeof callbacks[i] !== Type.Function) continue;
-            callbacks[i]();
+        for (const [client, callback] of this.#clients) {
+            this.#clients.set(client, null);
+            if (typeof callback === Type.Function) callback();
         }
     }
 
