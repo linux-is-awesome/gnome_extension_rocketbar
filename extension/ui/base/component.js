@@ -91,7 +91,6 @@ export class Component {
         if (!monitorRect) return null;
         const rect = this.rect;
         const monitorCenter = (monitorRect.y + monitorRect.height) / 2;
-        console.log('monitorCenter - y', monitorCenter, rect.y);
         if (rect.y < monitorCenter) return ComponentLocation.Top;
         else ComponentLocation.Bottom;
     }
