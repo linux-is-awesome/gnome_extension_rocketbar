@@ -107,6 +107,9 @@ class TaskbarService {
     #windowTracker = Shell.WindowTracker.get_default();
 
     /** @type {Meta.Workspace} */
+    #oldWorkspace = null;
+
+    /** @type {Meta.Workspace} */
     #workspace = null;
 
     /** @type {Favorites} */
@@ -153,6 +156,11 @@ class TaskbarService {
     /** @type {Set<Shell.App>} */
     get trackedApps() {
         return this.#trackedApps;
+    }
+
+    /** @type {boolean} */
+    get isWorkspaceChanged() {
+        return this.#oldWorkspace !== this.#workspace;
     }
 
     constructor() {
@@ -246,6 +254,7 @@ class TaskbarService {
         const currentWorkspace = global.workspace_manager.get_active_workspace();
         if (this.#workspace === currentWorkspace) return;
         Context.signals.remove(this, this.#workspace);
+        this.#oldWorkspace = this.#workspace;
         this.#workspace = currentWorkspace;
         Context.signals.add(this, [
             this.#workspace,
@@ -379,6 +388,7 @@ class TaskbarService {
         for (let i = 0, l = clients.length; i < l; ++i) clients[i].triggerNotify(this.#trackedApps);
         if (this.#trackedApps) this.#trackedApps.clear();
         else this.#trackedApps = new Set();
+        this.#oldWorkspace = this.#workspace;
     }
 
 }
@@ -413,6 +423,11 @@ export class TaskbarClient {
     /** @type {boolean} */
     get isPending() {
         return this.#app && TaskbarClient.#service?.trackedApps?.has(this.#app);
+    }
+
+    /** @type {boolean} */
+    get isWorkspaceChanged() {
+        return TaskbarClient.#service?.isWorkspaceChanged;
     }
 
     /**
