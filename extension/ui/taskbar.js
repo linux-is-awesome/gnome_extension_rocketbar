@@ -51,7 +51,10 @@ export class Taskbar extends ScrollView {
     #rerender() {
         if (!this.isMapped || Context.layout.isQueued(this)) return;
         const apps = this.#getApps();
-        if (!apps?.size) return this.#appButtons.clear();
+        if (!apps?.size) {
+            this.#appButtons = new WeakMap();
+            return;
+        }
         const appButtons = new WeakMap();
         const sortedAppButtons = []; 
         for (const app of apps) {
