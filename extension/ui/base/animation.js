@@ -15,9 +15,11 @@ export const AnimationDuration = {
 /** @enum {*} */
 export const AnimationType = {
     ScaleMax: { scale_x: 1, scale_y: 1 },
+    ScaleHalf: { scale_x: 0.5, scale_y: 0.5 },
     ScaleMin: { scale_x: 0, scale_y: 0 },
     OpacityMax: { opacity: 255 },
-    OpacityMin: { opacity: 0 }
+    OpacityMin: { opacity: 0 },
+    TranslationDefault: { translation_x: 0, translation_y: 0 }
 };
 
 /**

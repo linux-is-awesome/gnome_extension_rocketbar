@@ -16,6 +16,7 @@ export const Event = {
     ButtonPress: 'button-press-event',
     Touch: 'touch-event',
     FontName: 'notify::font-name',
+    IconTheme: 'notify::gtk-icon-theme',
     FocusWindow: 'notify::focus-window',
     Scroll: 'scroll-event',
     Clicked: 'clicked',
