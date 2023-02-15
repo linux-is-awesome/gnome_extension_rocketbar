@@ -10,6 +10,7 @@ import { Button, ButtonEvent } from '../base/button.js';
 import { ComponentEvent } from '../base/component.js';
 import { TaskbarClient } from '../../services/taskbarService.js';
 import { Config } from '../../utils/config.js';
+import { AppIcon, AppIconAnimation } from './appIcon.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
 
@@ -17,7 +18,7 @@ const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
 const ActivateBehavior = {
     NewWindow: 'new_window',
     MoveWindows: 'move_windows'
-}
+};
 
 /** @enum {string} */
 const ConfigFields = {
@@ -90,6 +91,9 @@ export class AppButton extends Button {
     /** @type {Shell.App} */
     #app = null;
 
+    /** @type {AppIcon} */
+    #appIcon = null;
+
     /** @type {St.Widget} */
     #layout = new St.Widget({ name: `${MODULE_NAME}.Layout`, layout_manager: new Clutter.BinLayout() });
 
@@ -137,6 +141,7 @@ export class AppButton extends Button {
 
     /** @param {boolean} value */
     set isActive(value) {
+        if (!this.isValid) return;
         const oldValue = super.isActive;
         super.isActive = !Main.overview?._shown && value;
         if (super.isActive !== oldValue) this.#updateBacklight();
@@ -159,7 +164,10 @@ export class AppButton extends Button {
         this.actor.set_child(this.#layout);
         this.#app = app;
         this.#service = new TaskbarClient(() => this.#handleAppState(), app);
+        this.#appIcon = new AppIcon(app).setParent(this.display);
         this.#connectSignals();
+        if (!this.#service?.isWorkspaceChanged) return;
+        this.#appIcon.startupAnimation = AppIconAnimation.Restore;
     }
 
     #destroy() {
@@ -168,6 +176,7 @@ export class AppButton extends Button {
         this.#service?.destroy();
         this.#service = null;
         this.#layout = null;
+        this.#appIcon = null;
         this.#windows = null;
     }
 
@@ -187,6 +196,7 @@ export class AppButton extends Button {
      * @param {string} settingsKey
      */
     #handleConfig(settingsKey) {
+        if (!this.isValid) return;
         switch (settingsKey) {
             case ConfigFields.isolateWorkspaces:
             case ConfigFields.enableMinimizeAction:
@@ -197,19 +207,13 @@ export class AppButton extends Button {
                 return this.#updateBacklight();
             case ConfigFields.iconSize:
             default:
-                this.#setIcon();
+                this.#appIcon.setSize(this.#config.iconSize);
             case ConfigFields.iconHPadding:
             case ConfigFields.iconVPadding:
             case ConfigFields.roundness:
             case ConfigFields.spacingAfter:
                 this.#updateStyle();
         }
-    }
-
-    #setIcon() {
-        if (!this.isValid) return;
-        this.display.get_child()?.destroy();
-        this.display.set_child(this.#app.create_icon_texture(this.#config.iconSize));
     }
 
     #updateStyle() {
