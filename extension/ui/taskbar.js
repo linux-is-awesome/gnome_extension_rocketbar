@@ -14,8 +14,8 @@ export class Taskbar extends ScrollView {
     /** @type {Map<Meta.Workspace, Set<Shell.App>>} */
     #runningApps = Context.getSessionCache(this.constructor.name);
 
-    /** @type {WeakMap<Shell.App, AppButton>} */
-    #appButtons = new WeakMap();
+    /** @type {Map<Shell.App, AppButton>} */
+    #appButtons = new Map();
 
     /** @type {TaskbarClient} */
     #service = new TaskbarClient(() => this.#rerender());
@@ -51,12 +51,9 @@ export class Taskbar extends ScrollView {
     #rerender() {
         if (!this.isMapped || Context.layout.isQueued(this)) return;
         const apps = this.#getApps();
-        if (!apps?.size) {
-            this.#appButtons = new WeakMap();
-            return;
-        }
-        const appButtons = new WeakMap();
-        const sortedAppButtons = []; 
+        if (!apps?.size) this.#appButtons.clear();
+        const appButtons = new Map();
+        const sortedAppButtons = [];
         for (const app of apps) {
             const oldAppButton = this.#appButtons.get(app);
             if (!oldAppButton) {
@@ -70,7 +67,16 @@ export class Taskbar extends ScrollView {
                 sortedAppButtons.push(oldAppButton);
             }
         }
+        const mergedAppButtons = new Map([...this.#appButtons, ...appButtons ]);
         this.#appButtons = appButtons;
+        if (mergedAppButtons.size !== appButtons.size) {
+            let i = -1;
+            for (const [app, appButton] of mergedAppButtons) {
+                if (!appButton.isValid) continue;
+                i++; if (appButtons.has(app)) continue;
+                sortedAppButtons.splice(i, 0, appButton);
+            }
+        }
         for (let i = 0, l = sortedAppButtons.length; i < l; ++i) sortedAppButtons[i].setParent(this, i);
     }
 
