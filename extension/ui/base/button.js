@@ -104,10 +104,6 @@ export class Button extends Component {
                 backlightColor, backlightIntensity, backlightRatio } = style;
         if (typeof spacingBefore === Type.Number) css.set(CssField.MarginLeft, `${CssField.MarginLeft}:${spacingBefore}px;`);
         if (typeof spacingAfter === Type.Number) css.set(CssField.MarginRight, `${CssField.MarginRight}:${spacingAfter}px;`);
-        if (this.#display !== this.actor && css.size) {
-            this.actor.set_style([...css.values()].join());
-            css.clear();
-        }
         if (typeof roundness === Type.Number) css.set(CssField.BorderRadius, `${CssField.BorderRadius}:${roundness}px;`);
         if (typeof height === Type.Number && height > 0) {
             this.#display.set({ y_expand: false });
