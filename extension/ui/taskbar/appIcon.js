@@ -3,7 +3,7 @@
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import { Context } from '../../core/context.js';
-import { Event, Type, Delay } from '../../core/enums.js';
+import { Event, Type } from '../../core/enums.js';
 import { Component, ComponentEvent, ComponentLocation } from '../base/component.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 
@@ -15,14 +15,15 @@ const DEFAULT_SIZE = 20;
 const DefaultProps = {
     name: MODULE_NAME,
     fallback_icon_name: FALLBACK_ICON_NAME,
-    icon_size: DEFAULT_SIZE,
-    opacity: 0
+    icon_size: DEFAULT_SIZE
 };
 
 /** @enum {*} */
 export const AppIconAnimation = {
-    Startup: { duration: AnimationDuration.Fast },
-    Restore: { duration: AnimationDuration.Fast }
+    Press: { duration: AnimationDuration.Fast, params: AnimationType.ScaleDown },
+    Release: { duration: AnimationDuration.Fast, params: AnimationType.ScaleMax },
+    Activate: { duration: AnimationDuration.Fast, offset: 3 },
+    Deactivate: { duration: AnimationDuration.Fast, offset: -3 }
 };
 
 export class AppIcon extends Component {
@@ -33,9 +34,6 @@ export class AppIcon extends Component {
      */
     #notifyHandler = (data) => ({
         [ComponentEvent.Destroy]: this.#destroy,
-        [ComponentEvent.Mapped]: () =>
-            !this.#startupAnimation ? this.actor.set(AnimationType.OpacityMax) :
-            Context.jobs.new(this, Delay.Redraw).destroy(() => this.animate(this.#startupAnimation)).catch(),
         [ComponentEvent.Scale]: () => this.setSize(this.#size)
     })[data?.event]?.call(this);
 
@@ -44,15 +42,6 @@ export class AppIcon extends Component {
 
     /** @type {number} */
     #size = DEFAULT_SIZE;
-
-    /** @type {AppIconAnimation} */
-    #startupAnimation = !Context.layout.isInitializing ? AppIconAnimation.Startup : null;
-
-    /** @param {AppIconAnimation} animation */
-    set startupAnimation(animation) {
-        if (Context.layout.isInitializing) return;
-        this.#startupAnimation = animation;
-    }
 
     /**
      * @param {Shell.App} app
@@ -76,25 +65,23 @@ export class AppIcon extends Component {
 
     /**
      * @param {AppIconAnimation} animation
-     * @param {() => void} callback
+     * @returns {Promise}
      */
-    animate(animation, callback) {
-        if (!this.isMapped || !animation) return;
-        const isLocationOnTop = this.location === ComponentLocation.Top;
-        let animationParams = !this.actor.opacity ? AnimationType.OpacityMax : {};
+    animate(animation) {
+        if (!this.isMapped) return null;
         switch (animation) {
-            case AppIconAnimation.Startup:
-                const offset = this.#size * this.uiScale;
-                this.actor.set({ translation_y: isLocationOnTop ? -offset : offset });
-                animationParams = { ...animationParams, ...AnimationType.TranslationDefault };
-            case AppIconAnimation.Restore:
-                this.actor.set(AnimationType.ScaleHalf);
-                animationParams = { ...animationParams, ...AnimationType.ScaleMax, ...{ mode: Clutter.AnimationMode.EASE_OUT_QUAD } };
-                break;
-            default: return;
+            case AppIconAnimation.Press:
+            case AppIconAnimation.Release:
+                return Animation(this, animation.duration, animation.params);
+            case AppIconAnimation.Activate:
+            case AppIconAnimation.Deactivate:
+                const offsetMultiplier = this.location === ComponentLocation.Top ? 1 : -1;
+                const translation_y = animation.offset * offsetMultiplier;
+                const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
+                return Animation(this, animation.duration, { translation_y, mode }).then(() =>
+                       Animation(this, animation.duration, { ...AnimationType.TranslationReset, mode }));
+            default: return null;
         }
-        const animationInstance = Animation(this, animation.duration, animationParams);
-        if (typeof callback === Type.Function) animationInstance.then(callback);
     }
 
     #destroy() {
