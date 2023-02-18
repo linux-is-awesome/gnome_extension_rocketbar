@@ -6,20 +6,20 @@ import { Component } from './component.js';
 /** @enum {number} */
 export const AnimationDuration = {
     Faster: 100,
-    Fast: 200,
-    Normal: 300,
-    Slow: 400,
-    Slower: 500
+    Fast: 150,
+    Default: 200,
+    Slow: 250,
+    Slower: 300
 };
 
 /** @enum {*} */
 export const AnimationType = {
     ScaleMax: { scale_x: 1, scale_y: 1 },
-    ScaleHalf: { scale_x: 0.5, scale_y: 0.5 },
+    ScaleDown: { scale_x: 0.85, scale_y: 0.85 },
     ScaleMin: { scale_x: 0, scale_y: 0 },
     OpacityMax: { opacity: 255 },
     OpacityMin: { opacity: 0 },
-    TranslationDefault: { translation_x: 0, translation_y: 0 }
+    TranslationReset: { translation_x: 0, translation_y: 0 }
 };
 
 /**

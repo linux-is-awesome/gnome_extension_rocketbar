@@ -246,7 +246,7 @@ export class NotificationCounter extends Component {
             this.#updateStyle();
             this.#updateClockMargin();
             this.#counter.add_style_pseudo_class(COUNTER_STYLE_PSEUDO_CLASS);
-            Animation(this.#counter, AnimationDuration.Fast, { ...AnimationType.ScaleMax, ...AnimationType.OpacityMax });
+            Animation(this.#counter, AnimationDuration.Default, { ...AnimationType.ScaleMax, ...AnimationType.OpacityMax });
         });
     }
 
