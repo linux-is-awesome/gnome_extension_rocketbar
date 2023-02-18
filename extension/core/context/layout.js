@@ -9,11 +9,6 @@ export class LayoutManager {
     /** @type {Map<*, () => void>} */
     #clients = new Map();
 
-    /** @type {boolean} */
-    get isInitializing() {
-        return this.#clients?.size > 0;
-    }
-
     destroy() {
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
