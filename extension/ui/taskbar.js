@@ -51,32 +51,31 @@ export class Taskbar extends ScrollView {
     #rerender() {
         if (!this.isMapped || Context.layout.isQueued(this)) return;
         const apps = this.#getApps();
-        if (!apps?.size) this.#appButtons.clear();
+        if (!apps?.size) return;
         const appButtons = new Map();
         const sortedAppButtons = [];
         for (const app of apps) {
             const oldAppButton = this.#appButtons.get(app);
-            if (!oldAppButton) {
-                const newAppButton = new AppButton(app);
-                appButtons.set(app, newAppButton);
-                sortedAppButtons.push(newAppButton);
-                continue;
-            }
-            if (oldAppButton.isValid) {
+            if (oldAppButton?.isValid) {
                 appButtons.set(app, oldAppButton);
                 sortedAppButtons.push(oldAppButton);
+                continue;
             }
+            const newAppButton = new AppButton(app);
+            appButtons.set(app, newAppButton);
+            sortedAppButtons.push(newAppButton);
         }
         const mergedAppButtons = new Map([...this.#appButtons, ...appButtons ]);
-        this.#appButtons = appButtons;
         if (mergedAppButtons.size !== appButtons.size) {
             let i = -1;
             for (const [app, appButton] of mergedAppButtons) {
                 if (!appButton.isValid) continue;
                 i++; if (appButtons.has(app)) continue;
+                appButtons.set(app, appButton);
                 sortedAppButtons.splice(i, 0, appButton);
             }
         }
+        this.#appButtons = appButtons;
         for (let i = 0, l = sortedAppButtons.length; i < l; ++i) sortedAppButtons[i].setParent(this, i);
     }
 
