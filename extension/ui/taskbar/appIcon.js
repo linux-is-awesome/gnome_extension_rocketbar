@@ -1,4 +1,4 @@
-/* exported AppIcon */
+/* exported AppIcon, AppIconAnimation */
 
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
