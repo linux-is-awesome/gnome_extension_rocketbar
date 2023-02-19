@@ -10,6 +10,7 @@ import { Button, ButtonEvent } from '../base/button.js';
 import { ComponentEvent } from '../base/component.js';
 import { TaskbarClient } from '../../services/taskbarService.js';
 import { Config } from '../../utils/config.js';
+import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { AppIcon, AppIconAnimation } from './appIcon.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
@@ -32,6 +33,12 @@ const ConfigFields = {
     roundness: 'appbutton-roundness',
     backlightColor: 'appbutton-backlight-color',
     backlightIntensity: 'appbutton-backlight-intensity'
+};
+
+/** @type {Object.<string, number>} */
+const DefaultProps = {
+    width: 0,
+    opacity: AnimationType.OpacityMin.opacity
 };
 
 class CycleWindowsQueue {
@@ -109,6 +116,9 @@ export class AppButton extends Button {
     /** @type {CycleWindowsQueue} */
     #cycleWindowsQueue = null;
 
+    /** @type {Promise} */
+    #destroyJob = null;
+
     /** @type {Object.<string, string|number|boolean>} */
     #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
 
@@ -160,14 +170,13 @@ export class AppButton extends Button {
      */
     constructor(app) {
         super(new St.Bin(), MODULE_NAME);
+        this.setProps(DefaultProps);
         this.#layout.add_child(this.display);
         this.actor.set_child(this.#layout);
         this.#app = app;
-        this.#service = new TaskbarClient(() => this.#handleAppState(), app);
         this.#appIcon = new AppIcon(app).setParent(this.display);
+        this.#service = new TaskbarClient(() => this.#handleAppState(), app);
         this.#connectSignals();
-        if (!this.#service?.isWorkspaceChanged) return;
-        this.#appIcon.startupAnimation = AppIconAnimation.Restore;
     }
 
     #destroy() {
@@ -184,7 +193,11 @@ export class AppButton extends Button {
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
         this.connect(Event.Scroll, (_, event) => this.#scroll(event));
         this.connect(Event.Hover, () => this.#hover());
-        Context.signals.add(this, [global.display, Event.FocusWindow, () => this.#handleFocusedWindow()]);
+        this.connect(Event.Pressed, () => this.#press());
+        Context.signals.add(this,
+            [global.display, Event.FocusWindow, () => this.#handleFocusedWindow()],
+            [global.window_manager, Event.Minimize, (_, actor) => this.#handleWindowState(actor?.meta_window),
+                                    Event.Unminimize, (_, actor) => this.#handleWindowState(actor?.meta_window)]);
     }
 
     #handleMapped() {
@@ -235,8 +248,28 @@ export class AppButton extends Button {
         const isFavorite = this.#service.favorites?.apps?.has(this.#app);
         this.#windows = this.#service.queryWindows(isolateWorkspaces, true);
         this.#windowsCount = this.#windows?.size ?? 0;
-        if (!isFavorite && !this.#windowsCount) this.destroy();
-        else if (!this.#isActive || !this.#windowsCount) this.#handleFocusedWindow();
+        if (!isFavorite && !this.#windowsCount) return this.#queueDestroy();
+        if (!this.#isActive || !this.#windowsCount) this.#handleFocusedWindow();
+        this.#handleStartup();
+        this.#setWindowsHooks();
+    }
+
+    #handleStartup() {
+        if (this.#destroyJob) {
+            this.actor.remove_all_transitions();
+            this.#destroyJob = null;
+        }
+        if (this.actor.opacity === AnimationType.OpacityMax.opacity) return;
+        const { spacingAfter, iconSize, iconHPadding } = this.#config;
+        const width = iconSize + iconHPadding * 2 + spacingAfter;
+        const animationParams = { ...AnimationType.OpacityMax, ...{ width, mode: Clutter.AnimationMode.EASE_OUT_QUAD } };
+        Animation(this, AnimationDuration.Default, animationParams).then(() => this.resetSize());
+    }
+
+    #queueDestroy() {
+        if (this.#destroyJob) return;
+        const animationParams = { ...DefaultProps, ...{ mode: Clutter.AnimationMode.EASE_OUT_QUAD } };
+        this.#destroyJob = Animation(this, AnimationDuration.Slow, animationParams).then(() => this.destroy());
     }
 
     #handleFocusedWindow() {
@@ -244,8 +277,25 @@ export class AppButton extends Button {
         this.isActive = this.#windowsCount ? this.#service.hasFocusedWindow() : false;
     }
 
+    #handleWindowState(window) {
+        if (!this.isValid || !window || !this.#windows?.has(window)) return;
+        this.#appIcon.animate(window.minimized ? AppIconAnimation.Deactivate : AppIconAnimation.Activate);
+    }
+
+    async #setWindowsHooks() {
+        if (!this.isValid || !this.#windows?.size) return;
+        for (const window of this.#windows) {
+            window.get_icon_geometry = () => this.#getWindowIconGeometry(window);
+        }
+    }
+
     #hover() {
         this.#resetCycleWindowsQueue();
+    }
+
+    #press() {
+        if (this.actor.pressed) this.#appIcon.animate(AppIconAnimation.Press);
+        else this.#appIcon.animate(AppIconAnimation.Release);
     }
 
     /**
@@ -264,6 +314,10 @@ export class AppButton extends Button {
 
     }
 
+    /**
+     * @param {{ event: Clutter.Event, button: number }} params
+     * @returns {void}
+     */
     #click(params) {
         if (!params || this.#service.isPending) return;
         const { isOverview, isMiddleButton, isCtrlPressed } = this.#getClickDetails(params);
@@ -302,6 +356,7 @@ export class AppButton extends Button {
     #openNewWindow(hideOverview = false) {
         this.#resetCycleWindowsQueue();
         if (hideOverview) Main.overview?.hide();
+        this.#appIcon.animate(AppIconAnimation.Activate);
         if (this.#app.state !== Shell.AppState.RUNNING || !this.#canOpenNewWindow) return this.#app.activate();
         this.#app.open_new_window(-1);
     }
@@ -310,6 +365,7 @@ export class AppButton extends Button {
         this.#resetCycleWindowsQueue();
         const sortedWindows = this.#sortedWindows;
         if (!sortedWindows?.length) return;
+        this.#appIcon.animate(AppIconAnimation.Deactivate);
         sortedWindows[0].delete(global.get_current_time());
     }
 
@@ -350,6 +406,17 @@ export class AppButton extends Button {
             if (window.get_monitor() === primaryMonitor) return window;
         }
         return windows[0];
+    }
+
+    /**
+     * @param {Meta.Window} window
+     * @returns {[success: boolean, geometry: Meta.Rect]}
+     */
+    #getWindowIconGeometry(window) {
+        if (!window) return [false];
+        if (this.#appIcon) return [true, this.#appIcon.rect];
+        window.get_icon_geometry = window.constructor.prototype.get_icon_geometry;
+        return window.get_icon_geometry();
     }
 
 }
