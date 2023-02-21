@@ -6,10 +6,10 @@ import St from 'gi://St';
 import { Type, Event } from '../../core/enums.js';
 import { Component } from './component.js';
 import { Property } from '../../core/enums.js';
+import { LongPressAction } from './longPressAction.js'; 
+import { Gradient } from '../../utils/gradient.js';
 
 const DEFAULT_STYLE_CLASS = 'panel-button rocketbar__button';
-const COLOR_REGEXP_STRING = /[^\d,]/g;
-const COLOR_STRING_SPLITTER = ',';
 
 /** @enum {string} */
 const PseudoClass = {
@@ -24,7 +24,7 @@ const CssField = {
     BorderRadius: 'border-radius',
     Height: 'height',
     Width: 'width',
-    BackgroundGradient: 'background-gradient-'
+    BackgroundGradient: 'background-gradient'
 };
 
 /** @type {Object.<string, boolean|number|string>} */
@@ -49,8 +49,10 @@ const DefaultStyle = {
 
 /** @enum {string} */
 export const ButtonEvent = {
-    Click: 'click',
-    Focus: 'focus'
+    Click: 'button::click',
+    Press: 'button::press',
+    LongPress: 'button::long-press',
+    Focus: 'button:focus'
 };
 
 export class Button extends Component {
@@ -63,6 +65,9 @@ export class Button extends Component {
 
     /** @type {Map<string, string>} */
     #css = null;
+
+    /** @type {LongPressAction} */
+    #longPressAction = new LongPressAction(this, () => this.#longPress());
 
     /** @type {St.Widget} */
     get display() {
@@ -88,6 +93,8 @@ export class Button extends Component {
      */
     constructor(display, name = null) {
         super(new St.Button({ name, ...DefaultProps }));
+        this.connect(Event.Destroy, () => { this.#longPressAction?.destroy(); this.#longPressAction = null; });
+        this.connect(Event.Pressed, () => this.#press());
         this.connect(Event.Clicked, () => this.#click());
         this.connect(Event.FocusIn, () => this.#focus());
         this.connect(Event.FocusOut, () => this.#focus());
@@ -101,7 +108,7 @@ export class Button extends Component {
     overrideStyle(style = DefaultStyle) {
         const css = new Map();
         const { spacingBefore, spacingAfter, roundness, height, width,
-                backlightColor, backlightIntensity, backlightRatio } = style;
+                backlightColor, backlightIntensity, backlightRatio = DefaultStyle.backlightRatio } = style;
         if (typeof spacingBefore === Type.Number) css.set(CssField.MarginLeft, `${CssField.MarginLeft}:${spacingBefore}px;`);
         if (typeof spacingAfter === Type.Number) css.set(CssField.MarginRight, `${CssField.MarginRight}:${spacingAfter}px;`);
         if (typeof roundness === Type.Number) css.set(CssField.BorderRadius, `${CssField.BorderRadius}:${roundness}px;`);
@@ -121,13 +128,7 @@ export class Button extends Component {
         }
         if (typeof backlightColor === Type.String &&
             typeof backlightIntensity === Type.Number && backlightIntensity > 0) {
-            const color = this.#parseColorString(backlightColor);
-            const ration = backlightRatio ?? DefaultStyle.backlightRatio;
-            const startColor = this.#colorToString(color, Math.max(backlightIntensity - ration, 0) / 10);
-            const endColor = this.#colorToString(color, backlightIntensity / 10);
-            css.set(CssField.BackgroundGradient, `${CssField.BackgroundGradient}direction:vertical;` +
-                                                 `${CssField.BackgroundGradient}start:rgba(${startColor});` +
-                                                 `${CssField.BackgroundGradient}end:rgba(${endColor});`);
+            css.set(CssField.BackgroundGradient, Gradient(backlightColor, backlightIntensity, backlightRatio));
         } else if (backlightIntensity === 0) {
             this.#css?.delete(CssField.BackgroundGradient);
         }
@@ -150,6 +151,17 @@ export class Button extends Component {
         this.#display.set({ name: `${name}.Display` });
     }
 
+    #press() {
+        const actor = this.actor;
+        if (!actor.pressed) actor.fake_release();
+        this.notifySelf(ButtonEvent.Press);
+    }
+
+    #longPress() {
+        this.actor.fake_release();
+        this.notifySelf(ButtonEvent.LongPress);
+    }
+
     #click() {
         const event = Clutter.get_current_event();
         if (!event) return;
@@ -161,16 +173,6 @@ export class Button extends Component {
         if (this.actor.has_key_focus()) this.#display.add_style_pseudo_class(PseudoClass.Focus);
         else this.#display.remove_style_pseudo_class(PseudoClass.Focus);
         this.notifySelf(ButtonEvent.Focus);
-    }
-
-    #parseColorString(colorString) {
-        const result = colorString.replace(COLOR_REGEXP_STRING, '').split(COLOR_STRING_SPLITTER);
-        result.length = 3;
-        return result;
-    }
-
-    #colorToString(color, opacity) {
-        return [...color, opacity].join(COLOR_STRING_SPLITTER);
     }
 
 }
