@@ -67,7 +67,7 @@ export class Button extends Component {
     #css = null;
 
     /** @type {LongPressAction} */
-    #longPressAction = new LongPressAction(this, () => this.#longPress());
+    #longPressAction = new LongPressAction(this, () => this.cancelDragEvents().notifySelf(ButtonEvent.LongPress));
 
     /** @type {St.Widget} */
     get display() {
@@ -93,7 +93,7 @@ export class Button extends Component {
      */
     constructor(display, name = null) {
         super(new St.Button({ name, ...DefaultProps }));
-        this.connect(Event.Destroy, () => { this.#longPressAction?.destroy(); this.#longPressAction = null; });
+        this.connect(Event.Destroy, () => this.#destroy());
         this.connect(Event.Pressed, () => this.#press());
         this.connect(Event.Clicked, () => this.#click());
         this.connect(Event.FocusIn, () => this.#focus());
@@ -106,6 +106,7 @@ export class Button extends Component {
      * @returns {this}
      */
     overrideStyle(style = DefaultStyle) {
+        if (!this.isValid) return this;
         const css = new Map();
         const { spacingBefore, spacingAfter, roundness, height, width,
                 backlightColor, backlightIntensity, backlightRatio = DefaultStyle.backlightRatio } = style;
@@ -137,6 +138,13 @@ export class Button extends Component {
         return this;
     }
 
+    #destroy() {
+        this.#longPressAction?.destroy();
+        this.#longPressAction = null;
+        this.#css = null;
+        this.#display = null;
+    }
+
     /**
      * @param {St.Widget} display
      * @param {string} [name]
@@ -155,11 +163,6 @@ export class Button extends Component {
         const actor = this.actor;
         if (!actor.pressed) actor.fake_release();
         this.notifySelf(ButtonEvent.Press);
-    }
-
-    #longPress() {
-        this.actor.fake_release();
-        this.notifySelf(ButtonEvent.LongPress);
     }
 
     #click() {
