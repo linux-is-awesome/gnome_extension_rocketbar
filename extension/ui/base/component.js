@@ -24,7 +24,8 @@ export const ComponentEvent = {
     DragBegin: 'component::drag-begin',
     DragEnd: 'component::drag-end',
     DragMotion: 'component::drag-motion',
-    DragActorRequest: 'component::drag-actor-request'
+    DragActorRequest: 'component::drag-actor-request',
+    DragActorSourceRequest: 'component::drag-actor-source-request'
 };
 
 /**
@@ -224,42 +225,13 @@ export class Component {
     }
 
     /**
-     * @returns {this}
-     */
-    resetSize() {
-        return this.setSize(-1, -1);
-    }
-
-    /**
-     * @param {number} width
-     * @param {number} height
+     * @param {number} [width]
+     * @param {number} [height]
      * @returns {this}
      */
     setSize(width = -1, height = -1) {
         if (typeof width === Type.Number &&
             typeof height === Type.Number) this.#actor?.set_size(width, height);
-        return this;
-    }
-
-    /**
-     * @param {Clutter.ActorAlign} x
-     * @param {Clutter.ActorAlign} y
-     * @returns {this}
-     */
-    setAlign(x, y) {
-        this.#actor?.set_x_align(x);
-        this.#actor?.set_y_align(y);
-        return this;
-    }
-
-    /**
-     * @param {boolean} x
-     * @param {boolean} y
-     * @returns {this}
-     */
-    setExpand(x, y) {
-        this.#actor?.set_x_expand(x === true);
-        this.#actor?.set_y_expand(y === true);
         return this;
     }
 
@@ -365,7 +337,15 @@ export class Component {
      * @returns {St.Widget}
      */
     getDragActorSource() {
-        return this.#actor;
+        return this.#notifySelf(ComponentEvent.DragActorSourceRequest) ?? this.#actor;
+    }
+
+    /**
+     * @returns {this}
+     */
+    cancelDragEvents() {
+        this.#draggable?.fakeRelease();
+        return this;
     }
 
     #destroy() {
