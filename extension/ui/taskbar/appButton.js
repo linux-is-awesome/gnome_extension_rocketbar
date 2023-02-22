@@ -91,6 +91,7 @@ export class AppButton extends Button {
         [ComponentEvent.Mapped]: this.#handleMapped,
         [ComponentEvent.DragActorRequest]: () => this.#appIcon.dragActor,
         [ComponentEvent.DragActorSourceRequest]: () => this.#appIcon.actor,
+        [ComponentEvent.Scale]: this.#updateStyle,
         [ButtonEvent.Press]: this.#press,
         [ButtonEvent.LongPress]: () => console.log('Button long press'),
         [ButtonEvent.Click]: () => this.#click(data?.params)
@@ -265,7 +266,7 @@ export class AppButton extends Button {
         }
         if (this.actor.opacity === AnimationType.OpacityMax.opacity) return;
         const { spacingAfter, iconSize, iconHPadding } = this.#config;
-        const width = iconSize + iconHPadding * 2 + spacingAfter;
+        const width = (iconSize + iconHPadding * 2 + spacingAfter) * this.uiScale * this.globalScale;
         const animationParams = { ...AnimationType.OpacityMax, ...{ width, mode: Clutter.AnimationMode.EASE_OUT_QUAD } };
         Animation(this, AnimationDuration.Default, animationParams).then(() => this.setSize());
     }

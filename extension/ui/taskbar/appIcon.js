@@ -86,7 +86,7 @@ export class AppIcon extends Component {
             case AppIconAnimation.Activate:
             case AppIconAnimation.Deactivate:
                 const offsetMultiplier = this.location === ComponentLocation.Top ? 1 : -1;
-                const translation_y = animation.offset * offsetMultiplier;
+                const translation_y = animation.offset * offsetMultiplier * this.uiScale * this.globalScale;
                 const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
                 return Animation(this, animation.duration, { translation_y, mode }).then(() =>
                        Animation(this, animation.duration, { ...AnimationType.TranslationReset, mode }));

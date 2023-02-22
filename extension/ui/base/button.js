@@ -107,22 +107,23 @@ export class Button extends Component {
      */
     overrideStyle(style = DefaultStyle) {
         if (!this.isValid) return this;
+        const scale = this.uiScale;
         const css = new Map();
         const { spacingBefore, spacingAfter, roundness, height, width,
                 backlightColor, backlightIntensity, backlightRatio = DefaultStyle.backlightRatio } = style;
-        if (typeof spacingBefore === Type.Number) css.set(CssField.MarginLeft, `${CssField.MarginLeft}:${spacingBefore}px;`);
-        if (typeof spacingAfter === Type.Number) css.set(CssField.MarginRight, `${CssField.MarginRight}:${spacingAfter}px;`);
-        if (typeof roundness === Type.Number) css.set(CssField.BorderRadius, `${CssField.BorderRadius}:${roundness}px;`);
+        if (typeof spacingBefore === Type.Number) css.set(CssField.MarginLeft, `${CssField.MarginLeft}:${spacingBefore * scale}px;`);
+        if (typeof spacingAfter === Type.Number) css.set(CssField.MarginRight, `${CssField.MarginRight}:${spacingAfter * scale}px;`);
+        if (typeof roundness === Type.Number) css.set(CssField.BorderRadius, `${CssField.BorderRadius}:${roundness * scale}px;`);
         if (typeof height === Type.Number && height > 0) {
             this.#display.set({ y_expand: false });
-            css.set(CssField.Height, `${CssField.Height}:${height}px;`);
+            css.set(CssField.Height, `${CssField.Height}:${height * scale}px;`);
         } else if (height === 0) {
             this.#display.set({ y_expand: true });
             this.#css?.delete(CssField.Height);
         }
         if (typeof width === Type.Number && width > 0) {
             this.#display.set({ x_expand: false });
-            css.set(CssField.Width, `${CssField.Width}:${width}px;`);
+            css.set(CssField.Width, `${CssField.Width}:${width * scale}px;`);
         } else if (width === 0) {
             this.#display.set({ x_expand: true });
             this.#css?.delete(CssField.Width);
