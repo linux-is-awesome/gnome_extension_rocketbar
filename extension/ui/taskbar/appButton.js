@@ -89,6 +89,10 @@ export class AppButton extends Button {
     #notifyHandler = (data) => ({
         [ComponentEvent.Destroy]: this.#destroy,
         [ComponentEvent.Mapped]: this.#handleMapped,
+        [ComponentEvent.DragActorRequest]: () => this.#appIcon.dragActor,
+        [ComponentEvent.DragActorSourceRequest]: () => this.#appIcon.actor,
+        [ButtonEvent.Press]: this.#press,
+        [ButtonEvent.LongPress]: () => console.log('Button long press'),
         [ButtonEvent.Click]: () => this.#click(data?.params)
     })[data?.event]?.call(this);
 
@@ -174,6 +178,7 @@ export class AppButton extends Button {
         this.#layout.add_child(this.display);
         this.actor.set_child(this.#layout);
         this.#app = app;
+        this.dragEvents = true;
         this.#appIcon = new AppIcon(app).setParent(this.display);
         this.#service = new TaskbarClient(() => this.#handleAppState(), app);
         this.#connectSignals();
@@ -193,7 +198,6 @@ export class AppButton extends Button {
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
         this.connect(Event.Scroll, (_, event) => this.#scroll(event));
         this.connect(Event.Hover, () => this.#hover());
-        this.connect(Event.Pressed, () => this.#press());
         Context.signals.add(this,
             [global.display, Event.FocusWindow, () => this.#handleFocusedWindow()],
             [global.window_manager, Event.Minimize, (_, actor) => this.#handleWindowState(actor?.meta_window),
@@ -263,7 +267,7 @@ export class AppButton extends Button {
         const { spacingAfter, iconSize, iconHPadding } = this.#config;
         const width = iconSize + iconHPadding * 2 + spacingAfter;
         const animationParams = { ...AnimationType.OpacityMax, ...{ width, mode: Clutter.AnimationMode.EASE_OUT_QUAD } };
-        Animation(this, AnimationDuration.Default, animationParams).then(() => this.resetSize());
+        Animation(this, AnimationDuration.Default, animationParams).then(() => this.setSize());
     }
 
     #queueDestroy() {
