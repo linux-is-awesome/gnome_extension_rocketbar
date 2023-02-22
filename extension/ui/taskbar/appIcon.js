@@ -10,12 +10,15 @@ import { Animation, AnimationType, AnimationDuration } from '../base/animation.j
 const MODULE_NAME = 'Rocketbar__Taskbar_AppIcon';
 const FALLBACK_ICON_NAME = 'application-x-executable';
 const DEFAULT_SIZE = 20;
+const DRAG_ACTOR_SIZE_SCALE = 1.5;
 
 /** @type {Object.<string, number|string>} */
 const DefaultProps = {
     name: MODULE_NAME,
     fallback_icon_name: FALLBACK_ICON_NAME,
-    icon_size: DEFAULT_SIZE
+    icon_size: DEFAULT_SIZE,
+    x_align: Clutter.ActorAlign.CENTER,
+    y_align: Clutter.ActorAlign.CENTER
 };
 
 /** @enum {*} */
@@ -42,6 +45,13 @@ export class AppIcon extends Component {
 
     /** @type {number} */
     #size = DEFAULT_SIZE;
+
+    /** @type {St.Icon} */
+    get dragActor() {
+        const gicon = this.actor.get_gicon();
+        const size = this.#size * DRAG_ACTOR_SIZE_SCALE * this.uiScale;
+        return new St.Icon({ name: `${MODULE_NAME}.DragActor`, icon_size: size, gicon });
+    }
 
     /**
      * @param {Shell.App} app
