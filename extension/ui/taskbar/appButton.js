@@ -12,6 +12,7 @@ import { TaskbarClient } from '../../services/taskbarService.js';
 import { Config } from '../../utils/config.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { AppIcon, AppIconAnimation } from './appIcon.js';
+import { Indicators } from './indicators.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
 
@@ -106,6 +107,9 @@ export class AppButton extends Button {
     /** @type {AppIcon} */
     #appIcon = null;
 
+    /** @type {Indicators} */
+    #indicators = null;
+
     /** @type {St.Widget} */
     #layout = new St.Widget({ name: `${MODULE_NAME}.Layout`, layout_manager: new Clutter.BinLayout() });
 
@@ -144,6 +148,11 @@ export class AppButton extends Button {
         return result;
     }
 
+    /** @type {boolean} */
+    get #isStartupRequired() {
+        return this.actor.opacity !== AnimationType.OpacityMax.opacity;
+    }
+
     /** @type {Shell.App} */
     get app() {
         return this.#app;
@@ -154,14 +163,23 @@ export class AppButton extends Button {
         return this.#isActive;
     }
 
+    /** @type {number} */
+    get windowsCount() {
+        return this.#windowsCount;
+    }
+
     /** @param {boolean} value */
     set isActive(value) {
         if (!this.isValid) return;
-        const oldValue = super.isActive;
-        super.isActive = !Main.overview?._shown && value;
-        if (super.isActive !== oldValue) this.#updateBacklight();
-        if (this.#isActive === value) return;
+        const oldValue = this.#isActive;
+        const oldSuperValue = super.isActive;
         this.#isActive = value;
+        super.isActive = !Main.overview?._shown && value;
+        if (super.isActive !== oldSuperValue) {
+            this.#updateBacklight();
+            if (!this.#isStartupRequired) this.#indicators?.rerender();
+        }
+        if (this.#isActive === oldValue) return;
         if (!this.#isActive) Context.signals.remove(this, Main.overview);
         else Context.signals.add(this, [
             Main.overview,
@@ -178,8 +196,8 @@ export class AppButton extends Button {
         this.setProps(DefaultProps);
         this.#layout.add_child(this.display);
         this.actor.set_child(this.#layout);
-        this.#app = app;
         this.dragEvents = true;
+        this.#app = app;
         this.#appIcon = new AppIcon(app).setParent(this.display);
         this.#service = new TaskbarClient(() => this.#handleAppState(), app);
         this.#connectSignals();
@@ -192,6 +210,7 @@ export class AppButton extends Button {
         this.#service = null;
         this.#layout = null;
         this.#appIcon = null;
+        this.#indicators = null;
         this.#windows = null;
     }
 
@@ -232,6 +251,8 @@ export class AppButton extends Button {
             case ConfigFields.spacingAfter:
                 this.#updateStyle();
         }
+        if (this.#indicators) return;
+        this.#indicators = new Indicators(this).setParent(this.#layout);
     }
 
     #updateStyle() {
@@ -257,24 +278,34 @@ export class AppButton extends Button {
         if (!this.#isActive || !this.#windowsCount) this.#handleFocusedWindow();
         this.#handleStartup();
         this.#setWindowsHooks();
+        
     }
 
     #handleStartup() {
+        Context.jobs.removeAll(this);
         if (this.#destroyJob) {
             this.actor.remove_all_transitions();
             this.#destroyJob = null;
         }
-        if (this.actor.opacity === AnimationType.OpacityMax.opacity) return;
+        if (!this.#isStartupRequired) return this.#indicators?.rerender();
+        const isWorkspaceChanged = this.#service.isWorkspaceChanged;
         const { spacingAfter, iconSize, iconHPadding } = this.#config;
         const width = (iconSize + iconHPadding * 2 + spacingAfter) * this.uiScale * this.globalScale;
         const animationParams = { ...AnimationType.OpacityMax, ...{ width, mode: Clutter.AnimationMode.EASE_OUT_QUAD } };
-        Animation(this, AnimationDuration.Default, animationParams).then(() => this.setSize());
+        Context.jobs.new(this).destroy(() => {
+            Animation(this, AnimationDuration.Default, animationParams).then(() => {
+                if (!isWorkspaceChanged) this.#indicators?.rerender();
+            }).finally(() => this.setSize());
+            if (isWorkspaceChanged) this.#indicators?.rerender();
+        }).catch();
     }
 
     #queueDestroy() {
         if (this.#destroyJob) return;
-        const animationParams = { ...DefaultProps, ...{ mode: Clutter.AnimationMode.EASE_OUT_QUAD } };
-        this.#destroyJob = Animation(this, AnimationDuration.Slow, animationParams).then(() => this.destroy());
+        Context.jobs.removeAll(this).new(this).destroy(() => {
+            const animationParams = { ...DefaultProps, ...{ mode: Clutter.AnimationMode.EASE_OUT_QUAD } };
+            this.#destroyJob = Animation(this, AnimationDuration.Slow, animationParams).then(() => this.destroy());
+        }).catch();
     }
 
     #handleFocusedWindow() {
