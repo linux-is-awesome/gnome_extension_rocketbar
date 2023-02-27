@@ -13,6 +13,18 @@ const ANIMATION_INTERVAL = 10;
 const ANIMATION_FRAMES = 15;
 const ANIMATION_STEP_MIN = 0.3;
 
+/** @enum {string} */
+const ConfigFields = {
+    countLimit: 'indicator-display-limit',
+    colorInactive: 'indicator-color-inactive',
+    colorActive: 'indicator-color-active',
+    sizeInactive: 'indicator-width-inactive',
+    sizeActive: 'indicator-width-active',
+    spacingInactive: 'indicator-spacing-inactive',
+    spacingActive: 'indicator-spacing-active',
+    weight: 'indicator-height-inactive'
+};
+
 /** @type {Object.<string, number|boolean|string>} */
 const DefaultProps = {
     name: MODULE_NAME,
@@ -285,7 +297,7 @@ export class Indicators extends Component {
     #appButton = null;
 
     /** @type {Object.<string, string|number|boolean>} */
-    #config = Config(this);
+    #config = Config(this, ConfigFields, () => this.rerender());
 
     /** @type {IndicatorsBackend} */
     #backend = new IndicatorsBackend(this.actor);
@@ -297,8 +309,13 @@ export class Indicators extends Component {
 
     /** @type {BackendParams} */
     get #backendParams() {
-        const count = this.#appButton.windowsCount;
-        return { ...BackendParams, ...{ count, appId: this.#appButton.app.id } };
+        const isActive = this.#isActive;
+        const count = Math.min(this.#appButton.windowsCount, this.#config.countLimit);
+        const color = isActive ? this.#config.colorActive : this.#config.colorInactive;
+        const size = isActive ? this.#config.sizeActive : this.#config.sizeInactive;
+        const spacing = isActive ? this.#config.spacingActive : this.#config.spacingInactive;
+        const weight = this.#config.weight;
+        return { ...BackendParams, ...{ count, color, size, spacing, weight } };
     };
 
     /**
