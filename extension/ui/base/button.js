@@ -21,6 +21,8 @@ const PseudoClass = {
 const CssField = {
     MarginLeft: 'margin-left',
     MarginRight: 'margin-right',
+    PaddingLeft: 'padding-left',
+    PaddingRight: 'padding-right',
     BorderRadius: 'border-radius',
     Height: 'height',
     Width: 'width',
@@ -107,12 +109,20 @@ export class Button extends Component {
      */
     overrideStyle(style = DefaultStyle) {
         if (!this.isValid) return this;
+        const actor = this.actor;
         const scale = this.uiScale;
         const css = new Map();
         const { spacingBefore, spacingAfter, roundness, height, width,
                 backlightColor, backlightIntensity, backlightRatio = DefaultStyle.backlightRatio } = style;
-        if (typeof spacingBefore === Type.Number) css.set(CssField.MarginLeft, `${CssField.MarginLeft}:${spacingBefore * scale}px;`);
-        if (typeof spacingAfter === Type.Number) css.set(CssField.MarginRight, `${CssField.MarginRight}:${spacingAfter * scale}px;`);
+        if (this.#display === actor) {
+            if (typeof spacingBefore === Type.Number) css.set(CssField.MarginLeft, `${CssField.MarginLeft}:${spacingBefore * scale}px;`);
+            if (typeof spacingAfter === Type.Number) css.set(CssField.MarginRight, `${CssField.MarginRight}:${spacingAfter * scale}px;`);
+        } else {
+            const css = [];
+            if (typeof spacingBefore === Type.Number) css.push(`${CssField.PaddingLeft}:${spacingBefore * scale}px;`);
+            if (typeof spacingAfter === Type.Number) css.push(`${CssField.PaddingRight}:${spacingAfter * scale}px;`);
+            if (css.length) actor.set_style(css.join(''));
+        }
         if (typeof roundness === Type.Number) css.set(CssField.BorderRadius, `${CssField.BorderRadius}:${roundness * scale}px;`);
         if (typeof height === Type.Number && height > 0) {
             this.#display.set({ y_expand: false });
