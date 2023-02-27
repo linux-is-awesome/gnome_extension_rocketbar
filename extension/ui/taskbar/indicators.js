@@ -2,13 +2,16 @@
 
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
+import { Main } from '../../core/legacy.js';
 import { Context } from '../../core/context.js';
+import { Event } from '../../core/enums.js';
 import { Component, ComponentEvent } from '../base/component.js';
+import { Config } from '../../utils/config.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_Indicator';
-
 const ANIMATION_INTERVAL = 10;
-const DEGREES = Math.PI / 180;
+const ANIMATION_FRAMES = 15;
+const ANIMATION_STEP_MIN = 0.3;
 
 /** @type {Object.<string, number|boolean|string>} */
 const DefaultProps = {
@@ -19,114 +22,95 @@ const DefaultProps = {
     y_align: Clutter.ActorAlign.FILL
 };
 
-class IndicatorsBackend {
+/** @type {Object.<string, number|boolean|string>} */
+const BackendParams = {
+    count: 0,
+    color: 'white',
+    size: 0,
+    weight: 2,
+    spacing: 0
+};
 
-    #actor = null;
+class Indicator {
 
-    #canvas = null;
-
-    get canvas() {
-        return this.#canvas;
-    }
-
-    get canvasSize() {
-        return this.#actor?.get_surface_size();
-    }
-
-    set color(value) {
-        if (!this.#canvas) return;
-        const color = Clutter.color_from_string(value)[1];
-        Clutter.cairo_set_source_color(this.#canvas, color);
-    }
-
-    constructor(actor) {
-        this.#actor = actor;
-    }
-
-    destroy() {
-        this.#canvas = null;
-    }
-
-    update() {}
-
-    rerender() {
-        this.#canvas = this.#actor?.get_context();
-    }
-
-    finish() {
-        this.#canvas.fill();
-        this.#canvas.$dispose();
-        this.#canvas = null;
-    }
-
-    triggerRerender() {
-        this.#actor?.queue_repaint();
-    }
-
-}
-
-class RoundedIndicator {
-
+    /** @type {number} */
     #index = 0;
 
-    #radius = 0;
+    /** @type {number} */
+    #weight = 0;
 
+    /** @type {number} */
     #size = 0;
 
+    /** @type {number} */
     #oldSize = 0;
 
+    /** @type {number} */
     #targetSize = 0;
 
+    /** @type {number} */
     #spacing = 0;
 
+    /** @type {number} */
+    #animationStep = 1;
+
+    /** @type {number} */
     get #realSize() {
         if (this.#targetSize === this.#size) return this.#targetSize - this.#spacing;
         if (this.#targetSize > this.#size && !this.#oldSize) return Math.min(this.#size, this.#targetSize - this.#spacing);
-        if (this.#size > this.#targetSize && this.#targetSize === 0) return Math.min(this.#size, this.#oldSize - this.#spacing);
+        if (this.#size > this.#targetSize && !this.#targetSize) return Math.min(this.#size, this.#oldSize - this.#spacing);
         return this.#size - this.#spacing;
     }
 
-    get #rawSize() {
-        const d = this.#radius * 2;
-        return Math.max(this.#realSize - d, -(d - 1));
+    /** @type {number} */
+    get #drawSize() {
+        return Math.max(this.#realSize - this.#weight, -(this.#weight - 1));
     }
 
-    constructor(params = {}) {
-        const { index, radius, spacing, size } = params;
-        this.#index = index ?? 0;
-        this.#radius = Math.max(radius ?? 0, 1);
-        this.#targetSize = Math.max(size ?? 0, this.#radius * 2);
-        this.#spacing = this.#index > 0 ? spacing ?? 0 : 0;
-        this.#targetSize += this.#spacing;
-    }
-
+    /** @type {boolean} */
     get isValid() {
         return this.#size || this.#targetSize;
     }
 
+    /** @type {number} */
     get size() {
-        return this.#index > 0 ? this.#size : this.#rawSize;
+        return this.#index > 0 ? this.#size : this.#drawSize;
     }
 
-    get diff() {
-        return Math.abs(this.#targetSize - this.#size);
+    /**
+     * @param {number} index
+     */
+    constructor(index) {
+        this.#index = index ?? 0;
+    }
+
+    /**
+     * @param {Object.<string, number>} params
+     */
+    update(params = {}) {
+        if (!params) return;
+        const { size, weight, spacing } = params;
+        this.#weight = Math.max(weight ?? 0, 1);
+        this.#targetSize = Math.max(size ?? 0, this.#weight);
+        this.#spacing = this.#index > 0 ? spacing ?? 0 : 0;
+        this.#targetSize += this.#spacing;
+        this.#updateAnimationStep();
     }
 
     destroy() {
         this.#targetSize = 0;
         this.#oldSize = this.#size;
+        this.#updateAnimationStep();
     }
 
-    resize(size) {
-        if (!size) return;
-        this.#targetSize = size + this.#spacing;
-    }
-
-    animate(step) {
+    /**
+     * @returns {boolean}
+     */
+    animate() {
         if (this.#targetSize < this.#size) {
-            this.#size = Math.max(this.#size - step, this.#targetSize);
+            this.#size = Math.max(this.#size - this.#animationStep, this.#targetSize);
         } else if (this.#targetSize > this.#size) {
-            this.#size = Math.min(this.#size + step, this.#targetSize);
+            this.#size = Math.min(this.#size + this.#animationStep, this.#targetSize);
         } else {
             this.#size = this.#targetSize;
             this.#oldSize = this.#size;
@@ -135,113 +119,151 @@ class RoundedIndicator {
         return true;
     }
 
-    draw(canvas, x, y) {
-        x += this.#size - this.#realSize;
+    /**
+     * Note: If spacing is 0, all indicators are drawn as a single line.
+     *       It's not a bug!
+     * 
+     * @param {cairo.Context} canvas
+     * @param {number} x
+     * @param {number} y
+     * @param {Indicator[]} indicators
+     */
+    draw(canvas, x, y, indicators) {
+        const drawSize = this.#drawSize + (
+            this.#index > 0 && this.#size - this.#realSize === 0 ?
+            indicators[this.#index - 1].#realSize : 0
+        );
+        const arcX = x - drawSize;
+        const angle = Math.PI / 2;
+        const radius = this.#weight / 2;
         canvas.newSubPath();
-        canvas.arc(x, y + this.#radius, this.#radius, 90 * DEGREES, -90 * DEGREES);
-        canvas.arc(x + this.#rawSize, y + this.#radius, this.#radius, -90 * DEGREES, 90 * DEGREES);
+        canvas.arc(arcX, y + radius, radius, angle, -angle);
+        canvas.arc(arcX + drawSize, y + radius, radius, -angle, angle);
         canvas.closePath();
-        return this.#size;
+        if (this.#index === 0) return;
+        indicators[this.#index - 1].draw(canvas, x - this.#size, y, indicators);
+    }
+
+    #updateAnimationStep() {
+        const diff = Math.abs(this.#targetSize - this.#size);
+        this.#animationStep = Math.max(diff / ANIMATION_FRAMES, ANIMATION_STEP_MIN);
     }
 
 }
 
-class FlexibleIndicators extends IndicatorsBackend {
+class IndicatorsBackend {
 
+    /** @type {St.DrawingArea} */
+    #actor = null;
+
+    /** @type {cairo.Context} */
+    #canvas = null;
+
+    /** @type {Indicator[]} */
     #indicators = [];
 
-    #animationStep = 1;
+    /** @type {BackendParams} */
+    #params = BackendParams;
 
     /** @type {Job} */
     #job = Context.jobs.new(this, ANIMATION_INTERVAL);
 
-    destroy() {
-        super.destroy();
-        this.#job?.destroy();
-        this.#job = null;
+    /**
+     * @param {St.DrawingArea} actor
+     */
+    constructor(actor) {
+        this.#actor = actor;
     }
 
-    update(params = {}) {
+    destroy() {
+        this.#job?.destroy();
+        this.#job = null;
+        this.#indicators = null;
+        this.#canvas = null;
+    }
+
+    /**
+     * @param {BackendParams} params
+     */
+    update(params = BackendParams) {
+        if (!this.#canUpdate(params)) return;
         this.#job.reset();
- 
-        const { count, isActive } = params;
-
-        const width = isActive ? 10 : 4;
-        const height = 2;
-        const spacing = 4;
-
+        const { count, size, weight, spacing } = params;
         if (count > this.#indicators.length) {
             this.#indicators.length = count;
         }
-
-        let diff = 0;
+        if (!this.#indicators.length) return;
         for (let i = 0, l = this.#indicators.length; i < l; ++i) {
             if (!this.#indicators[i]) {
-                this.#indicators[i] = new RoundedIndicator({
-                    index: i,
-                    size: width,
-                    radius: height,
-                    spacing
-                });
+                this.#indicators[i] = new Indicator(i);
             }
-
             const indicator = this.#indicators[i];
-
-            if (i < count) {
-                indicator.resize(width);
-            } else {
-                indicator.destroy();
-            }
-
-            diff = Math.max(indicator.diff, diff);
+            if (i < count) indicator.update({ size, weight, spacing });
+            else indicator.destroy();
         }
-        this.#animationStep = Math.max(diff / 15, 0.5);
+        
         this.#animate();
     }
 
     rerender() {
-        super.rerender();
-
-        this.color = 'white';
-
-        const canvas = this.canvas;
-        const [canvasWidth] = this.canvasSize;
-        const center = canvasWidth / 2;
-
+        this.#canvas = this.#actor?.get_context();
+        if (!this.#canvas || !this.#indicators?.length) return this.#finish();
+        this.#setColor(this.#params.color);
+        const [canvasWidth] = this.#actor.get_surface_size();
+        let x = canvasWidth / 2;
         let y = 0;
-        let totalWidth = 0;
-
         for (let i = 0, l = this.#indicators.length; i < l; ++i) {
-            totalWidth += this.#indicators[i].size;
+            const indicator = this.#indicators[i];
+            x += indicator.size / 2;
+            if (i === l - 1) indicator.draw(this.#canvas, x, y, this.#indicators)
         }
+        this.#finish();
+    }
 
-        let x = center - totalWidth / 2;
+    /**
+     * @param {Object.<string, *>} params
+     * @returns {boolean}
+     */
+    #canUpdate(params) {
+        if (!this.#job || !params) return false;
+        if (JSON.stringify(params) === JSON.stringify(this.#params)) return false;
+        this.#params = params;
+        return true;
+    }
 
-        for (let i = 0, l = this.#indicators.length; i < l; ++i) {
-            x += this.#indicators[i].draw(canvas, x, y);
-        }
-
-        this.finish();
+    /**
+     * @param {string} colorString
+     */
+    #setColor(colorString) {
+        const color = Clutter.color_from_string(colorString)[1];
+        Clutter.cairo_set_source_color(this.#canvas, color);
     }
 
     #animate() {
         this.#job.reset().then(() => {
-            this.triggerRerender();
-            let animationComplete = true;
-            for (let i = 0, l = this.#indicators.length; i < l; ++i) {
-                if (!this.#indicators[i].animate(this.#animationStep)) continue;
-                animationComplete = false;
-            }
-            if (!animationComplete) return this.#animate();
-            const indicators = [];
+            this.#triggerRerender();
+            const validIndicators = [];
+            let animationsCount = 0;
             for (let i = 0, l = this.#indicators.length; i < l; ++i) {
                 const indicator = this.#indicators[i];
-                if (!indicator.isValid) continue;
-                indicators.push(indicator);
+                if (indicator.animate()) animationsCount++;
+                if (indicator.isValid) validIndicators.push(indicator);
             }
-            this.#indicators = indicators;
-            this.triggerRerender();
+            if (animationsCount) return this.#animate();
+            this.#indicators = validIndicators;
+            this.#triggerRerender();
         }).catch();
+    }
+
+    #finish() {
+        if (!this.#canvas) return;
+        this.#canvas.fill();
+        this.#canvas.$dispose();
+        this.#canvas = null;
+    }
+
+    #triggerRerender() {
+        this.#actor?.queue_repaint();
     }
 
 }
@@ -262,8 +284,22 @@ export class Indicators extends Component {
      */
     #appButton = null;
 
+    /** @type {Object.<string, string|number|boolean>} */
+    #config = Config(this);
+
     /** @type {IndicatorsBackend} */
-    #backend = new FlexibleIndicators(this.actor);
+    #backend = new IndicatorsBackend(this.actor);
+
+    /** @type {boolean} */
+    get #isActive() {
+        return !Main.overview?._shown && this.#appButton.isActive;
+    }
+
+    /** @type {BackendParams} */
+    get #backendParams() {
+        const count = this.#appButton.windowsCount;
+        return { ...BackendParams, ...{ count, appId: this.#appButton.app.id } };
+    };
 
     /**
      * @param {AppButton} appButton
@@ -272,15 +308,12 @@ export class Indicators extends Component {
         super(new St.DrawingArea(DefaultProps));
         this.#appButton = appButton;
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
-        this.connect('repaint', () => this.#backend?.rerender());
+        this.connect(Event.Repaint, () => this.#backend?.rerender());
     }
 
     rerender() {
         if (!this.isMapped) return;
-        this.#backend?.update({
-            count: this.#appButton.windowsCount,
-            isActive: this.#appButton.isActive
-        });
+        this.#backend?.update(this.#backendParams);
     }
 
     #destroy() {
