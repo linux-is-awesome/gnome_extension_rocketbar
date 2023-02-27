@@ -43,6 +43,25 @@ const ConfigFields = {
     textColorDnd: 'notification-counter-text-color-dnd'
 };
 
+/** @type {Object.<string, number|boolean|string>} */
+const CounterProps = {
+    name: `${MODULE_NAME}.Counter`,
+    style_class: COUNTER_STYLE_CLASS,
+    text: COUNTER_DEFAULT_TEXT,
+    opacity: 0,
+    visible: false,
+    x_align: Clutter.ActorAlign.CENTER,
+    y_align: Clutter.ActorAlign.CENTER
+};
+
+/** @type {Object.<string, number|boolean|string>} */
+const SpacerProps = {
+    name: `${MODULE_NAME}.Spacer`,
+    text: COUNTER_DEFAULT_TEXT,
+    opacity: 0,
+    y_align: Clutter.ActorAlign.CENTER
+};
+
 class DateMenu extends Component {
 
     /**
@@ -170,21 +189,8 @@ export class NotificationCounter extends Component {
     }
 
     #createCounter() {
-        const spacer = new St.Label({
-            name: `${MODULE_NAME}.Spacer`,
-            text: COUNTER_DEFAULT_TEXT,
-            opacity: 0,
-            y_align: Clutter.ActorAlign.CENTER
-        });
-        this.#counter = new St.Label({
-            name: `${MODULE_NAME}.Counter`,
-            style_class: COUNTER_STYLE_CLASS,
-            text: COUNTER_DEFAULT_TEXT,
-            opacity: 0,
-            visible: false,
-            x_align: Clutter.ActorAlign.CENTER,
-            y_align: Clutter.ActorAlign.CENTER
-        });
+        const spacer = new St.Label(SpacerProps);
+        this.#counter = new St.Label(CounterProps);
         this.#counter.set_pivot_point(0.5, 0.5);
         this.#counter.bind_property(Property.Visible, spacer, Property.Visible, GObject.BindingFlags.SYNC_CREATE);
         this.actor.add_child(spacer);
