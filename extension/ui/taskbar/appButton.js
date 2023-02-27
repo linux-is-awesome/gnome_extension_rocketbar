@@ -131,9 +131,14 @@ export class AppButton extends Button {
     /** @type {Object.<string, string|number|boolean>} */
     #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
 
+    /** @type {number} */
+    get #isAppRunning() {
+        return this.#windowsCount || this.#app?.state === Shell.AppState.RUNNING;
+    }
+
     /** @type {boolean} */
     get #canOpenNewWindow() {
-        return this.#app?.can_open_new_window() && this.#app?.state === Shell.AppState.RUNNING;
+        return this.#app?.can_open_new_window() && this.#isAppRunning;
     }
 
     /** @type {Meta.Window[]} */
@@ -359,8 +364,7 @@ export class AppButton extends Button {
         const { isOverview, isMiddleButton, isCtrlPressed } = this.#getClickDetails(params);
         if (isCtrlPressed && isMiddleButton) return this.#closeFirstWindow();
         const newWindow = this.#canOpenNewWindow && (isCtrlPressed || isMiddleButton);
-        if (newWindow || this.#app.state !== Shell.AppState.RUNNING)
-            return this.#openNewWindow(!isCtrlPressed && !isMiddleButton && isOverview);
+        if (newWindow || !this.#isAppRunning) return this.#openNewWindow(!isCtrlPressed && !isMiddleButton && isOverview);
         const { isolateWorkspaces, activateRunningBehavior, enableMinimizeAction } = this.#config;
         if (!this.#windowsCount) {
             if (!isolateWorkspaces) return this.#openNewWindow(isOverview); 
@@ -393,7 +397,7 @@ export class AppButton extends Button {
         this.#resetCycleWindowsQueue();
         if (hideOverview) Main.overview?.hide();
         this.#appIcon.animate(AppIconAnimation.Activate);
-        if (this.#app.state !== Shell.AppState.RUNNING || !this.#canOpenNewWindow) return this.#app.activate();
+        if (!this.#canOpenNewWindow) return this.#app.activate();
         this.#app.open_new_window(-1);
     }
 
