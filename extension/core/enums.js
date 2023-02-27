@@ -36,7 +36,8 @@ export const Event = {
     FavoritesChanged: 'changed',
     OverviewShowing: 'showing',
     OverviewHiding: 'hiding',
-    ScaleFactor: 'notify::scale-factor'
+    ScaleFactor: 'notify::scale-factor',
+    Repaint: 'repaint'
 };
 
 /**
