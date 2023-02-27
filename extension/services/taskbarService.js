@@ -236,7 +236,7 @@ class TaskbarService {
             const window = windows[i].metaWindow;
             if (!this.#isValidWindow(window)) continue;
             if (oldWindows) newWindows.add(window);
-            this.#addWindow(window);
+            this.#addWindow(window, false);
         }
         if (!oldWindows) return;
         if (!newWindows.size) return this.#windows.clear();
@@ -261,6 +261,14 @@ class TaskbarService {
             Event.WindowAdded, (_, window) => this.#addWindowAsync(window), GObject.ConnectFlags.AFTER,
             Event.WindowRemoved, (_, window) => this.#removeWindowAsync(window), GObject.ConnectFlags.AFTER
         ]);
+        if (!this.#oldWorkspace) return this.#trackAll();
+        const workspaceWindows = this.#workspace.list_windows();
+        if (!workspaceWindows.length) return this.#trackAll();
+        for (let i = 0, l = workspaceWindows.length; i < l; ++i) {
+            const window = workspaceWindows[i];
+            if (!this.#isValidWindow(window)) continue;
+            this.#addWindow(window, false);
+        }
         this.#trackAll();
     }
 
@@ -302,14 +310,15 @@ class TaskbarService {
 
     /**
      * @param {Meta.Window} window
+     * @param {boolean} [track]
      */
-    #addWindow(window) {
+    #addWindow(window, track = true) {
         if (!this.#windows || this.#windows.has(window)) return;
         const app = this.#windowTracker?.get_window_app(window);
         if (typeof app?.id !== Type.String) return;
         this.#windows.set(window, app);
         this.#addAppWindow(app, window);
-        this.#trackApp(app);
+        if (track) this.#trackApp(app);
     }
 
     /**
