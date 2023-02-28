@@ -14,6 +14,12 @@ const ANIMATION_FRAMES = 15;
 const ANIMATION_STEP_MIN = 0.3;
 
 /** @enum {string} */
+const IndicatorsPosition = {
+    Top: 'top',
+    Bottom: 'bottom'
+};
+
+/** @enum {string} */
 const ConfigFields = {
     countLimit: 'indicator-display-limit',
     colorInactive: 'indicator-color-inactive',
@@ -23,7 +29,10 @@ const ConfigFields = {
     spacingInactive: 'indicator-spacing-inactive',
     spacingActive: 'indicator-spacing-active',
     weightInactive: 'indicator-height-inactive',
-    weightActive: 'indicator-height-active'
+    weightActive: 'indicator-height-active',
+    offsetInactive: 'indicator-margin-inactive',
+    offsetActive: 'indicator-margin-active',
+    position: 'indicator-position'
 };
 
 /** @type {Object.<string, number|boolean|string>} */
@@ -41,7 +50,9 @@ const BackendParams = {
     color: 'white',
     size: 0,
     weight: 2,
-    spacing: 0
+    spacing: 0,
+    offset: 0,
+    position: IndicatorsPosition.Top
 };
 
 class Indicator {
@@ -219,17 +230,20 @@ class IndicatorsBackend {
             if (i < count) indicator.update({ size, weight, spacing });
             else indicator.destroy();
         }
-        
         this.#animate();
     }
 
     rerender() {
         this.#canvas = this.#actor?.get_context();
         if (!this.#canvas || !this.#indicators?.length) return this.#finish();
-        this.#setColor(this.#params.color);
-        const [canvasWidth] = this.#actor.get_surface_size();
+        const { color, weight, offset, position } = this.#params;
+        this.#setColor(color);
+        const [canvasWidth, canvasHeight] = this.#actor.get_surface_size();
         let x = canvasWidth / 2;
-        let y = 0;
+        let y = offset;
+        if (position === IndicatorsPosition.Bottom) {
+            y = canvasHeight - weight - offset;
+        }
         for (let i = 0, l = this.#indicators.length; i < l; ++i) {
             const indicator = this.#indicators[i];
             x += indicator.size / 2;
@@ -293,7 +307,8 @@ export class Indicators extends Component {
      * @returns {void}
      */
     #notifyHandler = (data) => ({
-        [ComponentEvent.Destroy]: this.#destroy
+        [ComponentEvent.Destroy]: this.#destroy,
+        [ComponentEvent.Scale]: this.rerender
     })[data?.event]?.call(this);
 
     /**
@@ -315,15 +330,18 @@ export class Indicators extends Component {
 
     /** @type {BackendParams} */
     get #backendParams() {
+        const scale = this.uiScale * this.globalScale;
         const isActive = this.#isActive;
         const { countLimit, colorActive, colorInactive, sizeActive, sizeInactive,
-                spacingActive, spacingInactive, weightActive, weightInactive } = this.#config;
+                spacingActive, spacingInactive, weightActive, weightInactive,
+                offsetActive, offsetInactive, position } = this.#config;
         const count = Math.min(this.#appButton.windowsCount, countLimit);
         const color = isActive ? colorActive : colorInactive;
-        const size = isActive ? sizeActive : sizeInactive;
-        const spacing = isActive ? spacingActive : spacingInactive;
-        const weight = isActive ? weightActive : weightInactive;
-        return { ...BackendParams, ...{ count, color, size, spacing, weight } };
+        const size = (isActive ? sizeActive : sizeInactive) * scale;
+        const spacing = (isActive ? spacingActive : spacingInactive) * scale;
+        const weight = (isActive ? weightActive : weightInactive) * scale;
+        const offset = (isActive ? offsetActive : offsetInactive) * scale;
+        return { ...BackendParams, ...{ count, color, size, spacing, weight, offset, position } };
     };
 
     /**
