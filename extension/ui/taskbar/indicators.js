@@ -104,12 +104,16 @@ class Indicator {
         const { size, weight, spacing } = params;
         this.#weight = Math.max(weight ?? 0, 1);
         this.#targetSize = Math.max(size ?? 0, this.#weight);
-        this.#spacing = this.#index > 0 ? spacing ?? 0 : 0;
+        this.#spacing = spacing ?? 0;
         this.#targetSize += this.#spacing;
+        this.#oldSize = 0;
         this.#updateAnimationStep();
     }
 
     destroy() {
+        if (this.#size <= this.#weight) {
+            this.#spacing = 0;
+        }
         this.#targetSize = 0;
         this.#oldSize = this.#size;
         this.#updateAnimationStep();
@@ -141,8 +145,9 @@ class Indicator {
      * @param {Indicator[]} indicators
      */
     draw(canvas, x, y, indicators) {
+        const realSize = this.#realSize;
         const drawSize = this.#drawSize + (
-            this.#index > 0 && this.#size - this.#realSize === 0 ?
+            this.#index > 0 && (this.#size - realSize === 0 || realSize < this.#weight)?
             indicators[this.#index - 1].#realSize : 0
         );
         const arcX = x - drawSize;
