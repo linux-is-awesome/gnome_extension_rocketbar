@@ -22,7 +22,8 @@ const ConfigFields = {
     sizeActive: 'indicator-width-active',
     spacingInactive: 'indicator-spacing-inactive',
     spacingActive: 'indicator-spacing-active',
-    weight: 'indicator-height-inactive'
+    weightInactive: 'indicator-height-inactive',
+    weightActive: 'indicator-height-active'
 };
 
 /** @type {Object.<string, number|boolean|string>} */
@@ -315,11 +316,13 @@ export class Indicators extends Component {
     /** @type {BackendParams} */
     get #backendParams() {
         const isActive = this.#isActive;
-        const count = Math.min(this.#appButton.windowsCount, this.#config.countLimit);
-        const color = isActive ? this.#config.colorActive : this.#config.colorInactive;
-        const size = isActive ? this.#config.sizeActive : this.#config.sizeInactive;
-        const spacing = isActive ? this.#config.spacingActive : this.#config.spacingInactive;
-        const weight = this.#config.weight;
+        const { countLimit, colorActive, colorInactive, sizeActive, sizeInactive,
+                spacingActive, spacingInactive, weightActive, weightInactive } = this.#config;
+        const count = Math.min(this.#appButton.windowsCount, countLimit);
+        const color = isActive ? colorActive : colorInactive;
+        const size = isActive ? sizeActive : sizeInactive;
+        const spacing = isActive ? spacingActive : spacingInactive;
+        const weight = isActive ? weightActive : weightInactive;
         return { ...BackendParams, ...{ count, color, size, spacing, weight } };
     };
 
