@@ -21,7 +21,8 @@ const IndicatorsPosition = {
 
 /** @enum {string} */
 const ConfigFields = {
-    countLimit: 'indicator-display-limit',
+    limitInactive: 'indicator-display-limit',
+    limitActive: 'indicator-display-limit-active',
     colorInactive: 'indicator-color-inactive',
     colorActive: 'indicator-color-active',
     sizeInactive: 'indicator-width-inactive',
@@ -332,10 +333,10 @@ export class Indicators extends Component {
     get #backendParams() {
         const scale = this.uiScale * this.globalScale;
         const isActive = this.#isActive;
-        const { countLimit, colorActive, colorInactive, sizeActive, sizeInactive,
-                spacingActive, spacingInactive, weightActive, weightInactive,
-                offsetActive, offsetInactive, position } = this.#config;
-        const count = Math.min(this.#appButton.windowsCount, countLimit);
+        const { limitActive, limitInactive, colorActive, colorInactive,
+                sizeActive, sizeInactive, spacingActive, spacingInactive,
+                weightActive, weightInactive, offsetActive, offsetInactive, position } = this.#config;
+        const count = Math.min(this.#appButton.windowsCount, isActive ? limitActive : limitInactive);
         const color = isActive ? colorActive : colorInactive;
         const size = (isActive ? sizeActive : sizeInactive) * scale;
         const spacing = (isActive ? spacingActive : spacingInactive) * scale;

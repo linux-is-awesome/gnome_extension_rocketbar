@@ -150,7 +150,11 @@
         </key>
         <key type="i" name="indicator-display-limit">
             <default>3</default>
-            <summary>Max number of indicators to display for running apps</summary>
+            <summary>Max number of indicators to display for Inactive running apps</summary>
+        </key>
+        <key type="i" name="indicator-display-limit-active">
+            <default>3</default>
+            <summary>Max number of indicators to display for Active running apps</summary>
         </key>
         <!-- customize page: notification-badge -->
         <key type="s" name="notification-badge-color">
