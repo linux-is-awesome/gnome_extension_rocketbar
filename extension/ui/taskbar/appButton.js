@@ -224,7 +224,8 @@ export class AppButton extends Button {
         this.connect(Event.Scroll, (_, event) => this.#scroll(event));
         this.connect(Event.Hover, () => this.#hover());
         Context.signals.add(this,
-            [global.display, Event.FocusWindow, () => this.#handleFocusedWindow()],
+            [global.display, Event.FocusWindow, () => this.#handleFocusedWindow(),
+                             Event.DemandsAttention, (_, window) => this.#handleUrgentWindow(window)],
             [global.window_manager, Event.Minimize, (_, actor) => this.#handleWindowState(actor?.meta_window),
                                     Event.Unminimize, (_, actor) => this.#handleWindowState(actor?.meta_window)]);
     }
@@ -316,6 +317,13 @@ export class AppButton extends Button {
     #handleFocusedWindow() {
         if (!this.isMapped) return;
         this.isActive = this.#windowsCount ? this.#service.hasFocusedWindow() : false;
+    }
+
+    #handleUrgentWindow(window) {
+        if (!window || !this.#windows?.has(window)) return;
+        if (!this.#isActive) return;
+        if (window.has_focus()) return;
+        Main.activateWindow(window);
     }
 
     #handleWindowState(window) {
