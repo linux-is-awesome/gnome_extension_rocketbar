@@ -47,6 +47,7 @@ const DefaultProps = {
 
 /** @type {Object.<string, number|boolean|string>} */
 const BackendParams = {
+    scale: 1,
     count: 0,
     color: 'white',
     size: 0,
@@ -130,6 +131,9 @@ class Indicator extends IndicatorBase {
     /** @type {number} */
     #weight = 0;
 
+    /** @type {number} */
+    #scale = 1;
+
     /** @type {IndicatorBase} */
     #spacer = null;
 
@@ -140,7 +144,7 @@ class Indicator extends IndicatorBase {
 
     /** @type {number} */
     get #drawSize() {
-        return Math.max(super.size - this.#weight, -(this.#weight - 1));
+        return Math.max(super.size - this.#weight, -(this.#weight - this.#scale));
     }
 
     /** @type {number} */
@@ -171,8 +175,9 @@ class Indicator extends IndicatorBase {
      */
     update(params = {}) {
         if (!params) return;
-        const { size, weight, spacing, count } = params;
+        const { size, weight, scale, spacing, count } = params;
         this.#weight = Math.max(weight ?? 0, 1);
+        this.#scale = scale;
         if (count > 1 && !this.#spacer) {
             const spacerSize = this.#index === 0 && super.size ? spacing : 0;
             this.#spacer = new IndicatorBase(this, spacerSize);
@@ -266,7 +271,7 @@ class IndicatorsBackend {
     update(params = BackendParams) {
         if (!this.#canUpdate(params)) return;
         this.#job.reset();
-        const { count, size, weight, spacing } = params;
+        const { scale, count, size, weight, spacing } = params;
         if (count > this.#indicators.length) {
             this.#indicators.length = count;
         }
@@ -276,7 +281,7 @@ class IndicatorsBackend {
                 this.#indicators[i] = new Indicator(i);
             }
             const indicator = this.#indicators[i];
-            if (i < count) indicator.update({ size, weight, spacing, count: l });
+            if (i < count) indicator.update({ scale, size, weight, spacing, count: l });
             else indicator.destroy();
         }
         this.#animate();
@@ -390,7 +395,7 @@ export class Indicators extends Component {
         const spacing = (isActive ? spacingActive : spacingInactive) * scale;
         const weight = (isActive ? weightActive : weightInactive) * scale;
         const offset = (isActive ? offsetActive : offsetInactive) * scale;
-        return { ...BackendParams, ...{ count, color, size, spacing, weight, offset, position } };
+        return { ...BackendParams, ...{ scale, count, color, size, spacing, weight, offset, position } };
     };
 
     /**
