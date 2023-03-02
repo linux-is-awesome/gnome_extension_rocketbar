@@ -11,7 +11,7 @@ import { Config } from '../../utils/config.js';
 const MODULE_NAME = 'Rocketbar__Taskbar_Indicator';
 const ANIMATION_INTERVAL = 10;
 const ANIMATION_FRAMES = 15;
-const ANIMATION_STEP_MIN = 0.3;
+const ANIMATION_STEP_MIN = 0.1;
 
 /** @enum {string} */
 const IndicatorsPosition = {
@@ -56,41 +56,19 @@ const BackendParams = {
     position: IndicatorsPosition.Top
 };
 
-class Indicator {
+class IndicatorBase {
 
-    /** @type {number} */
-    #index = 0;
-
-    /** @type {number} */
-    #weight = 0;
+    /** @type {IndicatorBase} */
+    #parent = null;
 
     /** @type {number} */
     #size = 0;
 
     /** @type {number} */
-    #oldSize = 0;
-
-    /** @type {number} */
     #targetSize = 0;
 
     /** @type {number} */
-    #spacing = 0;
-
-    /** @type {number} */
     #animationStep = 1;
-
-    /** @type {number} */
-    get #realSize() {
-        if (this.#targetSize === this.#size) return this.#targetSize - this.#spacing;
-        if (this.#targetSize > this.#size && !this.#oldSize) return Math.min(this.#size, this.#targetSize - this.#spacing);
-        if (this.#size > this.#targetSize && !this.#targetSize) return Math.min(this.#size, this.#oldSize - this.#spacing);
-        return this.#size - this.#spacing;
-    }
-
-    /** @type {number} */
-    get #drawSize() {
-        return Math.max(this.#realSize - this.#weight, -(this.#weight - 1));
-    }
 
     /** @type {boolean} */
     get isValid() {
@@ -99,36 +77,29 @@ class Indicator {
 
     /** @type {number} */
     get size() {
-        return this.#index > 0 ? this.#size : this.#drawSize;
+        return this.#size;
+    }
+
+    /** @type {number} */
+    get diff() {
+        return this.#targetSize - this.#size;
+    }
+
+    constructor(parent = null, size = 0) {
+        this.#parent = parent;
+        this.#size = size ?? 0;
     }
 
     /**
-     * @param {number} index
+     * @param {number} targetSize
      */
-    constructor(index) {
-        this.#index = index ?? 0;
-    }
-
-    /**
-     * @param {Object.<string, number>} params
-     */
-    update(params = {}) {
-        if (!params) return;
-        const { size, weight, spacing } = params;
-        this.#weight = Math.max(weight ?? 0, 1);
-        this.#targetSize = Math.max(size ?? 0, this.#weight);
-        this.#spacing = spacing ?? 0;
-        this.#targetSize += this.#spacing;
-        this.#oldSize = 0;
+    update(targetSize) {
+        this.#targetSize = targetSize ?? 0;
         this.#updateAnimationStep();
     }
 
     destroy() {
-        if (this.#size <= this.#weight) {
-            this.#spacing = 0;
-        }
         this.#targetSize = 0;
-        this.#oldSize = this.#size;
         this.#updateAnimationStep();
     }
 
@@ -136,16 +107,97 @@ class Indicator {
      * @returns {boolean}
      */
     animate() {
+        const animationStep = this.#parent ? this.#parent.#animationStep : this.#animationStep;
         if (this.#targetSize < this.#size) {
-            this.#size = Math.max(this.#size - this.#animationStep, this.#targetSize);
+            this.#size = Math.max(this.#size - animationStep, this.#targetSize);
         } else if (this.#targetSize > this.#size) {
-            this.#size = Math.min(this.#size + this.#animationStep, this.#targetSize);
-        } else {
-            this.#size = this.#targetSize;
-            this.#oldSize = this.#size;
-            return false;
+            this.#size = Math.min(this.#size + animationStep, this.#targetSize);
         }
-        return true;
+        return this.#targetSize !== this.#size;
+    }
+
+    #updateAnimationStep() {
+        this.#animationStep = Math.max(Math.abs(this.diff) / ANIMATION_FRAMES, ANIMATION_STEP_MIN);
+    }
+
+}
+
+class Indicator extends IndicatorBase {
+
+    /** @type {number} */
+    #index = 0;
+
+    /** @type {number} */
+    #weight = 0;
+
+    /** @type {IndicatorBase} */
+    #spacer = null;
+
+    /** @type {number} */
+    get #size() {
+        return super.size;
+    }
+
+    /** @type {number} */
+    get #drawSize() {
+        return Math.max(super.size - this.#weight, -(this.#weight - 1));
+    }
+
+    /** @type {number} */
+    get size() {
+        return this.#index > 0 ? super.size + this.#spacer.size : this.#drawSize;
+    }
+
+    /** @type {number} */
+    get diff() {
+        return Math.abs(super.diff) + Math.abs(this.#spacer?.diff ?? 0);
+    }
+
+    /**
+     * @param {number} index
+     */
+    constructor(index) {
+        super();
+        this.#index = index ?? 0;
+    }
+
+    destroy() {
+        this.#spacer?.destroy();
+        super.destroy();
+    }
+
+    /**
+     * @param {Object.<string, number>} params
+     */
+    update(params = {}) {
+        if (!params) return;
+        const { size, weight, spacing, count } = params;
+        this.#weight = Math.max(weight ?? 0, 1);
+        if (count > 1 && !this.#spacer) {
+            const spacerSize = this.#index === 0 && super.size ? spacing : 0;
+            this.#spacer = new IndicatorBase(this, spacerSize);
+        } else if (count === 1) {
+            this.#spacer = null;
+        }
+        this.#spacer?.update(spacing);
+        super.update(Math.max(size ?? 0, this.#weight));
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    animate() {
+        const diff = super.diff;
+        const spacerDiff = this.#spacer?.diff ?? 0;
+        if (diff < 0 && spacerDiff < 0) {
+            return this.#spacer.animate() || super.animate();
+        } else if (diff > 0 && spacerDiff > 0) {
+            return super.animate() || this.#spacer.animate();
+        } else if ((diff < 0 || diff > 0) && spacerDiff) {
+            const spacerResult = this.#spacer.animate();
+            return super.animate() || spacerResult;
+        }
+        return super.animate() || this.#spacer?.animate();
     }
 
     /**
@@ -158,25 +210,21 @@ class Indicator {
      * @param {Indicator[]} indicators
      */
     draw(canvas, x, y, indicators) {
-        const realSize = this.#realSize;
-        const drawSize = this.#drawSize + (
-            this.#index > 0 && (this.#size - realSize === 0 || realSize < this.#weight)?
-            indicators[this.#index - 1].#realSize : 0
-        );
-        const arcX = x - drawSize;
-        const angle = Math.PI / 2;
-        const radius = this.#weight / 2;
-        canvas.newSubPath();
-        canvas.arc(arcX, y + radius, radius, angle, -angle);
-        canvas.arc(arcX + drawSize, y + radius, radius, -angle, angle);
-        canvas.closePath();
+        if (this.#index === 0 || super.size > 0) {
+            const drawSize = this.#drawSize + (
+                this.#index > 0 && !this.#spacer.size ?
+                indicators[this.#index - 1].#size : 0
+            );
+            const arcX = x - drawSize;
+            const angle = Math.PI / 2;
+            const radius = this.#weight / 2;
+            canvas.newSubPath();
+            canvas.arc(arcX, y + radius, radius, angle, -angle);
+            canvas.arc(arcX + drawSize, y + radius, radius, -angle, angle);
+            canvas.closePath();
+        }
         if (this.#index === 0) return;
-        indicators[this.#index - 1].draw(canvas, x - this.#size, y, indicators);
-    }
-
-    #updateAnimationStep() {
-        const diff = Math.abs(this.#targetSize - this.#size);
-        this.#animationStep = Math.max(diff / ANIMATION_FRAMES, ANIMATION_STEP_MIN);
+        indicators[this.#index - 1].draw(canvas, x - this.size, y, indicators);
     }
 
 }
@@ -228,7 +276,7 @@ class IndicatorsBackend {
                 this.#indicators[i] = new Indicator(i);
             }
             const indicator = this.#indicators[i];
-            if (i < count) indicator.update({ size, weight, spacing });
+            if (i < count) indicator.update({ size, weight, spacing, count: l });
             else indicator.destroy();
         }
         this.#animate();
@@ -284,7 +332,7 @@ class IndicatorsBackend {
             }
             if (animationsCount) return this.#animate();
             this.#indicators = validIndicators;
-            this.#triggerRerender();
+            this.#job.reset().then(() => this.#triggerRerender());
         }).catch();
     }
 
