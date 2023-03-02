@@ -19,7 +19,6 @@ export const Event = {
     Leave: 'leave-event',
     FontName: 'notify::font-name',
     IconTheme: 'notify::gtk-icon-theme',
-    FocusWindow: 'notify::focus-window',
     Scroll: 'scroll-event',
     Clicked: 'clicked',
     LongPress: 'long-press',
@@ -28,16 +27,18 @@ export const Event = {
     StartupComplete: 'startup-complete',
     AppStateChanged: 'app-state-changed',
     SwitchWorkspace: 'switch-workspace',
-    WindowAdded: 'window_added',
-    WindowRemoved: 'window_removed',
-    Minimize: 'minimize',
-    Unminimize: 'unminimize',
     InstalledAppsChanged: 'installed-changed',
     FavoritesChanged: 'changed',
     OverviewShowing: 'showing',
     OverviewHiding: 'hiding',
     ScaleFactor: 'notify::scale-factor',
-    Repaint: 'repaint'
+    Repaint: 'repaint',
+    FocusWindow: 'notify::focus-window',
+    DemandsAttention: 'window-demands-attention',
+    WindowAdded: 'window_added',
+    WindowRemoved: 'window_removed',
+    Minimize: 'minimize',
+    Unminimize: 'unminimize',
 };
 
 /**

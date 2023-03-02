@@ -86,6 +86,10 @@ class IndicatorBase {
         return this.#targetSize - this.#size;
     }
 
+    /**
+     * @param {IndicatorBase} [parent]
+     * @param {number} [size]
+     */
     constructor(parent = null, size = 0) {
         this.#parent = parent;
         this.#size = size ?? 0;
