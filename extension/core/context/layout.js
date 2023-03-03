@@ -1,8 +1,10 @@
 /* exported LayoutManager */
 
+import St from 'gi://St';
 import { Main } from '../legacy.js';
 import { Context } from '../context.js';
 import { Type, Event, Delay } from '../enums.js';
+import { Component } from '../../ui/base/component.js';
 
 export class LayoutManager {
 
@@ -13,6 +15,52 @@ export class LayoutManager {
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
         this.#clients = null;
+    }
+
+    /**
+     * @param {PopupMenu} menu
+     */
+    addMenu(menu) {
+        try {
+            Main.panel?.menuManager?.addMenu(menu);
+            this.addOverlay(menu.actor);
+        } catch (e) {
+            console.error(`${Context.metadata?.name} unable to add menu.`, e);
+        }
+    }
+
+    /**
+     * @param {PopupMenu} menu
+     */
+    removeMenu(menu) {
+        try {
+            Main.panel?.menuManager?.removeMenu(menu);
+            this.removeOverlay(menu.actor);
+        } catch (e) {
+            console.error(`${Context.metadata?.name} unable to remove menu.`, e);
+        }
+    }
+
+    /**
+     * @param {St.Widget} actor
+     */
+    addOverlay(actor) {
+        if (actor instanceof Component) {
+            actor = actor.actor;
+        }
+        if (actor instanceof St.Widget === false) return;
+        Main.layoutManager?.uiGroup?.add_actor(actor);
+    }
+
+    /**
+     * @param {St.Widget} actor
+     */
+    removeOverlay(actor) {
+        if (actor instanceof Component) {
+            actor = actor.actor;
+        }
+        if (actor instanceof St.Widget === false) return;
+        Main.layoutManager?.uiGroup?.remove_actor(actor);
     }
 
     /**
