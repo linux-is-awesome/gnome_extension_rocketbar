@@ -21,6 +21,7 @@ export class LayoutManager {
      * @param {PopupMenu} menu
      */
     addMenu(menu) {
+        if (!menu) return;
         try {
             Main.panel?.menuManager?.addMenu(menu);
             this.addOverlay(menu.actor);
@@ -33,6 +34,7 @@ export class LayoutManager {
      * @param {PopupMenu} menu
      */
     removeMenu(menu) {
+        if (!menu) return;
         try {
             Main.panel?.menuManager?.removeMenu(menu);
             this.removeOverlay(menu.actor);
