@@ -426,13 +426,13 @@ export class AppButton extends Button {
         this.#resetCycleWindowsQueue();
         const sortedWindows = this.#sortedWindows;
         if (!sortedWindows?.length) return;
-        this.#appIcon.animate(AppIconAnimation.Deactivate);
         sortedWindows[0].delete(global.get_current_time());
     }
 
     #moveWindows() {
         const windows = this.#service.queryWindows(false, true);
         if (!windows?.size) return;
+        this.#appIcon.animate(AppIconAnimation.Activate);
         const sortedWindows = this.#app.get_windows();
         const workspace = this.#service.workspace
         for (const window of windows) window.change_workspace(workspace);
