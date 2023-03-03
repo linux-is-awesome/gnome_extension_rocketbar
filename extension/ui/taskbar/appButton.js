@@ -25,6 +25,7 @@ const ActivateBehavior = {
 /** @enum {string} */
 const ConfigFields = {
     isolateWorkspaces: 'taskbar-isolate-workspaces',
+    enableIndicators: 'appbutton-enable-indicators',
     enableMinimizeAction: 'appbutton-enable-minimize-action',
     activateRunningBehavior: 'appbutton-running-app-activate-behavior',
     iconSize: 'appbutton-icon-size',
@@ -241,6 +242,8 @@ export class AppButton extends Button {
     #handleConfig(settingsKey) {
         if (!this.isValid) return;
         switch (settingsKey) {
+            case ConfigFields.enableIndicators:
+                return this.#toggleFeatures();
             case ConfigFields.isolateWorkspaces:
             case ConfigFields.enableMinimizeAction:
             case ConfigFields.activateRunningBehavior:
@@ -248,8 +251,8 @@ export class AppButton extends Button {
             case ConfigFields.backlightColor:
             case ConfigFields.backlightIntensity:
                 return this.#updateBacklight();
-            case ConfigFields.iconSize:
             default:
+            case ConfigFields.iconSize:
                 this.#appIcon.setSize(this.#config.iconSize);
             case ConfigFields.iconHPadding:
             case ConfigFields.iconVPadding:
@@ -257,8 +260,18 @@ export class AppButton extends Button {
             case ConfigFields.spacingAfter:
                 this.#updateStyle();
         }
-        if (this.#indicators) return;
-        this.#indicators = new Indicators(this).setParent(this.#layout);
+        if (!settingsKey) this.#toggleFeatures();
+    }
+
+    #toggleFeatures() {
+        const { enableIndicators } = this.#config;
+        if (enableIndicators && !this.#indicators) {
+            this.#indicators = new Indicators(this).setParent(this.#layout);
+            if (!this.#isStartupRequired) this.#indicators.rerender();
+        } else if (!enableIndicators && this.#indicators) {
+            this.#indicators.destroy();
+            this.#indicators = null;
+        }
     }
 
     #updateStyle() {
