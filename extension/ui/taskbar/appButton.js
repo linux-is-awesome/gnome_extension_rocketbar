@@ -13,6 +13,7 @@ import { Config } from '../../utils/config.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { AppIcon, AppIconAnimation } from './appIcon.js';
 import { Indicators } from './indicators.js';
+import { Menu } from './menu.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
 
@@ -95,8 +96,8 @@ export class AppButton extends Button {
         [ComponentEvent.DragActorSourceRequest]: () => this.#appIcon.actor,
         [ComponentEvent.Scale]: this.#updateStyle,
         [ButtonEvent.Press]: this.#press,
-        [ButtonEvent.LongPress]: () => console.log('Button long press'),
-        [ButtonEvent.Click]: () => this.#click(data?.params)
+        [ButtonEvent.Click]: () => this.#click(data?.params) ?? true,
+        [ButtonEvent.RequestMenu]: () => new Menu(this)
     })[data?.event]?.call(this);
 
     /** @type {boolean} */
@@ -206,6 +207,7 @@ export class AppButton extends Button {
         this.#app = app;
         this.#appIcon = new AppIcon(app).setParent(this.display);
         this.#service = new TaskbarClient(() => this.#handleAppState(), app);
+        this.actor.animateLaunch = () => this.#appIcon.animate(AppIconAnimation.Activate);
         this.#connectSignals();
     }
 
@@ -382,7 +384,8 @@ export class AppButton extends Button {
      */
     #click(params) {
         if (!params || this.#service.isPending) return;
-        const { isOverview, isMiddleButton, isCtrlPressed } = this.#getClickDetails(params);
+        const { isOverview, isSecondaryButton, isMiddleButton, isCtrlPressed } = this.#getClickDetails(params);
+        if (isSecondaryButton) return false;
         if (isCtrlPressed && isMiddleButton) return this.#closeFirstWindow();
         const newWindow = this.#canOpenNewWindow && (isCtrlPressed || isMiddleButton);
         if (newWindow || !this.#isAppRunning) return this.#openNewWindow(!isCtrlPressed && !isMiddleButton && isOverview);
@@ -409,15 +412,16 @@ export class AppButton extends Button {
     #getClickDetails(params) {
         const { event, button } = params;
         const isOverview = Main.overview?.visible;
+        const isSecondaryButton = button === Clutter.BUTTON_SECONDARY;
         const isMiddleButton = button === Clutter.BUTTON_MIDDLE;
         const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) !== 0;
-        return { isOverview, isMiddleButton, isCtrlPressed };
+        return { isOverview, isSecondaryButton, isMiddleButton, isCtrlPressed };
     }
 
     #openNewWindow(hideOverview = false) {
         this.#resetCycleWindowsQueue();
         if (hideOverview) Main.overview?.hide();
-        this.#appIcon.animate(AppIconAnimation.Activate);
+        this.actor.animateLaunch();
         if (!this.#canOpenNewWindow) return this.#app.activate();
         this.#app.open_new_window(-1);
     }
@@ -432,7 +436,7 @@ export class AppButton extends Button {
     #moveWindows() {
         const windows = this.#service.queryWindows(false, true);
         if (!windows?.size) return;
-        this.#appIcon.animate(AppIconAnimation.Activate);
+        this.actor.animateLaunch();
         const sortedWindows = this.#app.get_windows();
         const workspace = this.#service.workspace
         for (const window of windows) window.change_workspace(workspace);
