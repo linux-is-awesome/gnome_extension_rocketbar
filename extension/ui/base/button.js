@@ -3,6 +3,7 @@
 import GObject from 'gi://GObject';
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
+import { Context } from '../../core/context.js';
 import { Type, Event } from '../../core/enums.js';
 import { Component } from './component.js';
 import { Property } from '../../core/enums.js';
@@ -54,8 +55,61 @@ export const ButtonEvent = {
     Click: 'button::click',
     Press: 'button::press',
     LongPress: 'button::long-press',
-    Focus: 'button:focus'
+    Focus: 'button:focus',
+    RequestMenu: 'button:request-menu'
 };
+
+class DummyEventEmitter {
+    connectObject(){}
+    disconnectObject(){}
+}
+
+class ButtonMenuTrigger extends DummyEventEmitter {
+
+    /** @type {Button} */
+    #button = null;
+
+    /** @type {DummyEventEmitter} */
+    #actor = new DummyEventEmitter();
+
+    /** @type {Button} */
+    get sourceActor() {
+        return this.#button.actor;
+    }
+
+    /** @type {DummyEventEmitter} */
+    get actor() {
+        return this.#actor;
+    }
+
+    /**
+     * @param {Button} button
+     */
+    constructor(button) {
+        super();
+        this.#button = button;
+        Context.layout.addMenu(this);
+    }
+
+    /**
+     * @param {BoxPointer.PopupAnimation} animation
+     */
+    open(animation) {
+        const menu = this.#button?.notifySelf(ButtonEvent.RequestMenu);
+        if (!menu || typeof menu.open !== Type.Function) return;
+        this.#button.menu = menu;
+        if (animation) menu.open(animation);
+        else menu.toggle();
+    }
+
+    destroy() {
+        if (!this.#actor) return;
+        Context.layout.removeMenu(this);
+        this.#button = null;
+        this.#actor = null;
+    }
+
+}
 
 export class Button extends Component {
 
@@ -69,11 +123,22 @@ export class Button extends Component {
     #css = null;
 
     /** @type {LongPressAction} */
-    #longPressAction = new LongPressAction(this, () => this.cancelDragEvents().notifySelf(ButtonEvent.LongPress));
+    #longPressAction = new LongPressAction(this, () => this.#longPress());
+
+    /** @type {ButtonMenuTrigger} */
+    #menuTrigger = new ButtonMenuTrigger(this);
+
+    /** @type {PopupMenu.PopupMenu} */
+    #menu = null;
 
     /** @type {St.Widget} */
     get display() {
         return this.#display;
+    }
+
+    /** @type {PopupMenu.PopupMenu} */
+    get menu() {
+        return this.#menu;
     }
 
     /** @type {boolean} */
@@ -87,6 +152,18 @@ export class Button extends Component {
         this.#isActive = value;
         if (this.#isActive) this.#display.add_style_pseudo_class(PseudoClass.Active);
         else this.#display.remove_style_pseudo_class(PseudoClass.Active);
+    }
+
+    /** @param {PopupMenu.PopupMenu} menu */
+    set menu(menu) {
+        if (this.#menu || !menu ||
+            typeof menu.open !== Type.Function ||
+            typeof menu.connect !== Type.Function) return;
+        this.#menuTrigger?.destroy();
+        this.#menuTrigger = null;
+        this.#menu = menu;
+        this.#menu.connect(Event.OpenStateChanged, () => this.#focus());
+        Context.layout.addMenu(this.#menu);
     }
 
     /**
@@ -152,6 +229,10 @@ export class Button extends Component {
     #destroy() {
         this.#longPressAction?.destroy();
         this.#longPressAction = null;
+        this.#menuTrigger?.destroy();
+        this.#menuTrigger = null;
+        this.#menu?.destroy();
+        this.#menu = null;
         this.#css = null;
         this.#display = null;
     }
@@ -176,17 +257,28 @@ export class Button extends Component {
         this.notifySelf(ButtonEvent.Press);
     }
 
+    #longPress() {
+        if (this.cancelDragEvents().notifySelf(ButtonEvent.LongPress)) return;
+        this.#openMenu();
+    }
+
     #click() {
         const event = Clutter.get_current_event();
         if (!event) return;
         const button = event.type() === Clutter.EventType.BUTTON_RELEASE ? event.get_button() : null;
-        this.notifySelf(ButtonEvent.Click, { event, button });
+        if (this.notifySelf(ButtonEvent.Click, { event, button })) return;
+        this.#openMenu();
     }
 
     #focus() {
-        if (this.actor.has_key_focus()) this.#display.add_style_pseudo_class(PseudoClass.Focus);
+        if (this.actor.has_key_focus() || this.#menu?.isOpen) this.#display.add_style_pseudo_class(PseudoClass.Focus);
         else this.#display.remove_style_pseudo_class(PseudoClass.Focus);
         this.notifySelf(ButtonEvent.Focus);
+    }
+
+    #openMenu() {
+        if (this.#menu) this.#menu.toggle();
+        else this.#menuTrigger?.open();
     }
 
 }
