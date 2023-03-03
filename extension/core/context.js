@@ -137,7 +137,7 @@ export class Context {
     destroy() {
         try {
             this.#destroy();
-        } catch(e) {
+        } catch (e) {
             console.error(`${this.#extensionInfo?.metadata?.name} unable to destroy context.`, e);
         } finally {
             this.#extensionInfo = null;

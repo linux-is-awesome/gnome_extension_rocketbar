@@ -2,6 +2,10 @@
 
 class Extension {
 
+    /**
+     * @typedef {import('./core/context.js').Context} Context
+     * @type {Context}
+     */
     #instance = null;
 
     constructor() {

@@ -33,6 +33,7 @@ export const Event = {
     OverviewHiding: 'hiding',
     ScaleFactor: 'notify::scale-factor',
     Repaint: 'repaint',
+    OpenStateChanged: 'open-state-changed',
     FocusWindow: 'notify::focus-window',
     DemandsAttention: 'window-demands-attention',
     WindowAdded: 'window_added',
