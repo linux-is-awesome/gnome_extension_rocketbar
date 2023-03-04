@@ -5,7 +5,7 @@ import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import { Context } from '../../core/context.js';
 import { Type, Event } from '../../core/enums.js';
-import { Component } from './component.js';
+import { Component, ComponentLocation } from './component.js';
 import { Property } from '../../core/enums.js';
 import { LongPressAction } from './longPressAction.js'; 
 import { Gradient } from '../../utils/gradient.js';
@@ -88,25 +88,48 @@ class ButtonMenuTrigger extends DummyEventEmitter {
     constructor(button) {
         super();
         this.#button = button;
+        Context.signals.add(this, [this.#button.actor, Event.KeyPress, (_, event) => this.#keyPress(event)]);
         Context.layout.addMenu(this);
     }
 
     /**
      * @param {BoxPointer.PopupAnimation} animation
+     * @returns {PopupMenu|null}
      */
     open(animation) {
         const menu = this.#button?.notifySelf(ButtonEvent.RequestMenu);
-        if (!menu || typeof menu.open !== Type.Function) return;
+        if (typeof menu?.open !== Type.Function || typeof menu?.toggle !== Type.Function) return null;
         this.#button.menu = menu;
         if (animation) menu.open(animation);
         else menu.toggle();
+        return menu;
     }
 
     destroy() {
         if (!this.#actor) return;
+        Context.signals.removeAll(this);
         Context.layout.removeMenu(this);
         this.#button = null;
         this.#actor = null;
+    }
+
+    /**
+     * @param {Clutter.Event} event
+     * @returns {number}
+     */
+    #keyPress(event) {
+        let state = event.get_state();
+        state &= ~Clutter.ModifierType.LOCK_MASK;
+        state &= ~Clutter.ModifierType.MOD2_MASK;
+        state &= Clutter.ModifierType.MODIFIER_MASK;
+        if (state) return Clutter.EVENT_PROPAGATE;
+        const key = this.#button.location === ComponentLocation.Top ? Clutter.KEY_Down : Clutter.KEY_Up;
+        if (event.get_key_symbol() !== key) return Clutter.EVENT_PROPAGATE;
+        const menu = this.open();
+        if (!menu) return Clutter.EVENT_PROPAGATE;
+        if (typeof menu.actor?.navigate_focus === Type.Function)
+            menu.actor.navigate_focus(null, St.DirectionType.TAB_FORWARD, false);
+        return Clutter.EVENT_STOP;
     }
 
 }
@@ -156,9 +179,9 @@ export class Button extends Component {
 
     /** @param {PopupMenu.PopupMenu} menu */
     set menu(menu) {
-        if (this.#menu || !menu ||
-            typeof menu.open !== Type.Function ||
-            typeof menu.connect !== Type.Function) return;
+        if (this.#menu ||
+            typeof menu?.open !== Type.Function ||
+            typeof menu?.connect !== Type.Function) return;
         this.#menuTrigger?.destroy();
         this.#menuTrigger = null;
         this.#menu = menu;

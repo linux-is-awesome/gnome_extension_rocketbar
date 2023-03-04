@@ -15,6 +15,7 @@ export const Event = {
     DragEnd: 'drag-end',
     ButtonPress: 'button-press-event',
     ButtonRelease: 'button-release-event',
+    KeyPress: 'key-press-event',
     Touch: 'touch-event',
     Leave: 'leave-event',
     FontName: 'notify::font-name',
