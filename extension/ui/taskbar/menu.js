@@ -6,6 +6,7 @@ import { AppMenu } from '../../core/legacy.js';
 import { Context } from '../../core/context.js';
 import { ComponentLocation } from '../base/component.js';
 import { Config } from '../../utils/config.js';
+import { Labels } from '../../core/labels.js';
 
 const UNWANTED_STYLE_CLASS = 'app-menu';
 const DEFAULT_STYLE_CLASS = 'panel-menu aggregate-menu rocketbar__popup-menu';
@@ -111,7 +112,7 @@ export class Menu extends AppMenu {
         if (!this.#config.showFavorites) return this._toggleFavoriteItem.hide();
         const isFavorite = this._appFavorites?.isFavorite(this._app?.id);
         if (isFavorite) return;
-        this._toggleFavoriteItem.label?.set_text('Pin');
+        this._toggleFavoriteItem.label?.set_text(Labels.Pin);
     }
 
     _updateWindowsSection() {
