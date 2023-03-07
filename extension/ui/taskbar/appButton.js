@@ -228,7 +228,7 @@ export class AppButton extends Button {
         this.connect(Event.Hover, () => this.#hover());
         Context.signals.add(this,
             [global.display, Event.FocusWindow, () => this.#handleFocusedWindow(),
-                             Event.DemandsAttention, (_, window) => this.#handleUrgentWindow(window)],
+                             Event.WindowDemandsAttention, (_, window) => this.#handleUrgentWindow(window)],
             [global.window_manager, Event.Minimize, (_, actor) => this.#handleWindowState(actor?.meta_window),
                                     Event.Unminimize, (_, actor) => this.#handleWindowState(actor?.meta_window)]);
     }

@@ -85,6 +85,7 @@ class NotificationService {
         this.#updateJob?.destroy();
         Context.signals.removeAll(this);
         this.#handlers = null;
+        this.#updateJob = null;
         return true;
     }
 
@@ -142,6 +143,7 @@ class NotificationService {
     }
 
     #queueUpdate() {
+        if (!this.#updateJob) return;
         this.#updateJob.reset().then(() => this.#update()).catch();
     }
 
