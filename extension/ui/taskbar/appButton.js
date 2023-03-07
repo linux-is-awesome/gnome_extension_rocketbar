@@ -14,6 +14,7 @@ import { Animation, AnimationType, AnimationDuration } from '../base/animation.j
 import { AppIcon, AppIconAnimation } from './appIcon.js';
 import { Indicators } from './indicators.js';
 import { Menu } from './menu.js';
+import { AppSoundVolumeControl } from '../../services/soundVolumeService.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
 
@@ -127,6 +128,9 @@ export class AppButton extends Button {
     /** @type {CycleWindowsQueue} */
     #cycleWindowsQueue = null;
 
+    /** @type {AppSoundVolumeControl} */
+    #soundVolumeControl = null;
+
     /** @type {Promise} */
     #destroyJob = null;
 
@@ -175,6 +179,11 @@ export class AppButton extends Button {
         return this.#windowsCount;
     }
 
+    /** @type {AppSoundVolumeControl} */
+    get soundVolumeControl() {
+        return this.#soundVolumeControl;
+    }
+
     /** @param {boolean} value */
     set isActive(value) {
         if (!this.isValid) return;
@@ -216,6 +225,8 @@ export class AppButton extends Button {
         Context.signals.removeAll(this);
         this.#service?.destroy();
         this.#service = null;
+        this.#soundVolumeControl?.destroy();
+        this.#soundVolumeControl = null;
         this.#layout = null;
         this.#appIcon = null;
         this.#indicators = null;
@@ -274,6 +285,8 @@ export class AppButton extends Button {
             this.#indicators.destroy();
             this.#indicators = null;
         }
+        if (this.#soundVolumeControl) return;
+        this.#soundVolumeControl = new AppSoundVolumeControl(this.#app);
     }
 
     #updateStyle() {
