@@ -1,4 +1,4 @@
-/* exported DefaultSoundVolumeControlClient */
+/* exported DefaultSoundVolumeControlClient, AppSoundVolumeControl */
 
 import Gio from 'gi://Gio';
 import Gvc from 'gi://Gvc';
@@ -269,6 +269,7 @@ class AppSoundStream extends SoundStream {
 
 class AppSoundVolumeService {
 
+    /** @type {AppSoundVolumeControl} */
     #controls = new Set();
 
     /** @type {Map<number, AppSoundStream>} */
@@ -300,12 +301,18 @@ class AppSoundVolumeService {
         return true;
     }
 
+    /**
+     * @param {AppSoundVolumeControl} control
+     */
     addControl(control) {
         if (!this.#controls || this.#controls.has(control)) return;
         this.#controls.add(control);
         this.#queueUpdate();
     }
 
+    /**
+     * @param {AppSoundVolumeControl} control
+     */
     removeControl(control) {
         if (!this.#controls?.has(control)) return;
         this.#controls.delete(control);
@@ -315,6 +322,9 @@ class AppSoundVolumeService {
         this.#queueUpdate();
     }
 
+    /**
+     * @param {Gvc.MixerControl} mixer
+     */
     #addStreams(mixer) {
         const mixerStreams = mixer.get_streams();
         if (!mixerStreams?.length) return;
@@ -325,6 +335,10 @@ class AppSoundVolumeService {
         }
     }
 
+    /**
+     * @param {Gvc.MixerControl} mixer
+     * @param {number} streamId
+     */
     #addStream(mixer, streamId) {
         if (!this.#streams || this.#streams.has(streamId)) return;
         const mixerStream = mixer?.lookup_stream_id(streamId);
@@ -335,6 +349,9 @@ class AppSoundVolumeService {
         this.#queueUpdate();
     }
 
+    /**
+     * @param {number} streamId
+     */
     #removeStream(streamId) {
         if (!this.#streams?.has(streamId)) return;
         this.#streams.get(streamId).destroy();
@@ -426,6 +443,9 @@ export class AppSoundVolumeControl extends SoundVolumeControl {
         AppSoundVolumeControl.#service?.update();
     }
 
+    /**
+     * @param {AppSoundStream} stream
+     */
     addStream(stream) {
         if (!this.#canAcceptStream(stream)) return;
         const isInputStream = stream.isInput;
@@ -433,46 +453,76 @@ export class AppSoundVolumeControl extends SoundVolumeControl {
         else if (!isInputStream && !this.#outputStreams.has(stream)) this.#outputStreams.add(stream);
     }
 
+    /**
+     * @param {AppSoundStream} stream
+     */
     removeStream(stream) {
         if (!stream) return;  
         if (this.#inputStreams?.has(stream)) this.#inputStreams.delete(stream);
         else if (this.#outputStreams?.has(stream)) this.#outputStreams.delete(stream);
     }
 
+    /**
+     * @returns {number} positive float values 0..0.1...0.8..0.9..1
+     */
     getInputVolume() {
         return this.#getVolume(this.#inputStreams);
     }
 
+    /**
+     * @returns {number} positive float values 0..0.1...0.8..0.9..1
+     */
     getOutputVolume() {
         return this.#getVolume(this.#outputStreams);
     }
 
+    /**
+     * @param {number} volume positive float values 0..0.1...0.8..0.9..1
+     */
     setInputVolume(volume) {
         this.#setVolume(this.#inputStreams, volume);
     }
 
+    /**
+     * @param {number} volume positive float values 0..0.1...0.8..0.9..1
+     */
     setOutputVolume(volume) {
         this.#setVolume(this.#outputStreams, volume);
     }
 
+    /**
+     * @param {number} volume negative or positive integer -100..-1, 1..100
+     */
     addOutputVolume(volume) {
         if (!volume || !this.hasOutput) return;
         volume = this.#getVolume(this.#outputStreams) + (volume / 100);
         this.#setVolume(this.#outputStreams, volume);
-        this.#showOSD([...this.#outputStreams][0], false);
+        this.showOSD(this.#outputStreams, false);
     }
 
     toggleOutputMute() {
         if (!this.hasOutput) return;
-        const isMuted = this.#isMuted(this.#outputStreams);
-        this.#toggleMute(this.#outputStreams, isMuted);
-        this.showOSD([...this.#outputStreams][0], !isMuted);
+        const isMuted = this.#toggleMute(this.#outputStreams);
+        this.showOSD(this.#outputStreams, isMuted);
     }
 
-    showOSD(stream, isMuted) {
-        super.showOSD(stream, isMuted, this.#appName);
+    /**
+     * @param {Set<AppSoundStream>} streams
+     * @param {boolean} [isMuted]
+     */
+    showOSD(streams, isMuted) {
+        if (!streams?.size) return;
+        super.showOSD([...streams][0], isMuted, this.#appName);
     }
 
+    /**
+     * Note: Sometimes name of the app stream is not equal to the name of the app but it contains name of the app.
+     *       For example: Google Chrome create input streams called 'Google Chrome input'.
+     *       So using String.includes() function to identify app streams.
+     *
+     * @param {AppSoundStream} stream
+     * @returns {boolean}
+     */
     #canAcceptStream(stream) {
         if (!this.#inputStreams || !this.#outputStreams ||
             stream instanceof AppSoundStream === false) return false;
@@ -492,6 +542,10 @@ export class AppSoundVolumeControl extends SoundVolumeControl {
         this.#parentAppName = parentAppName ?? this.#appName;
     }
 
+    /**
+     * @param {Meta.Window[]} windows
+     * @returns {string}
+     */
     #getParentAppName(windows) {
         const appSystem = Shell.AppSystem.get_default();
         for (let i = 0, l = windows.length; i < l; ++i) {
@@ -513,6 +567,10 @@ export class AppSoundVolumeControl extends SoundVolumeControl {
         return null;
     }
 
+    /**
+     * @param {Set<AppSoundStream>} streams
+     * @returns {number}
+     */
     #getVolume(streams) {
         if (!streams?.size) return SOUND_STREAM_MIN_VOLUME;
         let result = SOUND_STREAM_MAX_VOLUME;
@@ -522,6 +580,10 @@ export class AppSoundVolumeControl extends SoundVolumeControl {
         return result;
     }
 
+    /**
+     * @param {Set<AppSoundStream>} streams
+     * @param {number} volume
+     */
     #setVolume(streams, volume) {
         if (!streams?.size) return;
         for (const stream of streams) {
@@ -530,14 +592,24 @@ export class AppSoundVolumeControl extends SoundVolumeControl {
         }
     }
 
-    #toggleMute(streams, isMuted) {
+    /**
+     * @param {Set<AppSoundStream>} streams
+     * @returns {boolean}
+     */
+    #toggleMute(streams) {
         if (!streams?.size) return;
+        const isMuted = this.#isMuted(streams);
         for (const stream of streams) {
             if (stream.isMuted !== isMuted) continue;
             stream.toggleMute();
         }
+        return !isMuted;
     }
 
+    /**
+     * @param {Set<AppSoundStream>} streams
+     * @returns {boolean}
+     */
     #isMuted(streams) {
         if (!streams?.size) return;
         for (const stream of streams) {
