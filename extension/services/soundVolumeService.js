@@ -65,7 +65,9 @@ class SoundStream {
 
     /** @type {string} */
     get name() {
-        return this.#stream?.get_port()?.human_port ?? this.#stream?.name;
+        if (!this.#stream) return null;
+        const portName = this.#stream.get_ports()?.length ? this.#stream.get_port().human_port : null;
+        return portName ?? this.#stream.name;
     }
 
     /** @type {number} positive float values 0..0.1...0.8..0.9..1 */
@@ -364,16 +366,16 @@ class AppSoundVolumeService {
     }
 
     #update() {
-        if (!this.#streams) return;
+        if (!this.#streams?.size) return;
         const validStreams = new Map();
-        for (const control of this.#controls) {
-            for (const appStream of this.#streams) {
-                if (!appStream.isValid) {
-                    control.removeStream(appStream);
+        for (const control of this.#controls) { 
+            for (const [id, stream] of this.#streams) {
+                if (!stream.isValid) {
+                    control.removeStream(stream);
                     continue;
                 }
-                control.addStream(appStream);
-                validStreams.set(appStream.id, appStream);
+                control.addStream(stream);
+                validStreams.set(id, stream);
             }
         }
         this.#streams = validStreams;
