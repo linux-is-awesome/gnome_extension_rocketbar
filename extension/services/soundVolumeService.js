@@ -561,7 +561,7 @@ export class AppSoundVolumeControl extends SoundVolumeControl {
                 if (!searchResult?.length) continue;
                 for (const appId of searchResult) {
                     const app = appSystem.lookup_app(appId);
-                    if (!app?.get_windows()?.length) continue;
+                    if (!app) continue;
                     return app.get_name();
                 }
             }
