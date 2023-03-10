@@ -1,15 +1,20 @@
 /* exported Menu */
 
+/** @typedef {import('./appButton.js').AppButton} AppButton */
+
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
-import { AppMenu } from '../../core/legacy.js';
+import { AppMenu, Slider, Ornament } from '../../core/legacy.js';
+import { PopupSubMenuMenuItem, PopupSeparatorMenuItem, PopupBaseMenuItem } from '../../core/legacy.js';
 import { Context } from '../../core/context.js';
+import { Event, Type } from '../../core/enums.js';
 import { ComponentLocation } from '../base/component.js';
 import { Config } from '../../utils/config.js';
 import { Labels } from '../../core/labels.js';
 
 const UNWANTED_STYLE_CLASS = 'app-menu';
-const DEFAULT_STYLE_CLASS = 'panel-menu aggregate-menu rocketbar__popup-menu';
+const DEFAULT_STYLE_CLASS = 'rocketbar__popup-menu';
+const SLIDER_ICON_STYLE_CLASS = 'popup-menu-icon';
 
 /** @type {Object.<string, boolean>} */
 const DefaultProps = {
@@ -17,10 +22,20 @@ const DefaultProps = {
     showSingleWindows: true
 };
 
-/** @enum {string} */
-const ConfigFields = {
-    isolateWorkspaces: 'taskbar-isolate-workspaces',
-    showFavorites: 'taskbar-show-favorites'
+/** @type {Object.<string, boolean>} */
+const SliderMenuItemProps = {
+    activate: false
+};
+
+/** @type {Object.<string, string>} */
+const SliderIconProps = {
+    style_class: SLIDER_ICON_STYLE_CLASS
+};
+
+/** @type {Object.<string, boolean|number>} */
+const SliderValueProps = {
+    y_expand: true,
+    y_align: Clutter.ActorAlign.CENTER
 };
 
 /** @type {Object.<number, number>} */
@@ -29,16 +44,172 @@ const MenuPosition = {
     [ComponentLocation.Bottom]: St.Side.BOTTOM
 };
 
-export class Menu extends AppMenu {
+/** @enum {string} */
+const ConfigFields = {
+    isolateWorkspaces: 'taskbar-isolate-workspaces',
+    showFavorites: 'taskbar-show-favorites'
+};
+
+/** @enum {string} */
+const SoundVolumeIcon = {
+    Output: 'audio-speakers-symbolic',
+    Input: 'audio-input-microphone-symbolic'
+};
+
+class SliderMenuItem {
+
+    /** @type {PopupBaseMenuItem} */
+    #actor = new PopupBaseMenuItem(SliderMenuItemProps);
+
+    /** @type {Slider} */
+    #slider = new Slider(0);
+
+    /** @type {St.Icon} */
+    #icon = new St.Icon(SliderIconProps);
+
+    /** @type {St.Label} */
+    #value = new St.Label(SliderValueProps);
+
+    /** @type {PopupBaseMenuItem} */
+    get actor() {
+        return this.#actor;
+    }
+
+    /** @type {Slider} */
+    get slider() {
+        return this.#slider;
+    }
+
+    /** @param {string} value */
+    set icon(value) {
+        if (typeof value !== Type.String) this.#icon.set_icon_name(null);
+        else this.#icon.set_icon_name(value);
+    }
+
+    /** @param {number} value */
+    set value(value) {
+        if (typeof value !== Type.Number) this.#value.set_text(null);
+        else this.#value.set_text(Math.round(value).toString());
+    }
 
     /**
-     * @typedef {import('./appButton.js').AppButton} AppButton
-     * @type {AppButton}
+     * @param {(sender: SliderMenuItem) => void} callback
+     * @param {string} icon
      */
+    constructor(callback, icon) {
+        this.#actor.setOrnament(Ornament.HIDDEN);
+        this.#actor.add_child(this.#icon);
+        this.#actor.add_child(this.#slider);
+        this.#actor.add_child(this.#value);
+        this.icon = icon;
+        this.#actor.connect(Event.KeyPress, (_, event) => this.#slider.emit(Event.KeyPress, event));
+        if (typeof callback !== Type.Function) return;
+        this.#slider.connect(Event.ValueChanged, () => callback(this));
+    }
+
+}
+
+class MenuSection {
+
+    /** @type {PopupSubMenuMenuItem} */
+    #actor = null;
+
+    /** @type {PopupSubMenuMenuItem} */
+    get actor() {
+        return this.#actor;
+    }
+
+    /** @type {PopupSubMenu} */
+    get menu() {
+        return this.#actor?.menu;
+    }
+
+    /** @type {boolean} */
+    get isOpen() {
+        return this.#actor?.menu?.isOpen;
+    }
+
+    /**
+     * @param {string} title
+     */
+    constructor(title) {
+        this.#actor = new PopupSubMenuMenuItem(title);
+    }
+
+}
+
+class SoundVolumeControlSection extends MenuSection {
+
+    /** @type {AppButton} */
+    #appButton = null;
+
+    /** @type {SliderMenuItem} */
+    #inputVolumeSlider = new SliderMenuItem(sender => this.#setVolume(sender), SoundVolumeIcon.Input);
+
+    /** @type {SliderMenuItem} */
+    #outputVolumeSlider = new SliderMenuItem(sender => this.#setVolume(sender), SoundVolumeIcon.Output);
+
+    /** @type {boolean} */
+    #isSyncing = false;
+
+    /**
+     * @param {AppButton} appButton
+     */
+    constructor(appButton) {
+        super(Labels.SoundVolumeControl);
+        this.#appButton = appButton;
+        this.menu.addMenuItem(this.#inputVolumeSlider.actor);
+        this.menu.addMenuItem(this.#outputVolumeSlider.actor);
+        this.menu.connect(Event.OpenStateChanged, () => this.#syncVolume());
+    }
+
+    update() {
+        if (!this.actor) return;
+        const soundVolumeControl = this.#appButton?.soundVolumeControl;
+        if (!soundVolumeControl?.hasInput && !soundVolumeControl?.hasOutput) return this.actor.hide();
+        else this.actor.show();
+        this.#inputVolumeSlider.actor.visible = soundVolumeControl.hasInput;
+        this.#outputVolumeSlider.actor.visible = soundVolumeControl.hasOutput;
+    }
+
+    /**
+     * @param {SliderMenuItem} sender
+     */
+    #setVolume(sender) {
+        if (this.#isSyncing) return;
+        const soundVolumeControl = this.#appButton?.soundVolumeControl;
+        if (!soundVolumeControl) return;
+        const slider = sender?.slider;
+        if (!slider) return;
+        if (sender === this.#inputVolumeSlider) {
+            soundVolumeControl.inputVolume = slider.value;
+        } else if (sender === this.#outputVolumeSlider) {
+            soundVolumeControl.outputVolume = slider.value;
+        }
+    }
+
+    async #syncVolume() {
+        if (!this.isOpen) return;
+        const soundVolumeControl = this.#appButton?.soundVolumeControl;
+        if (!soundVolumeControl) return;
+        this.#isSyncing = true;
+        this.#inputVolumeSlider.slider.value = soundVolumeControl.inputVolume;
+        this.#outputVolumeSlider.slider.value = soundVolumeControl.outputVolume;
+        this.#isSyncing = false;
+    }
+
+}
+
+export class Menu extends AppMenu {
+
+    /** @type {AppButton} */
     #appButton = null;
 
     /** @type {boolean} */
-    #hasValidApp = true;
+    #hasValidAppId = true;
+
+    /** @type {SoundVolumeControlSection} */
+    #soundVolumeControlSection = null;
 
     /** @type {Object.<string, boolean>} */
     #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
@@ -52,22 +223,21 @@ export class Menu extends AppMenu {
         this.actor.remove_style_class_name(UNWANTED_STYLE_CLASS);
         this.actor.add_style_class_name(DEFAULT_STYLE_CLASS);
         this.setApp(appButton.app);
-        this.#hasValidApp = this._appSystem?.lookup_app(this._app?.id) ? true : false;
-        // TODO
-        this.moveMenuItem(this._quitItem, this.numMenuItems);
+        this.#hasValidAppId = this._appSystem?.lookup_app(this._app?.id) ? true : false;
+        this.#createSections();
         this._updateDetailsVisibility();
     }
 
     /**
      * Note: There is a bug in the AppMenu that leads to exceptions while destroying the menu.
-     *       Set this._app as null to avoid the exceptions.
-     *       
+     *       Set this._app as null to avoid the exceptions. 
      */
     destroy() {
         Context.signals.removeAll(this);
         this.close(false);
         this._app?.disconnectObject(this);
         this._app = null;
+        this.#soundVolumeControlSection = null;
         super.destroy();
     }
 
@@ -76,7 +246,15 @@ export class Menu extends AppMenu {
      */
     open(animation) {
         this.actor._arrowSide = MenuPosition[this.#appButton.location];
+        this.#soundVolumeControlSection?.update();
         super.open(animation);
+    }
+
+    #createSections() {
+        this.#soundVolumeControlSection = new SoundVolumeControlSection(this.#appButton);
+        this.addMenuItem(this.#soundVolumeControlSection.actor);
+        this.addMenuItem(new PopupSeparatorMenuItem());
+        this.moveMenuItem(this._quitItem, this.numMenuItems);
     }
 
     /**
@@ -129,7 +307,7 @@ export class Menu extends AppMenu {
     }
 
     _updateDetailsVisibility() {
-        if (this._app && this.#hasValidApp) super._updateDetailsVisibility();
+        if (this._app && this.#hasValidAppId) super._updateDetailsVisibility();
         else this._detailsItem.hide();
     }
 

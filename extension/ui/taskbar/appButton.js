@@ -312,6 +312,7 @@ export class AppButton extends Button {
         if (!this.#isActive || !this.#windowsCount) this.#handleFocusedWindow();
         this.#handleStartup();
         this.#setWindowsHooks();
+        this.#soundVolumeControl?.update();
     }
 
     #handleStartup() {
