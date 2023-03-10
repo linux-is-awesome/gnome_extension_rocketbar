@@ -413,6 +413,26 @@ export class AppSoundVolumeControl extends SoundVolumeControl {
         return this.#outputStreams?.size > 0;
     }
 
+    /** @type {number} positive float values 0..0.1...0.8..0.9..1 */
+    get inputVolume() {
+        return this.#getVolume(this.#inputStreams);
+    }
+
+    /** @type {number} positive float values 0..0.1...0.8..0.9..1 */
+    get outputVolume() {
+        return this.#getVolume(this.#outputStreams);
+    }
+
+    /** @param {number} volume positive float values 0..0.1...0.8..0.9..1 */
+    set inputVolume(volume) {
+        this.#setVolume(this.#inputStreams, volume);
+    }
+
+    /** @param {number} volume positive float values 0..0.1...0.8..0.9..1 */
+    set outputVolume(volume) {
+        this.#setVolume(this.#outputStreams, volume);
+    }
+
     /**
      * @param {Shell.App} app
      */
@@ -462,34 +482,6 @@ export class AppSoundVolumeControl extends SoundVolumeControl {
         if (!stream) return;  
         if (this.#inputStreams?.has(stream)) this.#inputStreams.delete(stream);
         else if (this.#outputStreams?.has(stream)) this.#outputStreams.delete(stream);
-    }
-
-    /**
-     * @returns {number} positive float values 0..0.1...0.8..0.9..1
-     */
-    getInputVolume() {
-        return this.#getVolume(this.#inputStreams);
-    }
-
-    /**
-     * @returns {number} positive float values 0..0.1...0.8..0.9..1
-     */
-    getOutputVolume() {
-        return this.#getVolume(this.#outputStreams);
-    }
-
-    /**
-     * @param {number} volume positive float values 0..0.1...0.8..0.9..1
-     */
-    setInputVolume(volume) {
-        this.#setVolume(this.#inputStreams, volume);
-    }
-
-    /**
-     * @param {number} volume positive float values 0..0.1...0.8..0.9..1
-     */
-    setOutputVolume(volume) {
-        this.#setVolume(this.#outputStreams, volume);
     }
 
     /**
