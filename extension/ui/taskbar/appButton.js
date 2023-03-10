@@ -30,6 +30,7 @@ const ConfigFields = {
     enableIndicators: 'appbutton-enable-indicators',
     enableMinimizeAction: 'appbutton-enable-minimize-action',
     activateRunningBehavior: 'appbutton-running-app-activate-behavior',
+    enableSoundControl: 'appbutton-enable-sound-control',
     iconSize: 'appbutton-icon-size',
     iconHPadding: 'appbutton-icon-padding',
     iconVPadding: 'appbutton-icon-vertical-padding',
@@ -256,6 +257,7 @@ export class AppButton extends Button {
         if (!this.isValid) return;
         switch (settingsKey) {
             case ConfigFields.enableIndicators:
+            case ConfigFields.enableSoundControl:
                 return this.#toggleFeatures();
             case ConfigFields.isolateWorkspaces:
             case ConfigFields.enableMinimizeAction:
@@ -277,7 +279,7 @@ export class AppButton extends Button {
     }
 
     #toggleFeatures() {
-        const { enableIndicators } = this.#config;
+        const { enableIndicators, enableSoundControl } = this.#config;
         if (enableIndicators && !this.#indicators) {
             this.#indicators = new Indicators(this).setParent(this.#layout);
             if (!this.#isStartupRequired) this.#indicators.rerender();
@@ -285,8 +287,12 @@ export class AppButton extends Button {
             this.#indicators.destroy();
             this.#indicators = null;
         }
-        if (this.#soundVolumeControl) return;
-        this.#soundVolumeControl = new AppSoundVolumeControl(this.#app);
+        if (enableSoundControl && !this.#soundVolumeControl) {
+            this.#soundVolumeControl = new AppSoundVolumeControl(this.#app);
+        } else if (!enableSoundControl && this.#soundVolumeControl) {
+            this.#soundVolumeControl.destroy();
+            this.#soundVolumeControl = null;
+        }
     }
 
     #updateStyle() {
