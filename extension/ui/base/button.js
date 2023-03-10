@@ -151,7 +151,7 @@ export class Button extends Component {
     /** @type {ButtonMenuTrigger} */
     #menuTrigger = new ButtonMenuTrigger(this);
 
-    /** @type {PopupMenu.PopupMenu} */
+    /** @type {PopupMenu} */
     #menu = null;
 
     /** @type {St.Widget} */
@@ -159,7 +159,7 @@ export class Button extends Component {
         return this.#display;
     }
 
-    /** @type {PopupMenu.PopupMenu} */
+    /** @type {PopupMenu} */
     get menu() {
         return this.#menu;
     }
@@ -177,7 +177,7 @@ export class Button extends Component {
         else this.#display.remove_style_pseudo_class(PseudoClass.Active);
     }
 
-    /** @param {PopupMenu.PopupMenu} menu */
+    /** @param {PopupMenu} menu */
     set menu(menu) {
         if (this.#menu ||
             typeof menu?.open !== Type.Function ||

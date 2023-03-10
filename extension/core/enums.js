@@ -34,6 +34,7 @@ export const Event = {
     ScaleFactor: 'notify::scale-factor',
     Repaint: 'repaint',
     OpenStateChanged: 'open-state-changed',
+    ValueChanged: 'notify::value',
     FocusWindow: 'notify::focus-window',
     WindowDemandsAttention: 'window-demands-attention',
     WindowAdded: 'window_added',

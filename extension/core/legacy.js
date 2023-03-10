@@ -6,5 +6,6 @@ export const Keyboard = imports.ui.status.keyboard
 export const SwitcherPopup = imports.ui.switcherPopup;
 export const { WorkspaceSwitcherPopup } = imports.ui.workspaceSwitcherPopup;
 export const { AppMenu } = imports.ui.appMenu;
-export const PopupMenu = imports.ui.popupMenu;
+export const { PopupMenu, PopupMenuSection, PopupSubMenuMenuItem, PopupSeparatorMenuItem, PopupBaseMenuItem, Ornament } = imports.ui.popupMenu;
 export const AppFavorites = imports.ui.appFavorites;
+export const { Slider } = imports.ui.slider;
