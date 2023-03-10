@@ -74,8 +74,12 @@
 
 .rocketbar__popup-menu {
     /* shrink menu width as much as possible */
-    max-width: 0px;
-    min-width: 300px;
+    max-width: 0em;
+    min-width: 20em;
+}
+.rocketbar__popup-menu
+.popup-menu-ornament {
+    width: 0 !important;
 }
 .rocketbar__popup-menu
 .popup-separator-menu-item {
