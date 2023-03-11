@@ -11,6 +11,11 @@ export class LayoutManager {
     /** @type {Map<*, () => void>} */
     #clients = new Map();
 
+    /** @type {boolean} */
+    get isStartingUp() {
+        return Main.layoutManager?._startingUp;
+    }
+
     destroy() {
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
@@ -73,7 +78,7 @@ export class LayoutManager {
         if (!this.#clients || !client ||
             typeof callback !== Type.Function ||
             typeof this.#clients.get(client) === Type.Function) return;
-        if (!Context.isSessionStartingUp) {
+        if (!this.isStartingUp) {
             this.#clients.set(client, null);
             callback();
             return;
@@ -113,11 +118,6 @@ export class LayoutManager {
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
     }
-
-    /**
-     * TODO: return target parent based on input params
-     */
-    requestParent(...args) {}
 
     #initClients() {
         this.#processClients();
