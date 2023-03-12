@@ -24,7 +24,7 @@ const ConfigFields = {
     isolateWorkspaces: 'taskbar-isolate-workspaces',
     enableIndicators: 'appbutton-enable-indicators',
     enableMinimizeAction: 'appbutton-enable-minimize-action',
-    activateRunningBehavior: 'appbutton-running-app-activate-behavior',
+    activateBehavior: 'appbutton-running-app-activate-behavior',
     enableSoundControl: 'appbutton-enable-sound-control',
     iconSize: 'appbutton-icon-size',
     iconHPadding: 'appbutton-icon-padding',
@@ -256,7 +256,7 @@ export class AppButton extends Button {
                 return this.#toggleFeatures();
             case ConfigFields.isolateWorkspaces:
             case ConfigFields.enableMinimizeAction:
-            case ConfigFields.activateRunningBehavior:
+            case ConfigFields.activateBehavior:
                 return;
             case ConfigFields.backlightColor:
             case ConfigFields.backlightIntensity:
@@ -403,10 +403,10 @@ export class AppButton extends Button {
         if (isCtrlPressed && isMiddleButton) return this.#closeFirstWindow();
         const newWindow = this.#canOpenNewWindow && (isCtrlPressed || isMiddleButton);
         if (newWindow || !this.#isAppRunning) return this.#openNewWindow(!isCtrlPressed && !isMiddleButton && isOverview);
-        const { isolateWorkspaces, activateRunningBehavior, enableMinimizeAction } = this.#config;
+        const { isolateWorkspaces, activateBehavior, enableMinimizeAction } = this.#config;
         if (!this.#windowsCount) {
             if (!isolateWorkspaces) return this.#openNewWindow(isOverview); 
-            switch (activateRunningBehavior) {
+            switch (activateBehavior) {
                 case ActivateBehavior.MoveWindows: return this.#moveWindows();
                 case ActivateBehavior.NewWindow:
                 default: return this.#openNewWindow(isOverview);

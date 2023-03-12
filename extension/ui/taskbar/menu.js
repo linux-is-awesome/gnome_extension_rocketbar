@@ -49,14 +49,14 @@ const MenuPosition = {
 
 /** @type {Object.<string, string>} */
 const ActivateBehaviorCheckboxGroup = {
-    [ActivateBehavior.NewWindow]: 'New Window',
-    [ActivateBehavior.MoveWindows]: 'Move Windows'
+    [ActivateBehavior.NewWindow]: Labels.NewWindow,
+    [ActivateBehavior.MoveWindows]: Labels.MoveWindows
 };
 
 /** @type {Object.<string, string>} */
 const DemandsAttentionBehaviorCheckboxGroup = {
-    [DemandsAttentionBehavior.FocusActive]: 'Set Focus When Active',
-    [DemandsAttentionBehavior.FocusAll]: 'Always Set Focus'
+    [DemandsAttentionBehavior.FocusActive]: Labels.FocusActive,
+    [DemandsAttentionBehavior.FocusAll]: Labels.FocusAll
 };
 
 /** @enum {string} */
@@ -328,27 +328,46 @@ class CustomizeSection extends MenuSection {
     #createItems() {
         const menu = this.menu;
         this.addSeparator(Labels.ActivateBehavior);
-        this.#activateBehavior = this.addCheckboxGroup(ActivateBehaviorCheckboxGroup, value => {});
+        this.#activateBehavior = this.addCheckboxGroup(ActivateBehaviorCheckboxGroup, (...args) => this.#setCheckboxValue(...args));
         this.addSeparator(Labels.DemandsAttentionBehavior);
-        this.#demandsAttentionBehavior = this.addCheckboxGroup(DemandsAttentionBehaviorCheckboxGroup, value => {});
+        this.#demandsAttentionBehavior = this.addCheckboxGroup(DemandsAttentionBehaviorCheckboxGroup, (...args) => this.#setCheckboxValue(...args));
         this.addSeparator(Labels.IconSize);
         menu.addMenuItem(this.#iconSizeSlider.actor);
         this.addSeparator(Labels.CustomIcon);
-        this.#importIconItem = menu.addAction(Labels.CopyIconToClipboard, () => {});
-        this.#resetIconItem = menu.addAction(Labels.ResetToDefault, () => {});
+        this.#importIconItem = menu.addAction(Labels.CopyIconToClipboard, () => this.#importIcon());
+        this.#resetIconItem = menu.addAction(Labels.ResetToDefault, () => this.#resetIcon());
         this.addSeparator();
-        this.#resetAllItem = menu.addAction(Labels.ResetAllToDefault, () => {});
+        this.#resetAllItem = menu.addAction(Labels.ResetAllToDefault, () => this.#resetAll());
     }
 
     async #sync() {
         if (!this.isOpen) return;
+        this.#isSyncing = true;
         this.#importIconItem.reactive = false;
         this.#resetIconItem.hide();
         this.#resetAllItem.reactive = false;
+        this.#isSyncing = false;
     }
 
     #setIconSize(menuItem) {
         menuItem.value = menuItem.slider.value * 100;
+        if (this.#isSyncing) return;
+    }
+
+    #setCheckboxValue(value, group) {
+        if (this.#isSyncing) return;
+    }
+
+    #importIcon() {
+
+    }
+
+    #resetIcon() {
+
+    }
+
+    #resetAll() {
+
     }
 
 }
