@@ -10,6 +10,7 @@ import { Button, ButtonEvent } from '../base/button.js';
 import { ComponentEvent } from '../base/component.js';
 import { TaskbarClient } from '../../services/taskbarService.js';
 import { Config } from '../../utils/config.js';
+import { ActivateBehavior } from '../../utils/taskbar/appConfig.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { AppIcon, AppIconAnimation } from './appIcon.js';
 import { Indicators } from './indicators.js';
@@ -17,12 +18,6 @@ import { Menu } from './menu.js';
 import { AppSoundVolumeControl } from '../../services/soundVolumeService.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
-
-/** @enum {string} */
-const ActivateBehavior = {
-    NewWindow: 'new_window',
-    MoveWindows: 'move_windows'
-};
 
 /** @enum {string} */
 const ConfigFields = {
