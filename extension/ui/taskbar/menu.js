@@ -18,6 +18,7 @@ const UNWANTED_STYLE_CLASS = 'app-menu';
 const DEFAULT_STYLE_CLASS = 'rocketbar__popup-menu';
 const SECTION_TITLE_STYLE_CLASS = 'rocketbar__popup-menu_section-title';
 const SLIDER_ICON_STYLE_CLASS = 'popup-menu-icon';
+const INACTIVE_MENU_ITEM_STYLE_PSEUDO_CLASS = 'insensitive';
 
 /** @type {Object.<string, boolean>} */
 const DefaultProps = {
@@ -156,6 +157,17 @@ class MenuSection {
         this.#actor.connect(Event.Destroy, () => { this.#actor = null; });
         if (!dominate) return;
         this.menu?.connect(Event.OpenStateChanged, () => this.#handleState());
+    }
+
+    /**
+     * @param {PopupBaseMenuItem} menuItem
+     * @param {boolean} isActive
+     */
+    setItemActiveState(menuItem, isActive = true) {
+        if (menuItem instanceof PopupBaseMenuItem === false) return;
+        menuItem._activatable = isActive;
+        if (isActive) menuItem.remove_style_pseudo_class(INACTIVE_MENU_ITEM_STYLE_PSEUDO_CLASS);
+        else menuItem.add_style_pseudo_class(INACTIVE_MENU_ITEM_STYLE_PSEUDO_CLASS);
     }
 
     /**
@@ -341,12 +353,12 @@ class CustomizeSection extends MenuSection {
         this.#resetAllItem = menu.addAction(Labels.ResetAllToDefault, () => this.#resetAll());
     }
 
-    async #sync() {
+    #sync() {
         if (!this.isOpen) return;
         this.#isSyncing = true;
-        this.#importIconItem.reactive = false;
+        this.setItemActiveState(this.#importIconItem, false);
+        this.setItemActiveState(this.#resetAllItem, false);
         this.#resetIconItem.hide();
-        this.#resetAllItem.reactive = false;
         this.#isSyncing = false;
     }
 
