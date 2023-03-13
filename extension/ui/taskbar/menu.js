@@ -317,6 +317,7 @@ class CustomizeSection extends MenuSection {
         super(Labels.Customize, true);
         this.#appButton = appButton;
         this.#createItems();
+        this.menu.itemActivated = () => {};
         this.menu.connect(Event.OpenStateChanged, () => this.#sync());
         this.actor.connect(Event.Destroy, () => this.#destroy());
     }
