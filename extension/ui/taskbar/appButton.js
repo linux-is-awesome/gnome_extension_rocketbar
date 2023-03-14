@@ -9,8 +9,7 @@ import { Event, Delay } from '../../core/enums.js';
 import { Button, ButtonEvent } from '../base/button.js';
 import { ComponentEvent } from '../base/component.js';
 import { TaskbarClient } from '../../services/taskbarService.js';
-import { Config } from '../../utils/config.js';
-import { ActivateBehavior } from '../../utils/taskbar/appConfig.js';
+import { AppConfig, ConfigFields, ActivateBehavior } from '../../utils/taskbar/appConfig.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { AppIcon, AppIconAnimation } from './appIcon.js';
 import { Indicators } from './indicators.js';
@@ -18,22 +17,6 @@ import { Menu } from './menu.js';
 import { AppSoundVolumeControl } from '../../services/soundVolumeService.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
-
-/** @enum {string} */
-const ConfigFields = {
-    isolateWorkspaces: 'taskbar-isolate-workspaces',
-    enableIndicators: 'appbutton-enable-indicators',
-    enableMinimizeAction: 'appbutton-enable-minimize-action',
-    activateBehavior: 'appbutton-running-app-activate-behavior',
-    enableSoundControl: 'appbutton-enable-sound-control',
-    iconSize: 'appbutton-icon-size',
-    iconHPadding: 'appbutton-icon-padding',
-    iconVPadding: 'appbutton-icon-vertical-padding',
-    spacingAfter: 'appbutton-spacing',
-    roundness: 'appbutton-roundness',
-    backlightColor: 'appbutton-backlight-color',
-    backlightIntensity: 'appbutton-backlight-intensity'
-};
 
 /** @type {Object.<string, number>} */
 const DefaultProps = {
@@ -81,6 +64,9 @@ class CycleWindowsQueue {
 }
 
 export class AppButton extends Button {
+
+    /** @type {AppConfig} */
+    static #configProvider = null;
 
     /**
      * @param {{event: string, params: *}} data
@@ -131,7 +117,7 @@ export class AppButton extends Button {
     #destroyJob = null;
 
     /** @type {Object.<string, string|number|boolean>} */
-    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
+    #config = null;
 
     /** @type {number} */
     get #isAppRunning() {
@@ -175,6 +161,14 @@ export class AppButton extends Button {
         return this.#windowsCount;
     }
 
+    /** @type {AppConfig} */
+    get configProvider() {
+        if (!AppButton.#configProvider) {
+            AppButton.#configProvider = new AppConfig();
+        }
+        return AppButton.#configProvider;
+    }
+
     /** @type {AppSoundVolumeControl} */
     get soundVolumeControl() {
         return this.#soundVolumeControl;
@@ -210,6 +204,7 @@ export class AppButton extends Button {
         this.actor.set_child(this.#layout);
         this.dragEvents = true;
         this.#app = app;
+        this.#config = this.configProvider.getConfig(app, settingsKey => this.#handleConfig(settingsKey));
         this.#appIcon = new AppIcon(app).setParent(this.display);
         this.#service = new TaskbarClient(() => this.#handleAppState(), app);
         this.actor.animateLaunch = () => this.#appIcon.animate(AppIconAnimation.Activate);
@@ -219,6 +214,9 @@ export class AppButton extends Button {
     #destroy() {
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
+        if (AppButton.#configProvider?.destroy(this.#app)) {
+            AppButton.#configProvider = null;
+        }
         this.#service?.destroy();
         this.#service = null;
         this.#soundVolumeControl?.destroy();
@@ -291,9 +289,7 @@ export class AppButton extends Button {
     }
 
     #updateStyle() {
-        const { spacingAfter, roundness, iconSize, iconHPadding, iconVPadding } = this.#config;
-        const width = iconSize + iconHPadding * 2;
-        const height = iconSize + iconVPadding * 2;
+        const { spacingAfter, roundness, width, height } = this.#config;
         this.overrideStyle({ spacingAfter, roundness, width, height });
     }
 
@@ -324,8 +320,8 @@ export class AppButton extends Button {
         }
         if (!this.#isStartupRequired) return this.#indicators?.rerender();
         const isWorkspaceChanged = this.#service.isWorkspaceChanged;
-        const { spacingAfter, iconSize, iconHPadding } = this.#config;
-        const width = (iconSize + iconHPadding * 2 + spacingAfter) * this.uiScale * this.globalScale;
+        const { spacingAfter } = this.#config;
+        const width = (this.#config.width + spacingAfter) * this.uiScale * this.globalScale;
         const animationParams = { ...AnimationType.OpacityMax, ...{ width, mode: Clutter.AnimationMode.EASE_OUT_QUAD } };
         Context.jobs.new(this).destroy(() => {
             Animation(this, AnimationDuration.Default, animationParams).then(() => {
