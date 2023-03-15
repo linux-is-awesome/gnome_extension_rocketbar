@@ -152,7 +152,7 @@ export class AppConfig {
      * @param {{config: Config, callback: (settingsKey: string) => void}} client
      * @param {string} settingsKey
      */
-    async #setAppConfig(app, client, settingsKey) {
+    #setAppConfig(app, client, settingsKey) {
         const { config, callback } = client;
         const newConfig = this.#getAppConfig(app);
         for (const field in newConfig) {

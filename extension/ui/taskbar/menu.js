@@ -7,10 +7,10 @@ import St from 'gi://St';
 import { AppMenu, Slider, Ornament } from '../../core/legacy.js';
 import { PopupSubMenuMenuItem, PopupSeparatorMenuItem, PopupBaseMenuItem } from '../../core/legacy.js';
 import { Context } from '../../core/context.js';
-import { Event, Type } from '../../core/enums.js';
+import { Delay, Event, Type } from '../../core/enums.js';
 import { ComponentLocation } from '../base/component.js';
 import { Config } from '../../utils/config.js';
-import { ActivateBehavior, DemandsAttentionBehavior } from '../../utils/taskbar/appConfig.js';
+import { ActivateBehavior, DemandsAttentionBehavior, AppIconSize } from '../../utils/taskbar/appConfig.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { Labels } from '../../core/labels.js';
 
@@ -19,6 +19,9 @@ const DEFAULT_STYLE_CLASS = 'rocketbar__popup-menu';
 const SECTION_TITLE_STYLE_CLASS = 'rocketbar__popup-menu_section-title';
 const SLIDER_ICON_STYLE_CLASS = 'popup-menu-icon';
 const INACTIVE_MENU_ITEM_STYLE_PSEUDO_CLASS = 'insensitive';
+
+const ICON_SIZE_CONFIG_FIELD = 'iconSize';
+const ACTIVATE_BEHAVIOR_CONFIG_FIELD = 'activateBehavior';
 
 /** @type {Object.<string, boolean>} */
 const DefaultProps = {
@@ -111,13 +114,15 @@ class SliderMenuItem {
     /**
      * @param {(menuItem: SliderMenuItem) => void} callback
      * @param {string} [icon]
+     * @param {number} [value]
      */
-    constructor(callback, icon) {
+    constructor(callback, icon, value) {
         this.#actor.setOrnament(Ornament.HIDDEN);
         this.#actor.add_child(this.#icon);
         this.#actor.add_child(this.#slider);
         this.#actor.add_child(this.#value);
         this.icon = icon;
+        this.value = value;
         this.#actor.connect(Event.KeyPress, (_, event) => this.#slider.emit(Event.KeyPress, event));
         if (typeof callback !== Type.Function) return;
         this.#slider.connect(Event.ValueChanged, () => callback(this));
@@ -171,33 +176,40 @@ class MenuSection {
     }
 
     /**
-     * @param {string} [title]
-     */
-    addSeparator(title = null) {
-        if (!this.#actor?.menu) return;
-        const separator = new PopupSeparatorMenuItem(title);
-        if (title) separator.add_style_class_name(SECTION_TITLE_STYLE_CLASS);
-        this.#actor.menu.addMenuItem(separator);
-    }
-
-    /**
+     * @param {string} title
      * @param {Object.<string, string>} items
      * @param {(value: string, items: Object.<string, string>) => void} callback
-     * @returns {(value: string) => void}
+     * @returns {(value: string) => PopupBaseMenuItem[]}
      */
-    addCheckboxGroup(items, callback) {
+    addCheckboxGroup(title, items, callback) {
         const menu = this.menu;
         const group = new Map();
+        const separator = this.addSeparator(title);
         /** @param {string} value */
         const handler = value => {
+            const result = [separator];
             for (const [itemValue, item] of group) {
                 if (itemValue === value) item.setOrnament(Ornament.DOT);
                 else item.setOrnament(Ornament.NONE);
+                result.push(item);
             }
             if (typeof callback === Type.Function) callback(value, items);
+            return result;
         };
         for (const value in items) group.set(value, menu.addAction(items[value], () => handler(value)));
         return handler;
+    }
+
+    /**
+     * @param {string} [title]
+     * @returns {PopupSeparatorMenuItem}
+     */
+    addSeparator(title = null) {
+        if (!this.#actor?.menu) return null;
+        const separator = new PopupSeparatorMenuItem(title);
+        if (title) separator.add_style_class_name(SECTION_TITLE_STYLE_CLASS);
+        this.#actor.menu.addMenuItem(separator);
+        return separator;
     }
 
     #handleState() {
@@ -304,10 +316,12 @@ class CustomizeSection extends MenuSection {
     #appButton = null;
 
     /** @type {SliderMenuItem} */
-    #iconSizeSlider = new SliderMenuItem(menuItem => this.#setIconSize(menuItem));
+    #iconSizeSlider = new SliderMenuItem(menuItem => this.#setIconSize(menuItem), null, AppIconSize.Min);
 
+    /** @type {(value: string) => PopupBaseMenuItem[]} */
     #activateBehavior = null;
 
+    /** @type {(value: string) => PopupBaseMenuItem[]} */
     #demandsAttentionBehavior = null;
 
     /** @type {PopupMenuItem} */
@@ -328,22 +342,20 @@ class CustomizeSection extends MenuSection {
     constructor(appButton) {
         super(Labels.Customize, true);
         this.#appButton = appButton;
-        this.#createItems();
+        this.#createMenuItems();
         this.menu.itemActivated = () => {};
         this.menu.connect(Event.OpenStateChanged, () => this.#sync());
-        this.actor.connect(Event.Destroy, () => this.#destroy());
+        this.actor.connect(Event.Destroy, () => { this.#appButton = null; });
     }
 
-    #destroy() {
-        this.#appButton = null;
-    }
-
-    #createItems() {
+    #createMenuItems() {
         const menu = this.menu;
-        this.addSeparator(Labels.ActivateBehavior);
-        this.#activateBehavior = this.addCheckboxGroup(ActivateBehaviorCheckboxGroup, (...args) => this.#setCheckboxValue(...args));
-        this.addSeparator(Labels.DemandsAttentionBehavior);
-        this.#demandsAttentionBehavior = this.addCheckboxGroup(DemandsAttentionBehaviorCheckboxGroup, (...args) => this.#setCheckboxValue(...args));
+        this.#activateBehavior = this.addCheckboxGroup(
+            Labels.ActivateBehavior, ActivateBehaviorCheckboxGroup,
+            (...args) => this.#setCheckboxValue(...args));
+        this.#demandsAttentionBehavior = this.addCheckboxGroup(
+            Labels.DemandsAttentionBehavior, DemandsAttentionBehaviorCheckboxGroup,
+            (...args) => this.#setCheckboxValue(...args));
         this.addSeparator(Labels.IconSize);
         menu.addMenuItem(this.#iconSizeSlider.actor);
         this.addSeparator(Labels.CustomIcon);
@@ -353,22 +365,56 @@ class CustomizeSection extends MenuSection {
         this.#resetAllItem = menu.addAction(Labels.ResetAllToDefault, () => this.#resetAll());
     }
 
+    #resetAll() {
+        if (!this.#appButton) return;
+        this.#appButton.configProvider?.resetConfigOverride(this.#appButton.app);
+        this.#sync();
+    }
+
     #sync() {
         if (!this.isOpen) return;
+        const app = this.#appButton?.app;
+        const configProvider = this.#appButton?.configProvider;
+        if (!configProvider || !app) return;
+        const config = configProvider.getConfig(app);
         this.#isSyncing = true;
+        this.#activateBehavior(config[ACTIVATE_BEHAVIOR_CONFIG_FIELD]).forEach(item => item.visible = config.isolateWorkspaces);
+        this.#setIconSizeSliderPosition(config[ICON_SIZE_CONFIG_FIELD], configProvider.defaultConfig[ICON_SIZE_CONFIG_FIELD]);
         this.setItemActiveState(this.#importIconItem, false);
-        this.setItemActiveState(this.#resetAllItem, false);
-        this.#resetIconItem.hide();
+        this.setItemActiveState(this.#resetIconItem, false);
+        this.setItemActiveState(this.#resetAllItem, configProvider.hasConfigOverride(app));
         this.#isSyncing = false;
     }
 
+    #setIconSizeSliderPosition(iconSize, defaultIconSize) {
+        if (typeof iconSize !== Type.Number || typeof defaultIconSize !== Type.Number) return;
+        const slider = this.#iconSizeSlider.slider;
+        const offset = AppIconSize.Max - AppIconSize.Min;
+        slider.overdriveStart = (defaultIconSize - AppIconSize.Min) / offset;
+        slider.value = (iconSize - AppIconSize.Min) / offset;
+    }
+
     #setIconSize(menuItem) {
-        menuItem.value = menuItem.slider.value * 100;
-        if (this.#isSyncing) return;
+        const slider = menuItem.slider;
+        const iconSize = Math.round((AppIconSize.Max - AppIconSize.Min) * slider.value) + AppIconSize.Min;
+        menuItem.value = iconSize;
+        if (this.#isSyncing || !this.#appButton) return;
+        const job = Context.jobs.removeAll(this).new(this, Delay.Sleep);
+        job.destroy(() => this.#setConfigOverride(ICON_SIZE_CONFIG_FIELD, iconSize)).catch();
     }
 
     #setCheckboxValue(value, group) {
-        if (this.#isSyncing) return;
+        if (this.#isSyncing || !this.#appButton) return;
+        let field = null;
+        switch (group) {
+            case ActivateBehaviorCheckboxGroup:
+                field = ACTIVATE_BEHAVIOR_CONFIG_FIELD;
+                break;
+            case DemandsAttentionBehaviorCheckboxGroup:
+                break;
+        }
+        if (!field || !value) return;
+        this.#setConfigOverride(field, value);
     }
 
     #importIcon() {
@@ -379,8 +425,11 @@ class CustomizeSection extends MenuSection {
 
     }
 
-    #resetAll() {
-
+    #setConfigOverride(field, value) {
+        const configProvider = this.#appButton?.configProvider;
+        if (!configProvider) return;
+        configProvider.setConfigOverride(this.#appButton.app, field, value);
+        this.setItemActiveState(this.#resetAllItem, true);
     }
 
 }
