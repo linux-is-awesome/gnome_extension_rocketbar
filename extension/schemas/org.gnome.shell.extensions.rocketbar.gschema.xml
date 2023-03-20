@@ -250,6 +250,10 @@
             <default>'new_window'</default>
             <summary>Running apps activation behavior</summary>
         </key>
+        <key type="s" name="appbutton-demands-attention-behavior">
+            <default>'focus_active'</default>
+            <summary>Window Demands Attention behavior</summary>
+        </key>
         <key type="b" name="appbutton-enable-minimize-action">
             <default>true</default>
             <summary>Enable Minimize action</summary>

@@ -9,7 +9,7 @@ import { Event, Delay } from '../../core/enums.js';
 import { Button, ButtonEvent } from '../base/button.js';
 import { ComponentEvent } from '../base/component.js';
 import { TaskbarClient } from '../../services/taskbarService.js';
-import { AppConfig, ConfigFields, ActivateBehavior } from '../../utils/taskbar/appConfig.js';
+import { AppConfig, ConfigFields, ActivateBehavior, DemandsAttentionBehavior } from '../../utils/taskbar/appConfig.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { AppIcon, AppIconAnimation } from './appIcon.js';
 import { Indicators } from './indicators.js';
@@ -255,6 +255,7 @@ export class AppButton extends Button {
             case ConfigFields.isolateWorkspaces:
             case ConfigFields.enableMinimizeAction:
             case ConfigFields.activateBehavior:
+            case ConfigFields.demandsAttentionBehavior:
                 return;
             case ConfigFields.backlightColor:
             case ConfigFields.backlightIntensity:
@@ -308,7 +309,7 @@ export class AppButton extends Button {
         if (!isFavorite && !this.#windowsCount) return this.#queueDestroy();
         if (!this.#isActive || !this.#windowsCount) this.#handleFocusedWindow();
         this.#handleStartup();
-        this.#setWindowsHooks();
+        this.#handleWindows();
         this.#soundVolumeControl?.update();
     }
 
@@ -344,23 +345,23 @@ export class AppButton extends Button {
         this.isActive = this.#windowsCount ? this.#service.hasFocusedWindow() : false;
     }
 
-    #handleUrgentWindow(window) {
-        if (!window || !this.#windows?.has(window)) return;
-        if (!this.#isActive) return;
-        if (window.has_focus()) return;
-        Main.activateWindow(window);
-    }
-
     #handleWindowState(window) {
         if (!this.isValid || !window || !this.#windows?.has(window)) return;
         this.#appIcon.animate(window.minimized ? AppIconAnimation.Deactivate : AppIconAnimation.Activate);
     }
 
-    async #setWindowsHooks() {
+    async #handleWindows() {
         if (!this.isValid || !this.#windows?.size) return;
         for (const window of this.#windows) {
             window.get_icon_geometry = () => this.#getWindowIconGeometry(window);
+            if (window.demands_attention) this.#handleUrgentWindow(window);
         }
+    }
+
+    async #handleUrgentWindow(window) {
+        if (!window || !this.#windows?.has(window) || window.has_focus()) return;
+        if (this.#config.demandsAttentionBehavior === DemandsAttentionBehavior.FocusActive && !this.#isActive) return;
+        Main.activateWindow(window);
     }
 
     #hover() {

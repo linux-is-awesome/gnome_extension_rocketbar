@@ -15,6 +15,7 @@ export const ConfigFields = {
     enableIndicators: 'appbutton-enable-indicators',
     enableMinimizeAction: 'appbutton-enable-minimize-action',
     activateBehavior: 'appbutton-running-app-activate-behavior',
+    demandsAttentionBehavior: 'appbutton-demands-attention-behavior',
     enableSoundControl: 'appbutton-enable-sound-control',
     iconSize: 'appbutton-icon-size',
     iconHPadding: 'appbutton-icon-padding',
@@ -111,21 +112,26 @@ export class AppConfig {
         if (!app?.id || !this.#appConfig?.has(app)) return;
         if (!Object.keys(ConfigFields).includes(field)) return;
         const configOverride = this.#configOverride[app.id] ?? {};
-        switch (ConfigFields[field]) {
+        const settingsKey = ConfigFields[field];
+        switch (settingsKey) {
             case ConfigFields.iconSize:
                 value -= this.#config.iconSize;
                 if (configOverride.iconSizeOffset === value) return;
                 configOverride.iconSizeOffset = value;
                 break;
             case ConfigFields.activateBehavior:
-                if (!Object.values(ActivateBehavior).includes(value)) return;
+            case ConfigFields.demandsAttentionBehavior:
+                if (!Object.values(({
+                    [ConfigFields.activateBehavior]: ActivateBehavior,
+                    [ConfigFields.demandsAttentionBehavior]: DemandsAttentionBehavior
+                })[settingsKey]).includes(value)) return;
             default:
                 if (configOverride[field] === value) return;
                 configOverride[field] = value;
         }
         this.#configOverride[app.id] = configOverride;
         this.#saveConfigOverride();
-        this.#setAppConfig(app, this.#appConfig.get(app), ConfigFields[field]);
+        this.#setAppConfig(app, this.#appConfig.get(app), settingsKey);
     }
 
     /**
@@ -167,14 +173,15 @@ export class AppConfig {
      */
     #getAppConfig(app) {
         const { iconSizeOffset = 0,
-                activateBehavior = this.#config.activateBehavior } = this.#configOverride[app?.id] ?? {};
+                activateBehavior = this.#config.activateBehavior,
+                demandsAttentionBehavior = this.#config.demandsAttentionBehavior } = this.#configOverride[app?.id] ?? {};
         let { iconSize, iconHPadding, iconVPadding } = this.#config;
         const width = iconSize + iconHPadding * 2;
         const height = iconSize + iconVPadding * 2;
         iconSize += iconSizeOffset;
         iconSize = Math.max(iconSize, AppIconSize.Min);
         iconSize = Math.min(iconSize, AppIconSize.Max);
-        return { ...this.#config, ...{ iconSize, width, height, activateBehavior } };
+        return { ...this.#config, ...{ iconSize, width, height, activateBehavior, demandsAttentionBehavior } };
     }
 
     async #saveConfigOverride() {

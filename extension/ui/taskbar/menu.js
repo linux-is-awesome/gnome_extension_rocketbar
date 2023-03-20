@@ -22,6 +22,7 @@ const INACTIVE_MENU_ITEM_STYLE_PSEUDO_CLASS = 'insensitive';
 
 const ICON_SIZE_CONFIG_FIELD = 'iconSize';
 const ACTIVATE_BEHAVIOR_CONFIG_FIELD = 'activateBehavior';
+const DEMANDS_ATTENTION_BEHAVIOR_CONFIG_FIELD = 'demandsAttentionBehavior';
 
 /** @type {Object.<string, boolean>} */
 const DefaultProps = {
@@ -379,6 +380,7 @@ class CustomizeSection extends MenuSection {
         const config = configProvider.getConfig(app);
         this.#isSyncing = true;
         this.#activateBehavior(config[ACTIVATE_BEHAVIOR_CONFIG_FIELD]).forEach(item => item.visible = config.isolateWorkspaces);
+        this.#demandsAttentionBehavior(config[DEMANDS_ATTENTION_BEHAVIOR_CONFIG_FIELD]);
         this.#setIconSizeSliderPosition(config[ICON_SIZE_CONFIG_FIELD], configProvider.defaultConfig[ICON_SIZE_CONFIG_FIELD]);
         this.setItemActiveState(this.#importIconItem, false);
         this.setItemActiveState(this.#resetIconItem, false);
@@ -411,6 +413,7 @@ class CustomizeSection extends MenuSection {
                 field = ACTIVATE_BEHAVIOR_CONFIG_FIELD;
                 break;
             case DemandsAttentionBehaviorCheckboxGroup:
+                field = DEMANDS_ATTENTION_BEHAVIOR_CONFIG_FIELD;
                 break;
         }
         if (!field || !value) return;
