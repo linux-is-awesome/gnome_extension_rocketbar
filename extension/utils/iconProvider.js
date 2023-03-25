@@ -30,15 +30,30 @@ var IconProvider = class {
         const iconInfo = this.getIconInfo(iconName, iconSize);
 
         if (iconInfo) {
-            return Gio.Icon.new_for_string(iconInfo.get_filename());
+            let iconPath = null;
+            if (iconInfo.get_filename) {
+                iconPath = iconInfo.get_filename();
+            } else if (iconInfo.get_file) {
+                iconPath = iconInfo.get_file().get_path();
+            }
+
+            if (iconPath) {
+                return Gio.Icon.new_for_string(iconPath);
+            }
         }
 
         return this.getCustomIcon(this._assetsPath + iconName + '.svg');
     }
 
     getIconInfo(iconName, iconSize) {
-        this._iconTheme.set_custom_theme(St.Settings.get().gtkIconTheme);
-        return this._iconTheme.lookup_icon(iconName, iconSize, 0);
+        if (this._iconTheme.set_custom_theme) {
+            this._iconTheme.set_custom_theme(St.Settings.get().gtkIconTheme);
+            return this._iconTheme.lookup_icon(iconName, iconSize, 0);
+        } else if (this._iconTheme.set_theme_name) {
+            this._iconTheme.set_theme_name(St.Settings.get().gtkIconTheme);
+            return this._iconTheme.lookup_icon(iconName, null, iconSize, 1, 1, 1);
+        }
+        return null;
     }
 
     getCustomIcon(iconPath) {

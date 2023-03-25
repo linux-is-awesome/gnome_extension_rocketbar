@@ -43,12 +43,14 @@ var Timeout = class {
             return GLib.SOURCE_REMOVE;
         };
 
+        const laters = global.compositor?.get_laters();
+
         this._id = (
 
             this._priority === Meta.LaterType.BEFORE_REDRAW ||
                 this._priority === Meta.LaterType.IDLE ?
 
-            Meta.later_add(this._priority, handler) :
+            (laters ? laters.add(this._priority, handler) : Meta.later_add(this._priority, handler)) :
 
             GLib.timeout_add(this._priority, this._delay, handler)
         );
@@ -65,7 +67,13 @@ var Timeout = class {
         if (this._priority === Meta.LaterType.BEFORE_REDRAW ||
                 this._priority === Meta.LaterType.IDLE) {
 
-            Meta.later_remove(this._id);
+            const laters = global.compositor?.get_laters();
+    
+            if (laters) {
+                laters.remove(this._id);
+            } else {
+                Meta.later_remove(this._id);
+            }
 
             return;
         }
