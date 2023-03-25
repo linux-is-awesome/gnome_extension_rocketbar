@@ -1,6 +1,6 @@
 /* exported DominantColorExtractor */
 
-const { Gio, St, Gtk, GdkPixbuf } = imports.gi;
+const { Gio, St, GdkPixbuf } = imports.gi;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
@@ -142,7 +142,12 @@ var DominantColorExtractor = class {
         );
 
         if (iconInfo !== null) {
-            return iconInfo.load_icon();
+            if (iconInfo.load_icon) {
+                return iconInfo.load_icon();
+            }
+            if (iconInfo.get_file) {
+                return GdkPixbuf.Pixbuf.new_from_file(iconInfo.get_file().get_path());
+            }
         }
         
         return null;
