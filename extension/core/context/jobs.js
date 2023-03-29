@@ -5,6 +5,22 @@ import Meta from 'gi://Meta';
 import { Context } from '../context.js';
 import { Type, Delay } from '../enums.js';
 
+/**
+ * Note: Using compositor laters for Gnome 44+ instead of Meta functions.
+ * 
+ * @type {Meta.Laters}
+ */
+const Laters = global.compositor?.get_laters() ?? {
+    add: (...args) => Meta.later_add(...args),
+    remove: (...args) => Meta.later_remove(...args)
+};
+
+/** @type {Object.<string, number>} */
+const LaterType = {
+    [Delay.Redraw]: Meta.LaterType.BEFORE_REDRAW,
+    [Delay.Idle]: Meta.LaterType.IDLE
+};
+
 class Job {
 
     /** @type {number} */
@@ -95,16 +111,14 @@ class Job {
     }
 
     /**
-     * @param {() => void} callback
+     * @param {() => void} callback,
      */
     #queue(callback) {
-        const handler = () => this.#dequeue() ?? callback();
+        const handler = () => { this.#id = null; callback(); };
         switch (this.#delay) {
             case Delay.Redraw:
-                this.#id = Meta.later_add(Meta.LaterType.BEFORE_REDRAW, handler);
-                break;
             case Delay.Idle:
-                this.#id = Meta.later_add(Meta.LaterType.IDLE, handler);
+                this.#id = Laters.add(LaterType[this.#delay], handler);
                 break;
             default:
                 this.#id = GLib.timeout_add(GLib.PRIORITY_DEFAULT_IDLE, this.#delay, handler);
@@ -115,7 +129,7 @@ class Job {
         if (this.#id) switch (this.#delay) {
             case Delay.Redraw:
             case Delay.Idle:
-                Meta.later_remove(this.#id);
+                Laters.remove(this.#id);
                 break;
             default: GLib.source_remove(this.#id);
         }
