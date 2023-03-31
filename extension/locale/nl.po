@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-09-15 20:03+0300\n"
-"PO-Revision-Date: 2022-11-08 13:41+0100\n"
+"POT-Creation-Date: 2023-03-25 23:42+0300\n"
+"PO-Revision-Date: 2023-03-31 11:45+0200\n"
 "Last-Translator: Heimen Stoffels <vistausss@fastmail.com>\n"
 "Language-Team: Dutch\n"
 "Language: nl\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Lokalize 22.08.3\n"
+"X-Generator: Poedit 3.2.2\n"
 
 #: settings/aboutPage.js:13
 msgid "About"
@@ -60,8 +60,8 @@ msgstr "Unity-starterondersteuning inschakelen"
 #: settings/behaviorPage.js:31
 msgid "Use Unity Launcher API DBus interface to count notifications for apps"
 msgstr ""
-"Gebruik de Unity dbus-api om het aantal meldingen van toepassingen bij te"
-" houden"
+"Gebruik de Unity dbus-api om het aantal meldingen van toepassingen bij te "
+"houden"
 
 #: settings/behaviorPage.js:32
 msgid "Count Window Demands Attention notifications for apps"
@@ -80,8 +80,8 @@ msgid ""
 "Left button click to close the Overview, Right button click to show the App "
 "Grid"
 msgstr ""
-"Klik met de linkermuiskop om het overzicht te sluiten en met de"
-" rechtermuisknop om alle toepassingen te tonen"
+"Klik met de linkermuiskop om het overzicht te sluiten en met de "
+"rechtermuisknop om alle toepassingen te tonen"
 
 #: settings/behaviorPage.js:51
 msgid "Hot Corner"
@@ -131,8 +131,8 @@ msgstr "Minimaliseeractie inschakelen"
 #: settings/behaviorPage.js:76
 msgid "Allow to minimize single app windows by clicking apps in the taskbar"
 msgstr ""
-"Minimaliseer toepassingsvensters door de toepassing in kwestie aan te klikken"
-" op de taakbalk"
+"Minimaliseer toepassingsvensters door de toepassing in kwestie aan te "
+"klikken op de taakbalk"
 
 #: settings/behaviorPage.js:77
 msgid "Require click to open context menus"
@@ -147,8 +147,8 @@ msgid ""
 "By default Middle click is used to open new app windows and to close the "
 "first app window when Ctrl is pressed"
 msgstr ""
-"Standaard wordt de middelste muisknop gebruikt om nieuwe toepassingsvensters"
-" te openen en, met behulp van Ctrl, het eerste venster te sluiten"
+"Standaard wordt de middelste muisknop gebruikt om nieuwe toepassingsvensters "
+"te openen en, met behulp van Ctrl, het eerste venster te sluiten"
 
 #: settings/behaviorPage.js:81
 msgid "Scroll to change app sound volume"
@@ -168,9 +168,9 @@ msgid ""
 "active workspace, supports isolated workspaces only, can be configured "
 "separately for each app via an app menu"
 msgstr ""
-"Bepaal het gedrag van een toepassing die actief is, maar geen openstaande"
-" vensters op het actieve werkblad heeft. Let op: er is alléén ondersteuning"
-" voor geïsoleerde werkbladen."
+"Bepaal het gedrag van een toepassing die actief is, maar geen openstaande "
+"vensters op het actieve werkblad heeft. Let op: er is alléén ondersteuning "
+"voor geïsoleerde werkbladen."
 
 #: settings/behaviorPage.js:103 settings/behaviorPage.js:151
 msgid "None"
@@ -268,7 +268,7 @@ msgstr "Taakschakelaarpop-ups"
 msgid "Override show delay"
 msgstr "Pas de wachttijd alvorens te tonen aan"
 
-#: settings/behaviorPage.js:170 settings/customizePage.js:207
+#: settings/behaviorPage.js:170 settings/customizePage.js:238
 msgid "Show Delay"
 msgstr "Wachttijd alvorens te tonen"
 
@@ -296,8 +296,8 @@ msgstr "Midden"
 msgid "Right"
 msgstr "Rechts"
 
-#: settings/customizePage.js:95 settings/customizePage.js:162
-#: settings/customizePage.js:190
+#: settings/customizePage.js:95 settings/customizePage.js:154
+#: settings/customizePage.js:221
 msgid "Position"
 msgstr "Locatie"
 
@@ -312,8 +312,8 @@ msgstr "Locatie vergrendelen"
 #: settings/customizePage.js:103
 msgid "Prevent position changes caused by other extensions in the panel"
 msgstr ""
-"Voorkomt dat de locatie gewijzigd wordt door andere uitbreidingen op de"
-" bovenbalk"
+"Voorkomt dat de locatie gewijzigd wordt door andere uitbreidingen op de "
+"bovenbalk"
 
 #: settings/customizePage.js:109
 msgid "Backlight Color"
@@ -339,7 +339,7 @@ msgstr "Horizontale pictogramopvulling"
 msgid "Icon Vertical Padding"
 msgstr "Verticale pictogramopvulling"
 
-#: settings/customizePage.js:127 settings/customizePage.js:226
+#: settings/customizePage.js:127 settings/customizePage.js:261
 msgid "Roundness"
 msgstr "Afronding"
 
@@ -367,116 +367,152 @@ msgstr "Onderaan"
 msgid "Indicators"
 msgstr "Indicators"
 
-#: settings/customizePage.js:153
-msgid "Active Dominant Color"
-msgstr "Actieve dominante kleur"
-
-#: settings/customizePage.js:155
-msgid "Active Color"
-msgstr "Actieve kleur"
-
-#: settings/customizePage.js:157
-msgid "Inactive Dominant Color"
-msgstr "Inactieve dominante kleur"
-
-#: settings/customizePage.js:159
-msgid "Inactive Color"
-msgstr "Inactieve kleur"
-
-#: settings/customizePage.js:166 settings/customizePage.js:194
-msgid "Size"
-msgstr "Grootte"
-
-#: settings/customizePage.js:170
+#: settings/customizePage.js:158
 msgid "Limit"
 msgstr "Limiet"
 
-#: settings/customizePage.js:172
+#: settings/customizePage.js:160
 msgid "The maximum number of indicators to display on top of app buttons"
 msgstr ""
 "Het maximumaantal indicators dat op toepassingsknoppen mag worden getoond"
 
+#: settings/customizePage.js:162
+msgid "Active Dominant Color"
+msgstr "Actieve dominante kleur"
+
+#: settings/customizePage.js:164
+msgid "Active Color"
+msgstr "Actieve kleur"
+
+#: settings/customizePage.js:166
+msgid "Inactive Dominant Color"
+msgstr "Inactieve dominante kleur"
+
+#: settings/customizePage.js:168
+msgid "Inactive Color"
+msgstr "Inactieve kleur"
+
+#: settings/customizePage.js:172
+msgid "Inactive Width"
+msgstr "Inactieve breedte"
+
+#: settings/customizePage.js:176
+msgid "Active Width"
+msgstr "Actieve breedte"
+
 #: settings/customizePage.js:180
+msgid "Inactive Height"
+msgstr "Inactieve hoogte"
+
+#: settings/customizePage.js:184
+msgid "Active Height"
+msgstr "Actieve hoogte"
+
+#: settings/customizePage.js:188
+msgid "Inactive Roundness"
+msgstr "Inactieve afronding"
+
+#: settings/customizePage.js:192
+msgid "Active Roundness"
+msgstr "Actieve afronding"
+
+#: settings/customizePage.js:197
+msgid "Inactive Spacing"
+msgstr "Inactieve uitlijning"
+
+#: settings/customizePage.js:201
+msgid "Active Spacing"
+msgstr "Actieve uitlijning"
+
+#: settings/customizePage.js:211
 msgid "Top Left"
 msgstr "Linksboven"
 
-#: settings/customizePage.js:181
+#: settings/customizePage.js:212
 msgid "Top Right"
 msgstr "Rechtsboven"
 
-#: settings/customizePage.js:182
+#: settings/customizePage.js:213
 msgid "Bottom Left"
 msgstr "Linksonder"
 
-#: settings/customizePage.js:183
+#: settings/customizePage.js:214
 msgid "Bottom Right"
 msgstr "Rechtsonder"
 
-#: settings/customizePage.js:186
+#: settings/customizePage.js:217
 msgid "Notification Badges"
 msgstr "Meldingsemblemen"
 
-#: settings/customizePage.js:187
+#: settings/customizePage.js:218
 msgid "Color"
 msgstr "Kleur"
 
-#: settings/customizePage.js:188
+#: settings/customizePage.js:219
 msgid "Border Color"
 msgstr "Randkleur"
 
-#: settings/customizePage.js:198
+#: settings/customizePage.js:225
+msgid "Size"
+msgstr "Grootte"
+
+#: settings/customizePage.js:229
 msgid "Margin"
 msgstr "Marge"
 
-#: settings/customizePage.js:205
+#: settings/customizePage.js:236
 msgid "Tooltips"
 msgstr "Tekstballonnen"
 
-#: settings/customizePage.js:214 settings/generalPage.js:29
+#: settings/customizePage.js:242
+msgid "Max Width"
+msgstr "Max. breedte"
+
+#: settings/customizePage.js:249 settings/generalPage.js:29
 msgid "Notification Counter"
 msgstr "Meldingsteller"
 
-#: settings/customizePage.js:215
+#: settings/customizePage.js:250
 msgid "Hide when empty"
 msgstr "Verbergen indien geen meldingen"
 
-#: settings/customizePage.js:216
+#: settings/customizePage.js:251
 msgid "Center clock"
 msgstr "Klok centreren"
 
-#: settings/customizePage.js:218
+#: settings/customizePage.js:253
 msgid "Max Count"
 msgstr "Maximumaantal"
 
-#: settings/customizePage.js:222
+#: settings/customizePage.js:257
 msgid "Font Size"
 msgstr "Tekstgrootte"
 
-#: settings/customizePage.js:230
+#: settings/customizePage.js:265
 msgid "Top Margin"
 msgstr "Bovenste marge"
 
-#: settings/customizePage.js:234
+#: settings/customizePage.js:269
 msgid "Empty Color"
 msgstr "Ongekleurd"
 
-#: settings/customizePage.js:236
+#: settings/customizePage.js:271
 msgid "Not Empty Color"
 msgstr "Meldingskleur"
 
-#: settings/customizePage.js:237
+#: settings/customizePage.js:272
 msgid "Text Color"
 msgstr "Tekstkleur"
 
-#: settings/customizePage.js:239
+#: settings/customizePage.js:274
 msgid "Do Not Disturb - Empty Color"
 msgstr "Niet storen - Ongekleurd"
 
-#: settings/customizePage.js:241
+#: settings/customizePage.js:276
 msgid "Do Not Disturb - Not Empty Color"
 msgstr "Niet storen - Meldingskleur"
 
-#: settings/customizePage.js:242
+#: settings/customizePage.js:277
 msgid "Do Not Disturb - Text Color"
 msgstr "Niet storen - Tekstkleur"
 
