@@ -11,7 +11,7 @@ export const Labels = {
     DemandsAttentionBehavior: _('Demands Attention Behavior'),
     CustomIcon: _('Custom Icon'),
     IconSize: _('Icon Size'),
-    CopyIconToClipboard: _('Copy Icon To Clipboard'),
+    NoIconInClipboard: _('No Icon Found in Clipboard'),
     ResetToDefault: _('Reset To Default'),
     ResetAllToDefault: _('Reset All To Default'),
     NewWindow: _('New Window'),

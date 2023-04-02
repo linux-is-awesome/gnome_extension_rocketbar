@@ -19,8 +19,11 @@ const DEFAULT_STYLE_CLASS = 'rocketbar__popup-menu';
 const SECTION_TITLE_STYLE_CLASS = 'rocketbar__popup-menu_section-title';
 const SLIDER_ICON_STYLE_CLASS = 'popup-menu-icon';
 const INACTIVE_MENU_ITEM_STYLE_PSEUDO_CLASS = 'insensitive';
+const ICON_PATH_REGEXP_STRING = /^\/(.)*(\.(svg|png))$/;
+const ICON_PATH_SEPARATOR = '/';
 
 const ICON_SIZE_CONFIG_FIELD = 'iconSize';
+const ICON_PATH_CONFIG_FIELD = 'iconPath';
 const ACTIVATE_BEHAVIOR_CONFIG_FIELD = 'activateBehavior';
 const DEMANDS_ATTENTION_BEHAVIOR_CONFIG_FIELD = 'demandsAttentionBehavior';
 
@@ -337,6 +340,12 @@ class CustomizeSection extends MenuSection {
     /** @type {boolean} */
     #isSyncing = false;
 
+    /** @type {Object.<string, string|number|boolean>} */
+    #config = null;
+
+    /** @type {string} */
+    #clipboardIconPath = null;
+
     /**
      * @param {AppButton} appButton
      */
@@ -360,7 +369,7 @@ class CustomizeSection extends MenuSection {
         this.addSeparator(Labels.IconSize);
         menu.addMenuItem(this.#iconSizeSlider.actor);
         this.addSeparator(Labels.CustomIcon);
-        this.#importIconItem = menu.addAction(Labels.CopyIconToClipboard, () => this.#importIcon());
+        this.#importIconItem = menu.addAction(Labels.NoIconInClipboard, () => this.#importIcon());
         this.#resetIconItem = menu.addAction(Labels.ResetToDefault, () => this.#resetIcon());
         this.addSeparator();
         this.#resetAllItem = menu.addAction(Labels.ResetAllToDefault, () => this.#resetAll());
@@ -377,15 +386,36 @@ class CustomizeSection extends MenuSection {
         const app = this.#appButton?.app;
         const configProvider = this.#appButton?.configProvider;
         if (!configProvider || !app) return;
-        const config = configProvider.getConfig(app);
+        if (!this.#config) {
+            this.#config = configProvider.getConfig(app);
+        }
+        const config = this.#config;
         this.#isSyncing = true;
         this.#activateBehavior(config[ACTIVATE_BEHAVIOR_CONFIG_FIELD]).forEach(item => item.visible = config.isolateWorkspaces);
         this.#demandsAttentionBehavior(config[DEMANDS_ATTENTION_BEHAVIOR_CONFIG_FIELD]);
         this.#setIconSizeSliderPosition(config[ICON_SIZE_CONFIG_FIELD], configProvider.defaultConfig[ICON_SIZE_CONFIG_FIELD]);
-        this.setItemActiveState(this.#importIconItem, false);
-        this.setItemActiveState(this.#resetIconItem, false);
+        this.setItemActiveState(this.#resetIconItem, typeof config[ICON_PATH_CONFIG_FIELD] === Type.String);
         this.setItemActiveState(this.#resetAllItem, configProvider.hasConfigOverride(app));
+        this.#scanClipboard();
         this.#isSyncing = false;
+    }
+
+    #scanClipboard() {
+        if (!this.#config) return;
+        St.Clipboard.get_default().get_text(St.ClipboardType.CLIPBOARD, (_, iconPath) => {
+            const isValidIcon = ICON_PATH_REGEXP_STRING.test(iconPath ?? null);
+            this.#clipboardIconPath = isValidIcon ? iconPath : null;
+            this.setItemActiveState(this.#importIconItem, isValidIcon);
+            if (!isValidIcon) {
+                this.#importIconItem.label.set_text(Labels.NoIconInClipboard);
+                this.#importIconItem.setOrnament(Ornament.NONE);
+                return;
+            }
+            const iconName = iconPath.split(ICON_PATH_SEPARATOR).pop();
+            this.#importIconItem.label.set_text(iconName);
+            if (this.#config[ICON_PATH_CONFIG_FIELD] === iconPath) this.#importIconItem.setOrnament(Ornament.NONE);
+            else this.#importIconItem.setOrnament(Ornament.CHECK);
+        });
     }
 
     #setIconSizeSliderPosition(iconSize, defaultIconSize) {
@@ -421,18 +451,24 @@ class CustomizeSection extends MenuSection {
     }
 
     #importIcon() {
-
+        if (typeof this.#clipboardIconPath !== Type.String) return;
+        this.#setConfigOverride(ICON_PATH_CONFIG_FIELD, this.#clipboardIconPath);
+        this.#importIconItem.setOrnament(Ornament.NONE);
+        this.setItemActiveState(this.#resetIconItem, true);
     }
 
     #resetIcon() {
-
+        this.#setConfigOverride(ICON_PATH_CONFIG_FIELD, null);
+        this.setItemActiveState(this.#resetIconItem, false);
+        if (typeof this.#clipboardIconPath !== Type.String) return;
+        this.#importIconItem.setOrnament(Ornament.CHECK);
     }
 
     #setConfigOverride(field, value) {
         const configProvider = this.#appButton?.configProvider;
         if (!configProvider) return;
         configProvider.setConfigOverride(this.#appButton.app, field, value);
-        this.setItemActiveState(this.#resetAllItem, true);
+        this.setItemActiveState(this.#resetAllItem);
     }
 
 }
