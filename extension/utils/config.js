@@ -3,6 +3,8 @@
 import { Context } from '../core/context.js';
 import { Type } from '../core/enums.js';
 
+const DUMMY_FIELD_PREFIX = '~';
+
 /**
  * @typedef {string} settingsKey
  * @typedef {string|number|boolean} value
@@ -30,6 +32,10 @@ export const Config = (client, fields, callback) => {
     for (const fieldName in fields) {
         const settingsKey = fields[fieldName];
         if (typeof settingsKey !== Type.String) continue;
+        if (settingsKey.startsWith(DUMMY_FIELD_PREFIX)) {
+            values[fieldName] = null;
+            continue;
+        }
         valueMapping.set(settingsKey, fieldName);
         values[fieldName] = settings.get_value(settingsKey)?.unpack();
         signals.push(`changed::${settingsKey}`, valueHandler);
