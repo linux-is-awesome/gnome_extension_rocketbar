@@ -18,6 +18,7 @@ export const ConfigFields = {
     demandsAttentionBehavior: 'appbutton-demands-attention-behavior',
     enableSoundControl: 'appbutton-enable-sound-control',
     iconSize: 'appbutton-icon-size',
+    iconPath: '~appbutton-icon-path',
     iconHPadding: 'appbutton-icon-padding',
     iconVPadding: 'appbutton-icon-vertical-padding',
     spacingAfter: 'appbutton-spacing',
@@ -42,6 +43,14 @@ export const DemandsAttentionBehavior = {
 export const AppIconSize = {
     Min: 16,
     Max: 64
+};
+
+/** @type {Object.<string, string|number>} */
+const DefaultConfigOverride = {
+    iconSizeOffset: 0,
+    iconPath: null,
+    activateBehavior: ActivateBehavior.NewWindow,
+    demandsAttentionBehavior: DemandsAttentionBehavior.FocusActive
 };
 
 export class AppConfig {
@@ -172,16 +181,27 @@ export class AppConfig {
      * @returns {Config}
      */
     #getAppConfig(app) {
-        const { iconSizeOffset = 0,
-                activateBehavior = this.#config.activateBehavior,
-                demandsAttentionBehavior = this.#config.demandsAttentionBehavior } = this.#configOverride[app?.id] ?? {};
+        const configOverride = this.#getConfigOverride(app?.id);
+        const { iconSizeOffset, iconPath, activateBehavior, demandsAttentionBehavior } = configOverride;
         let { iconSize, iconHPadding, iconVPadding } = this.#config;
         const width = iconSize + iconHPadding * 2;
         const height = iconSize + iconVPadding * 2;
         iconSize += iconSizeOffset;
         iconSize = Math.max(iconSize, AppIconSize.Min);
         iconSize = Math.min(iconSize, AppIconSize.Max);
-        return { ...this.#config, ...{ iconSize, width, height, activateBehavior, demandsAttentionBehavior } };
+        return { ...this.#config, ...{ iconSize, iconPath, width, height, activateBehavior, demandsAttentionBehavior } };
+    }
+
+    /**
+     * @param {string} appId
+     * @returns {DefaultConfigOverride}
+     */
+    #getConfigOverride(appId) {
+        const configOverride = this.#configOverride[appId] ?? {};
+        return { ...DefaultConfigOverride, ...{
+            activateBehavior: this.#config.activateBehavior,
+            demandsAttentionBehavior: this.#config.demandsAttentionBehavior
+        }, ...configOverride };
     }
 
     async #saveConfigOverride() {
