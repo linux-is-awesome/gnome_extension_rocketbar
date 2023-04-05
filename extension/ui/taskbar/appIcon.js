@@ -2,6 +2,7 @@
 
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
 import { Context } from '../../core/context.js';
 import { Event, Type } from '../../core/enums.js';
 import { Component, ComponentEvent, ComponentLocation } from '../base/component.js';
@@ -46,6 +47,17 @@ export class AppIcon extends Component {
     /** @type {number} */
     #size = DEFAULT_SIZE;
 
+    /** @type {string} */
+    #iconPath = null;
+
+    /** @param {string|null} value */
+    set iconPath(value) {
+        if (this.#iconPath === value) return;
+        if (typeof value !== Type.String && value !== null) return;
+        this.#iconPath = value;
+        this.#setIcon();
+    }
+
     /** @type {St.Icon} */
     get dragActor() {
         const gicon = this.actor.get_gicon();
@@ -56,12 +68,13 @@ export class AppIcon extends Component {
     /**
      * @param {Shell.App} app
      */
-    constructor(app) {
+    constructor(app, iconPath) {
         super(new St.Icon(DefaultProps));
         this.actor.set_pivot_point(0.5, 0.5);
         this.#app = app;
+        this.#iconPath = iconPath;
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
-        this.#setDefaultIcon();
+        this.#setIcon();
     }
 
     /**
@@ -99,11 +112,20 @@ export class AppIcon extends Component {
         Context.signals.removeAll(this);
     }
 
-    #setDefaultIcon() {
-        if (this.actor.get_gicon()) this.actor.set_gicon(null);
-        this.actor.set_gicon(this.#app.get_icon());
-        if (Context.signals.hasClient(this)) return;
-        Context.signals.add(this, [St.Settings.get(), Event.IconTheme, () => this.#setDefaultIcon()]);
+    /**
+     * Note: Icon Path is not validated in terms of performance.
+     *       Gio.Icon.new_for_string doesn't throw an exception if the path is invalid.
+     *       So it's the expected behavior to get a blank icon in such cases for now.
+     */
+    #setIcon() {
+        const oldIcon = this.actor.get_gicon();
+        const hasIconPath = typeof this.#iconPath === Type.String && this.#iconPath.length;
+        const customIcon = hasIconPath ? Gio.Icon.new_for_string(this.#iconPath) : null;
+        if (oldIcon) this.actor.set_gicon(null);
+        this.actor.set_gicon(customIcon ?? this.#app.get_icon());
+        if (hasIconPath) Context.signals.removeAll(this);
+        else if (Context.signals.hasClient(this)) return;
+        Context.signals.add(this, [St.Settings.get(), Event.IconTheme, () => this.#setIcon()]);
     }
 
 }
