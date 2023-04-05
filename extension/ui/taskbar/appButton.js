@@ -205,7 +205,7 @@ export class AppButton extends Button {
         this.dragEvents = true;
         this.#app = app;
         this.#config = this.configProvider.getConfig(app, settingsKey => this.#handleConfig(settingsKey));
-        this.#appIcon = new AppIcon(app).setParent(this.display);
+        this.#appIcon = new AppIcon(app, this.#config.iconPath).setParent(this.display);
         this.#service = new TaskbarClient(() => this.#handleAppState(), app);
         this.actor.animateLaunch = () => this.#appIcon.animate(AppIconAnimation.Activate);
         this.#connectSignals();
@@ -249,17 +249,20 @@ export class AppButton extends Button {
     #handleConfig(settingsKey) {
         if (!this.isValid) return;
         switch (settingsKey) {
-            case ConfigFields.enableIndicators:
-            case ConfigFields.enableSoundControl:
-                return this.#toggleFeatures();
             case ConfigFields.isolateWorkspaces:
             case ConfigFields.enableMinimizeAction:
             case ConfigFields.activateBehavior:
             case ConfigFields.demandsAttentionBehavior:
                 return;
+            case ConfigFields.enableIndicators:
+            case ConfigFields.enableSoundControl:
+                return this.#toggleFeatures();
             case ConfigFields.backlightColor:
             case ConfigFields.backlightIntensity:
                 return this.#updateBacklight();
+            case ConfigFields.iconPath:
+                this.#appIcon.iconPath = this.#config.iconPath;
+                return;
             default:
             case ConfigFields.iconSize:
                 this.#appIcon.setSize(this.#config.iconSize);
@@ -269,7 +272,9 @@ export class AppButton extends Button {
             case ConfigFields.spacingAfter:
                 this.#updateStyle();
         }
-        if (!settingsKey) this.#toggleFeatures();
+        if (settingsKey) return;
+        this.#appIcon.iconPath = this.#config.iconPath;
+        this.#toggleFeatures();
     }
 
     #toggleFeatures() {
