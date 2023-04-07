@@ -84,7 +84,7 @@
 .rocketbar__popup-menu
 .rocketbar__popup-menu_options-group
 .popup-menu-ornament {
-    width: 16px !important;
+    width: 1em !important;
 }
 .rocketbar__popup-menu
 .popup-separator-menu-item {
@@ -97,6 +97,17 @@
 .rocketbar__popup-menu
 .popup-menu-icon {
     margin-left: 10px;
+}
+.rocketbar__popup-menu
+.popup-menu-arrow,
+.rocketbar__popup-menu
+.popup-menu-icon {
+    icon-size: 1em !important;
+}
+.rocketbar__popup-menu
+.slider {
+    -barlevel-height: 0.25em;
+    -slider-handle-radius: 0.5em;
 }
 
 /* date menu */
