@@ -41,6 +41,7 @@ export const Event = {
     WindowRemoved: 'window_removed',
     Minimize: 'minimize',
     Unminimize: 'unminimize',
+    MenuClosed: 'menu-closed'
 };
 
 /**

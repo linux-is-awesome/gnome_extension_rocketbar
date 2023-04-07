@@ -82,6 +82,11 @@
     width: 0 !important;
 }
 .rocketbar__popup-menu
+.rocketbar__popup-menu_options-group
+.popup-menu-ornament {
+    width: 16px !important;
+}
+.rocketbar__popup-menu
 .popup-separator-menu-item {
     font-size: 0.8em;
 }

@@ -4,8 +4,8 @@
 
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
-import { AppMenu, Slider, Ornament } from '../../core/legacy.js';
-import { PopupSubMenuMenuItem, PopupSeparatorMenuItem, PopupBaseMenuItem } from '../../core/legacy.js';
+import { AppMenu, Slider, Ornament, ArrowIcon } from '../../core/legacy.js';
+import { PopupSubMenuMenuItem, PopupSeparatorMenuItem, PopupBaseMenuItem, PopupMenuSection } from '../../core/legacy.js';
 import { Context } from '../../core/context.js';
 import { Delay, Event, Type } from '../../core/enums.js';
 import { ComponentLocation } from '../base/component.js';
@@ -17,7 +17,9 @@ import { Labels } from '../../core/labels.js';
 const UNWANTED_STYLE_CLASS = 'app-menu';
 const DEFAULT_STYLE_CLASS = 'rocketbar__popup-menu';
 const SECTION_TITLE_STYLE_CLASS = 'rocketbar__popup-menu_section-title';
+const OPTIONS_GROUP_STYLE_CLASS = 'rocketbar__popup-menu_options-group';
 const SLIDER_ICON_STYLE_CLASS = 'popup-menu-icon';
+const EXPANDER_STYLE_CLASS = 'popup-menu-item-expander';
 const INACTIVE_MENU_ITEM_STYLE_PSEUDO_CLASS = 'insensitive';
 const ICON_PATH_REGEXP_STRING = /^\/(.)*(\.(svg|png))$/;
 const ICON_PATH_SEPARATOR = '/';
@@ -47,6 +49,12 @@ const SliderIconProps = {
 const SliderValueProps = {
     y_expand: true,
     y_align: Clutter.ActorAlign.CENTER
+};
+
+/** @type {Object.<string, boolean|string>} */
+const MenuItemExpanderProps = {
+    style_class: EXPANDER_STYLE_CLASS,
+    x_expand: true
 };
 
 /** @type {Object.<number, number>} */
@@ -139,9 +147,6 @@ class MenuSection {
     /** @type {PopupSubMenuMenuItem} */
     #actor = null;
 
-    /** @type {Map<PopupBaseMenuItem, number>} */
-    #hiddenMenuItems = null;
-
     /** @type {PopupSubMenuMenuItem} */
     get actor() {
         return this.#actor;
@@ -159,13 +164,84 @@ class MenuSection {
 
     /**
      * @param {string} [title]
-     * @param {boolean} [dominate]
      */
-    constructor(title, dominate = false) {
+    constructor(title) {
         this.#actor = new PopupSubMenuMenuItem(title);
         this.#actor.connect(Event.Destroy, () => { this.#actor = null; });
-        if (!dominate) return;
-        this.menu?.connect(Event.OpenStateChanged, () => this.#handleState());
+    }
+
+}
+
+class ChildMenu extends PopupMenuSection {
+
+    /** @type {Set<PopupBaseMenuItem>} */
+    #hiddenMenuItems = new Set();
+
+    /** @type {PopupBaseMenuItem} */
+    #titleMenuItem = null;
+
+    /** @type {St.Icon} */
+    #arrowLeft = ArrowIcon(St.Side.LEFT);
+
+    /** @type {St.Icon} */
+    #arrowRight = ArrowIcon(St.Side.RIGHT);
+
+    /** @type {PopupMenuSection} */
+    #menu = new PopupMenuSection();
+
+    /** @type {PopupMenuSection} */
+    get menu() {
+        return this.#menu;
+    }
+
+    /**
+     * @param {string} title
+     */
+    constructor(title) {
+        super();
+        this.isOpen = false;
+        this.#menu.actor.hide();
+        this.#arrowLeft.hide();
+        this.#titleMenuItem = this.addAction(title, () => this.toggle());
+        this.#titleMenuItem.add_child(new St.Bin(MenuItemExpanderProps));
+        this.#titleMenuItem.insert_child_at_index(this.#arrowLeft, 0);
+        this.#titleMenuItem.add_child(this.#arrowRight);
+        this.addMenuItem(this.#menu);
+    }
+
+    destroy() {
+        super.destroy();
+        this.#menu = null;
+        this.#titleMenuItem = null;
+        this.#arrowLeft = null;
+        this.#arrowRight = null;
+        Context.signals.removeAll(this);
+    }
+
+    /**
+     * Note: Prevent undesirable behavior when the parent menu calls this function.
+     */
+    itemActivated() {}
+
+    /**
+     * Note: Prevent undesirable behavior when the parent menu calls this function.
+     */
+    open() {}
+
+    /**
+     * Note: Set closed flag if parent menu is closed but don't handle state.
+     */
+    close() {
+        this.isOpen = false;
+        super.close();
+    }
+
+    toggle() {
+        this.isOpen = !this.isOpen;
+        if (this.isOpen) super.open();
+        this.#handleState();
+        if (this.isOpen) return;
+        super.close();
     }
 
     /**
@@ -186,7 +262,6 @@ class MenuSection {
      * @returns {(value: string) => PopupBaseMenuItem[]}
      */
     addCheckboxGroup(title, items, callback) {
-        const menu = this.menu;
         const group = new Map();
         const separator = this.addSeparator(title);
         /** @param {string} value */
@@ -200,7 +275,7 @@ class MenuSection {
             if (typeof callback === Type.Function) callback(value, items);
             return result;
         };
-        for (const value in items) group.set(value, menu.addAction(items[value], () => handler(value)));
+        for (const value in items) group.set(value, this.#menu.addAction(items[value], () => handler(value)));
         return handler;
     }
 
@@ -209,43 +284,50 @@ class MenuSection {
      * @returns {PopupSeparatorMenuItem}
      */
     addSeparator(title = null) {
-        if (!this.#actor?.menu) return null;
         const separator = new PopupSeparatorMenuItem(title);
         if (title) separator.add_style_class_name(SECTION_TITLE_STYLE_CLASS);
-        this.#actor.menu.addMenuItem(separator);
+        this.#menu.addMenuItem(separator);
         return separator;
     }
 
     #handleState() {
+        const parentMenu = this._getTopMenu();
+        const parentActor = parentMenu?.actor;
+        if (!parentMenu.isOpen || !parentActor) return;
+        parentActor.remove_all_transitions();
+        const location = parentActor._arrowSide;
+        const translation = parentMenu._boxPointer?.get_theme_node()?.get_length('-arrow-rise') ?? 0;
+        const mode = Clutter.AnimationMode.LINEAR;
+        Animation(parentActor, AnimationDuration.Fast, { ...AnimationType.OpacityMin, mode }).then(() => {
+            this.#toggleVisibility();
+            this.#titleMenuItem?.grab_key_focus();
+            parentActor.translation_y = location === St.Side.BOTTOM ? translation : -translation;
+            Animation(parentActor, AnimationDuration.Fast, { ...AnimationType.OpacityMax, ...AnimationType.TranslationReset, mode });
+        });
+        if (!this.isOpen || Context.signals.hasClient(this)) return;
+        Context.signals.add(this, [parentMenu, Event.MenuClosed, () => this.#toggleVisibility()]);
+    }
+
+    #toggleVisibility() {
         if (!this.isOpen) {
-            if (!this.#hiddenMenuItems?.size) return;
-            const animationParams = { ...AnimationType.OpacityMax, ...{ mode: Clutter.AnimationMode.EASE_OUT_QUAD } };
-            for (const [menuItem, height] of this.#hiddenMenuItems) {
-                menuItem.show();
-                if (height < 0) continue;
-                Animation(menuItem, AnimationDuration.Faster, { ...animationParams, ...{ height } }).then(() => menuItem.set_size(-1, -1));
-            }
+            this.#menu.actor.hide();
+            this.#arrowLeft.hide();
+            this.#arrowRight.show();
+            if (!this.#hiddenMenuItems.size) return;
+            for (const menuItem of this.#hiddenMenuItems) menuItem.show();
             return this.#hiddenMenuItems.clear();
         }
-        const parent = this.#actor?.get_parent();
-        if (!parent) return;
-        if (!this.#hiddenMenuItems) {
-            this.#hiddenMenuItems = new Map();
-        }
-        const menuItems = parent.get_children();
-        const animationParams = { ...AnimationType.HeightMin, ...{ mode: Clutter.AnimationMode.EASE_OUT_QUAD } };
+        this.#menu.actor.show();
+        this.#arrowLeft.show();
+        this.#arrowRight.hide();
+        const menuItems = this.actor?.get_parent()?.get_children();
+        if (!menuItems) return;
         for (let i = 0, l = menuItems.length; i < l; ++i) {
             const menuItem = menuItems[i];
-            if (menuItem === this.#actor) continue;
-            if (menuItem instanceof St.ScrollView || !menuItem.visible) continue;           
-            const menuItemHeight = menuItem instanceof PopupSeparatorMenuItem ? -1 : menuItem.height; 
-            this.#hiddenMenuItems.set(menuItem, menuItemHeight);
-            if (menuItemHeight < 0) {
-                menuItem.hide();
-                continue;
-            }
-            menuItem.set(AnimationType.OpacityMin);
-            Animation(menuItem, AnimationDuration.Default, animationParams).then(() => menuItem.hide());
+            if (menuItem === this.actor) continue;
+            if (!menuItem.visible) continue;
+            this.#hiddenMenuItems.add(menuItem);
+            menuItem.hide();
         }
     }
 
@@ -314,7 +396,7 @@ class SoundVolumeControlSection extends MenuSection {
 
 }
 
-class CustomizeSection extends MenuSection {
+class CustomizeSection extends ChildMenu {
 
     /** @type {AppButton} */
     #appButton = null;
@@ -350,10 +432,11 @@ class CustomizeSection extends MenuSection {
      * @param {AppButton} appButton
      */
     constructor(appButton) {
-        super(Labels.Customize, true);
+        super(Labels.Customize);
         this.#appButton = appButton;
         this.#createMenuItems();
         this.menu.itemActivated = () => {};
+        this.menu.actor.add_style_class_name(OPTIONS_GROUP_STYLE_CLASS);
         this.menu.connect(Event.OpenStateChanged, () => this.#sync());
         this.actor.connect(Event.Destroy, () => { this.#appButton = null; });
     }
@@ -408,8 +491,7 @@ class CustomizeSection extends MenuSection {
             this.setItemActiveState(this.#importIconItem, isValidIcon);
             if (!isValidIcon) {
                 this.#importIconItem.label.set_text(Labels.NoIconInClipboard);
-                this.#importIconItem.setOrnament(Ornament.NONE);
-                return;
+                return this.#importIconItem.setOrnament(Ornament.NONE);
             }
             const iconName = iconPath.split(ICON_PATH_SEPARATOR).pop();
             this.#importIconItem.label.set_text(iconName);
@@ -526,7 +608,7 @@ export class Menu extends AppMenu {
     #createSections() {
         this.#soundVolumeControlSection = new SoundVolumeControlSection(this.#appButton);
         this.addMenuItem(this.#soundVolumeControlSection.actor);
-        if (this.#hasValidAppId) this.addMenuItem(new CustomizeSection(this.#appButton).actor);
+        if (this.#hasValidAppId) this.addMenuItem(new CustomizeSection(this.#appButton));
         this.addMenuItem(new PopupSeparatorMenuItem());
         this.moveMenuItem(this._quitItem, this.numMenuItems);
     }
