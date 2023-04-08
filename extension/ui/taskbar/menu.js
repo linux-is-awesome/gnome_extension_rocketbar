@@ -299,6 +299,7 @@ class ChildMenu extends PopupMenuSection {
         const translation = parentMenu._boxPointer?.get_theme_node()?.get_length('-arrow-rise') ?? 0;
         const mode = Clutter.AnimationMode.LINEAR;
         Animation(parentActor, AnimationDuration.Fast, { ...AnimationType.OpacityMin, mode }).then(() => {
+            parentMenu._openedSubMenu?.close();
             this.#toggleVisibility();
             this.#titleMenuItem?.grab_key_focus();
             parentActor.translation_y = location === St.Side.BOTTOM ? translation : -translation;
@@ -325,7 +326,7 @@ class ChildMenu extends PopupMenuSection {
         for (let i = 0, l = menuItems.length; i < l; ++i) {
             const menuItem = menuItems[i];
             if (menuItem === this.actor) continue;
-            if (!menuItem.visible) continue;
+            if (menuItem instanceof St.ScrollView || !menuItem.visible) continue;
             this.#hiddenMenuItems.add(menuItem);
             menuItem.hide();
         }
