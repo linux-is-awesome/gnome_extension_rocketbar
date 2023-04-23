@@ -79,7 +79,7 @@ export class Component {
         return this.#isComponent(parent) ? parent.#actor : parent;
     }
 
-    /** @type {Component} may return an instance of St.Widget instead */
+    /** @type {Component|St.Widget} */
     get parent() {
         if (!this.isMapped) return null;
         const actorParent = this.#actor.get_parent();
@@ -452,10 +452,25 @@ export class Component {
      */
     #notifyParents(event, params, sender = this) {
         if (typeof event !== Type.String) return this;
-        const parent = this.parent;
-        if (!this.#isComponent(parent)) return this;
+        const parent = this.#getNearestParentComponent();
+        if (!parent) return this;
         if (parent.#notifySelf(event, parent, params, sender)) return this;
         return parent.#notifyParents(event, params, sender);
+    }
+
+    /**
+     * @param {Component|St.Widget} parent
+     * @returns {Component|null}
+     */
+    #getNearestParentComponent(parent = this.parent) {
+        if (!parent) return null;
+        let nextParent = null;
+        if (parent instanceof St.Widget) {
+            nextParent = parent.get_parent();
+            parent = nextParent?._delegate;
+        }
+        if (this.#isComponent(parent)) return parent;
+        return this.#getNearestParentComponent(nextParent);
     }
 
     /**
