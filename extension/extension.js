@@ -13,11 +13,15 @@ class Extension {
         extensionUtils.initTranslations();
     }
 
+    /**
+     * Note: setTimeout is a temporary workaround for Gnome 44.
+     *       Without it session won't start for some reason.
+     */
     enable() {
         const extensionInfo = this.#getExtensionInfo();
-        import('./core/context.js').then(({ Context }) => {
+        setTimeout(() => import('./core/context.js').then(({ Context }) => {
             this.#instance = new Context(extensionInfo);
-        }).catch(e => console.error(`${extensionInfo.metadata.name} initialization failed.`, e));
+        }).catch(e => console.error(`${extensionInfo.metadata.name} initialization failed.`, e)));
     }
 
     disable() {
