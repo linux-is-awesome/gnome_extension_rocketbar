@@ -5,15 +5,8 @@ import Meta from 'gi://Meta';
 import { Context } from '../context.js';
 import { Type, Delay } from '../enums.js';
 
-/**
- * Note: Using compositor laters for Gnome 44+ instead of Meta functions.
- * 
- * @type {Meta.Laters}
- */
-const Laters = global.compositor?.get_laters() ?? {
-    add: (...args) => Meta.later_add(...args),
-    remove: (...args) => Meta.later_remove(...args)
-};
+/** @type {Meta.Laters} */
+const Laters = global.compositor?.get_laters();
 
 /** @type {Object.<string, number>} */
 const LaterType = {
