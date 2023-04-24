@@ -81,9 +81,7 @@ export class AppIcon extends Component {
     get dominantColor() {
         if (this.#dominantColor) return this.#dominantColor;
         this.#dominantColor = this.#dominantColors.get(this.#app);
-        console.log('Dominant Color from cache', this.#app?.id);
         if (this.#dominantColors.has(this.#app)) return this.#dominantColor;
-        console.log('Dominant Color from query', this.#app?.id);
         this.#dominantColor = DominantColor(this.actor.get_gicon());
         this.#dominantColors.set(this.#app, this.#dominantColor)
         return this.#dominantColor;
