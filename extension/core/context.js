@@ -1,12 +1,15 @@
 /* exported Context */
 
+import St from 'gi://St';
+import Gtk from 'gi://Gtk';
 import { Main } from './legacy.js';
 import { LayoutManager } from './context/layout.js';
 import { Modules } from './context/modules.js';
 import { Jobs } from './context/jobs.js';
 import { Signals } from './context/signals.js';
-import { Icons } from './context/icons.js';
 import { LauncherApiClient } from '../services/launcherApiService.js';
+
+const CUSTOM_ICONS_PATH = '/assets/icons/';
 
 export class Context {
 
@@ -34,8 +37,8 @@ export class Context {
     /** @type {Signals} */
     #signals = null;
 
-    /** @type {Icons} */
-    #icons = null;
+    /** @type {St.IconTheme|Gtk.IconTheme} */
+    #iconTheme = null;
 
     /** @type {LauncherApiClient} */
     #launcherApi = null;
@@ -79,12 +82,9 @@ export class Context {
         return instance.#signals;
     }
 
-    /** @type {Icons} */
-    static get icons() {
-        const instance = Context.#getInstance();
-        if (instance.#icons) return instance.#icons;
-        instance.#icons = new Icons();
-        return instance.#icons;
+    /** @type {St.IconTheme|Gtk.IconTheme} */
+    static get iconTheme() {
+        return Context.#getInstance().#iconTheme;
     }
 
     /** @type {LauncherApiClient} */
@@ -125,6 +125,7 @@ export class Context {
         this.#extensionInfo = extensionInfo;
         if (Context.#instance instanceof Context) return;
         Context.#instance = this;
+        this.#iconTheme = St.IconTheme ? new St.IconTheme() : Gtk.IconTheme.get_default();
         this.#launcherApi = new LauncherApiClient();
         this.#modules = new Modules();
     }
@@ -146,8 +147,6 @@ export class Context {
         this.#modules = null;
         this.#layoutManager?.destroy();
         this.#layoutManager = null;
-        this.#icons?.destroy();
-        this.#icons = null;
         this.#jobs?.destroy();
         this.#jobs = null;
         this.#signals?.destroy();
@@ -155,6 +154,7 @@ export class Context {
         this.#launcherApi?.destroy();
         this.#launcherApi = null;
         this.#extensionInfo?.settings?.run_dispose();
+        this.#iconTheme = null;
         this.#cleanSessionCache();
     }
 
