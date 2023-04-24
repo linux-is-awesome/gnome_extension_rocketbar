@@ -8,6 +8,8 @@ import { Type, Delay } from '../enums.js';
 /**
  * Note: Using compositor laters for Gnome 44+ instead of Meta functions.
  * 
+ * TODO: stop using old Meta.laters.
+ * 
  * @type {Meta.Laters}
  */
 const Laters = global.compositor?.get_laters() ?? {
