@@ -7,6 +7,7 @@
     "url": "https://github.com/linux-is-awesome/gnome_extension_rocketbar",
     "version": 6,
     "shell-version": [
+        "43",
         "44"
     ]
 }
