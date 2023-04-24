@@ -16,6 +16,8 @@ class Extension {
     /**
      * Note: setTimeout is a temporary workaround for Gnome 44.
      *       Without it session won't start for some reason.
+     * 
+     * TODO: remove setTimeout.
      */
     enable() {
         const extensionInfo = this.#getExtensionInfo();
