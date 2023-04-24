@@ -25,6 +25,8 @@ const ConfigFields = {
     limitActive: 'indicator-display-limit-active',
     colorInactive: 'indicator-color-inactive',
     colorActive: 'indicator-color-active',
+    dominantColorInactive: 'indicator-dominant-color-inactive',
+    dominantColorActive: 'indicator-dominant-color-active',
     sizeInactive: 'indicator-width-inactive',
     sizeActive: 'indicator-width-active',
     spacingInactive: 'indicator-spacing-inactive',
@@ -246,6 +248,9 @@ class IndicatorsBackend {
     /** @type {cairo.Context} */
     #canvas = null;
 
+    /** @type {Clutter.Color} */
+    #color = null;
+
     /** @type {Indicator[]} */
     #indicators = [];
 
@@ -325,8 +330,9 @@ class IndicatorsBackend {
      * @param {string} colorString
      */
     #setColor(colorString) {
-        const color = Clutter.color_from_string(colorString)[1];
-        Clutter.cairo_set_source_color(this.#canvas, color);
+        this.#color = colorString ? Clutter.color_from_string(colorString)[1] : this.#color;
+        if (!this.#color) return;
+        Clutter.cairo_set_source_color(this.#canvas, this.#color);
     }
 
     #animate() {
@@ -386,15 +392,26 @@ export class Indicators extends Component {
         return !Main.overview?._shown && this.#appButton.isActive;
     }
 
+    /** @type {string} */
+    get #color() {
+        const isActive = this.#isActive;
+        const { colorActive, colorInactive,
+                dominantColorActive, dominantColorInactive } = this.#config;
+        const requiresDominantColor = (isActive && dominantColorActive) || (!isActive && dominantColorInactive);
+        const dominantColor = requiresDominantColor ? this.#appButton?.dominantColor : null;
+        if (isActive) return dominantColor ?? colorActive;
+        return dominantColor ?? colorInactive;
+    }
+
     /** @type {BackendParams} */
     get #backendParams() {
+        const { limitActive, limitInactive, sizeActive, sizeInactive,
+                spacingActive, spacingInactive, weightActive, weightInactive,
+                offsetActive, offsetInactive, position } = this.#config;
         const scale = this.uiScale * this.globalScale;
         const isActive = this.#isActive;
-        const { limitActive, limitInactive, colorActive, colorInactive,
-                sizeActive, sizeInactive, spacingActive, spacingInactive,
-                weightActive, weightInactive, offsetActive, offsetInactive, position } = this.#config;
         const count = Math.min(this.#appButton.windowsCount, isActive ? limitActive : limitInactive);
-        const color = isActive ? colorActive : colorInactive;
+        const color = count > 0 ? this.#color : null;
         const size = (isActive ? sizeActive : sizeInactive) * scale;
         const spacing = (isActive ? spacingActive : spacingInactive) * scale;
         const weight = (isActive ? weightActive : weightInactive) * scale;

@@ -1,12 +1,13 @@
-/* exported AppIcon, AppIconAnimation */
+/* exported AppIconAnimation, AppIconEvent, AppIcon */
 
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import { Context } from '../../core/context.js';
-import { Event, Type } from '../../core/enums.js';
+import { Delay, Event, Type } from '../../core/enums.js';
 import { Component, ComponentEvent, ComponentLocation } from '../base/component.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
+import { DominantColor } from '../../utils/dominantColor.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppIcon';
 const FALLBACK_ICON_NAME = 'application-x-executable';
@@ -30,6 +31,11 @@ export const AppIconAnimation = {
     Deactivate: { duration: AnimationDuration.Fast, offset: -3 }
 };
 
+/** @enum {string} */
+export const AppIconEvent = {
+    DominantColorChanged: 'appicon::dominant-color-changed'
+};
+
 export class AppIcon extends Component {
 
     /**
@@ -50,6 +56,12 @@ export class AppIcon extends Component {
     /** @type {string} */
     #iconPath = null;
 
+    /** @type {string} */
+    #dominantColor = null;
+
+    /** @type {Map<Shell.App, string>} */
+    #dominantColors = Context.getSessionCache(this.constructor.name);
+
     /** @param {string|null} value */
     set iconPath(value) {
         if (this.#iconPath === value) return;
@@ -63,6 +75,18 @@ export class AppIcon extends Component {
         const gicon = this.actor.get_gicon();
         const size = this.#size * DRAG_ACTOR_SIZE_SCALE * this.uiScale;
         return new St.Icon({ name: `${MODULE_NAME}.DragActor`, icon_size: size, gicon });
+    }
+
+    /** @type {string} */
+    get dominantColor() {
+        if (this.#dominantColor) return this.#dominantColor;
+        this.#dominantColor = this.#dominantColors.get(this.#app);
+        console.log('Dominant Color from cache', this.#app?.id);
+        if (this.#dominantColors.has(this.#app)) return this.#dominantColor;
+        console.log('Dominant Color from query', this.#app?.id);
+        this.#dominantColor = DominantColor(this.actor.get_gicon());
+        this.#dominantColors.set(this.#app, this.#dominantColor)
+        return this.#dominantColor;
     }
 
     /**
@@ -112,6 +136,11 @@ export class AppIcon extends Component {
         Context.signals.removeAll(this);
     }
 
+    #handleIconTheme() {
+        this.#dominantColors.clear();
+        Context.jobs.removeAll(this).new(this, Delay.Background).destroy(() => this.#setIcon()).catch();
+    }
+
     /**
      * Note: Icon Path is not validated in terms of performance.
      *       Gio.Icon.new_for_string doesn't throw an exception if the path is invalid.
@@ -123,9 +152,17 @@ export class AppIcon extends Component {
         const customIcon = hasIconPath ? Gio.Icon.new_for_string(this.#iconPath) : null;
         if (oldIcon) this.actor.set_gicon(null);
         this.actor.set_gicon(customIcon ?? this.#app.get_icon());
+        this.#handleIcon();
         if (hasIconPath) Context.signals.removeAll(this);
         else if (Context.signals.hasClient(this)) return;
-        Context.signals.add(this, [St.Settings.get(), Event.IconTheme, () => this.#setIcon()]);
+        Context.signals.add(this, [St.Settings.get(), Event.IconTheme, () => this.#handleIconTheme()]);
+    }
+
+    #handleIcon() {
+        if (!this.#dominantColor) return;
+        this.#dominantColors.delete(this.#app);
+        this.#dominantColor = null;
+        this.notifyParents(AppIconEvent.DominantColorChanged);
     }
 
 }

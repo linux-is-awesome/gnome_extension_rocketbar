@@ -11,7 +11,7 @@ import { ComponentEvent } from '../base/component.js';
 import { TaskbarClient } from '../../services/taskbarService.js';
 import { AppConfig, ConfigFields, ActivateBehavior, DemandsAttentionBehavior } from '../../utils/taskbar/appConfig.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
-import { AppIcon, AppIconAnimation } from './appIcon.js';
+import { AppIcon, AppIconAnimation, AppIconEvent } from './appIcon.js';
 import { Indicators } from './indicators.js';
 import { Menu } from './menu.js';
 import { AppSoundVolumeControl } from '../../services/soundVolumeService.js';
@@ -80,7 +80,8 @@ export class AppButton extends Button {
         [ComponentEvent.Scale]: this.#updateStyle,
         [ButtonEvent.Press]: this.#press,
         [ButtonEvent.Click]: () => this.#click(data?.params) ?? true,
-        [ButtonEvent.RequestMenu]: () => new Menu(this)
+        [ButtonEvent.RequestMenu]: () => new Menu(this),
+        [AppIconEvent.DominantColorChanged]: () => this.#updateBacklight() ?? this.#indicators?.rerender() ?? true
     })[data?.event]?.call(this);
 
     /** @type {boolean} */
@@ -194,6 +195,11 @@ export class AppButton extends Button {
         ]);
     }
 
+    /** @type {string} */
+    get dominantColor() {
+        return this.#appIcon?.dominantColor;
+    }
+
     /**
      * @param {Shell.App} app
      */
@@ -259,6 +265,7 @@ export class AppButton extends Button {
                 return this.#toggleFeatures();
             case ConfigFields.backlightColor:
             case ConfigFields.backlightIntensity:
+            case ConfigFields.backlightDominantColor:
                 return this.#updateBacklight();
             case ConfigFields.iconPath:
                 this.#appIcon.iconPath = this.#config.iconPath;
@@ -300,8 +307,9 @@ export class AppButton extends Button {
     }
 
     #updateBacklight() {
-        let { backlightColor, backlightIntensity } = this.#config;
+        let { backlightColor, backlightIntensity, backlightDominantColor } = this.#config;
         if (!super.isActive) backlightIntensity = 0;
+        else if (backlightDominantColor) backlightColor = this.dominantColor ?? backlightColor;
         this.overrideStyle({ backlightColor, backlightIntensity });
     }
 

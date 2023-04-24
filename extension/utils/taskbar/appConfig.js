@@ -24,7 +24,8 @@ export const ConfigFields = {
     spacingAfter: 'appbutton-spacing',
     roundness: 'appbutton-roundness',
     backlightColor: 'appbutton-backlight-color',
-    backlightIntensity: 'appbutton-backlight-intensity'
+    backlightIntensity: 'appbutton-backlight-intensity',
+    backlightDominantColor: 'appbutton-backlight-dominant-color'
 };
 
 /** @enum {string} */
