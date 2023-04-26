@@ -338,9 +338,10 @@ export class AppButton extends Button {
         const width = (this.#config.width + spacingAfter) * this.uiScale * this.globalScale;
         const animationParams = { ...AnimationType.OpacityMax, ...{ width, mode: Clutter.AnimationMode.EASE_OUT_QUAD } };
         Context.jobs.new(this).destroy(() => {
-            Animation(this, AnimationDuration.Default, animationParams).then(() => {
+            Animation(this, AnimationDuration.Default, animationParams).finally(() => {
+                this.setSize();
                 if (!isWorkspaceChanged) this.#indicators?.rerender();
-            }).finally(() => this.setSize());
+            });
             if (isWorkspaceChanged) this.#indicators?.rerender();
         }).catch();
     }

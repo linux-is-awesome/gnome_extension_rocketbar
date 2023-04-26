@@ -8,7 +8,7 @@ import { Event } from '../../core/enums.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Config } from '../../utils/config.js';
 
-const MODULE_NAME = 'Rocketbar__Taskbar_Indicator';
+const MODULE_NAME = 'Rocketbar__Taskbar_Indicators';
 const ANIMATION_INTERVAL = 10;
 const ANIMATION_FRAMES = 15;
 const ANIMATION_STEP_MIN = 0.1;

@@ -41,10 +41,10 @@ const Pixels = (pixbuf) => {
     let resampleY = 1;
     let resampleX = 1;
     if (height >= 2 * SAMPLE_SIZE) {
-        resampleY = Math.floor(height / SAMPLE_SIZE);
+        resampleY = ~~(height / SAMPLE_SIZE);
     }
     if (width >= 2 * SAMPLE_SIZE) {
-        resampleX = Math.floor(width / SAMPLE_SIZE);
+        resampleX = ~~(width / SAMPLE_SIZE);
     }
     if (resampleX === 1 && resampleY === 1) return pixels;
     const resampledPixels = [];
