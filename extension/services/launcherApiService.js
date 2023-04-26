@@ -9,7 +9,7 @@ const DBUS_NAME = 'com.canonical.Unity';
 const DBUS_SIGNAL_SOURCE = 'com.canonical.Unity.LauncherEntry';
 const NOTIFICATIONS_COUNT_KEY = 'count';
 const NOTIFICATIONS_COUNT_VISIBLE_KEY = 'count-visible';
-const APPID_REGEXP_STRING = /(^\w+:|^)\/\//;
+const APPID_REGEXP_STRING = /(^\w+:|^)\/\/|(.desktop)/g;
 
 /** @enum {string} */
 const ConfigFields = {
@@ -60,7 +60,7 @@ class LauncherApiService {
      * @param {() => void} callback
      */
     connect(callback) {
-        if (typeof this.#callback !== Type.Function) return;
+        if (typeof callback !== Type.Function) return;
         this.#callback = callback;
     }
 
@@ -69,6 +69,8 @@ class LauncherApiService {
     }
 
     /**
+     * TODO: we also can handle progress notifications.
+     * 
      * @param {GLib.Variant} params
      */
     #update(params) {
@@ -91,7 +93,7 @@ export class LauncherApiClient {
     /** @type {LauncherApiService} */
     #service = null;
 
-    /** @type {Map<*, number>} */
+    /** @type {Map<*, () => void>} */
     #clients = new Map();
 
     /** @type {Object.<string, string|number|boolean>} */
