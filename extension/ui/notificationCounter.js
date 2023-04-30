@@ -276,7 +276,8 @@ export class NotificationCounter extends Component {
         this.#counter.set_style(
             `font-size: ${fontSize * scale}px;` +
             `padding: 0 ${padding * scale}px;` +
-            `border: ${borderSize * scale}px solid ${borderColor};` +
+            `border-width: ${borderSize * scale}px;` +
+            `border-color: ${borderColor};` +
             `border-radius: ${roundness * scale}px;` +
             `background-color: ${backgroundColor};` +
             `color: ${textColor};`
