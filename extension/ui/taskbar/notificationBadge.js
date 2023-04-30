@@ -3,6 +3,7 @@
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import { Component, ComponentEvent } from '../base/component.js';
+import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { Config } from '../../utils/config.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_NotificationBadge';
@@ -10,6 +11,7 @@ const STYLE_CLASS = 'rocketbar__notification-badge';
 const BORDER_SIZE = 1;
 const FONT_SIZE_MIN = 0;
 const LONG_VALUE_PADDING = 2;
+const BLINK_DURATION = 2;
 
 /** @enum {string} */
 const BadgePosition = {
@@ -17,6 +19,13 @@ const BadgePosition = {
     TopRight: 'top_right',
     BottomLeft: 'bottom_left',
     BottomRight: 'bottom_right'
+};
+
+/** @enum {Object.<string, *>} */
+const BadgeAnimation = {
+    Show: { ...AnimationType.OpacityMax, ...AnimationType.ScaleMax },
+    Hide: { ...AnimationType.OpacityMin, ...AnimationType.ScaleMin, mode: Clutter.AnimationMode.EASE_OUT_QUAD },
+    Blink: { ...AnimationType.OpacityDown, mode: Clutter.AnimationMode.EASE_OUT_QUAD }
 };
 
 /** @enum {string} */
@@ -37,8 +46,6 @@ const DefaultProps = {
     style_class: STYLE_CLASS,
     x_expand: true,
     y_expand: true,
-    x_align: Clutter.ActorAlign.END,
-    y_align: Clutter.ActorAlign.END,
     visible: false,
     text: '0'
 };
@@ -54,29 +61,51 @@ export class NotificationBadge extends Component {
         [ComponentEvent.Scale]: this.#updateStyle
     })[data?.event]?.call(this);
 
+    /**
+     * @typedef {import('./appButton.js').AppButton} AppButton
+     * @type {AppButton}
+     */
     #appButton = null;
 
+    /** @type {Object.<string, string|number|boolean>} */
     #config = Config(this, ConfigFields, () => this.#updateStyle());
 
+    /**
+     * @param {AppButton} appButton
+     */
     constructor(appButton) {
         super(new St.Label(DefaultProps));
+        this.actor.set_pivot_point(0.5, 0.5);
         this.#appButton = appButton;
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
     }
 
     rerender() {
         if (!this.isValid) return;
+        this.actor.remove_all_transitions();
         const count = this.#appButton.notificationsCount;
         const visible = count > 0;
-        if (!visible) return this.setProps({ visible });
+        if (!visible) return Animation(this, AnimationDuration.Default, BadgeAnimation.Hide).then(() =>
+                             this.setProps({ visible }));
         const { maxCount } = this.#config;
+        const oldVisible = this.actor.visible;
         const text = `${ count > maxCount ? maxCount : count }`;
-        this.setProps({ text, visible });
-        this.#updateStyle();
+        this.setProps({ text, visible }).#updateStyle();
+        if (oldVisible === visible) return this.#blink();
+        Animation(this, AnimationDuration.Fast, BadgeAnimation.Show);
     }
 
     #destroy() {
         this.#appButton = null;
+    }
+
+    async #blink() {
+        let i = 0;
+        while (i < BLINK_DURATION) {
+            await Animation(this, AnimationDuration.Slower, BadgeAnimation.Blink).then(() =>
+                  Animation(this, AnimationDuration.Slower, BadgeAnimation.Show));
+            i++;
+        }
     }
 
     #updateStyle() {

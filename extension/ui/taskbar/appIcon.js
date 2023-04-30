@@ -23,7 +23,7 @@ const DefaultProps = {
     y_align: Clutter.ActorAlign.CENTER
 };
 
-/** @enum {*} */
+/** @enum {Object.<string, *>} */
 export const AppIconAnimation = {
     Press: { duration: AnimationDuration.Fast, params: AnimationType.ScaleDown },
     Release: { duration: AnimationDuration.Fast, params: AnimationType.ScaleMax },
