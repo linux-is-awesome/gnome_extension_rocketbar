@@ -161,6 +161,10 @@
             <default>'rgb(255, 0, 0)'</default>
             <summary>Notification Badge color</summary>
         </key>
+        <key type="s" name="notification-badge-font-color">
+            <default>'rgba(255, 255, 255)'</default>
+            <summary>Notification Badge font color</summary>
+        </key>
         <key type="s" name="notification-badge-border-color">
             <default>'rgb(70, 70, 70)'</default>
             <summary>Notification Badge border color</summary>
@@ -170,12 +174,20 @@
             <summary>Notification Badge position</summary>
         </key>
         <key type="i" name="notification-badge-size">
-            <default>5</default>
+            <default>10</default>
             <summary>Notification Badge size</summary>
+        </key>
+        <key type="i" name="notification-badge-roundness">
+            <default>10</default>
+            <summary>Notification Badge roundness</summary>
         </key>
         <key type="i" name="notification-badge-margin">
             <default>7</default>
             <summary>Notification Badge margin</summary>
+        </key>
+        <key type="i" name="notification-badge-max-count">
+            <default>9</default>
+            <summary>Notification Badge max count to display</summary>
         </key>
         <!-- customize page: tooltip -->
         <key type="i" name="tooltip-show-delay">
