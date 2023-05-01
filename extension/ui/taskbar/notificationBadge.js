@@ -47,7 +47,9 @@ const DefaultProps = {
     x_expand: true,
     y_expand: true,
     visible: false,
-    text: '0'
+    text: '0',
+    ...AnimationType.OpacityMin,
+    ...AnimationType.ScaleMin
 };
 
 export class NotificationBadge extends Component {
@@ -82,13 +84,14 @@ export class NotificationBadge extends Component {
 
     rerender() {
         if (!this.isValid) return;
-        this.actor.remove_all_transitions();
         const count = this.#appButton.notificationsCount;
+        const oldVisible = this.actor.visible;
         const visible = count > 0;
+        if (!visible && !oldVisible) return;
+        this.actor.remove_all_transitions();
         if (!visible) return Animation(this, AnimationDuration.Default, BadgeAnimation.Hide).then(() =>
                              this.setProps({ visible }));
         const { maxCount } = this.#config;
-        const oldVisible = this.actor.visible;
         const text = `${ count > maxCount ? maxCount : count }`;
         this.setProps({ text, visible }).#updateStyle();
         if (oldVisible === visible) return this.#blink();
