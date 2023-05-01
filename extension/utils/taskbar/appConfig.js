@@ -17,6 +17,7 @@ export const ConfigFields = {
     activateBehavior: 'appbutton-running-app-activate-behavior',
     demandsAttentionBehavior: 'appbutton-demands-attention-behavior',
     enableSoundControl: 'appbutton-enable-sound-control',
+    enableNotificationBadges: 'appbutton-enable-notification-badges',
     iconSize: 'appbutton-icon-size',
     iconPath: '~appbutton-icon-path',
     iconHPadding: 'appbutton-icon-padding',

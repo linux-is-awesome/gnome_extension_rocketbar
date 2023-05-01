@@ -15,6 +15,8 @@ import { AppIcon, AppIconAnimation, AppIconEvent } from './appIcon.js';
 import { Indicators } from './indicators.js';
 import { Menu } from './menu.js';
 import { AppSoundVolumeControl } from '../../services/soundVolumeService.js';
+import { NotificationHandler } from '../../services/notificationService.js';
+import { NotificationBadge } from './notificationBadge.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
 
@@ -120,6 +122,15 @@ export class AppButton extends Button {
     /** @type {Object.<string, string|number|boolean>} */
     #config = null;
 
+    /** @type {NotificationHandler} */
+    #notificationHandler = null;
+
+    /** @type {NotificationBadge} */
+    #notificationBadge = null;
+
+    /** @type {number} */
+    #notificationsCount = 0;
+
     /** @type {number} */
     get #isAppRunning() {
         return this.#windowsCount || this.#app?.state === Shell.AppState.RUNNING;
@@ -200,6 +211,11 @@ export class AppButton extends Button {
         return this.#appIcon?.dominantColor;
     }
 
+    /** @type {number} */
+    get notificationsCount() {
+        return this.#notificationsCount;
+    }
+
     /**
      * @param {Shell.App} app
      */
@@ -213,6 +229,7 @@ export class AppButton extends Button {
         this.#config = this.configProvider.getConfig(app, settingsKey => this.#handleConfig(settingsKey));
         this.#appIcon = new AppIcon(app, this.#config.iconPath).setParent(this.display);
         this.#service = new TaskbarClient(() => this.#handleAppState(), app);
+        this.#notificationHandler = new NotificationHandler(count => this.#handleNotifications(count), this.#app);
         this.actor.animateLaunch = () => this.#appIcon.animate(AppIconAnimation.Activate);
         this.#connectSignals();
     }
@@ -227,6 +244,8 @@ export class AppButton extends Button {
         this.#service = null;
         this.#soundVolumeControl?.destroy();
         this.#soundVolumeControl = null;
+        this.#notificationHandler?.destroy();
+        this.#notificationHandler = null;
         this.#layout = null;
         this.#appIcon = null;
         this.#indicators = null;
@@ -262,6 +281,7 @@ export class AppButton extends Button {
                 return;
             case ConfigFields.enableIndicators:
             case ConfigFields.enableSoundControl:
+            case ConfigFields.enableNotificationBadges:
                 return this.#toggleFeatures();
             case ConfigFields.backlightColor:
             case ConfigFields.backlightIntensity:
@@ -285,7 +305,7 @@ export class AppButton extends Button {
     }
 
     #toggleFeatures() {
-        const { enableIndicators, enableSoundControl } = this.#config;
+        const { enableIndicators, enableSoundControl, enableNotificationBadges } = this.#config;
         if (enableIndicators && !this.#indicators) {
             this.#indicators = new Indicators(this).setParent(this.#layout);
             if (!this.#isStartupRequired) this.#indicators.rerender();
@@ -298,6 +318,13 @@ export class AppButton extends Button {
         } else if (!enableSoundControl && this.#soundVolumeControl) {
             this.#soundVolumeControl.destroy();
             this.#soundVolumeControl = null;
+        }
+        if (enableNotificationBadges && !this.#notificationBadge) {
+            this.#notificationBadge = new NotificationBadge(this).setParent(this.#layout);
+            if (!this.#isStartupRequired) this.#notificationBadge.rerender();
+        } else if (!enableNotificationBadges && this.#notificationBadge) {
+            this.#notificationBadge.destroy();
+            this.#notificationBadge = null;
         }
     }
 
@@ -319,11 +346,12 @@ export class AppButton extends Button {
         const isFavorite = this.#service.favorites?.apps?.has(this.#app);
         this.#windows = this.#service.queryWindows(isolateWorkspaces, true);
         this.#windowsCount = this.#windows?.size ?? 0;
+        this.#notificationHandler?.updatePids();
+        this.#soundVolumeControl?.update();
         if (!isFavorite && !this.#windowsCount) return this.#queueDestroy();
         if (!this.#isActive || !this.#windowsCount) this.#handleFocusedWindow();
         this.#handleStartup();
         this.#handleWindows();
-        this.#soundVolumeControl?.update();
     }
 
     #handleStartup() {
@@ -332,15 +360,20 @@ export class AppButton extends Button {
             this.actor.remove_all_transitions();
             this.#destroyJob = null;
         }
-        if (!this.#isStartupRequired) return this.#indicators?.rerender();
-        const isWorkspaceChanged = this.#service.isWorkspaceChanged;
+        if (!this.#isStartupRequired) this.#indicators?.rerender();
+        else this.#queueStartup();
+    }
+
+    #queueStartup() {
         const { spacingAfter } = this.#config;
+        const isWorkspaceChanged = this.#service.isWorkspaceChanged;
         const width = (this.#config.width + spacingAfter) * this.uiScale * this.globalScale;
         const animationParams = { ...AnimationType.OpacityMax, ...{ width, mode: Clutter.AnimationMode.EASE_OUT_QUAD } };
         Context.jobs.new(this).destroy(() => {
             Animation(this, AnimationDuration.Default, animationParams).finally(() => {
                 this.setSize();
                 if (!isWorkspaceChanged) this.#indicators?.rerender();
+                this.#notificationBadge?.rerender();
             });
             if (isWorkspaceChanged) this.#indicators?.rerender();
         }).catch();
@@ -372,10 +405,21 @@ export class AppButton extends Button {
         }
     }
 
+    /**
+     * @param {Meta.Window} window
+     */
     async #handleUrgentWindow(window) {
         if (!window || !this.#windows?.has(window) || window.has_focus()) return;
         if (this.#config.demandsAttentionBehavior === DemandsAttentionBehavior.FocusActive && !this.#isActive) return;
         Main.activateWindow(window);
+    }
+
+    /**
+     * @param {number} count
+     */
+    #handleNotifications(count) {
+        this.#notificationsCount = count;
+        if (!this.#isStartupRequired) this.#notificationBadge?.rerender();
     }
 
     #hover() {
@@ -419,6 +463,9 @@ export class AppButton extends Button {
             if (!isolateWorkspaces) return this.#openNewWindow(isOverview); 
             switch (activateBehavior) {
                 case ActivateBehavior.MoveWindows: return this.#moveWindows();
+                case ActivateBehavior.FindWindow:
+                    const sortedWindows = this.#app.get_windows();
+                    if (sortedWindows.length) return Main.activateWindow(sortedWindows[0]);
                 case ActivateBehavior.NewWindow:
                 default: return this.#openNewWindow(isOverview);
             }
@@ -434,6 +481,10 @@ export class AppButton extends Button {
         this.#cycleWindows(enableMinimizeAction);
     }
 
+    /**
+     * @param {{ event: Clutter.Event, button: number }} params
+     * @returns {Object.<string, boolean>}
+     */
     #getClickDetails(params) {
         const { event, button } = params;
         const isOverview = Main.overview?.visible;
@@ -443,6 +494,9 @@ export class AppButton extends Button {
         return { isOverview, isSecondaryButton, isMiddleButton, isCtrlPressed };
     }
 
+    /**
+     * @param {boolean} [hideOverview]
+     */
     #openNewWindow(hideOverview = false) {
         this.#resetCycleWindowsQueue();
         if (hideOverview) Main.overview?.hide();
