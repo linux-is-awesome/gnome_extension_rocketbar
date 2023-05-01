@@ -66,6 +66,7 @@ const MenuPosition = {
 /** @type {Object.<string, string>} */
 const ActivateBehaviorCheckboxGroup = {
     [ActivateBehavior.NewWindow]: Labels.NewWindow,
+    [ActivateBehavior.FindWindow]: Labels.FindWindow,
     [ActivateBehavior.MoveWindows]: Labels.MoveWindows
 };
 

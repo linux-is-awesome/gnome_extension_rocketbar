@@ -15,6 +15,7 @@ export const Labels = {
     ResetToDefault: _('Reset To Default'),
     ResetAllToDefault: _('Reset All To Default'),
     NewWindow: _('New Window'),
+    FindWindow: _('Find Window'),
     MoveWindows: _('Move Windows'),
     FocusActive: _('Set Focus When Active'),
     FocusAll: _('Always Set Focus')

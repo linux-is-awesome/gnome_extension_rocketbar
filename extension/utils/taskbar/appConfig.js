@@ -31,7 +31,8 @@ export const ConfigFields = {
 /** @enum {string} */
 export const ActivateBehavior = {
     NewWindow: 'new_window',
-    MoveWindows: 'move_windows'
+    FindWindow: 'find_window',
+    MoveWindows: 'move_windows',
 };
 
 /** @enum {string} */
