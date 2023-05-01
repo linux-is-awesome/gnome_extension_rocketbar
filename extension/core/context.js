@@ -2,6 +2,7 @@
 
 import St from 'gi://St';
 import Gtk from 'gi://Gtk';
+import { ExtensionUtils } from './legacy.js';
 import { Main } from './legacy.js';
 import { LayoutManager } from './context/layout.js';
 import { Modules } from './context/modules.js';
@@ -22,8 +23,11 @@ export class Context {
     /** @type {Context} */
     static #instance = null;
 
-    /** @type {{path: string, metadata: Object.<string, string>, settings: Gio.Settings}} */
-    #extensionInfo = null;
+    /** @type {{path: string, metadata: Object.<string, string>}} */
+    #extensionInfo = ExtensionUtils.getCurrentExtension();
+
+    /** @type {Gio.Settings} */
+    #settings = ExtensionUtils.getSettings();
 
     /** @type {LayoutManager} */
     #layoutManager = null;
@@ -55,7 +59,7 @@ export class Context {
 
     /** @type {Gio.Settings} */
     static get settings() {
-        return Context.#getInstance().#extensionInfo?.settings;
+        return Context.#getInstance().#settings;
     }
 
     /** @type {LayoutManager} */
@@ -118,12 +122,8 @@ export class Context {
         return new Context();
     }
 
-    /**
-     * @param {{path: string, metadata: Object.<string, string>, settings: Gio.Settings}} extensionInfo 
-     */
-    constructor(extensionInfo) {
-        this.#extensionInfo = extensionInfo;
-        if (Context.#instance instanceof Context) return;
+    constructor() {
+        if (Context.#instance instanceof Context) throw new Error(`${Context.name} already has an instance`);
         Context.#instance = this;
         this.#iconTheme = St.IconTheme ? new St.IconTheme() : Gtk.IconTheme.get_default();
         this.#launcherApi = new LauncherApiClient();
@@ -134,10 +134,9 @@ export class Context {
         try {
             this.#destroy();
         } catch (e) {
-            console.error(`${this.#extensionInfo?.metadata?.name} unable to destroy context.`, e);
+            console.error(`${this.#extensionInfo?.metadata?.name} unable to destroy ${Context.name}.`, e);
         } finally {
             this.#extensionInfo = null;
-            if (Context.#instance !== this) return;
             Context.#instance = null;
         }
     }
@@ -153,8 +152,9 @@ export class Context {
         this.#signals = null;
         this.#launcherApi?.destroy();
         this.#launcherApi = null;
-        this.#extensionInfo?.settings?.run_dispose();
         this.#iconTheme = null;
+        this.#settings?.run_dispose();
+        this.#settings = null;
         this.#cleanSessionCache();
     }
 

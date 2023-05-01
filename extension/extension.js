@@ -9,8 +9,7 @@ class Extension {
     #instance = null;
 
     constructor() {
-        const extensionUtils = imports.misc.extensionUtils;
-        extensionUtils.initTranslations();
+        imports.misc.extensionUtils.initTranslations();
     }
 
     /**
@@ -20,22 +19,17 @@ class Extension {
      * TODO: remove setTimeout.
      */
     enable() {
-        const extensionInfo = this.#getExtensionInfo();
         setTimeout(() => import('./core/context.js').then(({ Context }) => {
-            this.#instance = new Context(extensionInfo);
-        }).catch(e => console.error(`${extensionInfo.metadata.name} initialization failed.`, e)));
+            this.#instance = new Context();
+        }).catch(e => {
+            const extension = imports.misc.extensionUtils.getCurrentExtension();
+            console.error(`${extension.metadata.name} initialization failed.`, e);
+        }));
     }
 
     disable() {
         this.#instance?.destroy();
         this.#instance = null;
-    }
-
-    #getExtensionInfo() {
-        const extensionUtils = imports.misc.extensionUtils;
-        const extension = extensionUtils.getCurrentExtension();
-        const settings = extensionUtils.getSettings();
-        return { ...extension, ...{ settings } };
     }
 
 }
