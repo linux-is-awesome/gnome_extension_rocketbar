@@ -80,6 +80,7 @@ class NotificationService {
         if (this.#handlers?.size) return false;
         this.#updateJob?.destroy();
         Context.signals.removeAll(this);
+        Context.launcherApi?.disconnect(this);
         this.#handlers = null;
         this.#updateJob = null;
         return true;
