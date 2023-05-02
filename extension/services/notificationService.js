@@ -86,7 +86,7 @@ class NotificationService {
     }
 
     /**
-     * @param {NotificationHandler} handler 
+     * @param {NotificationHandler} handler
      */
     addHandler(handler) {
         if (!this.#handlers || handler instanceof NotificationHandler === false) return;
@@ -95,11 +95,19 @@ class NotificationService {
     }
 
     /**
-     * @param {NotificationHandler} handler 
+     * @param {NotificationHandler} handler
      */
     removeHandler(handler) {
         if (!handler || !this.#handlers?.has(handler)) return;
         this.#handlers.delete(handler);
+    }
+
+    /**
+     * @param {NotificationHandler} handler
+     */
+    triggerHandler(handler) {
+        if (!handler || !this.#handlers?.has(handler)) return;
+        this.#triggerHandler(handler);
     }
 
     /**
@@ -270,9 +278,12 @@ export class NotificationHandler {
      */
     async updatePids() {
         if (!this.appId) return null;
+        const oldPids = this.#pids ?? [];
         this.#pids = this.#app.get_pids();
         if (!this.#pids?.length) return;
+        if (`${oldPids}` === `${this.#pids}`) return;
         Context.getSessionCache(this.constructor.name).set(this.#appId, this.#pids);
+        NotificationHandler.#service.triggerHandler(this);
     }
 
     /**
