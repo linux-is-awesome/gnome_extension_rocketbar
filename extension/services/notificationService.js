@@ -115,7 +115,7 @@ class NotificationService {
      */
     #handleConfig(settingsKey) {
         if (settingsKey === ConfigFields.countAttentionSources) return this.#queueUpdate();
-        if (this.#config.enableLauncherApi) Context.launcherApi?.connect(this, () => this.#queueUpdate());
+        if (this.#config.enableLauncherApi) Context.launcherApi?.connectNotifications(this, () => this.#queueUpdate());
         else Context.launcherApi?.disconnect(this);
         this.#queueUpdate();
     }

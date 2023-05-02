@@ -7,14 +7,20 @@ import { Config } from '../utils/config.js';
 
 const DBUS_NAME = 'com.canonical.Unity';
 const DBUS_SIGNAL_SOURCE = 'com.canonical.Unity.LauncherEntry';
-const NOTIFICATIONS_COUNT_KEY = 'count';
-const NOTIFICATIONS_COUNT_VISIBLE_KEY = 'count-visible';
+const LAUNCHER_ENTRY_COUNT_KEY = 'count';
+const LAUNCHER_ENTRY_PROGRESS_KEY = 'progress';
 const APPID_REGEXP_STRING = /(^\w+:|^)\/\/|(.desktop)/g;
 
 /** @enum {string} */
 const ConfigFields = {
     enableLauncherApi: 'notification-service-enable-unity-dbus'
 };
+
+/** @enum {string} */
+const LauncherApiNotify = {
+    Notifications: 'notifications',
+    Progress: 'progress'
+}
 
 class LauncherApiService {
 
@@ -24,15 +30,23 @@ class LauncherApiService {
     /** @type {number} */
     #signalId = null;
 
-    /** @type {() => void} */
+    /** @type {(notifyType: LauncherApiNotify) => void} */
     #callback = null;
 
     /** @type {Map<string, number>} */
     #notifications = new Map();
 
     /** @type {Map<string, number>} */
+    #progress = new Map();
+
+    /** @type {Map<string, number>} */
     get notifications() {
         return this.#notifications;
+    }
+
+    /** @type {Map<string, number>} */
+    get progress() {
+        return this.#progress;
     }
 
     constructor() {
@@ -57,7 +71,7 @@ class LauncherApiService {
     }
 
     /**
-     * @param {() => void} callback
+     * @param {(notifyType: LauncherApiNotify) => void} callback
      */
     connect(callback) {
         if (typeof callback !== Type.Function) return;
@@ -69,8 +83,6 @@ class LauncherApiService {
     }
 
     /**
-     * TODO: we also can handle progress notifications.
-     * 
      * @param {GLib.Variant} params
      */
     #update(params) {
@@ -78,12 +90,32 @@ class LauncherApiService {
         const [appUri, props] = params.deepUnpack();
         const appId = appUri?.replace(APPID_REGEXP_STRING, '');
         if (!appId || !props) return;
-        const count = props[NOTIFICATIONS_COUNT_KEY]?.get_int64() ?? 0;
-        const countVisible = props[NOTIFICATIONS_COUNT_VISIBLE_KEY]?.get_boolean() ?? false;
-        if (count && countVisible) this.#notifications.set(appId, count);
+        const count = props[LAUNCHER_ENTRY_COUNT_KEY]?.get_int64() ?? 0;
+        const progress = props[LAUNCHER_ENTRY_PROGRESS_KEY]?.get_double() ?? 0;
+        this.#handleNotifications(appId, count);
+        this.#handleProgress(appId, progress);
+    }
+
+    /**
+     * @param {string} appId
+     * @param {number} count
+     */
+    #handleNotifications(appId, count) {
+        if (count) this.#notifications.set(appId, count);
         else if (!this.#notifications.has(appId)) return;
         else this.#notifications.delete(appId);
-        if (typeof this.#callback === Type.Function) this.#callback();
+        if (typeof this.#callback === Type.Function) this.#callback(LauncherApiNotify.Notifications);
+    }
+
+    /**
+     * @param {string} appId
+     * @param {number} value
+     */
+    #handleProgress(appId, value) {
+        if (value) this.#progress.set(appId, value);
+        else if (!this.#progress.has(appId)) return;
+        else this.#progress.delete(appId);
+        if (typeof this.#callback === Type.Function) this.#callback(LauncherApiNotify.Progress);
     }
 
 }
@@ -94,7 +126,10 @@ export class LauncherApiClient {
     #service = null;
 
     /** @type {Map<*, () => void>} */
-    #clients = new Map();
+    #notificationClients = new Map();
+
+    /** @type {Map<*, () => void>} */
+    #progressClients = new Map();
 
     /** @type {Object.<string, string|number|boolean>} */
     #config = Config(this, ConfigFields, () => this.#handleConfig());
@@ -102,6 +137,11 @@ export class LauncherApiClient {
     /** @type {Map<string, number>} */
     get notifications() {
         return this.#service?.notifications;
+    }
+
+    /** @type {Map<string, number>} */
+    get progress() {
+        return this.#service?.progress;
     }
 
     constructor() {
@@ -114,26 +154,36 @@ export class LauncherApiClient {
             Context.getSessionCache(this.constructor.name).clear();
         } else this.#service?.disconnect();
         this.#service = null;
-        this.#clients = null;
+        this.#notificationClients = null;
+        this.#progressClients = null;
     }
 
     /**
      * @param {*} client
      * @param {() => void} callback
      */
-    connect(client, callback) {
-        if (!this.#clients) return;
-        if (typeof callback !== Type.Function || this.#clients.has(client)) return;
-        this.#clients.set(client, callback);
+    connectNotifications(client, callback) {
+        if (!this.#notificationClients) return;
+        if (typeof callback !== Type.Function || this.#notificationClients.has(client)) return;
+        this.#notificationClients.set(client, callback);
+    }
+
+    /**
+     * @param {*} client
+     * @param {() => void} callback
+     */
+    connectProgress(client, callback) {
+        if (!this.#progressClients) return;
+        if (typeof callback !== Type.Function || this.#progressClients.has(client)) return;
+        this.#progressClients.set(client, callback);
     }
 
     /**
      * @param {*} client
      */
     disconnect(client) {
-        if (!this.#clients) return;
-        if (!this.#clients.has(client)) return;
-        this.#clients.delete(client);
+        if (this.#notificationClients?.has(client)) this.#notificationClients.delete(client);
+        if (this.#progressClients?.has(client)) this.#progressClients.delete(client);
     }
 
     #handleConfig() {
@@ -151,12 +201,24 @@ export class LauncherApiClient {
             this.#service = new LauncherApiService();
             sessionCache.set(LauncherApiService.name, this.#service);
         }
-        this.#service.connect(() => this.#notifyClients());
+        this.#service.connect(notifyType => this.#notifyClients(notifyType));
     }
 
-    #notifyClients() {
-        if (!this.#clients?.size) return;
-        for (const [_, callback] of this.#clients) callback();
+    /**
+     * @param {LauncherApiNotify} notifyType
+     */
+    #notifyClients(notifyType) {
+        let clients = null;
+        switch (notifyType) {
+            case LauncherApiNotify.Notifications:
+                clients = this.#notificationClients;
+                break;
+            case LauncherApiNotify.Progress:
+                clients = this.#progressClients;
+                break;
+        }
+        if (!clients?.size) return;
+        for (const [_, callback] of clients) callback();
     }
 
 }
