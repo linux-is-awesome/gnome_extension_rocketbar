@@ -10,6 +10,7 @@ const DBUS_SIGNAL_SOURCE = 'com.canonical.Unity.LauncherEntry';
 const LAUNCHER_ENTRY_COUNT_KEY = 'count';
 const LAUNCHER_ENTRY_PROGRESS_KEY = 'progress';
 const APPID_REGEXP_STRING = /(^\w+:|^)\/\/|(.desktop)/g;
+const PROGRESS_VALUE_DECIMAL_PLACES = 2;
 
 /** @enum {string} */
 const ConfigFields = {
@@ -112,6 +113,9 @@ class LauncherApiService {
      * @param {number} value
      */
     #handleProgress(appId, value) {
+        value = +parseFloat(value).toFixed(PROGRESS_VALUE_DECIMAL_PLACES) || 0;
+        const oldValue = this.#progress.get(appId) ?? 0;
+        if (value === oldValue) return;
         if (value) this.#progress.set(appId, value);
         else if (!this.#progress.has(appId)) return;
         else this.#progress.delete(appId);
