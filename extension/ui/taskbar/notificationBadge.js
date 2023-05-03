@@ -138,8 +138,7 @@ export class NotificationBadge extends Component {
             `min-width: ${size * scale}px;` +
             `border-color: ${borderColor};` +
             `border-width: ${BORDER_SIZE}px;` +
-            `padding: 0 ${padding}px;` +
-            `text-align: center; ${margins}`
+            `padding: 0 ${padding}px; ${margins}`
         );
         this.#updateAlignment();
     }
