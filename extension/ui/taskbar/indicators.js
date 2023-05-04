@@ -381,6 +381,9 @@ export class Indicators extends Component {
      */
     #appButton = null;
 
+    /** @type {number} */
+    #count = 0;
+
     /** @type {Object.<string, string|number|boolean>} */
     #config = Config(this, ConfigFields, () => this.rerender());
 
@@ -410,7 +413,7 @@ export class Indicators extends Component {
                 offsetActive, offsetInactive, position } = this.#config;
         const scale = this.uiScale * this.globalScale;
         const isActive = this.#isActive;
-        const count = Math.min(this.#appButton.windowsCount, isActive ? limitActive : limitInactive);
+        const count = Math.min(this.#count, isActive ? limitActive : limitInactive);
         const color = count > 0 ? this.#color : null;
         const size = (isActive ? sizeActive : sizeInactive) * scale;
         const spacing = (isActive ? spacingActive : spacingInactive) * scale;
@@ -431,6 +434,9 @@ export class Indicators extends Component {
 
     rerender() {
         if (!this.isMapped) return;
+        const count = this.#appButton.windowsCount;
+        if (!count && !this.#count) return;
+        this.#count = count;
         this.#backend?.update(this.#backendParams);
     }
 
