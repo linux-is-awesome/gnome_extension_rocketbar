@@ -393,7 +393,7 @@ export class Indicators extends Component {
 
     /** @type {boolean} */
     get #isActive() {
-        return !Main.overview?._shown && this.#appButton.isActive;
+        return !Main.overview?._shown && this.#appButton?.isActive;
     }
 
     /** @type {string} */
@@ -435,7 +435,7 @@ export class Indicators extends Component {
 
     rerender() {
         if (!this.isMapped) return;
-        const count = this.#appButton.windowsCount;
+        const count = this.#appButton?.windowsCount;
         if (!count && !this.#count) return;
         this.#count = count;
         this.#backend?.update(this.#backendParams);
@@ -444,6 +444,7 @@ export class Indicators extends Component {
     #destroy() {
         this.#backend?.destroy();
         this.#backend = null;
+        this.#appButton = null;
     }
 
 }
