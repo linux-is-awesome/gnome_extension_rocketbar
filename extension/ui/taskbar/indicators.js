@@ -297,8 +297,9 @@ class IndicatorsBackend {
     }
 
     rerender() {
+        if (!this.#indicators?.length) return;
         this.#canvas = this.#actor?.get_context();
-        if (!this.#canvas || !this.#indicators?.length) return this.#finish();
+        if (!this.#canvas) return;
         const { color, weight, offset, position } = this.#params;
         this.#setColor(color);
         const [canvasWidth, canvasHeight] = this.#actor.get_surface_size();
