@@ -12,6 +12,8 @@ import { DominantColor } from '../../utils/dominantColor.js';
 const MODULE_NAME = 'Rocketbar__Taskbar_AppIcon';
 const FALLBACK_ICON_NAME = 'application-x-executable';
 const DEFAULT_SIZE = 20;
+const HIGHLIGHT_BRIGHTNESS = 0.1;
+const HIGHLIGHT_CONTRAST = 0.1;
 const DRAG_ACTOR_SIZE_SCALE = 1.5;
 
 /** @type {Object.<string, number|string>} */
@@ -21,6 +23,11 @@ const DefaultProps = {
     icon_size: DEFAULT_SIZE,
     x_align: Clutter.ActorAlign.CENTER,
     y_align: Clutter.ActorAlign.CENTER
+};
+
+/** @type {Object.<string, boolean>} */
+const HighlightProps = {
+    enabled: false
 };
 
 /** @enum {Object.<string, *>} */
@@ -62,12 +69,21 @@ export class AppIcon extends Component {
     /** @type {Map<Shell.App, string>} */
     #dominantColors = Context.getSessionCache(this.constructor.name);
 
+    /** @type {Clutter.BrightnessContrastEffect} */
+    #highlight = new Clutter.BrightnessContrastEffect(HighlightProps);
+
     /** @param {string|null} value */
     set iconPath(value) {
         if (this.#iconPath === value) return;
         if (typeof value !== Type.String && value !== null) return;
         this.#iconPath = value;
         this.#setIcon();
+    }
+
+    /** @param {boolean} value */
+    set isHighlighted(value) {
+        if (typeof value !== Type.Boolean) return;
+        this.#highlight?.set_enabled(value);
     }
 
     /** @type {St.Icon} */
@@ -93,6 +109,9 @@ export class AppIcon extends Component {
     constructor(app, iconPath) {
         super(new St.Icon(DefaultProps));
         this.actor.set_pivot_point(0.5, 0.5);
+        this.actor.add_effect(this.#highlight);
+        this.#highlight.set_brightness(HIGHLIGHT_BRIGHTNESS);
+        this.#highlight.set_contrast(HIGHLIGHT_CONTRAST);
         this.#app = app;
         this.#iconPath = iconPath;
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
@@ -116,6 +135,7 @@ export class AppIcon extends Component {
         if (!this.isMapped) return null;
         switch (animation) {
             case AppIconAnimation.Press:
+                this.isHighlighted = false;
             case AppIconAnimation.Release:
                 return Animation(this, animation.duration, animation.params);
             case AppIconAnimation.Activate:
@@ -132,6 +152,7 @@ export class AppIcon extends Component {
     #destroy() {
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
+        this.#highlight = null;
     }
 
     #handleIconTheme() {
