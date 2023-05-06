@@ -8,6 +8,7 @@ import { Config } from '../../utils/config.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_NotificationBadge';
 const STYLE_CLASS = 'rocketbar__notification-badge';
+const DEFAULT_TEXT = '0';
 const BORDER_SIZE = 1;
 const FONT_SIZE_MIN = 0;
 const LONG_VALUE_PADDING = 2;
@@ -47,7 +48,7 @@ const DefaultProps = {
     x_expand: true,
     y_expand: true,
     visible: false,
-    text: '0',
+    text: DEFAULT_TEXT,
     ...AnimationType.OpacityMin,
     ...AnimationType.ScaleMin
 };

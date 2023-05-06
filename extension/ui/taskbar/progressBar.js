@@ -15,7 +15,7 @@ const ProgressBarPosition = {
     Bottom: 'bottom'
 };
 
-/** @type {Object.<string, number|boolean|string>} */
+/** @type {Object.<string, number|boolean>} */
 const DefaultProps = {
     name: MODULE_NAME,
     x_expand: true,
