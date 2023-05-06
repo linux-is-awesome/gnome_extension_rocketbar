@@ -459,6 +459,7 @@ export class AppButton extends Button {
     }
 
     #hover() {
+        this.#appIcon.isHighlighted = this.actor.hover;
         this.#resetCycleWindowsQueue();
     }
 
