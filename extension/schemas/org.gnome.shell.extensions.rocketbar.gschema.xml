@@ -190,7 +190,7 @@
             <summary>Notification Badge margin</summary>
         </key>
         <key type="i" name="notification-badge-max-count">
-            <default>9</default>
+            <default>99</default>
             <summary>Notification Badge max count to display</summary>
         </key>
         <!-- customize page: tooltip -->
