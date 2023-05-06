@@ -18,6 +18,7 @@ export const ConfigFields = {
     demandsAttentionBehavior: 'appbutton-demands-attention-behavior',
     enableSoundControl: 'appbutton-enable-sound-control',
     enableNotificationBadges: 'appbutton-enable-notification-badges',
+    enableProgressBars: 'appbutton-enable-progress-bars',
     iconSize: 'appbutton-icon-size',
     iconPath: '~appbutton-icon-path',
     iconHPadding: 'appbutton-icon-padding',

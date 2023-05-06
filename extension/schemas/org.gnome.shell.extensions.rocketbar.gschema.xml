@@ -27,6 +27,10 @@
             <default>true</default>
             <summary>Enable Notification Badges</summary>
         </key>
+        <key type="b" name="appbutton-enable-progress-bars">
+            <default>false</default>
+            <summary>Enable Progress Bars</summary>
+        </key>
         <key type="b" name="appbutton-enable-sound-control">
             <default>false</default>
             <summary>Enable Sound Volume Control</summary>

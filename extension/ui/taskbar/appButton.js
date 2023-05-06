@@ -17,6 +17,7 @@ import { Menu } from './menu.js';
 import { AppSoundVolumeControl } from '../../services/soundVolumeService.js';
 import { NotificationHandler } from '../../services/notificationService.js';
 import { NotificationBadge } from './notificationBadge.js';
+import { ProgressBar } from './progressBar.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
 
@@ -132,6 +133,12 @@ export class AppButton extends Button {
     #notificationsCount = 0;
 
     /** @type {number} */
+    #progress = 0;
+
+    /** @type {ProgressBar} */
+    #progressBar = null;
+
+    /** @type {number} */
     get #isAppRunning() {
         return this.#windowsCount || this.#app?.state === Shell.AppState.RUNNING;
     }
@@ -216,6 +223,11 @@ export class AppButton extends Button {
         return this.#notificationsCount;
     }
 
+    /** @type {number} */
+    get progress() {
+        return this.#progress;
+    }
+
     /**
      * @param {Shell.App} app
      */
@@ -237,6 +249,7 @@ export class AppButton extends Button {
     #destroy() {
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
+        Context.launcherApi?.disconnect(this);
         if (AppButton.#configProvider?.destroy(this.#app)) {
             AppButton.#configProvider = null;
         }
@@ -261,6 +274,7 @@ export class AppButton extends Button {
                              Event.WindowDemandsAttention, (_, window) => this.#handleUrgentWindow(window)],
             [global.window_manager, Event.Minimize, (_, actor) => this.#handleWindowState(actor?.meta_window),
                                     Event.Unminimize, (_, actor) => this.#handleWindowState(actor?.meta_window)]);
+        Context.launcherApi?.connectProgress(this, () => this.#handleProgress());
     }
 
     #handleMapped() {
@@ -282,6 +296,7 @@ export class AppButton extends Button {
             case ConfigFields.enableIndicators:
             case ConfigFields.enableSoundControl:
             case ConfigFields.enableNotificationBadges:
+            case ConfigFields.enableProgressBars:
                 return this.#toggleFeatures();
             case ConfigFields.backlightColor:
             case ConfigFields.backlightIntensity:
@@ -305,26 +320,38 @@ export class AppButton extends Button {
     }
 
     #toggleFeatures() {
-        const { enableIndicators, enableSoundControl, enableNotificationBadges } = this.#config;
-        if (enableIndicators && !this.#indicators) {
-            this.#indicators = new Indicators(this).setParent(this.#layout);
-            if (!this.#isStartupRequired) this.#indicators.rerender();
-        } else if (!enableIndicators && this.#indicators) {
-            this.#indicators.destroy();
-            this.#indicators = null;
-        }
+        const { enableIndicators, enableSoundControl, enableNotificationBadges, enableProgressBars } = this.#config;
+        const isStartupRequired = this.#isStartupRequired;
         if (enableSoundControl && !this.#soundVolumeControl) {
             this.#soundVolumeControl = new AppSoundVolumeControl(this.#app);
         } else if (!enableSoundControl && this.#soundVolumeControl) {
             this.#soundVolumeControl.destroy();
             this.#soundVolumeControl = null;
         }
+        if (enableIndicators && !this.#indicators) {
+            this.#indicators = new Indicators(this).setParent(this.#layout);
+            this.#layout.set_child_below_sibling(this.#indicators.actor, null);
+            if (!isStartupRequired) this.#indicators.rerender();
+        } else if (!enableIndicators && this.#indicators) {
+            this.#indicators.destroy();
+            this.#indicators = null;
+        }
         if (enableNotificationBadges && !this.#notificationBadge) {
             this.#notificationBadge = new NotificationBadge(this).setParent(this.#layout);
-            if (!this.#isStartupRequired) this.#notificationBadge.rerender();
+            this.#layout.set_child_above_sibling(this.#notificationBadge.actor, null);
+            if (!isStartupRequired) this.#notificationBadge.rerender();
         } else if (!enableNotificationBadges && this.#notificationBadge) {
             this.#notificationBadge.destroy();
             this.#notificationBadge = null;
+        }
+        if (enableProgressBars && !this.#progressBar) {
+            this.#progressBar = new ProgressBar(this).setParent(this.#layout);
+            const notificationBadge = this.#notificationBadge?.actor;
+            if (notificationBadge) this.#layout.set_child_below_sibling(this.#progressBar.actor, notificationBadge);
+            if (!isStartupRequired) this.#progressBar.rerender();
+        } else if (!enableProgressBars && this.#progressBar) {
+            this.#progressBar.destroy();
+            this.#progressBar = null;
         }
     }
 
@@ -374,6 +401,7 @@ export class AppButton extends Button {
                 this.setSize();
                 if (!isWorkspaceChanged) this.#indicators?.rerender();
                 this.#notificationBadge?.rerender();
+                this.#progressBar?.rerender();
             });
             if (isWorkspaceChanged) this.#indicators?.rerender();
         }).catch();
@@ -420,6 +448,14 @@ export class AppButton extends Button {
     #handleNotifications(count) {
         this.#notificationsCount = count;
         if (!this.#isStartupRequired) this.#notificationBadge?.rerender();
+    }
+
+    #handleProgress() {
+        const appId = this.#notificationHandler?.appId;
+        const progress = Context.launcherApi?.progress?.get(appId) ?? 0;
+        if (progress === this.#progress) return;
+        this.#progress = progress;
+        if (!this.#isStartupRequired) this.#progressBar?.rerender();
     }
 
     #hover() {
