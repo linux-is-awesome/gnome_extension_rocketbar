@@ -290,7 +290,7 @@ export class NotificationHandler {
     /**
      * @param {number} count
      */
-    async setCount(count) {
+    setCount(count) {
         if (typeof this.#callback !== Type.Function) return; 
         if (this.#count === count) return;
         this.#count = count;

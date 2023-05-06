@@ -84,8 +84,8 @@ class Favorites {
 
     #handleInstalled() {
         if (typeof this.#callback !== Type.Function) return;
-        const oldAppIds = this.#appsById ? [...this.#appsById.keys()].toString() : '';
-        const newAppIds = this.#favorites._getIds().toString();
+        const oldAppIds = `${this.#appsById ? [...this.#appsById.keys()] : []}`;
+        const newAppIds = `${this.#favorites._getIds()}`;
         if (oldAppIds === newAppIds) return;
         this.#appsById = null;
         this.#callback();
