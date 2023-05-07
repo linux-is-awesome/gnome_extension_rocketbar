@@ -48,18 +48,18 @@ const CounterProps = {
     name: `${MODULE_NAME}.Counter`,
     style_class: COUNTER_STYLE_CLASS,
     text: COUNTER_DEFAULT_TEXT,
-    opacity: 0,
     visible: false,
     x_align: Clutter.ActorAlign.CENTER,
-    y_align: Clutter.ActorAlign.CENTER
+    y_align: Clutter.ActorAlign.CENTER,
+    ...AnimationType.OpacityMin
 };
 
 /** @type {Object.<string, number|boolean|string>} */
 const SpacerProps = {
     name: `${MODULE_NAME}.Spacer`,
     text: COUNTER_DEFAULT_TEXT,
-    opacity: 0,
-    y_align: Clutter.ActorAlign.CENTER
+    y_align: Clutter.ActorAlign.CENTER,
+    ...AnimationType.OpacityMin
 };
 
 class DateMenu extends Component {
