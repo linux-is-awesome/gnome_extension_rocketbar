@@ -17,6 +17,7 @@ export const AnimationType = {
     ScaleMax: { scale_x: 1, scale_y: 1 },
     ScaleDown: { scale_x: 0.85, scale_y: 0.85 },
     ScaleMin: { scale_x: 0, scale_y: 0 },
+    ScaleXMin: { scale_x: 0 },
     OpacityMax: { opacity: 255 },
     OpacityDown: { opacity: 180 },
     OpacityMin: { opacity: 0 },

@@ -4,6 +4,7 @@ import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import { Event } from '../../core/enums.js';
 import { Component, ComponentEvent } from '../base/component.js';
+import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_ProgressBar';
 const PROGRESS_VALUE_MIN = 0;
@@ -15,13 +16,21 @@ const ProgressBarPosition = {
     Bottom: 'bottom'
 };
 
+/** @enum {Object.<string, *>} */
+const ProgressBarAnimation = {
+    Show: { ...AnimationType.OpacityMax, ...AnimationType.ScaleMax },
+    Hide: { ...AnimationType.OpacityMin, ...AnimationType.ScaleXMin, mode: Clutter.AnimationMode.EASE_OUT_QUAD }
+};
+
 /** @type {Object.<string, number|boolean>} */
 const DefaultProps = {
     name: MODULE_NAME,
     x_expand: true,
     y_expand: true,
     x_align: Clutter.ActorAlign.FILL,
-    y_align: Clutter.ActorAlign.FILL
+    y_align: Clutter.ActorAlign.FILL,
+    ...AnimationType.ScaleXMin,
+    ...AnimationType.OpacityMin
 };
 
 export class ProgressBar extends Component {
@@ -59,17 +68,20 @@ export class ProgressBar extends Component {
      */
     constructor(appButton) {
         super(new St.DrawingArea(DefaultProps));
+        this.actor.set_pivot_point(0.5, 0.5);
         this.#appButton = appButton;
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
         this.connect(Event.Repaint, () => this.#draw());
     }
 
     rerender() {
-        if (!this.isMapped) return;
+        if (!this.isValid) return;
         const progress = this.#appButton?.progress;
         if (this.#progress === progress) return;
+        const oldProgress = this.#progress;
         this.#progress = progress;
-        this.actor.queue_repaint();
+        if (oldProgress && !progress) Animation(this, AnimationDuration.Default, ProgressBarAnimation.Hide);
+        else this.actor.queue_repaint();
     }
 
     #destroy() {
@@ -79,10 +91,11 @@ export class ProgressBar extends Component {
 
     #draw() {
         if (!this.#progress) return;
-        const canvas = this.actor.get_context();
+        const actor = this.actor;
+        const canvas = actor.get_context();
         if (!canvas) return;
         const { width, height, margin, backgroundColor, progressColor, position } = this.#config;
-        const [canvasWidth, canvasHeight] = this.actor.get_surface_size();
+        const [canvasWidth, canvasHeight] = actor.get_surface_size();
         const scale = this.uiScale * this.globalScale;
         const angle = Math.PI / 2;
         const radius = height / 2 * scale;
@@ -105,6 +118,9 @@ export class ProgressBar extends Component {
         canvas.closePath();
         canvas.fill();
         canvas.$dispose();
+        if (actor.opacity === ProgressBarAnimation.Show.opacity) return;
+        actor.set(AnimationType.OpacityDown);
+        Animation(this, AnimationDuration.Default, ProgressBarAnimation.Show);
     }
 
     /**
