@@ -465,7 +465,9 @@ export class AppButton extends Button {
 
     #press() {
         if (this.actor.pressed) this.#appIcon.animate(AppIconAnimation.Press);
-        else this.#appIcon.animate(AppIconAnimation.Release);
+        else this.#appIcon.animate(AppIconAnimation.Release).finally(() => {
+            this.#appIcon.isHighlighted = this.actor.hover;
+        });
     }
 
     /**
