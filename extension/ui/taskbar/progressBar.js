@@ -16,21 +16,13 @@ const ProgressBarPosition = {
     Bottom: 'bottom'
 };
 
-/** @enum {Object.<string, *>} */
-const ProgressBarAnimation = {
-    Show: { ...AnimationType.OpacityMax, ...AnimationType.ScaleMax },
-    Hide: { ...AnimationType.OpacityMin, ...AnimationType.ScaleXMin, mode: Clutter.AnimationMode.EASE_OUT_QUAD }
-};
-
 /** @type {Object.<string, number|boolean>} */
 const DefaultProps = {
     name: MODULE_NAME,
     x_expand: true,
     y_expand: true,
     x_align: Clutter.ActorAlign.FILL,
-    y_align: Clutter.ActorAlign.FILL,
-    ...AnimationType.ScaleXMin,
-    ...AnimationType.OpacityMin
+    y_align: Clutter.ActorAlign.FILL
 };
 
 export class ProgressBar extends Component {
@@ -63,6 +55,21 @@ export class ProgressBar extends Component {
     /** @type {number} 0..0.1...0.9..1 */
     #progress = PROGRESS_VALUE_MIN;
 
+    /** @type {Object.<string, number|string>} */
+    get #drawParams() {
+        const { width, height, margin, backgroundColor, progressColor, position } = this.#config;
+        const [canvasWidth, canvasHeight] = this.actor.get_surface_size();
+        const scale = this.uiScale * this.globalScale;
+        const angle = Math.PI / 2;
+        const radius = height / 2 * scale;
+        const drawWidth = (width - height) * scale;
+        const x = canvasWidth / 2 - drawWidth / 2;
+        const y = position === ProgressBarPosition.Bottom ? canvasHeight - (height + margin) * scale : margin * scale;
+        const progressWidth = drawWidth * this.#progress - radius * (PROGRESS_VALUE_MAX - this.#progress);
+        const drawHeight = y + radius;
+        return { x, drawWidth, drawHeight, progressWidth, radius, angle, backgroundColor, progressColor };
+    }
+
     /**
      * @param {AppButton} appButton
      */
@@ -78,10 +85,11 @@ export class ProgressBar extends Component {
         if (!this.isValid) return;
         const progress = this.#appButton?.progress;
         if (this.#progress === progress) return;
-        const oldProgress = this.#progress;
+        const isFinal = this.#progress && !progress;
         this.#progress = progress;
-        if (oldProgress && !progress) Animation(this, AnimationDuration.Default, ProgressBarAnimation.Hide);
-        else this.actor.queue_repaint();
+        if (!isFinal) return this.actor.queue_repaint();
+        const animationParams = { ...AnimationType.OpacityMin, ...AnimationType.ScaleXMin, mode: Clutter.AnimationMode.EASE_OUT_QUAD };
+        Animation(this, AnimationDuration.Default, animationParams);
     }
 
     #destroy() {
@@ -94,33 +102,25 @@ export class ProgressBar extends Component {
         const actor = this.actor;
         const canvas = actor.get_context();
         if (!canvas) return;
-        const { width, height, margin, backgroundColor, progressColor, position } = this.#config;
-        const [canvasWidth, canvasHeight] = actor.get_surface_size();
-        const scale = this.uiScale * this.globalScale;
-        const angle = Math.PI / 2;
-        const radius = height / 2 * scale;
-        const drawWidth = (width - height) * scale;
-        const x = canvasWidth / 2 - drawWidth / 2;
-        const y = position === ProgressBarPosition.Bottom ? canvasHeight - (height + margin) * scale : margin * scale;
-        const progressWidth = drawWidth * this.#progress - radius * (PROGRESS_VALUE_MAX - this.#progress);
+        const { x, drawWidth, drawHeight, progressWidth, radius, angle, backgroundColor, progressColor } = this.#drawParams;
         this.#setColor(canvas, backgroundColor);
         canvas.newSubPath();
-        canvas.arc(x, y + radius, radius, angle, -angle);
-        canvas.arc(x + drawWidth, y + radius, radius, -angle, angle);
+        canvas.arc(x, drawHeight, radius, angle, -angle);
+        canvas.arc(x + drawWidth, drawHeight, radius, -angle, angle);
         canvas.closePath();
         canvas.fillPreserve();
         canvas.setLineWidth(0);
         canvas.stroke();
         this.#setColor(canvas, progressColor);
         canvas.newSubPath();
-        canvas.arc(x, y + radius, radius, angle, -angle);
-        canvas.arc(x + progressWidth, y + radius, radius, -angle, angle);
+        canvas.arc(x, drawHeight, radius, angle, -angle);
+        canvas.arc(x + progressWidth, drawHeight, radius, -angle, angle);
         canvas.closePath();
         canvas.fill();
         canvas.$dispose();
-        if (actor.opacity === ProgressBarAnimation.Show.opacity) return;
-        actor.set(AnimationType.OpacityDown);
-        Animation(this, AnimationDuration.Default, ProgressBarAnimation.Show);
+        if (actor.opacity === AnimationType.OpacityMax.opacity) return;
+        actor.remove_all_transitions();
+        this.setProps({ ...AnimationType.OpacityMax, ...AnimationType.ScaleMax });
     }
 
     /**
