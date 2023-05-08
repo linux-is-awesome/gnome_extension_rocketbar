@@ -1,4 +1,4 @@
-/* exported ButtonEvent, Button */
+/* exported ButtonEvent, Button, RuntimeButton */
 
 import GObject from 'gi://GObject';
 import Clutter from 'gi://Clutter';
@@ -9,6 +9,7 @@ import { Component, ComponentLocation } from './component.js';
 import { Property } from '../../core/enums.js';
 import { LongPressAction } from './longPressAction.js'; 
 import { Gradient } from '../../utils/gradient.js';
+import { Animation, AnimationType, AnimationDuration } from './animation.js';
 
 const DEFAULT_STYLE_CLASS = 'panel-button rocketbar__button';
 
@@ -48,6 +49,12 @@ const DefaultStyle = {
     backlightColor: '',
     backlightIntensity: 0,
     backlightRatio: 1
+};
+
+/** @type {Object.<string, number>} */
+const RuntimeButtonProps = {
+    width: 0,
+    ...AnimationType.OpacityMin
 };
 
 /** @enum {string} */
@@ -302,6 +309,39 @@ export class Button extends Component {
     #openMenu() {
         if (this.#menu) this.#menu.toggle();
         else this.#menuTrigger?.open();
+    }
+
+}
+
+export class RuntimeButton extends Button {
+
+    /** @type {boolean} */
+    get isFadeInDone() {
+        return this.actor.opacity === AnimationType.OpacityMax.opacity;
+    }
+
+    /**
+     * @param {St.Widget} [display]
+     * @param {string} [name]
+     */
+    constructor(display, name = null) {
+        super(display, name);
+        this.setProps(RuntimeButtonProps);
+    }
+
+    /**
+     * @param {number} width
+     * @returns {Promise}
+     */
+    async fadeIn(width) {
+        if (!width || this.isFadeInDone) return null;
+        const animationParams = { ...AnimationType.OpacityMax, ...{ width, mode: Clutter.AnimationMode.EASE_OUT_QUAD } };
+        return Animation(this, AnimationDuration.Default, animationParams).then(() => this.setSize());
+    }
+
+    async fadeOut() {
+        const animationParams = { ...RuntimeButtonProps, ...{ mode: Clutter.AnimationMode.EASE_OUT_QUAD } };
+        return Animation(this, AnimationDuration.Slow, animationParams);
     }
 
 }

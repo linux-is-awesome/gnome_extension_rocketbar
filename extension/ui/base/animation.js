@@ -21,8 +21,7 @@ export const AnimationType = {
     OpacityMax: { opacity: 255 },
     OpacityDown: { opacity: 180 },
     OpacityMin: { opacity: 0 },
-    TranslationReset: { translation_x: 0, translation_y: 0 },
-    HeightMin: { height: 0 }
+    TranslationReset: { translation_x: 0, translation_y: 0 }
 };
 
 /**
