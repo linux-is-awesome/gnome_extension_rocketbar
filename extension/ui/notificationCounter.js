@@ -242,7 +242,7 @@ export class NotificationCounter extends Component {
         this.#counter.remove_style_pseudo_class(COUNTER_STYLE_PSEUDO_CLASS);
         Animation(this.#counter, AnimationDuration.Faster, AnimationType.ScaleMin).then(() => {
             if (!this.isValid) return;
-            this.#counter.text = this.#count.toString();
+            this.#counter.text = `${this.#count}`;
             if (!this.#isVisible) {
                 this.#counter.hide();
                 this.#updateClockMargin();
@@ -283,7 +283,7 @@ export class NotificationCounter extends Component {
             `color: ${textColor};`
         );
         let [_, height] = this.#counter.get_size();
-        height = (height - borderSize * scale * globalScale * 4) / globalScale;
+        height = (height - Math.round(borderSize * scale * globalScale) * 4) / globalScale;
         this.#counter.style += (
             `height: ${height}px;` +
             `min-width: ${height}px;` +
@@ -294,7 +294,7 @@ export class NotificationCounter extends Component {
     #getStyleValues() {
         const isDnd = this.#dateMenu?.isDndEnabled;
         const isEmpty = !this.#count;
-        const padding = this.#count.toString().length === 1 ? 0 : COUNTER_LONG_VALUE_PADDING;
+        const padding = `${this.#count}`.length === 1 ? 0 : COUNTER_LONG_VALUE_PADDING;
         const borderColor = isDnd ? this.#config.colorEmptyDnd : this.#config.colorEmpty;
         const borderSize = isEmpty ? COUNTER_EMPTY_BORDER_SIZE : 0;
         const backgroundColor = isEmpty ? COUNTER_EMPTY_COLOR : (isDnd ? this.#config.colorNotEmptyDnd : this.#config.colorNotEmpty);
