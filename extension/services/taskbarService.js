@@ -1,9 +1,9 @@
 /* exported TaskbarClient */
 
 import GObject from 'gi://GObject';
+import Clutter from 'gi://Clutter';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
-import St from 'gi://St';
 import { AppFavorites } from '../core/legacy.js';
 import { Context } from '../core/context.js';
 import { Event, Type, Delay } from '../core/enums.js';
@@ -439,6 +439,32 @@ export class TaskbarClient {
         return TaskbarClient.#service?.isWorkspaceChanged;
     }
 
+    /** @type {boolean} */
+    get hasFocusedWindow() {
+        if (!TaskbarClient.#service || !this.#app ||
+            this.#app.state === Shell.AppState.STOPPED) return false;
+        const current = global.display.focus_window;
+        const old = TaskbarClient.#focusedWindow;
+        if (!current && !old) return false;
+        if (!current && old) {
+            if (old.window.minimized || !old.window.get_pid() ||
+                global.stage.get_key_focus() instanceof Clutter.Actor) {
+                TaskbarClient.#focusedWindow = null;
+                return false;
+            }
+            this.#workspace = this.workspace;
+            return this.#app === old.app && this.#testWindow(old.window);
+        }
+        if (current === old?.window) return this.#app === old.app;
+        this.#workspace = this.workspace;
+        if (!this.#testWindow(current)) return false;
+        const isValidWindow = TaskbarClient.#service.isValidWindow(current);
+        if (isValidWindow && !new Set(this.#app.get_windows()).has(current)) return false;
+        else if (!isValidWindow && !new Set(this.#app.get_pids()).has(current.get_pid())) return false;
+        TaskbarClient.#focusedWindow = { window: current, app: this.#app };
+        return true;
+    }
+
     /**
      * @param {() => void} callback
      * @param {Shell.App} app
@@ -513,34 +539,6 @@ export class TaskbarClient {
             result.add(app);
         }
         return result;
-    }
-
-    /**
-     * @returns {boolean}
-     */
-    hasFocusedWindow() {
-        if (!TaskbarClient.#service || !this.#app ||
-            this.#app.state === Shell.AppState.STOPPED) return false;
-        const current = global.display.focus_window;
-        const old = TaskbarClient.#focusedWindow;
-        if (!current && !old) return false;
-        if (!current && old) {
-            if (old.window.minimized || !old.window.get_pid() ||
-                global.stage.get_key_focus() instanceof St.Widget) {
-                TaskbarClient.#focusedWindow = null;
-                return false;
-            }
-            this.#workspace = this.workspace;
-            return this.#app === old.app && this.#testWindow(old.window);
-        }
-        if (current === old?.window) return this.#app === old.app;
-        this.#workspace = this.workspace;
-        if (!this.#testWindow(current)) return false;
-        const isValidWindow = TaskbarClient.#service.isValidWindow(current);
-        if (isValidWindow && !new Set(this.#app.get_windows()).has(current)) return false;
-        else if (!isValidWindow && !new Set(this.#app.get_pids()).has(current.get_pid())) return false;
-        TaskbarClient.#focusedWindow = { window: current, app: this.#app };
-        return true;
     }
 
     /**

@@ -430,7 +430,7 @@ export class AppButton extends RuntimeButton {
 
     #handleFocusedWindow() {
         if (!this.isMapped) return;
-        this.isActive = this.#windowsCount ? this.#service.hasFocusedWindow() : false;
+        this.isActive = this.#windowsCount ? this.#service.hasFocusedWindow : false;
     }
 
     #handleWindowState(window) {
