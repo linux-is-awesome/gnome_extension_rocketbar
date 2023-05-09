@@ -6,11 +6,10 @@ import Shell from 'gi://Shell';
 import { Main } from '../../core/legacy.js';
 import { Context } from '../../core/context.js';
 import { Event, Delay } from '../../core/enums.js';
-import { Button, ButtonEvent } from '../base/button.js';
+import { RuntimeButton, ButtonEvent } from '../base/button.js';
 import { ComponentEvent } from '../base/component.js';
 import { TaskbarClient } from '../../services/taskbarService.js';
 import { AppConfig, ConfigFields, ActivateBehavior, DemandsAttentionBehavior } from '../../utils/taskbar/appConfig.js';
-import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { AppIcon, AppIconAnimation, AppIconEvent } from './appIcon.js';
 import { Indicators } from './indicators.js';
 import { Menu } from './menu.js';
@@ -20,12 +19,6 @@ import { NotificationBadge } from './notificationBadge.js';
 import { ProgressBar } from './progressBar.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
-
-/** @type {Object.<string, number>} */
-const DefaultProps = {
-    width: 0,
-    opacity: AnimationType.OpacityMin.opacity
-};
 
 class CycleWindowsQueue {
 
@@ -66,7 +59,7 @@ class CycleWindowsQueue {
 
 }
 
-export class AppButton extends Button {
+export class AppButton extends RuntimeButton {
 
     /** @type {AppConfig} */
     static #configProvider = null;
@@ -90,14 +83,20 @@ export class AppButton extends Button {
     /** @type {boolean} */
     #isActive = false;
 
+    /** @type {boolean} */
+    #isDropCandidate = false;
+
+    /** @type {Object.<string, string|number|boolean>} */
+    #config = null;
+
+    /** @type {Job} */
+    #destroyJob = null;
+
     /** @type {Shell.App} */
     #app = null;
 
     /** @type {AppIcon} */
     #appIcon = null;
-
-    /** @type {Indicators} */
-    #indicators = null;
 
     /** @type {St.Widget} */
     #layout = new St.Widget({ name: `${MODULE_NAME}.Layout`, layout_manager: new Clutter.BinLayout() });
@@ -111,17 +110,17 @@ export class AppButton extends Button {
     /** @type {number} */
     #windowsCount = 0;
 
+    /** @type {number} */
+    #notificationsCount = 0;
+
+    /** @type {number} */
+    #progress = 0;
+
     /** @type {CycleWindowsQueue} */
     #cycleWindowsQueue = null;
 
-    /** @type {AppSoundVolumeControl} */
-    #soundVolumeControl = null;
-
-    /** @type {Promise} */
-    #destroyJob = null;
-
-    /** @type {Object.<string, string|number|boolean>} */
-    #config = null;
+    /** @type {Indicators} */
+    #indicators = null;
 
     /** @type {NotificationHandler} */
     #notificationHandler = null;
@@ -129,14 +128,11 @@ export class AppButton extends Button {
     /** @type {NotificationBadge} */
     #notificationBadge = null;
 
-    /** @type {number} */
-    #notificationsCount = 0;
-
-    /** @type {number} */
-    #progress = 0;
-
     /** @type {ProgressBar} */
     #progressBar = null;
+
+    /** @type {AppSoundVolumeControl} */
+    #soundVolumeControl = null;
 
     /** @type {number} */
     get #isAppRunning() {
@@ -162,7 +158,7 @@ export class AppButton extends Button {
 
     /** @type {boolean} */
     get #isStartupRequired() {
-        return this.actor.opacity !== AnimationType.OpacityMax.opacity;
+        return !this.isFadeInDone;
     }
 
     /** @type {Shell.App} */
@@ -175,17 +171,32 @@ export class AppButton extends Button {
         return this.#isActive;
     }
 
-    /** @type {number} */
-    get windowsCount() {
-        return this.#windowsCount;
-    }
-
     /** @type {AppConfig} */
     get configProvider() {
         if (!AppButton.#configProvider) {
             AppButton.#configProvider = new AppConfig();
         }
         return AppButton.#configProvider;
+    }
+
+    /** @type {number} */
+    get windowsCount() {
+        return this.#windowsCount;
+    }
+
+    /** @type {number} */
+    get notificationsCount() {
+        return this.#notificationsCount;
+    }
+
+    /** @type {number} */
+    get progress() {
+        return this.#progress;
+    }
+
+    /** @type {string} */
+    get dominantColor() {
+        return this.#appIcon?.dominantColor;
     }
 
     /** @type {AppSoundVolumeControl} */
@@ -213,37 +224,35 @@ export class AppButton extends Button {
         ]);
     }
 
-    /** @type {string} */
-    get dominantColor() {
-        return this.#appIcon?.dominantColor;
-    }
-
-    /** @type {number} */
-    get notificationsCount() {
-        return this.#notificationsCount;
-    }
-
-    /** @type {number} */
-    get progress() {
-        return this.#progress;
-    }
-
     /**
      * @param {Shell.App} app
+     * @param {boolean} [isDropCandidate]
      */
-    constructor(app) {
+    constructor(app, isDropCandidate = false) {
         super(new St.Bin(), MODULE_NAME);
-        this.setProps(DefaultProps);
         this.#layout.add_child(this.display);
         this.actor.set_child(this.#layout);
         this.dragEvents = true;
+        this.#isDropCandidate = isDropCandidate;
         this.#app = app;
         this.#config = this.configProvider.getConfig(app, settingsKey => this.#handleConfig(settingsKey));
         this.#appIcon = new AppIcon(app, this.#config.iconPath).setParent(this.display);
-        this.#service = new TaskbarClient(() => this.#handleAppState(), app);
-        this.#notificationHandler = new NotificationHandler(count => this.#handleNotifications(count), this.#app);
         this.actor.animateLaunch = () => this.#appIcon.animate(AppIconAnimation.Activate);
-        this.#connectSignals();
+        this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
+    }
+
+    destroy() {
+        this.#queueDestroy();
+    }
+
+    drop() {
+        if (!this.#isDropCandidate) return;
+        this.#isDropCandidate = false;
+        this.#handleMapped();
+    }
+
+    activate() {
+        
     }
 
     #destroy() {
@@ -263,10 +272,21 @@ export class AppButton extends Button {
         this.#appIcon = null;
         this.#indicators = null;
         this.#windows = null;
+        this.#destroyJob = null;
+    }
+
+    #handleMapped() {
+        if (!this.isValid) return;
+        this.#handleConfig();
+        if (this.#isDropCandidate) return this.#handleStartup();
+        this.#service = new TaskbarClient(() => this.#handleAppState(), this.#app);
+        this.#notificationHandler = new NotificationHandler(count => this.#handleNotifications(count), this.#app);
+        this.#connectSignals();
+        this.#handleProgress();
+        this.#handleAppState();
     }
 
     #connectSignals() {
-        this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
         this.connect(Event.Scroll, (_, event) => this.#scroll(event));
         this.connect(Event.Hover, () => this.#hover());
         Context.signals.add(this,
@@ -275,11 +295,6 @@ export class AppButton extends Button {
             [global.window_manager, Event.Minimize, (_, actor) => this.#handleWindowState(actor?.meta_window),
                                     Event.Unminimize, (_, actor) => this.#handleWindowState(actor?.meta_window)]);
         Context.launcherApi?.connectProgress(this, () => this.#handleProgress());
-    }
-
-    #handleMapped() {
-        this.#handleConfig();
-        this.#handleAppState();
     }
 
     /**
@@ -373,7 +388,7 @@ export class AppButton extends Button {
         const isFavorite = this.#service.favorites?.apps?.has(this.#app);
         this.#windows = this.#service.queryWindows(isolateWorkspaces, true);
         this.#windowsCount = this.#windows?.size ?? 0;
-        this.#notificationHandler?.updatePids();
+        this.#notificationHandler.updatePids();
         this.#soundVolumeControl?.update();
         if (!isFavorite && !this.#windowsCount) return this.#queueDestroy();
         if (!this.#isActive || !this.#windowsCount) this.#handleFocusedWindow();
@@ -382,37 +397,35 @@ export class AppButton extends Button {
     }
 
     #handleStartup() {
-        Context.jobs.removeAll(this);
         if (this.#destroyJob) {
-            this.actor.remove_all_transitions();
+            this.#destroyJob.destroy();
             this.#destroyJob = null;
+            this.actor.remove_all_transitions();
         }
         if (!this.#isStartupRequired) this.#indicators?.rerender();
         else this.#queueStartup();
     }
 
     #queueStartup() {
-        const { spacingAfter } = this.#config;
+        const { spacingAfter, width } = this.#config;
         const isWorkspaceChanged = this.#service.isWorkspaceChanged;
-        const width = (this.#config.width + spacingAfter) * this.uiScale * this.globalScale;
-        const animationParams = { ...AnimationType.OpacityMax, ...{ width, mode: Clutter.AnimationMode.EASE_OUT_QUAD } };
         Context.jobs.new(this).destroy(() => {
-            Animation(this, AnimationDuration.Default, animationParams).finally(() => {
-                this.setSize();
-                if (!isWorkspaceChanged) this.#indicators?.rerender();
-                this.#notificationBadge?.rerender();
-                this.#progressBar?.rerender();
-            });
-            if (isWorkspaceChanged) this.#indicators?.rerender();
+            const targetWidth = (width + spacingAfter) * this.uiScale * this.globalScale;
+            this.fadeIn(targetWidth).finally(() => !isWorkspaceChanged && this.#rerenderChildren());
+            if (isWorkspaceChanged) return this.#rerenderChildren();
         }).catch();
     }
 
     #queueDestroy() {
         if (this.#destroyJob) return;
-        Context.jobs.removeAll(this).new(this).destroy(() => {
-            const animationParams = { ...DefaultProps, ...{ mode: Clutter.AnimationMode.EASE_OUT_QUAD } };
-            this.#destroyJob = Animation(this, AnimationDuration.Slow, animationParams).then(() => this.destroy());
-        }).catch();
+        this.#destroyJob = Context.jobs.removeAll(this).new(this).destroy(() =>
+        this.fadeOut().finally(() => super.destroy())).catch();
+    }
+
+    #rerenderChildren() {
+        this.#indicators?.rerender();
+        this.#notificationBadge?.rerender();
+        this.#progressBar.rerender();
     }
 
     #handleFocusedWindow() {
@@ -437,8 +450,8 @@ export class AppButton extends Button {
      * @param {Meta.Window} window
      */
     async #handleUrgentWindow(window) {
-        if (!window || !this.#windows?.has(window) || window.has_focus()) return;
-        if (this.#config.demandsAttentionBehavior === DemandsAttentionBehavior.FocusActive && !this.#isActive) return;
+        if (!this.#isActive || this.#config.demandsAttentionBehavior === DemandsAttentionBehavior.FocusActive ||
+            !window || !this.#windows?.has(window) || window.has_focus()) return;
         Main.activateWindow(window);
     }
 
