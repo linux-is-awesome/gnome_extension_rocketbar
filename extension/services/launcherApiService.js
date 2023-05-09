@@ -115,7 +115,7 @@ class LauncherApiService {
     #handleProgress(appId, value) {
         value = +parseFloat(value).toFixed(PROGRESS_VALUE_DECIMAL_PLACES) || 0;
         const oldValue = this.#progress.get(appId) ?? 0;
-        if (value === oldValue) return;
+        if (value === oldValue || (value === 1 && !this.#progress.has(appId))) return;
         if (value) this.#progress.set(appId, value);
         else if (!this.#progress.has(appId)) return;
         else this.#progress.delete(appId);
