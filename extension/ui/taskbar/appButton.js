@@ -147,9 +147,9 @@ export class AppButton extends RuntimeButton {
     /** @type {Meta.Window[]} */
     get #sortedWindows() {
         if (!this.#app || !this.#windowsCount) return null;
-        if (this.#windows.size === 1) return [...this.#windows];
+        if (this.#windowsCount === 1) return [...this.#windows];
         const windows = this.#app.get_windows();
-        if (windows.length === this.#windows.size) return windows;
+        if (windows.length === this.#windowsCount) return windows;
         const result = [];
         for (let i = 0, l = windows.length; i < l; ++i)
             if (this.#windows.has(windows[i])) result.push(windows[i]);
@@ -392,8 +392,9 @@ export class AppButton extends RuntimeButton {
         this.#soundVolumeControl?.update();
         if (!isFavorite && !this.#windowsCount) return this.#queueDestroy();
         if (!this.#isActive || !this.#windowsCount) this.#handleFocusedWindow();
+        if (this.#windowsCount) this.#handleWindows();
+        else if (this.#progress) this.#handleProgress();
         this.#handleStartup();
-        this.#handleWindows();
     }
 
     #handleStartup() {
@@ -439,7 +440,7 @@ export class AppButton extends RuntimeButton {
     }
 
     async #handleWindows() {
-        if (!this.isValid || !this.#windows?.size) return;
+        if (!this.isValid || !this.#windowsCount) return;
         for (const window of this.#windows) {
             window.get_icon_geometry = () => this.#getWindowIconGeometry(window);
             if (window.demands_attention) this.#handleUrgentWindow(window);
@@ -450,8 +451,8 @@ export class AppButton extends RuntimeButton {
      * @param {Meta.Window} window
      */
     async #handleUrgentWindow(window) {
-        if (!this.#isActive || this.#config.demandsAttentionBehavior === DemandsAttentionBehavior.FocusActive ||
-            !window || !this.#windows?.has(window) || window.has_focus()) return;
+        if (!window || !this.#windows?.has(window) || window.has_focus()) return;
+        if (this.#config.demandsAttentionBehavior === DemandsAttentionBehavior.FocusActive && !this.#isActive) return;
         Main.activateWindow(window);
     }
 
@@ -464,8 +465,10 @@ export class AppButton extends RuntimeButton {
     }
 
     #handleProgress() {
+        const canHandleProgress = this.#isAppRunning;
+        if (!canHandleProgress && !this.#progress) return;
         const appId = this.#notificationHandler?.appId;
-        const progress = Context.launcherApi?.progress?.get(appId) ?? 0;
+        const progress = canHandleProgress ? Context.launcherApi?.progress?.get(appId) ?? 0 : 0;
         if (progress === this.#progress) return;
         this.#progress = progress;
         if (!this.#isStartupRequired) this.#progressBar?.rerender();
