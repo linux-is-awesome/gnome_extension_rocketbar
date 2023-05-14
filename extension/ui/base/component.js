@@ -96,7 +96,7 @@ export class Component {
         else ComponentLocation.Bottom;
     }
 
-    /** @type {Meta.Rect} */
+    /** @type {Meta.Rectangle} */
     get monitorRect() {
         const monitorIndex = this.monitorIndex;
         if (monitorIndex < 0) return null;
@@ -110,7 +110,7 @@ export class Component {
         return global.display.get_monitor_index_for_rect(rect);
     }
 
-    /** @type {Meta.Rect} */
+    /** @type {Meta.Rectangle} */
     get rect() {
         if (!this.isMapped) return null;
         const result = new Meta.Rectangle();

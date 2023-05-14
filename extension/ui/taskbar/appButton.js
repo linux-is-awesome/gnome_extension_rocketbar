@@ -3,6 +3,7 @@
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Shell from 'gi://Shell';
+import Meta from 'gi://Meta';
 import { Main } from '../../core/legacy.js';
 import { Context } from '../../core/context.js';
 import { Event, Delay } from '../../core/enums.js';
@@ -17,6 +18,7 @@ import { AppSoundVolumeControl } from '../../services/soundVolumeService.js';
 import { NotificationHandler } from '../../services/notificationService.js';
 import { NotificationBadge } from './notificationBadge.js';
 import { ProgressBar } from './progressBar.js';
+import { AnimationType } from '../base/animation.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
 
@@ -161,6 +163,17 @@ export class AppButton extends RuntimeButton {
         return !this.isFadeInDone;
     }
 
+    /** @type {Meta.Rectangle} */
+    get rect() {
+        if (!this.isValid) return null;
+        const { spacingAfter, width, height } = this.#config;
+        const scale = this.uiScale;
+        const result = new Meta.Rectangle();
+        [result.width, result.height] = [(width + spacingAfter) * scale, height * scale];
+        [result.x, result.y] = this.actor.get_transformed_position();
+        return result;
+    }
+
     /** @type {Shell.App} */
     get app() {
         return this.#app;
@@ -239,15 +252,18 @@ export class AppButton extends RuntimeButton {
         this.#appIcon = new AppIcon(app, this.#config.iconPath).setParent(this.display);
         this.actor.animateLaunch = () => this.#appIcon.animate(AppIconAnimation.Activate);
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
+        if (this.#isDropCandidate) this.actor.set_reactive(!this.#isDropCandidate);
     }
 
     destroy() {
+        if (!this.isValid) return;
         this.#queueDestroy();
     }
 
     drop() {
         if (!this.#isDropCandidate) return;
         this.#isDropCandidate = false;
+        this.actor.set_reactive(!this.#isDropCandidate);
         this.#handleMapped();
     }
 
@@ -408,11 +424,11 @@ export class AppButton extends RuntimeButton {
     }
 
     #queueStartup() {
-        const { spacingAfter, width } = this.#config;
-        const isWorkspaceChanged = this.#service.isWorkspaceChanged;
+        const isWorkspaceChanged = this.#service?.isWorkspaceChanged ?? false;
         Context.jobs.new(this).destroy(() => {
-            const targetWidth = (width + spacingAfter) * this.uiScale * this.globalScale;
-            this.fadeIn(targetWidth).finally(() => !isWorkspaceChanged && this.#rerenderChildren());
+            const targetWidth = this.rect.width * this.globalScale;
+            const { opacity } = this.#isDropCandidate ? AnimationType.OpacityDown : {};
+            this.fadeIn(targetWidth, opacity).finally(() => !isWorkspaceChanged && this.#rerenderChildren());
             if (isWorkspaceChanged) return this.#rerenderChildren();
         }).catch();
     }
@@ -609,7 +625,7 @@ export class AppButton extends RuntimeButton {
 
     /**
      * @param {Meta.Window} window
-     * @returns {[success: boolean, geometry: Meta.Rect]}
+     * @returns {[success: boolean, geometry: Meta.Rectangle]}
      */
     #getWindowIconGeometry(window) {
         if (!window) return [false];

@@ -1,6 +1,5 @@
 /* exported ConfigFields, ActivateBehavior, DemandsAttentionBehavior, AppIconSize, AppConfig */
 
-/** @typedef {import('./appButton.js').AppButton} AppButton */
 /** @typedef {Object.<string, string|number|boolean>} Config */
 
 import { Context } from '../../core/context.js';
