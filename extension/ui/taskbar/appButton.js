@@ -169,7 +169,7 @@ export class AppButton extends RuntimeButton {
         const { spacingAfter, width, height } = this.#config;
         const scale = this.uiScale;
         const result = new Meta.Rectangle();
-        [result.width, result.height] = [(width + spacingAfter) * scale, height * scale];
+        [result.width, result.height] = [(width + spacingAfter) * scale * this.globalScale, height * scale];
         [result.x, result.y] = this.actor.get_transformed_position();
         return result;
     }
@@ -265,10 +265,11 @@ export class AppButton extends RuntimeButton {
         this.#isDropCandidate = false;
         this.actor.set_reactive(!this.#isDropCandidate);
         this.#handleMapped();
+        this.#abortDestroy();
     }
 
     activate() {
-        
+        this.#click({});
     }
 
     #destroy() {
@@ -414,19 +415,22 @@ export class AppButton extends RuntimeButton {
     }
 
     #handleStartup() {
-        if (this.#destroyJob) {
-            this.#destroyJob.destroy();
-            this.#destroyJob = null;
-            this.actor.remove_all_transitions();
-        }
+        this.#abortDestroy();
         if (!this.#isStartupRequired) this.#indicators?.rerender();
         else this.#queueStartup();
+    }
+
+    #abortDestroy() {
+        if (!this.#destroyJob) return;
+        this.#destroyJob.destroy();
+        this.#destroyJob = null;
+        this.actor.remove_all_transitions();
     }
 
     #queueStartup() {
         const isWorkspaceChanged = this.#service?.isWorkspaceChanged ?? false;
         Context.jobs.new(this).destroy(() => {
-            const targetWidth = this.rect.width * this.globalScale;
+            const targetWidth = this.rect.width;
             const { opacity } = this.#isDropCandidate ? AnimationType.OpacityDown : {};
             this.fadeIn(targetWidth, opacity).finally(() => !isWorkspaceChanged && this.#rerenderChildren());
             if (isWorkspaceChanged) return this.#rerenderChildren();
@@ -523,7 +527,7 @@ export class AppButton extends RuntimeButton {
      * @returns {void}
      */
     #click(params) {
-        if (!params || this.#service.isPending) return;
+        if (!params || this.#service?.isPending) return;
         const { isOverview, isSecondaryButton, isMiddleButton, isCtrlPressed } = this.#getClickDetails(params);
         if (isSecondaryButton) return false;
         if (isCtrlPressed && isMiddleButton) return this.#closeFirstWindow();
@@ -561,7 +565,7 @@ export class AppButton extends RuntimeButton {
         const isOverview = Main.overview?.visible;
         const isSecondaryButton = button === Clutter.BUTTON_SECONDARY;
         const isMiddleButton = button === Clutter.BUTTON_MIDDLE;
-        const isCtrlPressed = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) !== 0;
+        const isCtrlPressed = (event?.get_state() & Clutter.ModifierType.CONTROL_MASK) !== 0;
         return { isOverview, isSecondaryButton, isMiddleButton, isCtrlPressed };
     }
 

@@ -1,7 +1,8 @@
 /* exported Taskbar */
 
 import Shell from 'gi://Shell';
-import { Main } from '../core/legacy.js';
+import Meta from 'gi://Meta';
+import { Main, Dnd } from '../core/legacy.js';
 import { Context } from '../core/context.js';
 import { Type, Event } from '../core/enums.js';
 import { ComponentEvent } from './base/component.js';
@@ -24,7 +25,7 @@ const DropCompetitor = (competitor, xyRect) => {
     return { rect, competitor };
 };
 
-export class DragAndDropHandler {
+class DragAndDropHandler {
 
     /** @type {DropCompetitor[]} */
     #slots = [];
@@ -114,13 +115,37 @@ export class DragAndDropHandler {
         this.#slots.splice(position, 0, DropCompetitor(this.#candidate, slotRect));       
     }
 
-    handleDrop() {
-        
+    handleDrop(target) {
+        if (!target || !this.#slots) return null;
+        const candidate = this.#candidate;
+        const slots = new Set();
+        for (let i = 0, l = this.#slots.length; i < l; ++i) {
+            const { competitor } = this.#slots[i];
+            if (competitor === target || !competitor.isValid) continue;
+            slots.add(competitor);
+        }
+        if (!slots.has(candidate)) slots.add(candidate);
+        this.#candidate = null;
+        this.destroy();
+        return [candidate, [...slots]];
     }
 
     #watchDragActor(actor) {
         if (Context.signals.hasClient(this)) return;
-        Context.signals.add(this, [actor, Event.Destroy, () => this.destroy()]);
+        Context.signals.add(this, [actor, Event.Destroy, () => this.destroy(),
+                                          Event.MoveX, () => this.#handleDragActorPosition(actor),
+                                          Event.MoveY, () => this.#handleDragActorPosition(actor)]);
+    }
+
+    #handleDragActorPosition(actor) {
+        if (!actor) return;
+        const parentRect = this.#parent.rect;
+        const actorRect = new Meta.Rectangle();
+        [actorRect.x, actorRect.y] = actor.get_transformed_position();
+        [actorRect.width, actorRect.height] = actor.get_transformed_size();
+        const [parentContainsActor] = actorRect.intersect(parentRect);
+        if (parentContainsActor) return;
+        this.destroy();
     }
 
 }
@@ -134,7 +159,8 @@ export class Taskbar extends ScrollView {
     #notifyHandler = (data) => ({
         [ComponentEvent.Destroy]: this.#destroy,
         [ComponentEvent.Mapped]: () => Context.layout.queueAfterInit(this, () => this.#rerender()),
-        [ComponentEvent.DragOver]: () => this.#handleDragOver(data?.target, data?.params)
+        [ComponentEvent.DragOver]: () => this.#handleDragOver(data?.target, data?.params),
+        [ComponentEvent.AcceptDrop]: () => this.#handleDrop(data?.target)
     })[data?.event]?.call(this);
 
     /** @type {Map<Meta.Workspace, Set<Shell.App>>} */
@@ -170,22 +196,58 @@ export class Taskbar extends ScrollView {
     }
     
     /**
-     * 
-     * @param {*} target 
+     * @param {*} target
      * @param {{x: number, y: number}} params
-     * @returns {?}
+     * @returns {Dnd.DragMotionResult|null}
      */
     #handleDragOver(target, params) {
         if (!params || target?.app instanceof Shell.App === false) return;
+        let isAppButton = target instanceof AppButton;
+        if (isAppButton && !target.isValid) return;
+        const result = isAppButton ? Dnd.DragMotionResult.MOVE_DROP : Dnd.DragMotionResult.COPY_DROP;
+        if (!isAppButton && this.#appButtons.has(target.app)) {
+            const appButton = this.#appButtons.get(target.app);
+            if (appButton.isValid) target = appButton;
+        }
         if (!this.#dndHandler) {
             const competitors = [...this.#appButtons.values()];
             this.#dndHandler = new DragAndDropHandler(this, competitors, () => this.#handleDragEnd());
         }
         this.#dndHandler.handleDrag({ target, ...params });
+        return result;
     }
 
-    #handleDrop() {
-
+    /**
+     * @param {*} target
+     * @returns {boolean}
+     */
+    #handleDrop(target) {
+        if (!this.#dndHandler) return false;
+        const [candidate, slots] = this.#dndHandler.handleDrop(target);
+        if (!candidate || !slots) return false;
+        let candidatePosition = 0;
+        let splitterPosition = -1; // TODO
+        const workspace = this.#service.workspace;
+        const candidateApp = candidate.app;
+        const oldAppButton = this.#appButtons.get(candidateApp);
+        const apps = new Set();
+        const appButtons = new Map();
+        for (let i = 0, l = slots.length; i < l; ++i) {
+            const actor = slots[i];
+            if (actor instanceof AppButton === false) continue;
+            const app = actor.app;
+            if (app === candidateApp && actor !== candidate) continue; 
+            if (actor === candidate) {
+                candidatePosition = i;
+            }
+            apps.add(app);
+            appButtons.set(app, actor);
+        }
+        this.#runningApps.set(workspace, apps);
+        this.#appButtons = appButtons;
+        oldAppButton?.destroy();
+        candidate.drop();
+        return true;
     }
 
     #handleDragEnd() {
@@ -221,9 +283,13 @@ export class Taskbar extends ScrollView {
             }
         }
         this.#appButtons = appButtons;
+        // TODO: we need to find separator position during this loop
         for (let i = 0, l = sortedAppButtons.length; i < l; ++i) sortedAppButtons[i].setParent(this, i);
     }
 
+    /**
+     * @returns {Set<Shell.App>}
+     */
     #getApps() {
         const workspace = this.#service.workspace;
         const favoriteApps = this.#service.favorites?.apps;
@@ -233,7 +299,10 @@ export class Taskbar extends ScrollView {
         else {
             const oldRunningApps = this.#runningApps.get(workspace);
             const newRunningApps = new Set();
-            for (const app of oldRunningApps) if (runningApps.has(app)) newRunningApps.add(app);
+            for (const app of oldRunningApps) {
+                if (!runningApps.has(app)) continue;
+                newRunningApps.add(app);
+            }
             runningApps = new Set([...newRunningApps, ...runningApps]);
             this.#runningApps.set(workspace, runningApps);
         }
