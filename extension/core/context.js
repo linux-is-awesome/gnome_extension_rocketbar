@@ -2,8 +2,7 @@
 
 import St from 'gi://St';
 import Gtk from 'gi://Gtk';
-import { ExtensionUtils } from './legacy.js';
-import { Main } from './legacy.js';
+import { ExtensionUtils, Main } from './legacy.js';
 import { LayoutManager } from './context/layout.js';
 import { Modules } from './context/modules.js';
 import { Jobs } from './context/jobs.js';
