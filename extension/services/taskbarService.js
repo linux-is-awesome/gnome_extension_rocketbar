@@ -65,21 +65,28 @@ class Favorites {
 
     /**
      * @param {Shell.App} app
-     * @param {number} position
+     * @param {number} [position]
      */
-    move(app, position) {
+    add(app, position = -1) {
         if (app instanceof Shell.App === false || !app.id) return;
-        const appIds = [...this.appsById.keys()];
-        const oldPosition = appIds.indexOf(app.id);
+        const oldPosition = [...this.appsById.keys()].indexOf(app.id);
         if (position === oldPosition) return;
-        this.#favorites.moveFavoriteToPos(app.id, position);
+        if (oldPosition < 0) this.#favorites.addFavoriteAtPos(app.id, position);
+        else this.#favorites.moveFavoriteToPos(app.id, position);
+    }
+
+    /**
+     * @param {Shell.App} app
+     */
+    remove(app) {
+        if (app instanceof Shell.App === false || !app.id) return;
+        this.#favorites.removeFavorite(app.id);
     }
 
     #handleChanged() {
         if (!this.#appsById || typeof this.#callback !== Type.Function) return;
         this.#appsById = null;
         this.#callback();
-        console.log('Favorites: changed');
     }
 
     #handleInstalled() {
@@ -89,7 +96,6 @@ class Favorites {
         if (oldAppIds === newAppIds) return;
         this.#appsById = null;
         this.#callback();
-        console.log('Favorites: installed changed');
     }
 
 }
