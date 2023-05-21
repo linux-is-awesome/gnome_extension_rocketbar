@@ -257,6 +257,8 @@ export class AppButton extends RuntimeButton {
 
     destroy() {
         if (!this.isValid) return;
+        this.#service?.destroy();
+        this.#service = null;
         this.#queueDestroy();
     }
 
