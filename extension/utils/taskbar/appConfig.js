@@ -1,6 +1,7 @@
 /* exported ConfigFields, ActivateBehavior, DemandsAttentionBehavior, AppIconSize, AppConfig */
 
 /** @typedef {Object.<string, string|number|boolean>} Config */
+/** @typedef {{config: Config, clients: Map<*, (settingsKey: string) => void>}} AppConfigDetails */
 
 import { Context } from '../../core/context.js';
 import { Config } from '../config.js';
@@ -58,7 +59,7 @@ const DefaultConfigOverride = {
 
 export class AppConfig {
 
-    /** @type {Map<Shell.App, {config: Config, callback: (settingsKey: string) => void}>} */
+    /** @type {Map<Shell.App, AppConfigDetails>} */
     #appConfig = new Map();
 
     /** @type {Object.<string, Config>} */
@@ -84,11 +85,15 @@ export class AppConfig {
 
     /**
      * @param {Shell.App} app
+     * @param {*} client
      * @returns {boolean}
      */
-    destroy(app) {
+    destroy(app, client) {
+        if (!this.#appConfig?.size) return true;
         if (!this.#appConfig?.has(app)) return false;
-        this.#appConfig.delete(app);
+        const { clients } = this.#appConfig.get(app);
+        clients?.delete(client);
+        if (!clients?.size) this.#appConfig.delete(app);
         if (this.#appConfig.size) return false;
         Context.signals.removeAll(this);
         return true;
@@ -96,14 +101,21 @@ export class AppConfig {
 
     /**
      * @param {Shell.App} app
-     * @param {(settingsKey: string) => void} callback
+     * @param {*} [client]
+     * @param {(settingsKey: string) => void} [callback]
      * @returns {Config}
      */
-    getConfig(app, callback) {
-        if (this.#appConfig.has(app)) return this.#appConfig.get(app).config;
-        if (!app?.id || typeof callback !== Type.Function) return null;
+    getConfig(app, client, callback) {
+        if (this.#appConfig.has(app) && !client) return this.#appConfig.get(app).config;
+        if (!app?.id || !client) return null;
+        const appConfig = this.#appConfig.get(app);
+        if (appConfig?.config) {
+            appConfig.clients.set(client, callback);
+            return appConfig.config;
+        } 
         const config = this.#getAppConfig(app);
-        this.#appConfig.set(app, { config, callback });
+        const clients = new Map([[client, callback]]);
+        this.#appConfig.set(app, { config, clients });
         return config;
     }
 
@@ -162,21 +174,25 @@ export class AppConfig {
      */
     #handleConfig(settingsKey) {
         if (!this.#appConfig?.size) return;
-        for (const [app, client] of this.#appConfig) this.#setAppConfig(app, client, settingsKey);
+        for (const [app, details] of this.#appConfig) this.#setAppConfig(app, details, settingsKey);
     }
 
     /**
      * @param {Shell.App} app
-     * @param {{config: Config, callback: (settingsKey: string) => void}} client
+     * @param {AppConfigDetails} details
      * @param {string} settingsKey
      */
-    #setAppConfig(app, client, settingsKey) {
-        const { config, callback } = client;
+    #setAppConfig(app, details, settingsKey) {
+        const { config, clients } = details;
         const newConfig = this.#getAppConfig(app);
         for (const field in newConfig) {
             config[field] = newConfig[field];
         }
-        callback(settingsKey);
+        if (!clients?.size) return;
+        for (const [_, callback] of clients) {
+            if (typeof callback !== Type.Function) continue;
+            callback(settingsKey);
+        }
     }
 
     /**

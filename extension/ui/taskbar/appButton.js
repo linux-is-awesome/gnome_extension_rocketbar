@@ -248,7 +248,7 @@ export class AppButton extends RuntimeButton {
         this.dragEvents = true;
         this.#isDropCandidate = isDropCandidate;
         this.#app = app;
-        this.#config = this.configProvider.getConfig(app, settingsKey => this.#handleConfig(settingsKey));
+        this.#config = this.configProvider.getConfig(app, this, settingsKey => this.#handleConfig(settingsKey));
         this.#appIcon = new AppIcon(app, this.#config.iconPath).setParent(this.display);
         this.actor.animateLaunch = () => this.#appIcon.animate(AppIconAnimation.Activate);
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
@@ -276,7 +276,7 @@ export class AppButton extends RuntimeButton {
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
         Context.launcherApi?.disconnect(this);
-        if (AppButton.#configProvider?.destroy(this.#app)) {
+        if (AppButton.#configProvider?.destroy(this.#app, this)) {
             AppButton.#configProvider = null;
         }
         this.#service?.destroy();
