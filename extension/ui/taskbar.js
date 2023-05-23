@@ -9,10 +9,12 @@ import { ComponentEvent } from './base/component.js';
 import { ScrollView } from './base/scrollView.js';
 import { TaskbarClient } from '../services/taskbarService.js';
 import { AppButton } from './taskbar/appButton.js';
+import { Splitter } from './taskbar/splitter.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar';
 
 /**
+ * @typedef {import('./base/component.js').Component} Component
  * @param {Component} competitor
  * @param {Meta.Rectangle} [xyRect]
  * @returns {{rect: Meta.Rectangle, competitor: Component}}
@@ -59,7 +61,6 @@ class DragAndDropHandler {
     }
 
     destroy() {
-        Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
         this.#slots = null;
         this.#parent = null;
@@ -69,6 +70,9 @@ class DragAndDropHandler {
         this.#destroyCallback = null;
     }
 
+    /**
+     * @param {{x: number, y:number, target: *, actor: Clutter.Actor}} params
+     */
     handleDrag(params) {
         if (!params || !this.#slots) return;
         const { target, actor } = params;
@@ -108,28 +112,33 @@ class DragAndDropHandler {
             this.#candidatePosition = position;
             return;
         }
-        this.#candidatePosition = position;
         this.#candidate?.destroy();
+        this.#candidatePosition = position;
         this.#candidate = new AppButton(target.app, true).setParent(this.#parent, position);
         if (!slotRect) return;
-        this.#slots.splice(position, 0, DropCompetitor(this.#candidate, slotRect));       
+        this.#slots.splice(position, 0, DropCompetitor(this.#candidate, slotRect));
     }
 
-    handleDrop(target) {
-        if (!this.#slots) return null;
+    /**
+     * @returns {[candidate: AppButton, slots: Component[]]}
+     */
+    handleDrop() {
+        if (!this.#slots || !this.#candidate) return null;
         const candidate = this.#candidate;
         const slots = new Set();
         for (let i = 0, l = this.#slots.length; i < l; ++i) {
             const { competitor } = this.#slots[i];
-            if (competitor === target || !competitor.isValid) continue;
-            slots.add(competitor);
+            if (competitor.isValid) slots.add(competitor);
         }
-        if (candidate && !slots.has(candidate)) slots.add(candidate);
+        if (!slots.has(candidate)) slots.add(candidate);
         this.#candidate = null;
         this.destroy();
         return [candidate, [...slots]];
     }
 
+    /**
+     * @param {Clutter.Actor} actor
+     */
     #watchDragActor(actor) {
         if (Context.signals.hasClient(this)) return;
         Context.signals.add(this, [actor, Event.Destroy, () => this.destroy(),
@@ -137,6 +146,9 @@ class DragAndDropHandler {
                                           Event.MoveY, () => this.#handleDragActorPosition(actor)]);
     }
 
+    /**
+     * @param {Clutter.Actor} actor
+     */
     #handleDragActorPosition(actor) {
         if (!actor) return;
         const parentRect = this.#parent.rect;
@@ -160,7 +172,7 @@ export class Taskbar extends ScrollView {
         [ComponentEvent.Destroy]: this.#destroy,
         [ComponentEvent.Mapped]: () => Context.layout.queueAfterInit(this, () => this.#rerender()),
         [ComponentEvent.DragOver]: () => this.#handleDragOver(data?.target, data?.params),
-        [ComponentEvent.AcceptDrop]: () => this.#handleDrop(data?.target)
+        [ComponentEvent.AcceptDrop]: this.#handleDrop
     })[data?.event]?.call(this);
 
     /** @type {Map<Meta.Workspace, Set<Shell.App>>} */
@@ -174,6 +186,12 @@ export class Taskbar extends ScrollView {
 
     /** @type {DragAndDropHandler} */
     #dndHandler = null;
+
+    /** @type {Splitter} */
+    #splitter = new Splitter();
+
+    /** @type {number} */
+    #splitterPosition = 0;
 
     constructor() {
         super(MODULE_NAME);
@@ -189,6 +207,7 @@ export class Taskbar extends ScrollView {
         this.#service = null;
         this.#appButtons = null;
         this.#dndHandler = null;
+        this.#splitter = null;
     }
 
     #setParent() {
@@ -210,7 +229,9 @@ export class Taskbar extends ScrollView {
             if (appButton.isValid) target = appButton;
         }
         if (!this.#dndHandler) {
+            this.#splitter.show();
             const competitors = [...this.#appButtons.values()];
+            competitors.splice(this.#splitterPosition, 0, this.#splitter);
             this.#dndHandler = new DragAndDropHandler(this, competitors, () => this.#handleDragEnd());
         }
         this.#dndHandler.handleDrag({ target, ...params });
@@ -218,15 +239,14 @@ export class Taskbar extends ScrollView {
     }
 
     /**
-     * @param {*} target
      * @returns {boolean}
      */
-    #handleDrop(target) {
-        if (!this.#dndHandler) return false;
-        const [candidate, slots] = this.#dndHandler.handleDrop(target);
-        if (!candidate || !slots) return false;
+    #handleDrop() {
+        const dropResult = this.#dndHandler?.handleDrop();
+        if (!dropResult) return false;
+        const [candidate, slots] = dropResult;
         let candidatePosition = -1;
-        let splitterPosition = -1; // TODO
+        let splitterPosition = -1;
         const workspace = this.#service.workspace;
         const candidateApp = candidate.app;
         const oldAppButton = this.#appButtons.get(candidateApp);
@@ -234,11 +254,17 @@ export class Taskbar extends ScrollView {
         const appButtons = new Map();
         for (let i = 0, l = slots.length; i < l; ++i) {
             const actor = slots[i];
+            if (actor instanceof Splitter) {
+                splitterPosition = i;
+                continue;
+            }
             if (actor instanceof AppButton === false) continue;
             const app = actor.app;
-            if (app === candidateApp && actor !== candidate) continue; 
             if (actor === candidate) {
                 candidatePosition = i;
+            } else if (app === candidateApp) {
+                if (actor === oldAppButton) appButtons.set({ app }, actor);
+                continue;
             }
             apps.add(app);
             appButtons.set(app, actor);
@@ -248,8 +274,8 @@ export class Taskbar extends ScrollView {
         oldAppButton?.destroy();
         candidate.drop();
         if (candidatePosition > splitterPosition) {
-            this.#service.favorites?.remove(candidateApp);
             if (!oldAppButton?.isValid) candidate.activate();
+            else this.#service.favorites?.remove(candidateApp);
             return true;
         } 
         const favoritePosition = [...apps].indexOf(candidateApp);
@@ -260,15 +286,19 @@ export class Taskbar extends ScrollView {
     #handleDragEnd() {
         if (!this.isValid) return;
         this.#dndHandler = null;
+        this.#splitter.hide();
     }
 
     #rerender() {
         if (!this.isMapped || Context.layout.isQueued(this)) return;
-        const apps = this.#getApps();
-        if (!apps?.size) return;
+        const favoriteApps = this.#service.favorites?.apps;
+        const runningApps = this.#getRunningApps();
+        const apps = [...new Set([...favoriteApps ?? [], ...runningApps ?? []])];
+        if (!apps.length) return;
         const appButtons = new Map();
         const sortedAppButtons = [];
-        for (const app of apps) {
+        for (let i = 0, l = apps.length; i < l; ++i) {
+            const app = apps[i];
             const oldAppButton = this.#appButtons.get(app);
             if (oldAppButton?.isValid) {
                 appButtons.set(app, oldAppButton);
@@ -279,27 +309,32 @@ export class Taskbar extends ScrollView {
             appButtons.set(app, newAppButton);
             sortedAppButtons.push(newAppButton);
         }
-        const mergedAppButtons = new Map([...this.#appButtons, ...appButtons ]);
+        let splitterPosition = favoriteApps?.size ?? 0;
+        this.#splitterPosition = splitterPosition;
+        const mergedAppButtons = new Map([...this.#appButtons, ...appButtons]);
         if (mergedAppButtons.size !== appButtons.size) {
+            const splitterApp = splitterPosition ? apps[splitterPosition - 1] : null;
             let i = -1;
             for (const [app, appButton] of mergedAppButtons) {
                 if (!appButton.isValid) continue; i++;
+                if (splitterApp === app) {
+                    splitterPosition = i + 1;
+                }
                 if (appButtons.has(app)) continue;
                 appButtons.set(app, appButton);
                 sortedAppButtons.splice(i, 0, appButton);
             }
         }
         this.#appButtons = appButtons;
-        // TODO: we need to find separator position during this loop
         for (let i = 0, l = sortedAppButtons.length; i < l; ++i) sortedAppButtons[i].setParent(this, i);
+        this.#splitter.setParent(this, splitterPosition);
     }
 
     /**
-     * @returns {Set<Shell.App>}
+     * @returns {Set<Shell.App>|null}
      */
-    #getApps() {
+    #getRunningApps() {
         const workspace = this.#service.workspace;
-        const favoriteApps = this.#service.favorites?.apps;
         let runningApps = this.#service.queryApps(true, true);
         if (!runningApps?.size) this.#runningApps.delete(workspace);
         else if (!this.#runningApps.has(workspace)) this.#runningApps.set(workspace, runningApps);
@@ -313,9 +348,7 @@ export class Taskbar extends ScrollView {
             runningApps = new Set([...newRunningApps, ...runningApps]);
             this.#runningApps.set(workspace, runningApps);
         }
-        if (!favoriteApps?.size) return runningApps;
-        if (!runningApps?.size) return favoriteApps;
-        return new Set([...favoriteApps, ...runningApps]);
+        return runningApps;
     }
 
 }
