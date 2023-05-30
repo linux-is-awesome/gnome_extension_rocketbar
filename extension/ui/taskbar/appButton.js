@@ -3,7 +3,6 @@
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Shell from 'gi://Shell';
-import Meta from 'gi://Meta';
 import { Main } from '../../core/legacy.js';
 import { Context } from '../../core/context.js';
 import { Event, Delay } from '../../core/enums.js';
@@ -163,14 +162,16 @@ export class AppButton extends RuntimeButton {
         return !this.isFadeInDone;
     }
 
-    /** @type {Meta.Rectangle} */
+    /**
+     * Note: Using Math.round to match css width.
+     * 
+     * @type {Meta.Rectangle}
+     */
     get rect() {
         if (!this.isValid) return null;
-        const { spacingAfter, width, height } = this.#config;
-        const scale = this.uiScale;
-        const result = new Meta.Rectangle();
-        [result.width, result.height] = [(width + spacingAfter) * scale * this.globalScale, height * scale];
-        [result.x, result.y] = this.actor.get_transformed_position();
+        const result = super.rect;
+        const { spacingAfter, width } = this.#config;
+        result.width = Math.round((width + spacingAfter) * this.uiScale * this.globalScale);
         return result;
     }
 

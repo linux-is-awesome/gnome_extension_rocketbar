@@ -112,7 +112,7 @@ export class Component {
 
     /** @type {Meta.Rectangle} */
     get rect() {
-        if (!this.isMapped) return null;
+        if (!this.isValid) return null;
         const result = new Meta.Rectangle();
         [result.x, result.y] = this.#actor.get_transformed_position();
         [result.width, result.height] = this.#actor.get_transformed_size();
