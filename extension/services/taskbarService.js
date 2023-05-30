@@ -77,6 +77,17 @@ class Favorites {
 
     /**
      * @param {Shell.App} app
+     * @returns {boolean}
+     */
+    canAdd(app) {
+        if (app instanceof Shell.App === false || !app.id || !app.app_info) return false;
+        const validationFunction = this.#favorites?._parentalControlsManager?.shouldShowApp;
+        if (typeof validationFunction !== Type.Function) return false;
+        return validationFunction(app.app_info);
+    }
+
+    /**
+     * @param {Shell.App} app
      */
     remove(app) {
         if (app instanceof Shell.App === false || !app.id) return;
