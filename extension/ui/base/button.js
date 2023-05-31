@@ -62,8 +62,8 @@ export const ButtonEvent = {
     Click: 'button::click',
     Press: 'button::press',
     LongPress: 'button::long-press',
-    Focus: 'button:focus',
-    RequestMenu: 'button:request-menu'
+    Focus: 'button::focus',
+    RequestMenu: 'button::request-menu'
 };
 
 class DummyEventEmitter {
