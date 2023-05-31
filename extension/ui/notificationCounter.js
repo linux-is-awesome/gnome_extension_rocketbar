@@ -45,7 +45,7 @@ const ConfigFields = {
 
 /** @type {Object.<string, number|boolean|string>} */
 const CounterProps = {
-    name: `${MODULE_NAME}.Counter`,
+    name: `${MODULE_NAME}-Counter`,
     style_class: COUNTER_STYLE_CLASS,
     text: COUNTER_DEFAULT_TEXT,
     visible: false,
@@ -56,7 +56,7 @@ const CounterProps = {
 
 /** @type {Object.<string, number|boolean|string>} */
 const SpacerProps = {
-    name: `${MODULE_NAME}.Spacer`,
+    name: `${MODULE_NAME}-Spacer`,
     text: COUNTER_DEFAULT_TEXT,
     y_align: Clutter.ActorAlign.CENTER,
     ...AnimationType.OpacityMin
@@ -89,7 +89,7 @@ class DateMenu extends Component {
     }
 
     constructor() {
-        super(new St.BoxLayout({ name: `${MODULE_NAME}.${DateMenu.name}` }));
+        super(new St.BoxLayout({ name: `${MODULE_NAME}-${DateMenu.name}` }));
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
         this.#initialize();
     }

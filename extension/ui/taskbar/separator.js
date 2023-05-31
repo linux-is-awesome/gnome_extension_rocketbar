@@ -27,7 +27,7 @@ const DefaultProps = {
 
 /** @type {Object.<string, boolean|number|string>} */
 const BodyProps = {
-    name: `${MODULE_NAME}.Body`,
+    name: `${MODULE_NAME}-Body`,
     y_align: Clutter.ActorAlign.CENTER,
     x_align: Clutter.ActorAlign.CENTER
 };

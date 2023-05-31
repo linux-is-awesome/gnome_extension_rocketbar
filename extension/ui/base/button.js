@@ -278,7 +278,7 @@ export class Button extends Component {
         this.actor.set_style_class_name(null);
         this.actor.bind_property(Property.Hover, this.#display, Property.Hover, GObject.BindingFlags.SYNC_CREATE);
         if (typeof name !== Type.String) return;
-        this.#display.set({ name: `${name}.Display` });
+        this.#display.set({ name: `${name}-Display` });
     }
 
     #press() {

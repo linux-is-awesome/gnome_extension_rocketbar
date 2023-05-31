@@ -90,7 +90,7 @@ export class AppIcon extends Component {
     get dragActor() {
         const gicon = this.actor.get_gicon();
         const size = this.#size * DRAG_ACTOR_SIZE_SCALE * this.uiScale;
-        return new St.Icon({ name: `${MODULE_NAME}.DragActor`, icon_size: size, gicon });
+        return new St.Icon({ name: `${MODULE_NAME}-DragActor`, icon_size: size, gicon });
     }
 
     /** @type {string} */
