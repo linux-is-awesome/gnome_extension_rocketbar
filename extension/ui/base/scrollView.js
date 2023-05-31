@@ -31,6 +31,13 @@ export class ScrollView extends Component {
         return super.actor;
     }
 
+    /** @param {boolean} value */
+    set horizontalFade(value) {
+        const className = `h${FADE_EFFECT_NAME}`;
+        if (value) super.actor.add_style_class_name(className);
+        else super.actor.remove_style_class_name(className);
+    }
+
     /**
      * @param {string} [name] 
      */
