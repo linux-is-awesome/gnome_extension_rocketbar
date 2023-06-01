@@ -149,6 +149,9 @@ export class Button extends Component {
     /** @type {boolean} */
     #isActive = false;
 
+    /** @type {boolean} */
+    #hasFocus = false;
+
     /** @type {Map<string, string>} */
     #css = null;
 
@@ -174,6 +177,11 @@ export class Button extends Component {
     /** @type {boolean} */
     get isActive() {
         return this.#isActive;
+    }
+
+    /** @type {boolean} */
+    get hasFocus() {
+        return this.#hasFocus;
     }
 
     /** @param {boolean} value */
@@ -301,7 +309,8 @@ export class Button extends Component {
     }
 
     #focus() {
-        if (this.actor.has_key_focus() || this.#menu?.isOpen) this.#display.add_style_pseudo_class(PseudoClass.Focus);
+        this.#hasFocus = this.actor.has_key_focus() || this.#menu?.isOpen;
+        if (this.#hasFocus) this.#display.add_style_pseudo_class(PseudoClass.Focus);
         else this.#display.remove_style_pseudo_class(PseudoClass.Focus);
         this.notifySelf(ButtonEvent.Focus);
     }
