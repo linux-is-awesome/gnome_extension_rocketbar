@@ -449,7 +449,7 @@ export class AppButton extends RuntimeButton {
     #rerenderChildren() {
         this.#indicators?.rerender();
         this.#notificationBadge?.rerender();
-        this.#progressBar.rerender();
+        this.#progressBar?.rerender();
     }
 
     #handleFocusedWindow() {
