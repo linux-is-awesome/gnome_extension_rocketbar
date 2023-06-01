@@ -16,10 +16,15 @@ const DefaultProps = {
     vscrollbar_policy: St.PolicyType.NEVER   
 };
 
+/** @type {Object.<string, number>} */
+const LayoutProps = {
+    x_align: Clutter.ActorAlign.START
+};
+
 export class ScrollView extends Component {
 
     /** @type {St.BoxLayout} */
-    #layout = new St.BoxLayout();
+    #layout = new St.BoxLayout(LayoutProps);
 
     /** @type {St.BoxLayout} */
     get actor() {

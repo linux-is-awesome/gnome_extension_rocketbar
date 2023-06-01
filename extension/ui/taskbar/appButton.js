@@ -21,6 +21,13 @@ import { AnimationType } from '../base/animation.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
 
+/** @type {Object.<string, string|boolean>} */
+const LayoutProps = {
+    name: `${MODULE_NAME}-Layout`,
+    x_expand: true,
+    y_expand: true
+};
+
 class CycleWindowsQueue {
 
     /** @type {Meta.Window[]} */
@@ -100,7 +107,7 @@ export class AppButton extends RuntimeButton {
     #appIcon = null;
 
     /** @type {St.Widget} */
-    #layout = new St.Widget({ name: `${MODULE_NAME}.Layout`, layout_manager: new Clutter.BinLayout() });
+    #layout = new St.Widget({ ...LayoutProps, layout_manager: new Clutter.BinLayout() });
 
     /** @type {TaskbarClient} */
     #service = null;
