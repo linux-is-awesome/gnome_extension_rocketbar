@@ -43,7 +43,8 @@ export const Event = {
     Unminimize: 'unminimize',
     MenuClosed: 'menu-closed',
     MoveX: 'notify::x',
-    MoveY: 'notify::y'
+    MoveY: 'notify::y',
+    AdjustmentChanged: 'changed'
 };
 
 /**
