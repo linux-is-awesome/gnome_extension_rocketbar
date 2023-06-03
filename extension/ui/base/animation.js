@@ -25,12 +25,17 @@ export const AnimationType = {
 };
 
 /**
- * @param {St.Widget|Component} actor
+ * @param {St.Widget|St.Adjustment|Component} actor
  * @param {number} [duration]
  * @param {*} [params]
  * @returns {Promise}
  */
 export const Animation = (actor, duration = 0, params = {}) => {
+    if (actor instanceof St.Adjustment) {
+        const value = params?.value ?? 0;
+        delete params?.value;
+        return new Promise(resolve => actor.ease(value, { ...params, duration, onComplete: resolve }));
+    }
     if (actor instanceof Component) {
         actor = actor.actor;
     }
