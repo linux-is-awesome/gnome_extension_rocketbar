@@ -66,7 +66,7 @@ export class ScrollView extends Component {
      */
     scrollToActor(actor) {
         if (!this.isMapped || !this.scroll) return;
-        if (actor instanceof Component) {
+        if (actor instanceof Component && actor.isValid) {
             actor = actor.actor;
         }
         if (actor instanceof St.Widget === false) return;
