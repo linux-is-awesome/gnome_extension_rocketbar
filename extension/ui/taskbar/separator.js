@@ -21,6 +21,8 @@ const ConfigFields = {
 /** @type {Object.<string, boolean|number|string>} */
 const DefaultProps = {
     name: MODULE_NAME,
+    reactive: true,
+    track_hover: true,
     width: 0,
     opacity: AnimationType.OpacityMin.opacity
 };
@@ -40,7 +42,7 @@ export class Separator extends Component {
      */
     #notifyHandler = (data) => ({
         [ComponentEvent.Destroy]: this.#destroy,
-        [ComponentEvent.Scale]: this.#updateStyle,
+        [ComponentEvent.Scale]: this.#handleConfig,
         [ComponentEvent.Mapped]: () => this.#updateStyle() ?? this.#handleState()
     })[data?.event]?.call(this);
 
@@ -54,7 +56,7 @@ export class Separator extends Component {
     #body = new St.Widget(BodyProps);
 
     /** @type {Object.<string, string|number|boolean>} */
-    #config = Config(this, ConfigFields, () => this.#updateStyle());
+    #config = Config(this, ConfigFields, () => this.#handleConfig());
 
     /** @type {number} */
     get #width() {
@@ -108,6 +110,11 @@ export class Separator extends Component {
         this.#body = null;
     }
 
+    #handleConfig() {
+        this.#updateStyle();
+        if (this.#isVisible) this.notifyParents(ComponentEvent.Mapped);
+    }
+
     #updateStyle() {
         if (!this.isValid) return;
         const { iconSize, spacingAfter } = this.#config;
@@ -131,9 +138,11 @@ export class Separator extends Component {
         if (!this.#isVisible && opacity === AnimationType.OpacityMin.opacity) return;
         this.actor.remove_all_transitions();
         const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
-        if (!this.#isVisible) return Animation(this, AnimationDuration.Slow, { ...DefaultProps, mode });
+        if (!this.#isVisible) return Animation(this, AnimationDuration.Slow, { ...DefaultProps, mode }).then(() =>
+                                     this.notifyParents(ComponentEvent.Destroy));
         const width = this.rect.width;
-        Animation(this, AnimationDuration.Default, { ...AnimationType.OpacityMax, width, mode }).then(() => this.setSize());;
+        this.notifyParents(ComponentEvent.Mapped);
+        Animation(this, AnimationDuration.Default, { ...AnimationType.OpacityMax, width, mode }).then(() => this.setSize());
     }
 
 }
