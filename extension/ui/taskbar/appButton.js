@@ -1,4 +1,4 @@
-/* exported AppButton */
+/* exported AppButtonEvent, AppButton */
 
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
@@ -26,6 +26,11 @@ const LayoutProps = {
     name: `${MODULE_NAME}-Layout`,
     x_expand: true,
     y_expand: true
+};
+
+/** @enum {string} */
+export const AppButtonEvent = {
+    Reaction: 'appbutton::reaction'
 };
 
 class CycleWindowsQueue {
@@ -85,6 +90,7 @@ export class AppButton extends RuntimeButton {
         [ButtonEvent.Press]: this.#press,
         [ButtonEvent.Click]: () => this.#click(data?.params) ?? true,
         [ButtonEvent.RequestMenu]: () => new Menu(this),
+        [ButtonEvent.Focus]: () => this.notifyParents(AppButtonEvent.Reaction),
         [AppIconEvent.DominantColorChanged]: () => this.#updateBacklight() ?? this.#indicators?.rerender() ?? true
     })[data?.event]?.call(this);
 
@@ -237,8 +243,9 @@ export class AppButton extends RuntimeButton {
             if (!this.#isStartupRequired) this.#indicators?.rerender();
         }
         if (this.#isActive === oldValue) return;
-        if (!this.#isActive) Context.signals.remove(this, Main.overview);
-        else Context.signals.add(this, [
+        if (!this.#isActive) return Context.signals.remove(this, Main.overview);
+        if (!this.#isStartupRequired) this.notifyParents(AppButtonEvent.Reaction);
+        Context.signals.add(this, [
             Main.overview,
             Event.OverviewShowing, () => { this.isActive = this.#isActive; },
             Event.OverviewHiding, () => { this.isActive = this.#isActive; }
@@ -400,6 +407,7 @@ export class AppButton extends RuntimeButton {
     #updateStyle() {
         const { spacingAfter, roundness, width, height } = this.#config;
         this.overrideStyle({ spacingAfter, roundness, width, height });
+        this.notifyParents(ComponentEvent.Mapped);
     }
 
     #updateBacklight() {
@@ -442,15 +450,18 @@ export class AppButton extends RuntimeButton {
         Context.jobs.new(this).destroy(() => {
             const targetWidth = this.rect.width;
             const { opacity } = this.#isDropCandidate ? AnimationType.OpacityDown : {};
-            this.fadeIn(targetWidth, opacity).finally(() => !isWorkspaceChanged && this.#rerenderChildren());
-            if (isWorkspaceChanged) return this.#rerenderChildren();
+            this.fadeIn(targetWidth, opacity).finally(() => {
+                if (!isWorkspaceChanged) this.#rerenderChildren();
+                if (this.#isActive) this.notifyParents(AppButtonEvent.Reaction);
+            });
+            if (isWorkspaceChanged) this.#rerenderChildren();
         }).catch();
     }
 
     #queueDestroy() {
         if (this.#destroyJob) return;
         this.#destroyJob = Context.jobs.removeAll(this).new(this).destroy(() =>
-        this.fadeOut().finally(() => super.destroy())).catch();
+        this.fadeOut().finally(() => this.notifyParents(ComponentEvent.Destroy).actor?.destroy())).catch();
     }
 
     #rerenderChildren() {
@@ -507,6 +518,7 @@ export class AppButton extends RuntimeButton {
     #hover() {
         this.#appIcon.isHighlighted = this.actor.hover;
         this.#resetCycleWindowsQueue();
+        this.notifyParents(AppButtonEvent.Reaction);
     }
 
     #press() {
