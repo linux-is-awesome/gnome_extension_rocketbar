@@ -44,9 +44,16 @@ const ConfigFields = {
 /** @type {Object.<string, number|boolean|string>} */
 const DefaultProps = {
     name: MODULE_NAME,
-    style_class: STYLE_CLASS,
     x_expand: true,
-    y_expand: true,
+    y_expand: true
+};
+
+/** @type {Object.<string, number|boolean|string>} */
+const BadgeProps = {
+    name: `${MODULE_NAME}-Badge`,
+    style_class: STYLE_CLASS,
+    x_expand: false,
+    y_expand: false,
     visible: false,
     text: DEFAULT_TEXT,
     ...AnimationType.OpacityMin,
@@ -64,21 +71,25 @@ export class NotificationBadge extends Component {
         [ComponentEvent.Scale]: this.#updateStyle
     })[data?.event]?.call(this);
 
+    /** @type {St.Label} */
+    #badge = new St.Label(BadgeProps);
+
+    /** @type {Object.<string, string|number|boolean>} */
+    #config = Config(this, ConfigFields, () => this.#updateStyle());
+
     /**
      * @typedef {import('./appButton.js').AppButton} AppButton
      * @type {AppButton}
      */
     #appButton = null;
 
-    /** @type {Object.<string, string|number|boolean>} */
-    #config = Config(this, ConfigFields, () => this.#updateStyle());
-
     /**
      * @param {AppButton} appButton
      */
     constructor(appButton) {
-        super(new St.Label(DefaultProps));
-        this.actor.set_pivot_point(0.5, 0.5);
+        super(new St.Bin(DefaultProps));
+        this.actor.set_child(this.#badge);
+        this.#badge.set_pivot_point(0.5, 0.5);
         this.#appButton = appButton;
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
     }
@@ -86,40 +97,41 @@ export class NotificationBadge extends Component {
     rerender() {
         if (!this.isValid) return;
         const count = this.#appButton.notificationsCount;
-        const oldVisible = this.actor.visible;
+        const oldVisible = this.#badge.visible;
         const visible = count > 0;
         if (!visible && !oldVisible) return;
-        this.actor.remove_all_transitions();
-        if (!visible) return Animation(this, AnimationDuration.Default, BadgeAnimation.Hide).then(() =>
-                             this.setProps({ visible }));
+        this.#badge.remove_all_transitions();
+        if (!visible) return Animation(this.#badge, AnimationDuration.Default, BadgeAnimation.Hide).then(() =>
+                             this.#badge.set({ visible }));
         const { maxCount } = this.#config;
         const text = `${ count > maxCount ? maxCount : count }`;
-        this.setProps({ text, visible }).#updateStyle();
+        this.#badge.set({ text, visible });
+        this.#updateStyle();
         if (oldVisible === visible) return this.#blink();
-        Animation(this, AnimationDuration.Fast, BadgeAnimation.Show);
+        Animation(this.#badge, AnimationDuration.Fast, BadgeAnimation.Show);
     }
 
     #destroy() {
+        this.#badge?.remove_all_transitions();
+        this.#badge = null;
         this.#appButton = null;
     }
 
     async #blink() {
         let i = 0;
         while (i < BLINK_DURATION) {
-            await Animation(this, AnimationDuration.Slower, BadgeAnimation.Blink).then(() =>
-                  Animation(this, AnimationDuration.Slower, BadgeAnimation.Show));
+            await Animation(this.#badge, AnimationDuration.Slower, BadgeAnimation.Blink).then(() =>
+                  Animation(this.#badge, AnimationDuration.Slower, BadgeAnimation.Show));
             i++;
         }
     }
 
     #updateStyle() {
-        if (!this.isValid) return;
-        const actor = this.actor;
-        if (!actor?.visible) return;
+        if (!this.isValid || !this.#badge?.visible) return;
         const { color, fontColor, borderColor, margin, size, roundness, position } = this.#config;
         const scale = this.uiScale;
         const fontSize = Math.max(size - BORDER_SIZE * 2, FONT_SIZE_MIN) * scale;
-        const padding = actor.text.length === 1 ? 0 : LONG_VALUE_PADDING * scale;
+        const padding = this.#badge.text.length === 1 ? 0 : LONG_VALUE_PADDING * scale;
         const margins = (
             position === BadgePosition.TopLeft ?
             `margin-top: ${margin * scale}px; margin-left: ${margin * scale}px;` :
@@ -130,7 +142,7 @@ export class NotificationBadge extends Component {
             position === BadgePosition.BottomRight ?
             `margin-bottom: ${margin * scale}px; margin-right: ${margin * scale}px;` : ''
         );
-        actor.set_style(
+        this.#badge.set_style(
             `background-color: ${color};` +
             `color: ${fontColor};` +
             `font-size: ${fontSize}px;` +
@@ -154,7 +166,7 @@ export class NotificationBadge extends Component {
             position === BadgePosition.TopLeft || position === BadgePosition.TopRight ?
             Clutter.ActorAlign.START : Clutter.ActorAlign.END
         );
-        this.setProps({ x_align, y_align });
+        this.#badge.set({ x_align, y_align });
     }
 
 }
