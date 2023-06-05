@@ -32,8 +32,11 @@ const DropCompetitor = (competitor, xyRect) => {
     const rect = competitor.rect;
     if (xyRect) {
         [rect.x, rect.y] = [xyRect.x, xyRect.y];
+    } else {
+        const allocation = competitor.actor.get_allocation_box();
+        [rect.x, rect.y] = [allocation.x1, allocation.y1];
     }
-    return { rect, competitor };
+    return { competitor, rect };
 };
 
 class DragAndDropHandler {
@@ -52,6 +55,14 @@ class DragAndDropHandler {
 
     /** @type {() => void} */
     #destroyCallback = null;
+
+    /** @type {Meta.Rectangle} */
+    get #parentRect() {
+        const rect = this.#parent.rect;
+        const [x, y] = this.#parent.actor.get_transformed_position();
+        [rect.x, rect.y] = [rect.x - x, rect.y - y];
+        return rect;
+    }
 
     /**
      * @param {Component} parent
@@ -83,10 +94,10 @@ class DragAndDropHandler {
      * @param {{x: number, y:number, target: *, actor: Clutter.Actor}} params
      */
     handleDrag(params) {
-        if (!params || !this.#slots) return;
+        if (!params || !this.#slots || !this.#parent) return;
         const { target, actor } = params;
         this.#watchDragActor(actor);
-        const x = this.#parent?.rect.x + params.x;
+        const x = this.#parentRect.x + params.x;
         const slots = [];
         for (let i = 0, l = this.#slots.length; i < l; ++i) {
             if (!this.#slots[i].competitor?.isValid) continue;
@@ -117,7 +128,8 @@ class DragAndDropHandler {
             return;
         }
         if (this.#candidate && (this.#candidatePosition === position ||
-                                competitorAtPosition === this.#candidate)) {
+                                competitorAtPosition === this.#candidate ||
+                                competitorBeforePosition === this.#candidate)) {
             this.#candidatePosition = position;
             return;
         }
