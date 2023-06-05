@@ -15,6 +15,7 @@ import { Separator } from './taskbar/separator.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar';
 const APP_ALLOCATION_THRESHOLD = 2;
+const SCROLL_RESET_DELAY = 1000;
 
 /** @type {Object.<string, boolean|number>} */
 const AllocationProps = {
@@ -92,9 +93,10 @@ class DragAndDropHandler {
 
     /**
      * @param {{x: number, y:number, target: *, actor: Clutter.Actor}} params
+     * @returns {Component|null}
      */
     handleDrag(params) {
-        if (!params || !this.#slots || !this.#parent) return;
+        if (!params || !this.#slots || !this.#parent) return null;
         const { target, actor } = params;
         this.#watchDragActor(actor);
         const x = this.#parentRect.x + params.x;
@@ -125,19 +127,19 @@ class DragAndDropHandler {
         } else if (target === competitorAtPosition || target === competitorBeforePosition) {
             this.#candidate?.destroy();
             this.#candidate = null;
-            return;
+            return competitorAtPosition;
         }
         if (this.#candidate && (this.#candidatePosition === position ||
                                 competitorAtPosition === this.#candidate ||
                                 competitorBeforePosition === this.#candidate)) {
             this.#candidatePosition = position;
-            return;
+            return competitorAtPosition;
         }
         this.#candidate?.destroy();
         this.#candidatePosition = position;
         this.#candidate = new AppButton(target.app, true).setParent(this.#parent, position);
-        if (!slotRect) return;
-        this.#slots.splice(position, 0, DropCompetitor(this.#candidate, slotRect));
+        if (slotRect) this.#slots.splice(position, 0, DropCompetitor(this.#candidate, slotRect));
+        return competitorAtPosition;
     }
 
     /**
@@ -193,7 +195,7 @@ export class Taskbar extends ScrollView {
         [ComponentEvent.Mapped]: () => this.#handleMapped(data?.sender) ?? true,
         [ComponentEvent.DragOver]: () => this.#handleDragOver(data?.target, data?.params),
         [ComponentEvent.AcceptDrop]: this.#handleDrop,
-        [AppButtonEvent.Reaction]: () => this.#handleAppButtonReaction(data?.sender) ?? true
+        [AppButtonEvent.Reaction]: () => this.#handleChildReaction(data?.sender) ?? true
     })[data?.event]?.call(this);
 
     /** @type {Object.<string, string|number|boolean>} */
@@ -212,8 +214,8 @@ export class Taskbar extends ScrollView {
     /** @type {AppButton|null} */
     #activeAppButton = null;
 
-    /** @type {AppButton|null} */
-    #hoveredAppButton = null;
+    /** @type {Component|null} */
+    #scrollLock = null;
 
     /** @type {TaskbarClient} */
     #service = new TaskbarClient(() => this.#rerender());
@@ -237,7 +239,7 @@ export class Taskbar extends ScrollView {
     #allocationJob = Context.jobs.new(this, Delay.Redraw);
 
     /** @type {Job} */
-    #restoreScrollJob = Context.jobs.new(this, 1000);
+    #scrollResetJob = Context.jobs.new(this, SCROLL_RESET_DELAY);
 
     /** @type {St.BoxLayout} */
     get actor() {
@@ -248,6 +250,7 @@ export class Taskbar extends ScrollView {
         super(MODULE_NAME);
         super.actor.add_actor(this.#allocation);
         this.dropEvents = true;
+        this.#separator.connect(Event.Hover, () => this.#handleChildReaction(this.#separator));
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
         Context.layout.requestInit(this, () => this.#setParent());
     }
@@ -265,8 +268,8 @@ export class Taskbar extends ScrollView {
         if (sender === this.#activeAppButton) {
             this.#activeAppButton = null;
         }
-        if (sender === this.#hoveredAppButton) {
-            this.#hoveredAppButton = null;
+        if (sender === this.#scrollLock) {
+            this.#scrollLock = null;
         }
         this.#allocationInfo.delete(sender);
         this.#allocationJob.reset().then(() => this.#updateAllocation()).catch();
@@ -274,7 +277,7 @@ export class Taskbar extends ScrollView {
 
     #destroy() {
         Context.layout.removeClient(this);
-        this.#restoreScrollJob?.destroy();
+        this.#scrollResetJob?.destroy();
         this.#allocationJob?.destroy();
         this.#service?.destroy();
         this.#dndHandler?.destroy();
@@ -285,9 +288,9 @@ export class Taskbar extends ScrollView {
         this.#allocation = null;
         this.#allocationInfo = null;
         this.#allocationJob = null;
-        this.#restoreScrollJob = null;
+        this.#scrollResetJob = null;
         this.#activeAppButton = null;
-        this.#hoveredAppButton = null;
+        this.#scrollLock = null;
     }
 
     /**
@@ -309,7 +312,7 @@ export class Taskbar extends ScrollView {
             if (source instanceof AppButton) {
                 const app = source.app;
                 const count = apps.get(app) ?? 0;
-                if (count > APP_ALLOCATION_THRESHOLD) continue;
+                if (count >= APP_ALLOCATION_THRESHOLD) continue;
                 apps.set(app, count + 1);
             }
             minWidth += width ?? 0;
@@ -318,7 +321,7 @@ export class Taskbar extends ScrollView {
         const scroll = this.scroll;
         const scrollOffset = Math.max(0, minWidth - scroll?.pageSize ?? 0);
         if (scrollOffset >= scroll?.value ?? 0) return this.#allocation.set_style(style);
-        this.scrollToPosition(scrollOffset).then(() => this.#allocation.set_style(style));
+        this.scrollToPosition(scrollOffset)?.then(() => this.#allocation.set_style(style));
     }
 
     /**
@@ -328,7 +331,7 @@ export class Taskbar extends ScrollView {
      */
     #handleDragOver(target, params) {
         if (!this.isValid || !params || target?.app instanceof Shell.App === false) return;
-        let isAppButton = target instanceof AppButton;
+        const isAppButton = target instanceof AppButton;
         if (isAppButton && !target.isValid) return;
         const result = isAppButton ? Dnd.DragMotionResult.MOVE_DROP : Dnd.DragMotionResult.COPY_DROP;
         if (!isAppButton && this.#appButtons.has(target.app)) {
@@ -338,6 +341,7 @@ export class Taskbar extends ScrollView {
             }
         }
         if (!this.#dndHandler) {
+            this.#scrollResetJob.reset();
             const competitors = [...this.#appButtons.values()];
             if (this.#service?.favorites && this.#separatorPosition >= 0) {
                 this.#separator.toggle();
@@ -345,7 +349,8 @@ export class Taskbar extends ScrollView {
             }
             this.#dndHandler = new DragAndDropHandler(this, competitors, () => this.#handleDragEnd());
         }
-        this.#dndHandler.handleDrag({ target, ...params });
+        const competitor = this.#dndHandler.handleDrag({ target, ...params });
+        if (competitor) this.scrollToActor(competitor);
         return result;
     }
 
@@ -471,29 +476,29 @@ export class Taskbar extends ScrollView {
     }
 
     /**
-     * @param {AppButton} appButton
+     * @param {Component} child
      */
-    #handleAppButtonReaction(appButton) {
-        if (!this.isValid || !appButton?.isValid) return;
-        this.#restoreScrollJob.reset();
-        const isActive = appButton.isActive;
-        const hasHover = appButton.actor.hover;
-        const hasFocus = appButton.hasFocus;
+    #handleChildReaction(child) {
+        if (!this.isValid || !child?.isValid) return;
+        this.#scrollResetJob.reset();
+        const isActive = child.isActive ?? false;
+        const hasFocus = child.hasFocus ?? false;
+        const hasHover = child.actor.hover ?? false;
         if (isActive) {
-            this.#activeAppButton = appButton;
-        } else if (this.#activeAppButton === appButton) {
+            this.#activeAppButton = child;
+        } else if (this.#activeAppButton === child) {
             this.#activeAppButton = null;
         }
         if (hasHover) {
-            this.#hoveredAppButton = appButton;
-        } else if (this.#hoveredAppButton === appButton) {
-            this.#hoveredAppButton = null;
-            if (!hasFocus && this.#activeAppButton) this.#restoreScrollJob.then(() =>
+            this.#scrollLock = child;
+        } else if (this.#scrollLock === child) {
+            this.#scrollLock = null;
+            if (!hasFocus && this.#activeAppButton) this.#scrollResetJob.then(() =>
                                                     this.scrollToActor(this.#activeAppButton));
         }
-        if (this.#hoveredAppButton && this.#hoveredAppButton !== appButton) return;
+        if (this.#scrollLock && this.#scrollLock !== child) return;
         if (!isActive && !hasHover && !hasFocus) return;
-        this.scrollToActor(appButton);
+        this.scrollToActor(child);
     }
 
 }
