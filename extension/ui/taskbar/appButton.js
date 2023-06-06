@@ -337,11 +337,13 @@ export class AppButton extends RuntimeButton {
     #handleConfig(settingsKey) {
         if (!this.isValid) return;
         switch (settingsKey) {
-            case ConfigFields.isolateWorkspaces:
             case ConfigFields.enableMinimizeAction:
             case ConfigFields.activateBehavior:
             case ConfigFields.demandsAttentionBehavior:
                 return;
+            case ConfigFields.isolateWorkspaces:
+            case ConfigFields.showAllWindows:
+                return this.#handleAppState();
             case ConfigFields.enableIndicators:
             case ConfigFields.enableSoundControl:
             case ConfigFields.enableNotificationBadges:
@@ -419,9 +421,9 @@ export class AppButton extends RuntimeButton {
 
     #handleAppState() {
         if (!this.isMapped || !this.#service) return;
-        const { isolateWorkspaces } = this.#config;
+        const { isolateWorkspaces, showAllWindows } = this.#config;
         const isFavorite = this.#service.favorites?.apps?.has(this.#app);
-        this.#windows = this.#service.queryWindows(isolateWorkspaces, true);
+        this.#windows = this.#service.queryWindows(isolateWorkspaces, showAllWindows);
         this.#windowsCount = this.#windows?.size ?? 0;
         this.#notificationHandler.updatePids();
         this.#soundVolumeControl?.update();

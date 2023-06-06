@@ -12,6 +12,7 @@ const CONFIG_OVERRIDE_SETTINGS_KEY = 'appbutton-config-override';
 /** @enum {string} */
 export const ConfigFields = {
     isolateWorkspaces: 'taskbar-isolate-workspaces',
+    showAllWindows: 'taskbar-show-all-windows',
     enableIndicators: 'appbutton-enable-indicators',
     enableMinimizeAction: 'appbutton-enable-minimize-action',
     activateBehavior: 'appbutton-running-app-activate-behavior',

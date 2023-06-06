@@ -12,10 +12,18 @@ import { ScrollView } from './base/scrollView.js';
 import { TaskbarClient } from '../services/taskbarService.js';
 import { AppButton, AppButtonEvent } from './taskbar/appButton.js';
 import { Separator } from './taskbar/separator.js';
+import { Config } from '../utils/config.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar';
 const APP_ALLOCATION_THRESHOLD = 2;
 const SCROLL_RESET_DELAY = 1000;
+
+/** @enum {string} */
+const ConfigFields = {
+    enableSeparator: 'taskbar-enable-separator',
+    showAllWindows: 'taskbar-show-all-windows',
+    isolateWorkspaces: 'taskbar-isolate-workspaces'
+};
 
 /** @type {Object.<string, boolean|number>} */
 const AllocationProps = {
@@ -199,11 +207,7 @@ export class Taskbar extends ScrollView {
     })[data?.event]?.call(this);
 
     /** @type {Object.<string, string|number|boolean>} */
-    #config = {
-        enableSeparator: true,
-        enableAllWindows: true,
-        isolateWorkspaces: true
-    };
+    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey), true);
 
     /** @type {Map<Meta.Workspace, Set<Shell.App>>} */
     #runningApps = Context.getSessionCache(this.constructor.name);
@@ -255,6 +259,19 @@ export class Taskbar extends ScrollView {
         Context.layout.requestInit(this, () => this.#setParent());
     }
 
+    /**
+     * @param {string} settingsKey
+     */
+    #handleConfig(settingsKey) {
+        switch (settingsKey) {
+            case ConfigFields.enableSeparator:
+            case ConfigFields.showAllWindows:
+            case ConfigFields.isolateWorkspaces:
+                this.#rerender();
+                break;
+        }
+    }
+
     #setParent() {
         this.setParent(Main.panel._leftBox, -1);
     }
@@ -277,8 +294,8 @@ export class Taskbar extends ScrollView {
 
     #destroy() {
         Context.layout.removeClient(this);
-        this.#scrollResetJob?.destroy();
-        this.#allocationJob?.destroy();
+        Context.jobs.removeAll(this);
+        Context.signals.removeAll(this);
         this.#service?.destroy();
         this.#dndHandler?.destroy();
         this.#service = null;
@@ -459,7 +476,8 @@ export class Taskbar extends ScrollView {
      */
     #getRunningApps() {
         const workspace = this.#service.workspace;
-        let runningApps = this.#service.queryApps(true, true);
+        const { isolateWorkspaces, showAllWindows } = this.#config;
+        let runningApps = this.#service.queryApps(isolateWorkspaces, showAllWindows);
         if (!runningApps?.size) this.#runningApps.delete(workspace);
         else if (!this.#runningApps.has(workspace)) this.#runningApps.set(workspace, runningApps);
         else {
