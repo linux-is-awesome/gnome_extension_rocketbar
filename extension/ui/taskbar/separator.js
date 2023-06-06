@@ -2,6 +2,7 @@
 
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
+import { Context } from '../../core/context.js';
 import { Type } from '../../core/enums.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Animation, AnimationDuration, AnimationType } from '../base/animation.js';
@@ -107,6 +108,7 @@ export class Separator extends Component {
     }
 
     #destroy() {
+        Context.signals.removeAll(this);
         this.#body = null;
     }
 

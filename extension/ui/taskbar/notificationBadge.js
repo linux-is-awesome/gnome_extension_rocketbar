@@ -2,6 +2,7 @@
 
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
+import { Context } from '../../core/context.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { Config } from '../../utils/config.js';
@@ -112,6 +113,7 @@ export class NotificationBadge extends Component {
     }
 
     #destroy() {
+        Context.signals.removeAll(this);
         this.#badge?.remove_all_transitions();
         this.#badge = null;
         this.#appButton = null;

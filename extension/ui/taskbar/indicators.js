@@ -442,6 +442,7 @@ export class Indicators extends Component {
     }
 
     #destroy() {
+        Context.signals.removeAll(this);
         this.#backend?.destroy();
         this.#backend = null;
         this.#appButton = null;

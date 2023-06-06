@@ -182,8 +182,8 @@ export class NotificationCounter extends Component {
 
     #destroy() {
         Context.layout.removeClient(this);
-        this.#counter?.remove_all_transitions();
         Context.signals.removeAll(this);
+        this.#counter?.remove_all_transitions();
         this.#dateMenu?.destroy();
         this.#notificationHandler?.destroy();
     }

@@ -157,6 +157,7 @@ export class LauncherApiClient {
             this.#service?.destroy();
             Context.getSessionCache(this.constructor.name).clear();
         } else this.#service?.disconnect();
+        Context.signals.removeAll(this);
         this.#service = null;
         this.#notificationClients = null;
         this.#progressClients = null;
