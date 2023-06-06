@@ -1,5 +1,6 @@
 /* exported Config */
 
+import GObject from 'gi://GObject';
 import { Context } from '../core/context.js';
 import { Type } from '../core/enums.js';
 
@@ -12,9 +13,10 @@ const DUMMY_FIELD_PREFIX = '~';
  * @param {*} client
  * @param {Object.<string, string> & {fieldName: settingsKey}} fields
  * @param {(settingsKey: string) => void} [callback]
+ * @param {boolean} [isAfter]
  * @returns {Object.<string, string|number|boolean> & {fieldName: value}}
  */
-export const Config = (client, fields, callback) => {
+export const Config = (client, fields, callback, isAfter) => {
     if (!client || !fields) return null;
     /** @type {Gio.Settings} */
     const settings = Context.settings;
@@ -39,6 +41,7 @@ export const Config = (client, fields, callback) => {
         valueMapping.set(settingsKey, fieldName);
         values[fieldName] = settings.get_value(settingsKey)?.unpack();
         signals.push(`changed::${settingsKey}`, valueHandler);
+        if (isAfter) signals.push(GObject.ConnectFlags.AFTER);
     }
     if (!signals.length) return values;
     Context.signals.add(client, [settings, ...signals]);
