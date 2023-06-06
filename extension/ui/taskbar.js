@@ -338,7 +338,7 @@ export class Taskbar extends ScrollView {
         const scroll = this.scroll;
         const scrollOffset = Math.max(0, minWidth - scroll?.pageSize ?? 0);
         if (scrollOffset >= scroll?.value ?? 0) return this.#allocation.set_style(style);
-        this.scrollToPosition(scrollOffset)?.then(() => this.#allocation.set_style(style));
+        this.scrollToPosition(scrollOffset, true)?.then(() => this.#allocation.set_style(style));
     }
 
     /**
@@ -513,11 +513,11 @@ export class Taskbar extends ScrollView {
         } else if (this.#scrollLock === child) {
             this.#scrollLock = null;
             if (!hasFocus && this.#activeAppButton) this.#scrollResetJob.then(() =>
-                                                    this.scrollToActor(this.#activeAppButton));
+                                                    this.scrollToActor(this.#activeAppButton, true));
         }
         if (this.#scrollLock && this.#scrollLock !== child) return;
         if (!isActive && !hasHover && !hasFocus) return;
-        this.scrollToActor(child);
+        this.scrollToActor(child, !hasHover);
     }
 
 }

@@ -1,11 +1,14 @@
 /* exported ScrollView */
 
 import St from 'gi://St';
+import Clutter from 'gi://Clutter';
 import { Type, Event } from '../../core/enums.js';
 import { Component } from './component.js';
 import { Animation, AnimationDuration } from './animation.js';
 
 const FADE_EFFECT_NAME = 'fade';
+const SCROLL_SPEED_MAX = AnimationDuration.Slower;
+const SCROLL_SPEED_MIN = AnimationDuration.Faster;
 
 /** @type {Object.<string, boolean|number>} */
 const DefaultProps = {
@@ -63,15 +66,17 @@ export class ScrollView extends Component {
 
     /**
      * @param {Component|St.Widget} actor
+     * @param {boolean} [deceleration]
+     * @returns {Promise|null}
      */
-    scrollToActor(actor) {
-        if (!this.isMapped || !this.scroll) return;
+    scrollToActor(actor, deceleration = false) {
+        if (!this.isMapped || !this.scroll) return null;
         if (actor instanceof Component && actor.isValid) {
             actor = actor.actor;
         }
-        if (actor instanceof St.Widget === false) return;
+        if (actor instanceof St.Widget === false) return null;
         let { value, pageSize, upper } = this.#scroll;
-        if (pageSize >= upper) return; 
+        if (pageSize >= upper) return null; 
         const fadeEffect = this.area.get_effect(FADE_EFFECT_NAME);
         const allocation = actor.get_allocation_box();
         const { x1, x2 } = allocation;
@@ -81,17 +86,26 @@ export class ScrollView extends Component {
         } else if (x2 > value + pageSize - offset) {
             value = Math.min(upper - pageSize, x2 + offset - pageSize);
         }
-        this.scrollToPosition(value);
+        return this.scrollToPosition(value, deceleration);
     }
 
     /**
      * @param {number} value
+     * @param {boolean} [deceleration]
      * @returns {Promise|null}
      */
-    scrollToPosition(value = 0) {
+    scrollToPosition(value = 0, deceleration = false) {
         if (!this.isMapped || !this.scroll ||
             this.#scroll.value === value) return null;
-        return Animation(this.#scroll, AnimationDuration.Faster, { value });
+        const { pageSize, upper } = this.#scroll;
+        const maxValue = upper - pageSize;
+        const valueOffset = Math.abs(this.#scroll.value - value);
+        const targetSpeed = deceleration ? SCROLL_SPEED_MAX : SCROLL_SPEED_MIN;
+        const currentSpeed = deceleration ? SCROLL_SPEED_MIN + valueOffset : SCROLL_SPEED_MAX - valueOffset;
+        const speed = deceleration ? Math.min(targetSpeed, currentSpeed) :
+                      value >= maxValue || !value ? targetSpeed : Math.max(targetSpeed, currentSpeed);
+        const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
+        return Animation(this.#scroll, speed, { value, mode });
     }
 
 
