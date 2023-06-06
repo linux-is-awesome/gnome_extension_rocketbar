@@ -455,7 +455,8 @@ export class Taskbar extends ScrollView {
             let i = -1;
             for (const [app, appButton] of mergedAppButtons) {
                 if (!appButton.isValid) continue; i++;
-                if (i >= separatorPosition && (separatorApp === app || app.separatorPosition === -1)) {
+                if ((i == separatorPosition && separatorApp === app) ||
+                        (i >= separatorPosition && app.separatorPosition === -1)) {
                     separatorPosition = i + 1;
                 }
                 if (appButtons.has(app)) continue;
