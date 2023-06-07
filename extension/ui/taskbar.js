@@ -409,9 +409,7 @@ export class Taskbar extends ScrollView {
         this.#appButtons = appButtons;
         this.#dndHandler = null;
         oldAppButton?.destroy();
-        if (!isFavorite && favorites) {
-            favorites.remove(candidateApp);
-        }
+        if (!isFavorite && favorites) favorites.remove(candidateApp);
         candidate.drop();
         if (isFavorite) {
             const favoritePosition = [...apps].indexOf(candidateApp);
