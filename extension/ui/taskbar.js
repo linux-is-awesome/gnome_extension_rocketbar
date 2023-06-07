@@ -397,7 +397,7 @@ export class Taskbar extends ScrollView {
             if (actor === candidate) {
                 candidatePosition = i;
             } else if (app === candidateApp) {
-                if (actor === oldAppButton) appButtons.set({ separatorPosition }, actor);
+                if (actor === oldAppButton) appButtons.set({ app }, actor);
                 continue;
             }
             apps.add(app);
@@ -409,6 +409,9 @@ export class Taskbar extends ScrollView {
         this.#appButtons = appButtons;
         this.#dndHandler = null;
         oldAppButton?.destroy();
+        if (!isFavorite && favorites) {
+            favorites.remove(candidateApp);
+        }
         candidate.drop();
         if (isFavorite) {
             const favoritePosition = [...apps].indexOf(candidateApp);
@@ -416,7 +419,6 @@ export class Taskbar extends ScrollView {
             return true;
         }
         if (!oldAppButton?.isValid) candidate.activate();
-        else favorites?.remove(candidateApp);
         return true;
     }
 
@@ -451,17 +453,13 @@ export class Taskbar extends ScrollView {
         this.#separatorPosition = separatorPosition;
         const mergedAppButtons = new Map([...this.#appButtons, ...appButtons]);
         if (mergedAppButtons.size !== appButtons.size) {
-            const separatorApp = apps[separatorPosition - 1] ?? null;
             let i = -1;
             for (const [app, appButton] of mergedAppButtons) {
                 if (!appButton.isValid) continue; i++;
-                if ((i == separatorPosition && separatorApp === app) ||
-                        (i >= separatorPosition && app.separatorPosition === -1)) {
-                    separatorPosition = i + 1;
-                }
                 if (appButtons.has(app)) continue;
                 appButtons.set(app, appButton);
                 sortedAppButtons.splice(i, 0, appButton);
+                if (separatorPosition !== -1 && appButton.isFavorite) separatorPosition++;
             }
         }
         this.#appButtons = appButtons;

@@ -95,6 +95,9 @@ export class AppButton extends RuntimeButton {
     })[data?.event]?.call(this);
 
     /** @type {boolean} */
+    #isFavorite = false;
+
+    /** @type {boolean} */
     #isActive = false;
 
     /** @type {boolean} */
@@ -229,6 +232,11 @@ export class AppButton extends RuntimeButton {
     /** @type {AppSoundVolumeControl} */
     get soundVolumeControl() {
         return this.#soundVolumeControl;
+    }
+
+    /** @type {boolean} */
+    get isFavorite() {
+        return this.#isFavorite;
     }
 
     /** @param {boolean} value */
@@ -422,12 +430,13 @@ export class AppButton extends RuntimeButton {
     #handleAppState() {
         if (!this.isMapped || !this.#service) return;
         const { isolateWorkspaces, showAllWindows } = this.#config;
-        const isFavorite = this.#service.favorites?.apps?.has(this.#app);
+        const isFavorite = this.#service.favorites?.apps?.has(this.#app) ?? false;
         this.#windows = this.#service.queryWindows(isolateWorkspaces, showAllWindows);
         this.#windowsCount = this.#windows?.size ?? 0;
         this.#notificationHandler.updatePids();
         this.#soundVolumeControl?.update();
         if (!isFavorite && !this.#windowsCount) return this.#queueDestroy();
+        this.#isFavorite = isFavorite;
         if (!this.#isActive || !this.#windowsCount) this.#handleFocusedWindow();
         if (this.#windowsCount) this.#handleWindows();
         else if (this.#progress) this.#handleProgress();
