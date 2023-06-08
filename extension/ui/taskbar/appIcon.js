@@ -152,6 +152,7 @@ export class AppIcon extends Component {
     #destroy() {
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
+        this.actor.remove_effect(this.#highlight);
         this.#highlight = null;
     }
 
