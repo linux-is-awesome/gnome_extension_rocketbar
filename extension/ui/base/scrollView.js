@@ -86,7 +86,7 @@ export class ScrollView extends Component {
         } else if (x2 > value + pageSize - offset) {
             value = Math.min(upper - pageSize, x2 + offset - pageSize);
         }
-        return this.scrollToPosition(value, deceleration);
+        return this.scrollToPosition(~~value, deceleration);
     }
 
     /**
