@@ -28,17 +28,24 @@ export const AnimationType = {
  * @param {St.Widget|St.Adjustment|Component} actor
  * @param {number} [duration]
  * @param {*} [params]
- * @returns {Promise}
+ * @returns {Promise|null}
  */
 export const Animation = (actor, duration = 0, params = {}) => {
+    const canAnimate = St.Settings.get()?.enable_animations ?? false;
     if (actor instanceof St.Adjustment) {
         const value = params?.value ?? 0;
         delete params?.value;
+        if (!canAnimate) return new Promise(resolve => actor.set_value(value) ?? resolve());
         return new Promise(resolve => actor.ease(value, { ...params, duration, onComplete: resolve }));
     }
     if (actor instanceof Component) {
         actor = actor.actor;
     }
     if (actor instanceof St.Widget === false) return null;
+    if (!canAnimate) {
+        delete params.delay;
+        delete params.mode;
+        return new Promise(resolve => actor.set(params) ?? resolve());
+    }
     return new Promise(resolve => actor.ease({ ...params, duration, onComplete: resolve }));
 };

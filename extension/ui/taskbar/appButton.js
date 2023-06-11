@@ -454,6 +454,7 @@ export class AppButton extends RuntimeButton {
         this.#destroyJob.destroy();
         this.#destroyJob = null;
         this.actor.remove_all_transitions();
+        this.notifyParents(ComponentEvent.Mapped);
     }
 
     #queueStartup() {
