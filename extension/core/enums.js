@@ -73,5 +73,6 @@ export const Delay = {
     Idle: 0,
     Queue: 100,
     Sleep: 300,
-    Background: 500
+    Background: 500,
+    Scheduled: 1000
 };
