@@ -155,9 +155,14 @@ var CustomizePage = GObject.registerClass(
                     positionOptions
                 ),
                 this.createSpinButton(
-                    _('Limit'), 'indicator-display-limit',
+                    _('Inactive Limit'), 'indicator-display-limit',
                     { min: 1, max: 5 },
-                    _('The maximum number of indicators to display on top of app buttons')
+                    _('The maximum number of indicators to display for Inactive app buttons')
+                ),
+                this.createSpinButton(
+                    _('Active Limit'), 'indicator-display-limit-active',
+                    { min: 1, max: 5 },
+                    _('The maximum number of indicators to display for Active app buttons')
                 ),
                 this.createSwitch(_('Active Dominant Color'), 'indicator-dominant-color-active'),
                 ...this.addVisibilityControl([
@@ -231,7 +236,7 @@ var CustomizePage = GObject.registerClass(
                 ),
                 this.createSpinButton(
                     _('Size'), 'notification-badge-size',
-                    { min: 2, max: 10 }
+                    { min: 2, max: 20 }
                 ),
                 this.createSpinButton(
                     _('Margin'), 'notification-badge-margin',

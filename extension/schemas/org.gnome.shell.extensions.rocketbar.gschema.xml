@@ -15,6 +15,14 @@
             <default>true</default>
             <summary>Isolate Workspaces</summary>
         </key>
+        <key type="b" name="taskbar-show-all-windows">
+            <default>true</default>
+            <summary>Show All Windows</summary>
+        </key>
+        <key type="b" name="taskbar-enable-separator">
+            <default>true</default>
+            <summary>Always show separator between favorites and running apps</summary>
+        </key>
         <key type="b" name="appbutton-enable-tooltips">
             <default>true</default>
             <summary>Enable Tooltips</summary>
