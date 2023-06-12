@@ -136,14 +136,6 @@
             <default>4</default>
             <summary>Active Indicators height</summary>
         </key>
-        <key type="i" name="indicator-roundness-inactive">
-            <default>4</default>
-            <summary>Inactive Indicators roundness</summary>
-        </key>
-        <key type="i" name="indicator-roundness-active">
-            <default>4</default>
-            <summary>Active Indicators roundness</summary>
-        </key>
         <key type="i" name="indicator-spacing-inactive">
             <default>2</default>
             <summary>Inactive Indicators spacing</summary>

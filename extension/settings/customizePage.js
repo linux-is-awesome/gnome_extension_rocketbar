@@ -189,14 +189,6 @@ var CustomizePage = GObject.registerClass(
                     _('Active Height'), 'indicator-height-active',
                     { min: 1, max: 100 }
                 ),
-                this.createSpinButton(
-                    _('Inactive Roundness'), 'indicator-roundness-inactive',
-                    { min: 0, max: 100 }
-                ),
-                this.createSpinButton(
-                    _('Active Roundness'), 'indicator-roundness-active',
-                    { min: 0, max: 100 }
-                ),
                 ...this.addVisibilityControl([
                     this.createSpinButton(
                         _('Inactive Spacing'), 'indicator-spacing-inactive',
