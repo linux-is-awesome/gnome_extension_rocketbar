@@ -34,7 +34,7 @@ const ConfigFields = {
     maxCount: 'notification-counter-max-count',
     fontSize: 'notification-counter-font-size',
     roundness: 'notification-counter-roundness',
-    marginTop: 'notification-counter-margin-top',
+    margin: 'notification-counter-margin-top',
     colorEmpty: 'notification-counter-color-empty',
     colorNotEmpty: 'notification-counter-color-not-empty',
     textColor: 'notification-counter-text-color',
@@ -270,7 +270,7 @@ export class NotificationCounter extends Component {
 
     #updateStyle() {
         const { borderColor, borderSize, backgroundColor, textColor, padding } = this.#getStyleValues();
-        const { fontSize, roundness, marginTop } = this.#config;
+        const { fontSize, roundness, margin } = this.#config;
         const scale = this.uiScale;
         const globalScale = this.globalScale;
         this.#counter.set_style(
@@ -287,7 +287,7 @@ export class NotificationCounter extends Component {
         this.#counter.style += (
             `height: ${height}px;` +
             `min-width: ${height}px;` +
-            `margin-top: ${marginTop}px;`
+            `${margin > 0 ? 'margin-top' : 'margin-bottom'}: ${Math.abs(margin)}px;`
         );
     }
 
