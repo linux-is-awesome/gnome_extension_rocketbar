@@ -25,10 +25,16 @@ export class ScrollView extends Component {
     #layout = new St.BoxLayout();
 
     /** @type {St.Adjustment} */
-    #scroll = null;
+    #scroll = this.area?.hscroll?.adjustment;
+
+    /** @type {number} */
+    #scrollPosition = 0;
+
+    /** @type {number} */
+    #scrollLimit = -1;
 
     /** @type {Job} */
-    #handleScrollJob = Context.jobs.new(this, Delay.Redraw);
+    #handleScrollJob = Context.jobs.new(this.area, Delay.Redraw);
 
     /** @type {St.BoxLayout} */
     get actor() {
@@ -40,12 +46,26 @@ export class ScrollView extends Component {
         return super.actor;
     }
 
-    /** @type {St.Adjustment} */
-    get scroll() {
-        if (!this.#scroll) {
-            this.#scroll = this.area?.hscroll?.adjustment
-        }
-        return this.#scroll;
+    /** @type {number} 0...scrollSize - pageSize */
+    get scrollPosition() {
+        const scrollValue = this.#scroll?.value ?? 0;
+        return Math.max(scrollValue, this.#scrollPosition);
+    }
+
+    /** @type {number} */
+    get pageSize() {
+        return this.#scroll?.pageSize ?? 0;
+    }
+
+    /** @type {number} */
+    get scrollSize() {
+        return this.#scroll?.upper ?? 0;
+    }
+
+    /** @param {number} value -1...0...scrollSize - pageSize */
+    set scrollLimit(value) {
+        if (typeof value !== Type.Number) return;
+        this.#scrollLimit = value;
     }
 
     /**
@@ -56,8 +76,8 @@ export class ScrollView extends Component {
         const area = this.area;
         area.add_actor(this.#layout);
         area.connect(Event.Destroy, () => this.#destroy());
-        this.scroll?.connect(Event.AdjustmentChanged, () => this.#handleScrollJob.reset().then(() =>
-                                                            this.#handleScrollSize()).catch());
+        this.#scroll?.connect(Event.AdjustmentChanged, () => this.#handleScrollJob.reset().then(() =>
+                                                             this.#handleScrollSize()).catch());
         if (typeof name !== Type.String) return;
         this.#layout.set_name(`${name}-Layout`);
     }
@@ -68,7 +88,7 @@ export class ScrollView extends Component {
      * @returns {Promise|null}
      */
     scrollToActor(actor, deceleration = false) {
-        if (!this.isMapped || !this.scroll) return null;
+        if (!this.isMapped || !this.#scroll) return null;
         if (actor instanceof Component && actor.isValid) {
             actor = actor.actor;
         }
@@ -88,13 +108,15 @@ export class ScrollView extends Component {
     }
 
     /**
-     * @param {number} value
+     * @param {number} value positive value 0...scrollSize - pageSize
      * @param {boolean} [deceleration]
      * @returns {Promise|null}
      */
     scrollToPosition(value = 0, deceleration = false) {
-        if (!this.isMapped || !this.scroll ||
-            this.#scroll.value === value) return null;
+        if (!this.isMapped || !this.#scroll ||
+            this.#scrollPosition === value ||
+            (this.#scroll.value === value && this.#scrollPosition <= value) ||
+            (this.#scrollLimit !== -1 && value > this.#scrollLimit)) return null;
         const { pageSize, upper } = this.#scroll;
         const maxValue = upper - pageSize;
         const valueOffset = Math.abs(this.#scroll.value - value);
@@ -103,9 +125,9 @@ export class ScrollView extends Component {
         const speed = deceleration ? Math.min(targetSpeed, currentSpeed) :
                       value >= maxValue || !value ? targetSpeed : Math.max(targetSpeed, currentSpeed);
         const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
-        return Animation(this.#scroll, speed, { value, mode });
+        this.#scrollPosition = value;
+        return Animation(this.#scroll, speed, { value, mode })
     }
-
 
     #destroy() {
         this.#handleScrollJob?.destroy();
@@ -119,11 +141,12 @@ export class ScrollView extends Component {
      *       It's not implemented in C++ code for some reason.
      */
     #handleScrollSize() {
-        if (!this.isValid || !this.scroll) return;
+        if (!this.isValid || !this.#scroll) return;
         const area = this.area;
         const className = `h${FADE_EFFECT_NAME}`;
         const { pageSize, upper } = this.#scroll;
         if (pageSize < ~~upper) return area.add_style_class_name(className);
+        if (!area.has_style_class_name(className)) return;
         area.remove_style_class_name(className);
         area.update_fade_effect(new Clutter.Margin());
     }
