@@ -140,8 +140,8 @@ export class Separator extends Component {
         if (!this.#isVisible && opacity === AnimationType.OpacityMin.opacity) return;
         this.actor.remove_all_transitions();
         const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
-        if (!this.#isVisible) return Animation(this, AnimationDuration.Slow, { ...DefaultProps, mode }).then(() =>
-                                     this.notifyParents(ComponentEvent.Destroy));
+        if (!this.#isVisible) return Animation(this, AnimationDuration.Slow, { ...DefaultProps, mode }) &&
+                                     this.notifyParents(ComponentEvent.Destroy);
         const width = this.rect.width;
         this.notifyParents(ComponentEvent.Mapped);
         Animation(this, AnimationDuration.Default, { ...AnimationType.OpacityMax, width, mode }).then(() => this.setSize());

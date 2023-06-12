@@ -462,10 +462,9 @@ export class AppButton extends RuntimeButton {
         Context.jobs.new(this).destroy(() => {
             const targetWidth = this.rect.width;
             const { opacity } = this.#isDropCandidate ? AnimationType.OpacityDown : {};
-            this.fadeIn(targetWidth, opacity).finally(() => {
-                if (!isWorkspaceChanged) this.#rerenderChildren();
-                if (this.#isActive) this.notifyParents(AppButtonEvent.Reaction);
-            });
+            this.fadeIn(targetWidth, opacity).then(() => !isWorkspaceChanged && this.#rerenderChildren())
+                                             .finally(() => this.#isActive && Context.jobs.new(this, Delay.Queue).destroy(() =>
+                                                            this.notifyParents(AppButtonEvent.Reaction)).catch());
             if (isWorkspaceChanged) this.#rerenderChildren();
         }).catch();
     }
@@ -473,7 +472,8 @@ export class AppButton extends RuntimeButton {
     #queueDestroy() {
         if (this.#destroyJob) return;
         this.#destroyJob = Context.jobs.removeAll(this).new(this).destroy(() =>
-        this.fadeOut().finally(() => this.notifyParents(ComponentEvent.Destroy).actor?.destroy())).catch();
+        this.fadeOut().finally(() => super.destroy()) &&
+        this.notifyParents(ComponentEvent.Destroy)).catch();
     }
 
     #rerenderChildren() {
