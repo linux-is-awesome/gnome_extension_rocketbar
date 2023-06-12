@@ -16,12 +16,15 @@ export class LongPressAction {
     /** @type {St.Widget} */
     #actor = null;
 
-    /** @type {() => void} */
+    /** @type {Clutter.Event} */
+    #event = null;
+
+    /** @type {(event: Clutter.Event) => void} */
     #callback = null;
 
     /**
      * @param {St.Widget|Component} actor
-     * @param {() => void} callback
+     * @param {(event: Clutter.Event) => void} callback
      */
     constructor(actor, callback) {
         if (actor instanceof Component) {
@@ -46,6 +49,7 @@ export class LongPressAction {
     }
 
     #handlePress() {
+        this.#event = Clutter.get_current_event();
         if (typeof this.#callback !== Type.Function) return Clutter.EVENT_PROPAGATE;
         Context.jobs.new(this, this.#delay).destroy(() => this.#handleDelay()).catch();
         return Clutter.EVENT_PROPAGATE;
@@ -53,10 +57,11 @@ export class LongPressAction {
 
     #handleDelay() {
         if (this.#actor instanceof St.Button) this.#actor.fake_release();
-        this.#callback()
+        this.#callback(this.#event);
     }
 
     #handleRelease() {
+        this.#event = null;
         Context.jobs.removeAll(this);
         return Clutter.EVENT_PROPAGATE;
     }

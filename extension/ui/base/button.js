@@ -156,7 +156,7 @@ export class Button extends Component {
     #css = null;
 
     /** @type {LongPressAction} */
-    #longPressAction = new LongPressAction(this, () => this.#longPress());
+    #longPressAction = new LongPressAction(this, event => this.#longPress(event));
 
     /** @type {ButtonMenuTrigger} */
     #menuTrigger = new ButtonMenuTrigger(this);
@@ -295,8 +295,11 @@ export class Button extends Component {
         this.notifySelf(ButtonEvent.Press);
     }
 
-    #longPress() {
-        if (this.cancelDragEvents().notifySelf(ButtonEvent.LongPress)) return;
+    /**
+     * @param {Clutter.Event} event
+     */
+    #longPress(event) {
+        if (this.cancelDragEvents().notifySelf(ButtonEvent.LongPress, { event })) return;
         this.#openMenu();
     }
 

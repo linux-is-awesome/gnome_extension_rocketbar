@@ -88,6 +88,7 @@ export class AppButton extends RuntimeButton {
         [ComponentEvent.DragActorSourceRequest]: () => this.#appIcon.actor,
         [ComponentEvent.Scale]: this.#updateStyle,
         [ButtonEvent.Press]: this.#press,
+        [ButtonEvent.LongPress]: () => this.#longPress(data?.params),
         [ButtonEvent.Click]: () => this.#click(data?.params) ?? true,
         [ButtonEvent.RequestMenu]: () => new Menu(this),
         [ButtonEvent.Focus]: () => this.notifyParents(AppButtonEvent.Reaction),
@@ -541,6 +542,19 @@ export class AppButton extends RuntimeButton {
     }
 
     /**
+     * @param {{ event: Clutter.Event }} params
+     * @returns {boolean}
+     */
+    #longPress(params) {
+        if (!params || !params.event) return false;
+        params.button = params.event.get_button();
+        const { isMiddleButton, isCtrlPressed } = this.#getClickDetails(params);
+        if (!isMiddleButton && !isCtrlPressed) return false;
+        if (isCtrlPressed) this.#closeWindows(true);
+        return true;
+    }
+
+    /**
      * @param {Clutter.Event} event
      * @returns {number}
      */
@@ -564,7 +578,7 @@ export class AppButton extends RuntimeButton {
         if (!params || this.#service?.isPending) return;
         const { isOverview, isSecondaryButton, isMiddleButton, isCtrlPressed } = this.#getClickDetails(params);
         if (isSecondaryButton) return false;
-        if (isCtrlPressed && isMiddleButton) return this.#closeFirstWindow();
+        if (isCtrlPressed && isMiddleButton) return this.#closeWindows();
         const newWindow = this.#canOpenNewWindow && (isCtrlPressed || isMiddleButton);
         if (newWindow || !this.#isAppRunning) return this.#openNewWindow(!isCtrlPressed && !isMiddleButton && isOverview);
         const { isolateWorkspaces, activateBehavior, enableMinimizeAction } = this.#config;
@@ -614,11 +628,15 @@ export class AppButton extends RuntimeButton {
         this.#app.open_new_window(-1);
     }
 
-    #closeFirstWindow() {
+    /**
+     * @param {boolean} closeAll
+     */
+    #closeWindows(closeAll = false) {
         this.#resetCycleWindowsQueue();
         const sortedWindows = this.#sortedWindows;
         if (!sortedWindows?.length) return;
-        sortedWindows[0].delete(global.get_current_time());
+        if (!closeAll) sortedWindows[0].delete(global.get_current_time());
+        else for (const window of sortedWindows) window.delete(global.get_current_time());
     }
 
     #moveWindows() {
