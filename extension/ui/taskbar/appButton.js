@@ -629,7 +629,7 @@ export class AppButton extends RuntimeButton {
     }
 
     /**
-     * @param {boolean} closeAll
+     * @param {boolean} [closeAll]
      */
     #closeWindows(closeAll = false) {
         this.#resetCycleWindowsQueue();
@@ -650,6 +650,10 @@ export class AppButton extends RuntimeButton {
         Main.activateWindow(sortedWindows[0]);
     }
 
+    /**
+     * @param {boolean} [minimize]
+     * @param {boolean} [reverse]
+     */
     #cycleWindows(minimize = true, reverse = false) {
         if (!this.#windowsCount) return;
         const sortedWindows = this.#sortedWindows;
