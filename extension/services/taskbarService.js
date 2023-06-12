@@ -314,8 +314,8 @@ class TaskbarService {
     }
 
     /**
-     * Async execution is required in order to extract an app from the window
-     * Connecting signals using GObject.ConnectFlags.AFTER isn't really helpful in this case
+     * Note: Async execution is required in order to extract an app from the window.
+     *       Connecting signals using GObject.ConnectFlags.AFTER isn't really helpful in this case.
      * 
      * @param {Meta.Window} window
      */
@@ -348,7 +348,7 @@ class TaskbarService {
     }
 
     /**
-     * Async execution is required in order to check existing app windows
+     * Note: Async execution is required in order to check existing app windows.
      * 
      * @param {Meta.Window} window
      */
