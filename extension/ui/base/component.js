@@ -44,6 +44,9 @@ export class Component {
     /** @type {St.Widget} */
     #actor = null;
 
+    /** @type {Component} */
+    #parent = null;
+
     /** @type {Dnd._Draggable} */
     #draggable = null;
 
@@ -200,10 +203,13 @@ export class Component {
      */
     setParent(parent, position = -1) {
         if (!this.isValid || typeof position !== Type.Number) return this;
+        let parentComponent = null;
         if (this.#isComponent(parent)) {
+            parentComponent = parent;
             parent = parent.actor;
         }
         if (parent instanceof St.Widget === false) return this;
+        this.#parent = parentComponent;
         this.#defaultPosition = position;
         const oldParent = this.parentActor;
         const isParentChanged = oldParent !== parent;
@@ -361,6 +367,7 @@ export class Component {
         this.#uiSettings = null;
         this.#actor._delegate = null;
         this.#actor = null;
+        this.#parent = null;
     }
 
     #setMappedHandler() {
@@ -452,9 +459,8 @@ export class Component {
      */
     #notifyParents(event, params, sender = this) {
         if (typeof event !== Type.String) return this;
-        const parent = this.#getNearestParentComponent();
-        if (!parent) return this;
-        if (parent.#notifySelf(event, parent, params, sender)) return this;
+        const parent = this.#parent ?? this.#getNearestParentComponent();
+        if (!parent || parent.#notifySelf(event, parent, params, sender)) return this;
         return parent.#notifyParents(event, params, sender);
     }
 
@@ -469,8 +475,7 @@ export class Component {
             nextParent = parent.get_parent();
             parent = nextParent?._delegate;
         }
-        if (this.#isComponent(parent)) return parent;
-        return this.#getNearestParentComponent(nextParent);
+        return this.#isComponent(parent) ?? this.#getNearestParentComponent(nextParent);
     }
 
     /**
