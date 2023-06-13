@@ -1,30 +1,37 @@
-//#region imports
+/* exported init */
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { Modules } = Me.imports.main.modules;
+class Extension {
 
-//#endregion imports
+    /**
+     * @typedef {import('./core/context.js').Context} Context
+     * @type {Context}
+     */
+    #instance = null;
 
-//#region variables
+    constructor() {
+        imports.misc.extensionUtils.initTranslations();
+    }
 
-let modules = null;
+    /**
+     * Note: setTimeout is a temporary workaround for Gnome 44.
+     *       Without it session won't start for some reason.
+     * 
+     * TODO: remove setTimeout.
+     */
+    enable() {
+        setTimeout(() => import('./core/context.js').then(({ Context }) => {
+            this.#instance = new Context();
+        }).catch(e => {
+            const extension = imports.misc.extensionUtils.getCurrentExtension();
+            console.error(`${extension.metadata.name} initialization failed.`, e);
+        }));
+    }
 
-//#endregion variables
+    disable() {
+        this.#instance?.destroy();
+        this.#instance = null;
+    }
 
-//#region main
-
-function init() {
-    ExtensionUtils.initTranslations();
 }
 
-function enable() {
-    modules = new Modules();
-}
-
-function disable() {
-    modules?.destroy();
-    modules = null;
-}
-
-//#endregion main
+var init = () => new Extension();

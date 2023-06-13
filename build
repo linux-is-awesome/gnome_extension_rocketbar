@@ -9,6 +9,6 @@ gnome-extensions pack --force\
                       --extra-source ui/\
                       --extra-source services/\
                       --extra-source utils/\
-                      --extra-source main/\
+                      --extra-source core/\
                       --extra-source settings/\
                       --out-dir ../

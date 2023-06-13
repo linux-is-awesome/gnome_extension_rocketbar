@@ -1,786 +1,615 @@
-/* exported SoundVolumeControl, AppSoundVolumeControl */
+/* exported DefaultSoundVolumeControlClient, AppSoundVolumeControl */
 
-//#region imports
+import Gio from 'gi://Gio';
+import Gvc from 'gi://Gvc';
+import Shell from 'gi://Shell';
+import { Main, Volume } from '../core/legacy.js';
+import { Context } from '../core/context.js';
+import { Type, Delay } from '../core/enums.js';
 
-const { Gio, Gvc, Shell } = imports.gi;
-const Main = imports.ui.main;
-const Volume = imports.ui.status.volume;
+const SOUND_STREAM_MIN_VOLUME = 0;
+const SOUND_STREAM_MAX_VOLUME = 1;
+const SOUND_VOLUME_CHANGE_NOTIFY_DELAY = 50;
+const SOUND_VOLUME_CHANGE_NOTIFY_THEME = 'audio-volume-change';
+const SOUND_VOLUME_CHANGE_NOTIFY_TITLE = 'Volume Changed Notify';
 
-// custom modules import
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { Connections } = Me.imports.utils.connections;
-const { Timeout } = Me.imports.utils.timeout;
+const SOUND_VOLUME_ICONS = [
+    'audio-volume-muted-symbolic',
+    'audio-volume-low-symbolic',
+    'audio-volume-medium-symbolic',
+    'audio-volume-high-symbolic'
+];
 
-//#endregion imports
+/** @enum {number} */
+const SoundVolumeIcon = {
+    Muted: 0,
+    Low: 1,
+    Medium: 2,
+    High: 3
+}
 
-//#region base classes
+/** @enum {string} */
+const MixerControlEvent = {
+    DefaultSinkChanged: 'default-sink-changed',
+    StreamAdded: 'stream-added',
+    StreamRemoved: 'stream-removed'
+}
 
 class SoundStream {
 
-    constructor(stream) {
+    /** @type {Gvc.MixerStream} */
+    #stream = null;
 
-        this._stream = stream;
+    /** @type {number} */
+    #volumeMax = SOUND_STREAM_MIN_VOLUME;
 
-        this.id = this._stream?.id;
-
-        this._volumeMax = (
-            this._stream?.get_base_volume() ||
-            // for app streams get_base_volume returns 0
-            // so we need this fallback
-            Volume.getMixerControl().get_vol_max_norm()
-        );
+    /** @type {number} */
+    get id() {
+        return this.#stream?.id;
     }
 
-    /*
-     * volume: positive double 0..0.1...0.8..0.9..1
+    /** @type {boolean} */
+    get isValid() {
+        return this.#stream ? true : false;
+    }
+
+    /** @type {boolean} */
+    get isMuted() {
+        return this.#stream?.is_muted;
+    }
+
+    /** @type {boolean} */
+    get isPlaying() {
+        return this.#stream?.state === Gvc.MixerStreamState.RUNNING;
+    }
+
+    /** @type {string} */
+    get name() {
+        if (!this.#stream) return null;
+        const portName = this.#stream.get_ports()?.length ? this.#stream.get_port().human_port : null;
+        return portName ?? this.#stream.name;
+    }
+
+    /** @type {number} positive float values 0..0.1...0.8..0.9..1 */
+    get volume() {
+        if (!this.#stream || !this.#volumeMax) return SOUND_STREAM_MIN_VOLUME;
+        return this.#stream.volume / this.#volumeMax;
+    }
+
+    /** @param {number} volume positive float values 0..0.1...0.8..0.9..1 */
+    set volume(volume) {
+        if (!this.#stream || typeof volume !== Type.Number) return;
+        volume = this.#volumeMax * volume;
+        volume = Math.min(volume, this.#volumeMax);
+        volume = Math.max(volume, SOUND_STREAM_MIN_VOLUME);
+        this.#stream.volume = volume;
+        this.#stream.push_volume();
+    }
+
+    /**
+     * @param {Gvc.MixerStream} stream
      */
-    setVolume(volume) {
-
-        if (!this._stream) {
-            return false;
-        }
-
-        volume = this._volumeMax * volume;
-
-        volume = Math.min(volume, this._volumeMax);
-        volume = Math.max(volume, 0);
-
-        this._stream.volume = volume;
-        this._stream.push_volume();
-
-        return true;
-    }
-
-    toggleMute() {
-
-        if (!this._stream) {
-            return false;
-        }
-
-        this._stream.change_is_muted(!this.isMuted());
-
-        return true;
-    }
-
-    // change_is_muted changes state of the stream with a delay
-    // so we may need to pass the actual state manually
-    getVolume(isMuted = this.isMuted()) {
-        return (
-            !this._stream || isMuted ? 0 :
-            this._stream.volume / this._volumeMax
-        );
-    }
-
-    isPlaying() {
-        return this._stream?.state === Gvc.MixerStreamState.RUNNING;
-    }
-
-    isMuted() {
-        return this._stream?.is_muted;
-    }
-
-    getName() {
-        return this._stream ? (
-            this._stream.get_port() ?
-            this._stream.get_port().human_port :
-            this._stream.get_name()
-        ) : null;
-    }
-
-}
-
-class SoundVolumeControlBase {
-
-    constructor() {
-        this._notifyVolumeChangeTimeout = null;
+    constructor(stream) {
+        if (!this.#isValidStream(stream)) return;
+        this.#stream = stream;
+        this.#volumeMax = this.#stream.get_base_volume();
+        if (this.#volumeMax) return;
+        this.#volumeMax = Volume.getMixerControl().get_vol_max_norm();
     }
 
     destroy() {
-        this._notifyVolumeChangeTimeout?.destroy();
+        this.#stream = null;
     }
 
-    _showOSD(stream, isMuted, name) {
-
-        if (!stream) {
-            return;
-        }
-
-        const volumeLevel = stream.getVolume(isMuted);
-        const volumeIcon = this._getVolumeIcon(volumeLevel);
-        const monitorIndex = global.display.get_current_monitor();
-
-        Main.osdWindowManager.show(monitorIndex, volumeIcon, name || stream.getName(), volumeLevel);
+    toggleMute() {
+        this.#stream?.change_is_muted(!this.isMuted);
     }
 
-    _getVolumeIcon(volumeLevel = 0) {
-
-        const volumeIcons = [
-            'audio-volume-muted-symbolic',
-            'audio-volume-low-symbolic',
-            'audio-volume-medium-symbolic',
-            'audio-volume-high-symbolic'
-        ];
-
-        let iconIndex = 0;
-
-        if (volumeLevel > 0) {
-
-            const iconIndexMax = volumeIcons.length - 1;
-
-            iconIndex = parseInt(iconIndexMax * volumeLevel + 1);
-            iconIndex = Math.max(1, iconIndex);
-            iconIndex = Math.min(iconIndexMax, iconIndex);
-        }
-
-        return Gio.Icon.new_for_string(volumeIcons[iconIndex]);
-    }
-
-    _notifyVolumeChange(stream) {
-
-        if (this._notifyVolumeChangeTimeout) {
-            return;
-        }
-
-        // slow down notifications a bit
-        this._notifyVolumeChangeTimeout = Timeout.default(50).run(() => {
-            this._notifyVolumeChangeTimeout = null;
-        });
-
-        if (this._volumeCancellable) {
-            this._volumeCancellable.cancel();
-        }
-
-        this._volumeCancellable = null;
-
-        // feedback not necessary while playing
-        if (!stream || stream.isPlaying())
-            return;
-
-        this._volumeCancellable = new Gio.Cancellable();
-
-        const player = global.display.get_sound_player();
-
-        player.play_from_theme('audio-volume-change', 'Volume changed', this._volumeCancellable);
+    #isValidStream(stream) {
+        return stream instanceof Gvc.MixerStream && stream.id && !stream.is_event_stream;
     }
 
 }
 
-//#endregion base classes
+class SoundVolumeControl {
+    
+    /** @type {Gio.Cancellable} */
+    #volumeCancellable = null;
 
-//#region system wide control
+    destroy() {
+        this.#volumeCancellable?.cancel();
+        this.#volumeCancellable = null;
+    }
 
-var SoundVolumeControl = class extends SoundVolumeControlBase {
+    /**
+     * @param {SoundStream} stream
+     * @param {boolean} [isMuted]
+     * @param {string} [name]
+     */
+    showOSD(stream, isMuted = false, name = null) {
+        if (stream instanceof SoundStream === false) return;
+        const volumeLevel = isMuted ? SOUND_STREAM_MIN_VOLUME : stream.volume;
+        const volumeIcon = this.#getVolumeIcon(volumeLevel);
+        const monitorIndex = global.display.get_current_monitor();
+        Main.osdWindowManager.show(monitorIndex, volumeIcon, name ?? stream.name, volumeLevel);
+    }
+
+    /**
+     * @param {SoundStream} stream
+     */
+    notifyVolumeChange(stream) {
+        if (stream instanceof SoundStream === false) return;
+        if (stream.isPlaying || Context.jobs.hasClient(this)) return;
+        Context.jobs.new(this, SOUND_VOLUME_CHANGE_NOTIFY_DELAY).destroy(() => null);
+        this.#volumeCancellable?.cancel();
+        this.#volumeCancellable = new Gio.Cancellable();
+        const player = global.display.get_sound_player();
+        player.play_from_theme(SOUND_VOLUME_CHANGE_NOTIFY_THEME, SOUND_VOLUME_CHANGE_NOTIFY_TITLE, this.#volumeCancellable);
+    }
+
+    /**
+     * @param {number} volumeLevel
+     */
+    #getVolumeIcon(volumeLevel) {
+        if (!volumeLevel) return Gio.Icon.new_for_string(SOUND_VOLUME_ICONS[SoundVolumeIcon.Muted]);
+        let iconIndex = parseInt(SoundVolumeIcon.High * volumeLevel + SoundVolumeIcon.Low);
+        iconIndex = Math.max(SoundVolumeIcon.Low, iconIndex);
+        iconIndex = Math.min(SoundVolumeIcon.High, iconIndex);
+        return Gio.Icon.new_for_string(SOUND_VOLUME_ICONS[iconIndex]);
+    }
+
+}
+
+class DefaultSoundVolumeControl extends SoundVolumeControl {
+
+    /** @type {SoundStream} */
+    #stream = null;
 
     constructor() {
         super();
-
-        this._stream = null;
-
-        this._connections = new Connections();
-
-        const mixerControl = Volume.getMixerControl();
-
-        this._connections.add(
-            mixerControl, 'default-sink-changed',
-            (mixerControl, streamId) => this._handleActiveStream(mixerControl, streamId)
-        );
-
-        this._handleActiveStream(mixerControl);
+        const mixer = Volume.getMixerControl();
+        Context.signals.add(this, [mixer, MixerControlEvent.DefaultSinkChanged, (...args) => this.#setStream(...args)]);
+        this.#setStream(mixer);
     }
 
     destroy() {
-
+        Context.signals.removeAll(this);
+        this.#stream?.destroy();
+        this.#stream = null;
         super.destroy();
-
-        this._connections.destroy();
     }
 
-    /*
-     * volume: negative or positive integer -100..-1, 1..100
+    /**
+     * @param {number} volume negative or positive integer -100..-1, 1..100
      */
     addVolume(volume) {
-
-        if (!volume || !this._stream) {
-            return;
-        }
-
-        if (this._stream.isMuted()) {
-            this.toggleMute(this._stream);
-            return;
-        }
-
-        if (!this._stream.setVolume(this._stream.getVolume() + (volume / 100))) {
-            return;
-        }
-
-        this._showOSD(this._stream);
-
-        this._notifyVolumeChange(this._stream);
+        if (!this.#stream || typeof volume !== Type.Number) return;
+        if (this.#stream.isMuted) return this.toggleMute();
+        this.#stream.volume = this.#stream.volume + (volume / 100);
+        this.showOSD(this.#stream);
+        this.notifyVolumeChange(this.#stream);
     }
 
     toggleMute() {
-        
-        if (!this._stream) {
-            return;
-        }
-
-        const isMuted = this._stream.isMuted();
-
-        if (!this._stream.toggleMute()) {
-            return;
-        }
-
-        this._showOSD(this._stream, !isMuted);
-
-        // play sound when stream gets unmuted
-        if (isMuted) {
-            this._notifyVolumeChange(this._stream);
-        }
+        if (!this.#stream) return;
+        const isMuted = this.#stream.isMuted;
+        this.#stream.toggleMute();
+        this.showOSD(this.#stream, !isMuted);
+        if (isMuted) this.notifyVolumeChange(this.#stream);
     }
 
-    _handleActiveStream(mixerControl, streamId) {
-        this._stream = new SoundStream(
-            streamId ?
-            mixerControl.lookup_stream_id(streamId) :
-            mixerControl.get_default_sink()
-        );
+    /**
+     * @param {Gvc.MixerControl} mixer 
+     * @param {number} streamId 
+     */
+    #setStream(mixer, streamId) {
+        const stream = new SoundStream(streamId ? mixer?.lookup_stream_id(streamId) : mixer?.get_default_sink());
+        this.#stream = stream.isValid ? stream : null;
     }
 
 }
 
-//#endregion system wide control
+export class DefaultSoundVolumeControlClient {
 
-//#region app sound volume control
+    /** @type {Set<DefaultSoundVolumeControlClient>} */
+    static #clients = null;
 
-class AppSoundStream extends SoundStream {
+    /** @type {DefaultSoundVolumeControl} */
+    static #control = null;
 
-    static isValidStream(stream) {
-        return stream && stream.id && !stream.is_event_stream && (
-            stream instanceof Gvc.MixerSinkInput ||
-            stream instanceof Gvc.MixerSourceOutput
-        );
-    }
-
-    constructor(stream) {
-        super(stream);
-
-        this.name = this._stream?.name;
-
-        this.isInput = (
-            this._stream &&
-            this._stream instanceof Gvc.MixerSourceOutput
-        );
-
-        this._listeners = []; // [AppSoundVolumeControl...]
-    }
-
-    addListener(listener) {
-
-        if (!this._listeners || (
-                this._listeners.length &&
-                this._listeners.indexOf(listener) >= 0
-        )) {
-            return;
+    constructor() {
+        if (!DefaultSoundVolumeControlClient.#clients) {
+            DefaultSoundVolumeControlClient.#clients = new Set();
         }
-
-        this._listeners.push(listener);
-    }
-
-    removeListener(listener) {
-
-        if (!this._listeners || !this._listeners.length) {
-            return;
+        if (!DefaultSoundVolumeControlClient.#control) {
+            DefaultSoundVolumeControlClient.#control = new DefaultSoundVolumeControl();
         }
-
-        const index = this._listeners.indexOf(listener);
-
-        if (index < 0) {
-            return;
-        }
-
-        this._listeners.splice(index, 1);
-
+        DefaultSoundVolumeControlClient.#clients.add(this);
     }
 
     destroy() {
-
-        this._stream = null;
-
-        if (this._listeners.length) {
-            for (let listener of this._listeners) {
-                listener.removeStream(this);
-            }
-        }
-
-        this._listeners = null;
+        if (!DefaultSoundVolumeControlClient.#clients) return;
+        DefaultSoundVolumeControlClient.#clients.delete(this);
+        if (DefaultSoundVolumeControlClient.#clients.size) return;
+        DefaultSoundVolumeControlClient.#control?.destroy();
+        DefaultSoundVolumeControlClient.#control = null;
+        DefaultSoundVolumeControlClient.#clients = null;
     }
+
+    /**
+     * @param {number} volume negative or positive integer -100..-1, 1..100
+     */
+    addVolume(volume) {
+        DefaultSoundVolumeControlClient.#control?.addVolume(volume);
+    }
+
+    toggleMute() {
+        DefaultSoundVolumeControlClient.#control.toggleMute();
+    }
+
+}
+
+class AppSoundStream extends SoundStream {
+
+    /** @type {boolean} */
+    #isInput = false;
+
+    /** @type {boolean} */
+    get isInput() {
+        return this.#isInput;
+    }
+
+    /**
+     * @param {Gvc.MixerStream} stream
+     */
+    constructor(stream) {
+        super((stream instanceof Gvc.MixerSinkInput || stream instanceof Gvc.MixerSourceOutput) ? stream : null);
+        this.#isInput = stream instanceof Gvc.MixerSourceOutput;
+    }
+
 }
 
 class AppSoundVolumeService {
 
+    /** @type {AppSoundVolumeControl} */
+    #controls = new Set();
+
+    /** @type {Map<number, AppSoundStream>} */
+    #streams = new Map();
+
+    /** @type {Job} */
+    #updateJob = Context.jobs.new(this, Delay.Background);
+
     constructor() {
-        
-        this._controls = [];
-
-        const mixerControl = Volume.getMixerControl();
-        
-        this._setStreams(mixerControl);
-
-        this._connections = new Connections();
-
-        this._connections.add(
-            mixerControl, 'stream-added',
-            (mixerControl, streamId) => this._addStream(mixerControl, streamId)
-        );
-
-        this._connections.add(
-            mixerControl, 'stream-removed',
-            (mixerControl, streamId) => this._removeStream(streamId)
-        );
+        const mixer = Volume.getMixerControl();
+        Context.signals.add(this, [
+            mixer,
+            MixerControlEvent.StreamAdded, (...args) => this.#addStream(...args),
+            MixerControlEvent.StreamRemoved, (_, streamId) => this.#removeStream(streamId)
+        ]);
+        this.#addStreams(mixer);
     }
 
+    /**
+     * @returns {boolean}
+     */
     destroy() {
-
-        this._controls = null;
-        this._streams = null;
-
-        this._stopUpdateControls();
-
-        this._connections.destroy();
+        if (this.#controls?.size) return false;
+        this.#updateJob?.destroy();
+        Context.signals.removeAll(this);
+        this.#controls = null;
+        this.#streams = null;
+        this.#updateJob = null;
+        return true;
     }
 
-    isEmpty() {
-        return !this._controls?.length;
-    }
-
+    /**
+     * @param {AppSoundVolumeControl} control
+     */
     addControl(control) {
-
-        if (!control || this._controls.indexOf(control) >= 0) {
-            return;
-        }
-
-        this._controls.push(control);
-
-        this._queueUpdateControls();
+        if (!this.#controls || this.#controls.has(control)) return;
+        this.#controls.add(control);
+        this.#queueUpdate();
     }
 
+    /**
+     * @param {AppSoundVolumeControl} control
+     */
     removeControl(control) {
-
-        if (!control) {
-            return;
-        }
-
-        const controlIndex = this._controls.indexOf(control);
-
-        if (controlIndex >= 0) {
-            this._controls.splice(controlIndex, 1);
-        }
-
+        if (!this.#controls?.has(control)) return;
+        this.#controls.delete(control);
     }
 
-    forceUpdate() {
-        this._queueUpdateControls();
+    update() {
+        this.#queueUpdate();
     }
 
-    _setStreams(mixerControl) {
-
-        this._streams = new Map(); // id => AppSoundStream
-
-        for (let stream of mixerControl.get_streams()) {
-
-            if (!AppSoundStream.isValidStream(stream)) {
-                continue;
-            }
-
-            const appStream = new AppSoundStream(stream);
-
-            if (!appStream.id) {
-                continue;
-            }
-
-            this._streams.set(appStream.id, appStream);
+    /**
+     * @param {Gvc.MixerControl} mixer
+     */
+    #addStreams(mixer) {
+        const mixerStreams = mixer.get_streams();
+        if (!mixerStreams?.length) return;
+        for (let i = 0, l = mixerStreams.length; i < l; ++i) {
+            const appStream = new AppSoundStream(mixerStreams[i]);
+            if (!appStream.isValid) continue;
+            this.#streams.set(appStream.id, appStream);
         }
     }
 
-    _addStream(mixerControl, streamId) {
-
-        if (!mixerControl || !streamId || !this._streams) {
-            return;
-        }
-
-        if (this._streams.has(streamId)) {
-            return;
-        }
-
-        const stream = mixerControl.lookup_stream_id(streamId);
-
-        if (AppSoundStream.isValidStream(stream)) {
-            this._streams.set(streamId, new AppSoundStream(stream));
-        }
-
-        this._queueUpdateControls();
+    /**
+     * @param {Gvc.MixerControl} mixer
+     * @param {number} streamId
+     */
+    #addStream(mixer, streamId) {
+        if (!this.#streams || this.#streams.has(streamId)) return;
+        const mixerStream = mixer?.lookup_stream_id(streamId);
+        if (!mixerStream) return;
+        const appStream = new AppSoundStream(mixerStream);
+        if (!appStream.isValid) return;
+        this.#streams.set(appStream.id, appStream);
+        this.#queueUpdate();
     }
 
-    _removeStream(streamId) {
-
-        if (!streamId || !this._streams) {
-            return;
-        }
-
-        const appStream = this._streams.get(streamId);
-
-        if (appStream) {
-            appStream.destroy();
-            this._streams.delete(streamId);
-        }
-
+    /**
+     * @param {number} streamId
+     */
+    #removeStream(streamId) {
+        if (!this.#streams?.has(streamId)) return;
+        this.#streams.get(streamId).destroy();
+        this.#queueUpdate();
     }
 
-    _queueUpdateControls() {
-        this._stopUpdateControls();
-
-        if (this._skipUpdateControls()) {
-            return;
-        }
-
-        this._updateControlsTimeout = Timeout.idle(500).run(() => {
-            this._updateControlsTimeout = null;
-            this._updateControls();
-        });
+    #queueUpdate() {
+        if (!this.#updateJob) return;
+        this.#updateJob.reset().then(() => this.#update()).catch();
     }
 
-    _stopUpdateControls() {
-        this._updateControlsTimeout?.destroy();
-        this._updateControlsTimeout = null;
-    }
-
-    _updateControls() {
-
-        if (this._skipUpdateControls()) {
-            return;
-        }
-
-        const streams = [...this._streams.values()];
-
-        for (let i = 0, l = this._controls.length; i < l; ++i) {
-
-            const appControl = this._controls[i];
-
-            for (let i = 0, l = streams.length; i < l; ++i) {
-                // let the app control to validate the stream
-                appControl.addStream(streams[i]);
+    #update() {
+        if (!this.#streams?.size) return;
+        const validStreams = new Map();
+        for (const control of this.#controls) { 
+            for (const [id, stream] of this.#streams) {
+                if (!stream.isValid) {
+                    control.removeStream(stream);
+                    continue;
+                }
+                control.addStream(stream);
+                validStreams.set(id, stream);
             }
         }
-    }
-
-    _skipUpdateControls() {
-        return !this._controls?.length || !this._streams?.size;
+        this.#streams = validStreams;
     }
 
 }
 
-var AppSoundVolumeControl = class extends SoundVolumeControlBase {
+export class AppSoundVolumeControl extends SoundVolumeControl {
 
-    static _service = null;
+    /** @type {AppSoundVolumeService} */
+    static #service = null;
 
+    /** @type {Shell.App} */
+    #app = null;
+    
+    /** @type {string} */
+    #appName = null;
+
+    /** @type {string} */
+    #parentAppName = null;
+
+    /** @type {Set<AppSoundStream>} */
+    #inputStreams = new Set();
+
+    /** @type {Set<AppSoundStream>} */
+    #outputStreams = new Set();
+
+    /** @type {boolean} */
+    get hasInput() {
+        return this.#inputStreams?.size > 0;
+    }
+
+    /** @type {boolean} */
+    get hasOutput() {
+        return this.#outputStreams?.size > 0;
+    }
+
+    /** @type {number} positive float values 0..0.1...0.8..0.9..1 */
+    get inputVolume() {
+        return this.#getVolume(this.#inputStreams);
+    }
+
+    /** @type {number} positive float values 0..0.1...0.8..0.9..1 */
+    get outputVolume() {
+        return this.#getVolume(this.#outputStreams);
+    }
+
+    /** @param {number} volume positive float values 0..0.1...0.8..0.9..1 */
+    set inputVolume(volume) {
+        this.#setVolume(this.#inputStreams, volume);
+    }
+
+    /** @param {number} volume positive float values 0..0.1...0.8..0.9..1 */
+    set outputVolume(volume) {
+        this.#setVolume(this.#outputStreams, volume);
+    }
+
+    /**
+     * @param {Shell.App} app
+     */
     constructor(app) {
         super();
-
-        this._app = app;
-
-        this._originalAppName = this._app.get_name();
-        this._appName = null; // will be set later
-
-        this._inputStreams = [];
-
-        this._outputStreams = [];
-    
-        if (!AppSoundVolumeControl._service) {
-            AppSoundVolumeControl._service = new AppSoundVolumeService();
+        if (app instanceof Shell.App === false) return;
+        this.#app = app;
+        this.#appName = app.get_name();
+        if (!AppSoundVolumeControl.#service) {
+            AppSoundVolumeControl.#service = new AppSoundVolumeService();
         }
-
-        AppSoundVolumeControl._service.addControl(this);
+        AppSoundVolumeControl.#service.addControl(this);
     }
 
     destroy() {
-
         super.destroy();
-
-        if (this._inputStreams) {
-            for (let appStream of this._inputStreams) {
-                appStream.removeListener(this);
-            }
-            this._inputStreams = null;
-        }
-
-        if (this._outputStreams) {
-            for (let appStream of this._outputStreams) {
-                appStream.removeListener(this);
-            }
-            this._outputStreams = null;
-        }
-
-        if (!AppSoundVolumeControl._service) {
-            return;
-        }
-
-        AppSoundVolumeControl._service.removeControl(this);
-
-        if (AppSoundVolumeControl._service.isEmpty()) {
-            AppSoundVolumeControl._service.destroy();
-            AppSoundVolumeControl._service = null;
-        }
+        this.#app = null;
+        this.#inputStreams = null;
+        this.#outputStreams = null;
+        if (!AppSoundVolumeControl.#service) return;
+        AppSoundVolumeControl.#service.removeControl(this);
+        if (!AppSoundVolumeControl.#service.destroy()) return;
+        AppSoundVolumeControl.#service = null;
     }
 
-    addStream(appStream) {
-
-        if (!this._inputStreams || !this._outputStreams ||
-                !this._canAcceptStream(appStream)) {
-            return;
-        }
-
-        const streams = (
-            appStream.isInput ?
-            this._inputStreams :
-            this._outputStreams
-        );
-
-        if (streams.length && streams.indexOf(appStream) >= 0) {
-            return;
-        }
-
-        streams.push(appStream);
-
-        appStream.addListener(this);
+    async update() {
+        if (this.#parentAppName) return;
+        this.#setParentAppName();
+        if (!this.#parentAppName || this.#parentAppName === this.#appName) return;
+        AppSoundVolumeControl.#service?.update();
     }
 
-    removeStream(appStream) {
-
-        if (!appStream || !this._inputStreams || !this._outputStreams) {
-            return;
-        }
-
-        const streams = (
-            appStream.isInput ?
-            this._inputStreams :
-            this._outputStreams
-        );
-
-        const streamIndex = (
-            streams.length ?
-            streams.indexOf(appStream) :
-            -1
-        );
-
-        if (streamIndex < 0) {
-            return;
-        }
-
-        streams.splice(streamIndex, 1);
-
-        // no need to call appStream.removeListener because this method
-        // will be called by the appStream itself when it gets removed
+    /**
+     * @param {AppSoundStream} stream
+     */
+    addStream(stream) {
+        if (!this.#canAcceptStream(stream)) return;
+        const isInputStream = stream.isInput;
+        if (isInputStream && !this.#inputStreams.has(stream)) this.#inputStreams.add(stream);
+        else if (!isInputStream && !this.#outputStreams.has(stream)) this.#outputStreams.add(stream);
     }
 
-    //#region functions to be called outside this module
-
-    handleAppState() {
-
-        // no need to set the name twice
-        if (this._appName !== null) {
-            return;
-        }
-
-        // try to set the app name
-        this._setAppName();
-
-        // if the name has changed and is not equal to the original name
-        // force the service to update app controls
-        if (this._appName && this._appName !== this._originalAppName) {
-            AppSoundVolumeControl._service?.forceUpdate();
-        }
+    /**
+     * @param {AppSoundStream} stream
+     */
+    removeStream(stream) {
+        if (!stream) return;  
+        if (this.#inputStreams?.has(stream)) this.#inputStreams.delete(stream);
+        else if (this.#outputStreams?.has(stream)) this.#outputStreams.delete(stream);
     }
 
-    getInputVolume() {
-        return this._getVolume(this._inputStreams);
-    }
-
-    getOutputVolume() {
-        return this._getVolume(this._outputStreams);
-    }
-
-    setInputVolume(volume) {
-        this._setVolume(this._inputStreams, volume);
-    }
-
-    setOutputVolume(volume) {
-        this._setVolume(this._outputStreams, volume);
-    }
-
-    /*
-     * volume: negative or positive integer -100..-1, 1..100
+    /**
+     * @param {number} volume negative or positive integer -100..-1, 1..100
      */
     addOutputVolume(volume) {
-
-        if (!volume || !this.hasOutput()) {
-            return;
-        }
-
-        volume = this._getVolume(this._outputStreams, false) + (volume / 100);
-
-        this._setVolume(this._outputStreams, volume);
-
-        this._showOSD(this._outputStreams[0], false);
+        if (!volume || !this.hasOutput) return;
+        volume = this.#getVolume(this.#outputStreams) + (volume / 100);
+        this.#setVolume(this.#outputStreams, volume);
+        this.showOSD(this.#outputStreams, false);
     }
 
     toggleOutputMute() {
-
-        if (!this.hasOutput()) {
-            return;
-        }
-
-        const isMuted = this._isMuted(this._outputStreams);
-
-        this._toggleMute(this._outputStreams, isMuted);
-
-        this._showOSD(this._outputStreams[0], !isMuted);
+        if (!this.hasOutput) return;
+        const isMuted = this.#toggleMute(this.#outputStreams);
+        this.showOSD(this.#outputStreams, isMuted);
     }
 
-    hasInput() {
-        return this._inputStreams?.length > 0;
+    /**
+     * @param {Set<AppSoundStream>} streams
+     * @param {boolean} [isMuted]
+     */
+    showOSD(streams, isMuted) {
+        if (!streams?.size) return;
+        super.showOSD([...streams][0], isMuted, this.#appName);
     }
 
-    hasOutput() {
-        return this._outputStreams?.length > 0;
+    /**
+     * Note: Sometimes name of the app stream is not equal to the name of the app but it contains name of the app.
+     *       For example: Google Chrome create input streams called 'Google Chrome input'.
+     *       So using String.includes() function to identify app streams.
+     *
+     * @param {AppSoundStream} stream
+     * @returns {boolean}
+     */
+    #canAcceptStream(stream) {
+        if (!this.#inputStreams || !this.#outputStreams ||
+            stream instanceof AppSoundStream === false) return false;
+        if (!this.#parentAppName) this.#setParentAppName();
+        return stream.name?.includes(this.#parentAppName ?? this.#appName);
     }
 
-    //#endregion functions to be called outside this module
-
-    _canAcceptStream(stream) {
-
-        if (!stream || !stream.name) {
-            return false;
-        }
-
-        if (this._appName === null) {
-            this._setAppName();
-        }
-
-        // Sometimes name of the app stream is not equal to the name of the app
-        // But it contains name of the app
-        // For ex: Google Chrome create input streams called 'Google Chrome input'
-        return stream.name.includes(this._appName || this._originalAppName);
+    /**
+     * Note: A workaround to handle Chrome Apps and probably something else.
+     *       Chrome Apps share Google Chrome's sound streams.
+     *       To identify proper streams for such apps we need to get name of the parent app.
+     */
+    #setParentAppName() {
+        const windows = this.#app?.get_windows();
+        if (!windows?.length) return;
+        const parentAppName = this.#getParentAppName(windows);
+        this.#parentAppName = parentAppName ?? this.#appName;
     }
 
-    _setAppName() {
-
-        if (!this._app) {
-            // just in case set dummy name to avoid calling this method twice
-            this._appName = '';
-        }
-
-        // A workaround to handle Chrome Apps and probably something else
-        // Chrome Apps share Google Chrome's sound streams
-        // To identify proper streams for such apps we need to get name of the parent app
-
-        const appWindows = this._app.get_windows();
-
-        if (!appWindows || !appWindows.length) {
-            return;
-        }
-
-        let appName = null;
-
-        if (appWindows[0].wm_class) {
-            
-            let searchResult = Shell.AppSystem.search(appWindows[0].wm_class);
-
-            // it's an array of arrays [[],[],[]]
-            if (searchResult?.length && searchResult[0]?.length) {
-
-                for (let appId of searchResult[0]) {
-
-                    let app = Shell.AppSystem.get_default().lookup_app(appId);
-
-                    if (!app || !app.get_windows()?.length) {
-                        continue;
-                    }
-
-                    appName = app.get_name();
-
-                    break;
+    /**
+     * @param {Meta.Window[]} windows
+     * @returns {string}
+     */
+    #getParentAppName(windows) {
+        const appSystem = Shell.AppSystem.get_default();
+        for (let i = 0, l = windows.length; i < l; ++i) {
+            const wmClass = windows[i].wm_class;
+            if (!wmClass) continue;
+            /** @type {string[][]} */
+            const searchResults = Shell.AppSystem.search(wmClass);
+            if (!searchResults?.length) continue;
+            for (let i = 0, l = searchResults.length; i < l; ++i) {
+                const searchResult = searchResults[i];
+                if (!searchResult?.length) continue;
+                for (const appId of searchResult) {
+                    const app = appSystem.lookup_app(appId);
+                    if (!app) continue;
+                    return app.get_name();
                 }
-                
             }
         }
-
-        this._appName = appName || this._originalAppName;
+        return null;
     }
 
-    _getVolume(streams, isMuted) {
-
-        if (!streams || !streams.length) {
-            return 0;
+    /**
+     * @param {Set<AppSoundStream>} streams
+     * @returns {number}
+     */
+    #getVolume(streams) {
+        if (!streams?.size) return SOUND_STREAM_MIN_VOLUME;
+        let result = SOUND_STREAM_MAX_VOLUME;
+        for (const stream of streams) {
+            result = Math.min(stream.volume, result);
         }
-
-        let result = 1;
-
-        for (let appStream of streams) {
-            result = Math.min(appStream.getVolume(isMuted), result);
-        }
-
         return result;
     }
 
-    _setVolume(streams, volume) {
-
-        if (!streams || !streams.length) {
-            return;
-        }
-
-        for (let appStream of streams) {
-
-            if (appStream.isMuted()) {
-                appStream.toggleMute();
-            }
-
-            appStream.setVolume(volume);
+    /**
+     * @param {Set<AppSoundStream>} streams
+     * @param {number} volume
+     */
+    #setVolume(streams, volume) {
+        if (!streams?.size) return;
+        for (const stream of streams) {
+            if (stream.isMuted) stream.toggleMute();
+            stream.volume = volume;
         }
     }
 
-    _toggleMute(streams, isMuted) {
-
-        if (!streams || !streams.length) {
-            return;
+    /**
+     * @param {Set<AppSoundStream>} streams
+     * @returns {boolean}
+     */
+    #toggleMute(streams) {
+        if (!streams?.size) return;
+        const isMuted = this.#isMuted(streams);
+        for (const stream of streams) {
+            if (stream.isMuted !== isMuted) continue;
+            stream.toggleMute();
         }
-
-        for (let appStream of streams) {
-            if (appStream.isMuted() === isMuted) {
-                appStream.toggleMute();
-            }
-        }
+        return !isMuted;
     }
 
-    _isMuted(streams) {
-
-        if (!streams || !streams.length) {
-            return false;
+    /**
+     * @param {Set<AppSoundStream>} streams
+     * @returns {boolean}
+     */
+    #isMuted(streams) {
+        if (!streams?.size) return;
+        for (const stream of streams) {
+            if (stream.isMuted) return true;
         }
-
-        for (let appStream of streams) {
-            if (appStream.isMuted()) {
-                return true;
-            }
-        }
-
         return false;
     }
 
-    _showOSD(stream, isMuted) {
-        super._showOSD(stream, isMuted, this._originalAppName);
-    }
-
 }
-
-//#endregion app sound volume control

@@ -1,348 +1,300 @@
 /* exported NotificationHandler */
 
-//#region imports
+import Shell from 'gi://Shell';
+import { Main } from '../core/legacy.js';
+import { Context } from '../core/context.js';
+import { Type, Delay } from '../core/enums.js';
+import { Config } from '../utils/config.js';
 
-const Main = imports.ui.main;
-const { FdoNotificationDaemonSource, GtkNotificationDaemonAppSource } = imports.ui.notificationDaemon;
-const { WindowAttentionSource } = imports.ui.windowAttentionHandler;
+const APPID_REGEXP_STRING = /.desktop/g;
 
-// custom modules import
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { Timeout } = Me.imports.utils.timeout;
-const { Connections } = Me.imports.utils.connections;
-const { LauncherAPI } = Me.imports.utils.launcherAPI;
+/** @enum {string} */
+const ConfigFields = {
+    enableLauncherApi: 'notification-service-enable-unity-dbus',
+    countAttentionSources: 'notification-service-count-attention-sources'
+};
 
-//#endregion imports
+/** @enum {string} */
+const MessageTrayEvent = {
+    SourceAdded: 'source-added',
+    SourceRemoved: 'source-removed',
+    QueueChanged: 'queue-changed',
+    CountChanged: 'notify::count'
+};
 
-class UnityDBusConnector {
-
-    // store the counters in a static variable
-    // to restore them after unlocking user's session
-    static _countByAppId = null; // Map
-
-    constructor(callback) {
-        this._callback = callback;
-
-        if (!UnityDBusConnector._countByAppId) {
-            UnityDBusConnector._countByAppId = new Map();
-        } else {
-            this._callback();
-        }
-
-        this._dbusHandler = LauncherAPI.instance().subscribe(params => this._update(params));
-    }
-
-    destroy() {
-        LauncherAPI.instance().unsubscribe(this._dbusHandler);
-    }
-
-    getCount(callback) {
-
-        if (!UnityDBusConnector._countByAppId?.size || !callback) {
-            return;
-        }
-
-        UnityDBusConnector._countByAppId.forEach(callback);
-    }
-
-    _update(params) {
-
-        if (!params || !UnityDBusConnector._countByAppId) {
-            return;
-        }
-
-        const [ appUri, props ] = params.deepUnpack();
-
-        const appId = appUri?.replace(/(^\w+:|^)\/\//, '');
-
-        if (!appId || !props) {
-            return;
-        }
-
-        const count = props['count']?.get_int64() ?? 0;
-        const countVisible = props['count-visible']?.get_boolean() ?? false;
-
-        if (!count || !countVisible) {
-
-            // no need to trigger the callback as nothing has changed
-            if (!UnityDBusConnector._countByAppId.has(appId)) {
-                return;
-            }
-
-            UnityDBusConnector._countByAppId.delete(appId);
-        } else {
-            UnityDBusConnector._countByAppId.set(appId, count);
-        }
-
-        this._callback();
-    }
-
-}
+/** @enum {string} */
+const NotificationSource = {
+    FdoNotification: 'FdoNotificationDaemonSource',
+    GtkNotification: 'GtkNotificationDaemonAppSource',
+    WindowAttention: 'WindowAttentionSource'
+};
 
 class NotificationService {
 
-    constructor(settings) {
+    /**        
+     * @param {MessageTray.Source} source
+     * @returns {string|null}
+     */
+    #notificationAppId = (source) => ({
+        [NotificationSource.FdoNotification]: source.app?.id,
+        [NotificationSource.GtkNotification]: source._appId,
+        [NotificationSource.WindowAttention]: source._app?.id
+    })[source.constructor?.name]?.replace(APPID_REGEXP_STRING, '');
 
-        this._settings = settings;
-        this._handlers = []; // [NotificationHandler...]
+    /** @type {Set<MessageTray.Source>} */
+    #notifications = new Set();
 
-        this._resetCounts();
+    /** @type {Set<NotificationHandler>} */
+    #handlers = new Set();
 
-        this._createSources();
+    /** @type {Map<string|number, number>} */
+    #countForApps = new Map();
 
-        this._handleSettings();
+    /** @type {boolean} */
+    #hasCountByPid = false;
 
-        this._createConnections();
+    /** @type {number} */
+    #totalCount = 0;
+
+    /** @type {Job} */
+    #updateJob = Context.jobs.new(this, Delay.Background);
+
+    /** @type {Object.<string, string|number|boolean>} */
+    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
+
+    constructor() {
+        this.#handleConfig();
+        this.#initNotifications();
+        Context.signals.add(this, [
+            Main.messageTray,
+            MessageTrayEvent.SourceAdded, (_, source) => this.#addNotification(source),
+            MessageTrayEvent.SourceRemoved, (_, source) => this.#removeNotification(source),
+            MessageTrayEvent.QueueChanged, () => this.#queueUpdate()
+        ]);
     }
 
-    addHandler(handler) {
-
-        if (!handler) {
-            return;
-        }
-
-        this._handlers.push(handler);
-
-        this._triggerHandler(handler);
-    }
-
-    removeHandler(handler) {
-
-        if (!handler) {
-            return;
-        }
-
-        const handlerIndex = this._handlers.indexOf(handler);
-
-        if (handlerIndex < 0) {
-            return;
-        }
-
-        this._handlers.splice(handlerIndex, 1);
-    }
-
-    isEmpty() {
-        return !this._handlers.length;
-    }
-
+    /**
+     * @returns {boolean}
+     */
     destroy() {
-
-        this._stopUpdateCountQueue();
-
-        this._unityDBusConnector?.destroy();
-
-        this._connections.destroy();
+        if (this.#handlers?.size) return false;
+        this.#updateJob?.destroy();
+        Context.signals.removeAll(this);
+        Context.launcherApi?.disconnect(this);
+        this.#handlers = null;
+        this.#updateJob = null;
+        return true;
     }
 
-    _createConnections() {
-        this._connections = new Connections();
-        this._connections.add(Main.messageTray, 'source-added', (tray, source) => this._addSource(source));
-        this._connections.add(Main.messageTray, 'source-removed', (tray, source) => this._removeSource(source));
-        this._connections.add(Main.messageTray, 'queue-changed', () => this._queueUpdateCount());
-        // handle settings
-        this._connections.addScope(this._settings, [
-            'changed::notification-service-enable-unity-dbus',
-            'changed::notification-service-count-attention-sources'
-        ], () => {
-            this._handleSettings();
-            this._queueUpdateCount();
-        });
+    /**
+     * @param {NotificationHandler} handler
+     */
+    addHandler(handler) {
+        if (!this.#handlers || handler instanceof NotificationHandler === false) return;
+        this.#handlers.add(handler);
+        this.#triggerHandler(handler);
     }
 
-    _handleSettings() {
-
-        this._setConfig();
-
-        if (this._config.enableUnityDBus && !this._unityDBusConnector) {
-            this._unityDBusConnector = new UnityDBusConnector(() => this._queueUpdateCount());
-        } else if (!this._config.enableUnityDBus && this._unityDBusConnector) {
-            this._unityDBusConnector.destroy();
-            this._unityDBusConnector = null;
-        }
+    /**
+     * @param {NotificationHandler} handler
+     */
+    removeHandler(handler) {
+        if (!handler || !this.#handlers?.has(handler)) return;
+        this.#handlers.delete(handler);
     }
 
-    _setConfig() {
-        this._config = {
-            enableUnityDBus: this._settings.get_boolean('notification-service-enable-unity-dbus'),
-            countAttentionSources: this._settings.get_boolean('notification-service-count-attention-sources')
-        };
+    /**
+     * @param {NotificationHandler} handler
+     */
+    triggerHandler(handler) {
+        if (!handler || !this.#handlers?.has(handler)) return;
+        this.#triggerHandler(handler);
     }
 
-    _createSources() {
-
-        this._sources = new Map(); // source => connection id
-
-        const messageTraySources = Main.messageTray.getSources();
-
-        if (!messageTraySources.length) {
-            return;
-        }
-
-        for (let i = 0, l = messageTraySources.length; i < l; ++i) {
-            this._addSource(messageTraySources[i]);
-        }
+    /**
+     * @param {string} settingsKey 
+     */
+    #handleConfig(settingsKey) {
+        if (settingsKey === ConfigFields.countAttentionSources) return this.#queueUpdate();
+        if (this.#config.enableLauncherApi) Context.launcherApi?.connectNotifications(this, () => this.#queueUpdate());
+        else Context.launcherApi?.disconnect(this);
+        this.#queueUpdate();
     }
 
-    _addSource(source) {
-
-        if (!this._sources.has(source)) {
-            this._sources.set(source, source.connect('notify::count', () => this._queueUpdateCount()));
-        }
-
-        this._queueUpdateCount();
+    #initNotifications() {
+        const sources = Main.messageTray?.getSources();
+        if (!sources?.length) return;
+        for (let i = 0, l = sources.length; i < l; ++i) this.#addNotification(sources[i]);
     }
 
-    _removeSource(source) {
-
-        if (this._sources.has(source)) {
-            source.disconnect(this._sources.get(source));
-            this._sources.delete(source);
-        }
- 
-        this._queueUpdateCount();
+    /**
+     * @param {MessageTray.Source} source
+     */
+    #addNotification(source) {
+        if (this.#notifications.has(source)) return;
+        this.#notifications.add(source);
+        Context.signals.add(this, [source, MessageTrayEvent.CountChanged, () => this.#queueUpdate()]);
+        this.#queueUpdate();
     }
 
-    _queueUpdateCount() {
-
-        this._stopUpdateCountQueue();
-
-        // slow down it a bit
-        // I believe we can wait for 500 ms to get notifications
-        this._updateCountTimeout = Timeout.idle(500).run(() => {
-            this._updateCountTimeout = null;
-            this._updateCount();
-        });
+    /**
+     * @param {MessageTray.Source} source
+     */
+    #removeNotification(source) {
+        if (!this.#notifications.has(source)) return;
+        this.#notifications.delete(source);
+        Context.signals.remove(this, source);
+        this.#queueUpdate();
     }
 
-    _stopUpdateCountQueue() {
-        this._updateCountTimeout?.destroy();
-        this._updateCountTimeout = null;
+    #queueUpdate() {
+        if (!this.#updateJob) return;
+        this.#updateJob.reset().then(() => this.#update()).catch();
     }
 
-    _updateCount() {
-
-        this._resetCounts();
-
-        let unityAppIds = new Set();
-
-        // let's use the Unity dbus connection
-        // as the source of truth to count notifications for apps
-        this._unityDBusConnector?.getCount((count, appId) => {
-            unityAppIds.add(appId);
-            this._countByAppId.set(appId, count);
-        });
-
-        const sources = [...this._sources.keys()];      
-
-        for (let i = 0, l = sources.length; i < l; ++i) {
-
-            const source = sources[i];
-            const sourceCount = source.count || 0;
-
-            this._totalCount += sourceCount;
-
-            // count notifications for apps
-
-            let appId = null;
-
-            if (source instanceof FdoNotificationDaemonSource) {
-                appId = source.app ? source.app.id : null;
-            } else if (source instanceof GtkNotificationDaemonAppSource) {
-                appId = source._appId;
-            } else if (source instanceof WindowAttentionSource && this._config.countAttentionSources) {
-                appId = source._app ? source._app.id : null;
-            } else {
-                continue;
+    /**
+     * Note: FdoNotification source may not have appId in some cases.
+     *       As an example: Thunderbird notifications when using SysTray-X addon.
+     *       As a workaround for such cases pid can be used to count app notifications.
+     *       For Flatpak apps dbus access in required to count notifications for them.
+     */
+    #update() {
+        if (!this.#handlers) return;
+        this.#totalCount = 0;
+        this.#hasCountByPid = false; 
+        const launcherApiCount = Context.launcherApi?.notifications;
+        if (!launcherApiCount) this.#countForApps.clear();
+        else this.#countForApps = new Map([...launcherApiCount]);
+        for (const source of this.#notifications) {
+            const sourceCount = source.count ?? 0;
+            if (!sourceCount) continue;
+            this.#totalCount += sourceCount;
+            const appId = this.#notificationAppId(source);
+            if (appId && launcherApiCount?.has(appId)) continue;
+            if (appId) {
+                const countForApp = this.#countForApps.get(appId) ?? 0;
+                this.#countForApps.set(appId, countForApp + sourceCount);
             }
-
-            if (!appId || unityAppIds.has(appId)) {
-                continue;
+            if (source.pid) {
+                const countForApp = this.#countForApps.get(source.pid) ?? 0;
+                this.#countForApps.set(source.pid, countForApp + sourceCount);
+                this.#hasCountByPid = true;
             }
-
-            let countForApp = this._countByAppId.get(appId) || 0;
-
-            countForApp += sourceCount;
-            
-            if (countForApp === 0) {
-                continue;
-            }
-
-            this._countByAppId.set(appId, countForApp);
         }
-
-        this._triggerHandlers();
+        for (const handler of this.#handlers) this.#triggerHandler(handler);
     }
 
-    _resetCounts() {
-        this._totalCount = 0;
-        this._countByAppId = new Map();
-    }
-
-    _triggerHandlers() {
-        for (let i = 0, l = this._handlers.length; i < l; ++i) {
-            this._triggerHandler(this._handlers[i]);
+    /**
+     * Note: Count notifications by pid as a backup option.
+     *       This workaround helps with Thunderbird notifications when using SysTray-X addon.
+     *       Probably can be useful for other apps as well.
+     *       It doesn't allow to count notifications for separate Chrome windows separately.
+     *       Doesn't help to count notifications for Flatpak apps without dbus access.
+     * 
+     * @param {NotificationHandler} handler
+     */
+    #triggerHandler(handler) {
+        const appId = handler.appId;
+        if (typeof appId !== Type.String) return handler.setCount(this.#totalCount);
+        let count = this.#countForApps.get(appId) ?? 0;
+        if (count || !this.#hasCountByPid) return handler.setCount(count);
+        const pids = handler.pids;
+        if (!pids?.length) return handler.setCount(count);
+        for (let i = 0, l = pids.length; i < l; ++i) {
+            count += this.#countForApps.get(pids[i]) ?? 0;
         }
+        handler.setCount(count);
     }
 
-    _triggerHandler(handler) {
-
-        if (!handler.appId) {
-            handler.setCount(this._totalCount);
-            return;
-        }
-
-        handler.setCount(this._countByAppId.get(handler.appId) || 0);
-    }
 }
 
-var NotificationHandler = class {
+export class NotificationHandler {
 
-    // static instance of NotificationService
-    static _service = null;
+    /** @type {NotificationService} */
+    static #service = null;
 
-    /*
-     * callback: (count) => {} to notify handler target about notifications
-     * appId: optional string value to filter notifications by app Id, null to get total count
+    /** @type {(count: number) => void} */
+    #callback = null;
+
+    /** @type {Shell.App} */
+    #app = null;
+
+    /** @type {string|null} */
+    #appId = null;
+
+    /** @type {number[]} */
+    #pids = null;
+
+    /** @type {number} */
+    #count = null;
+
+    /** @type {string|null} */
+    get appId() {
+        if (!this.#app) return null;
+        if (this.#appId) return this.#appId;
+        this.#appId = this.#app.id?.replace(APPID_REGEXP_STRING, '');
+        return this.#appId;
+    }
+
+    /**
+     * @type {number[]|null}
      */
-    constructor(callback, settings, appId) {
-        
-        this.appId = appId;
+    get pids() {
+        if (this.#pids?.length) return this.#pids;
+        if (!this.appId) return null;
+        return Context.getSessionCache(this.constructor.name).get(this.#appId);
+    }
 
-        this._callback = callback;
-
-        if (!NotificationHandler._service) {
-            NotificationHandler._service = new NotificationService(settings);
+    /**
+     * @param {(count: number) => void} callback
+     * @param {Shell.App} [app]
+     */
+    constructor(callback, app) {
+        if (typeof callback !== Type.Function) return; 
+        this.#callback = callback;
+        if (app instanceof Shell.App) {
+            this.#app = app;
         }
-
-        NotificationHandler._service.addHandler(this);
+        if (!NotificationHandler.#service) {
+            NotificationHandler.#service = new NotificationService();
+        }
+        NotificationHandler.#service.addHandler(this);
     }
 
     destroy() {
-
         this.setCount(0);
-
-        this._callback = null;
-
-        if (!NotificationHandler._service) {
-            return;
-        }
-
-        NotificationHandler._service.removeHandler(this);
-
-        if (NotificationHandler._service.isEmpty()) {
-            NotificationHandler._service.destroy();
-            NotificationHandler._service = null;
-        }
+        this.#callback = null;
+        this.#app = null;
+        if (!NotificationHandler.#service) return;
+        NotificationHandler.#service.removeHandler(this);
+        if (!NotificationHandler.#service.destroy()) return;
+        NotificationHandler.#service = null;
     }
 
+    /**
+     * Note: This is a special function to call outside this class and catch pids of the running app.
+     *       So basically the app should be running at some point, otherwise it may not get notifications count.
+     *       Caching pids to restore notifications count for the app after session unlock.
+     *       Usually all windows of a single app share the same pid.
+     */
+    async updatePids() {
+        if (!this.appId) return null;
+        const oldPids = this.#pids ?? [];
+        this.#pids = this.#app.get_pids();
+        if (!this.#pids?.length) return;
+        if (`${oldPids}` === `${this.#pids}`) return;
+        Context.getSessionCache(this.constructor.name).set(this.#appId, this.#pids);
+        NotificationHandler.#service.triggerHandler(this);
+    }
+
+    /**
+     * @param {number} count
+     */
     setCount(count) {
-
-        if (!this._callback) {
-            return;
-        }
-
-        this._callback(count);
+        if (typeof this.#callback !== Type.Function) return; 
+        if (this.#count === count) return;
+        this.#count = count;
+        this.#callback(count);
     }
 
 }

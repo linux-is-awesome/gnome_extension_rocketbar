@@ -43,6 +43,7 @@ var GeneralPage = GObject.registerClass(
                     this.createSwitch(_('Isolate Workspaces'), 'taskbar-isolate-workspaces'),
                     this.createSwitch(_('Enable Indicators'), 'appbutton-enable-indicators'),
                     this.createSwitch(_('Enable Notification Badges'), 'appbutton-enable-notification-badges'),
+                    this.createSwitch(_('Enable Progress Bars'), 'appbutton-enable-progress-bars'),
                     this.createSwitch(_('Enable Tooltips'), 'appbutton-enable-tooltips'),
                     this.createSwitch(_('Enable Sound Volume Control'), 'appbutton-enable-sound-control',
                                       _('Experimental feature'))

@@ -1,45 +1,49 @@
 /* exported Config */
 
-var Config = class {
+import GObject from 'gi://GObject';
+import { Context } from '../core/context.js';
+import { Type } from '../core/enums.js';
 
-    constructor(callback = () => null) {
-        this._callback = callback;
-        this._old = null;
-        this.values = null; // { field => value }
-        this.update();
+const DUMMY_FIELD_PREFIX = '~';
+
+/**
+ * @typedef {string} settingsKey
+ * @typedef {string|number|boolean} value
+ * 
+ * @param {*} client
+ * @param {Object.<string, string> & {fieldName: settingsKey}} fields
+ * @param {(settingsKey: string) => void} [callback]
+ * @param {boolean} [isAfter]
+ * @returns {Object.<string, string|number|boolean> & {fieldName: value}}
+ */
+export const Config = (client, fields, callback, isAfter) => {
+    if (!client || !fields) return null;
+    /** @type {Gio.Settings} */
+    const settings = Context.settings;
+    /** @type {Object.<string, string|number|boolean>} */
+    const values = {};
+    /** @type {Array<string|((...args) => void)>} */
+    const signals = [];
+    /** @type {Map<string, string>}*/
+    const valueMapping = new Map();
+    /** @type {(...args) => void} */
+    const valueHandler = (_, key) => {
+        values[valueMapping.get(key)] = settings.get_value(key)?.unpack();
+        if (typeof callback === Type.Function) callback(key);
     }
-
-    update() {
-
-        if (!this._callback) {
-            return;
+    for (const fieldName in fields) {
+        const settingsKey = fields[fieldName];
+        if (typeof settingsKey !== Type.String) continue;
+        if (settingsKey.startsWith(DUMMY_FIELD_PREFIX)) {
+            values[fieldName] = null;
+            continue;
         }
-
-        this._old = this.values;
-        this.values = this._callback();
+        valueMapping.set(settingsKey, fieldName);
+        values[fieldName] = settings.get_value(settingsKey)?.unpack();
+        signals.push(`changed::${settingsKey}`, valueHandler);
+        if (isAfter) signals.push(GObject.ConnectFlags.AFTER);
     }
-
-    hasOld() {
-        return !!this._old;
-    }
-
-    handleChanged(fields = [], callback = () => {}) {
-
-        if (!this._old) {
-            callback();
-            return;
-        }
-
-        if (!this.values) {
-            return;
-        }
-
-        for (let field of fields) {
-            if (this._old[field] !== this.values[field]) {
-                callback();
-                return;
-            }
-        }
-    }
-
-}
+    if (!signals.length) return values;
+    Context.signals.add(client, [settings, ...signals]);
+    return values;
+};

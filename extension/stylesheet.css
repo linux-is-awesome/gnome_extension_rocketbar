@@ -8,6 +8,12 @@
 .rocketbar__button:active {
     background: rgba(0, 0, 0, 0.01);
 }
+.rocketbar__button:active {
+    transition-duration: 0.3s;
+}
+.rocketbar__button:active StIcon {
+    icon-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
 
 /* tooltip */
 
@@ -68,8 +74,17 @@
 
 .rocketbar__popup-menu {
     /* shrink menu width as much as possible */
-    max-width: 0px;
-    min-width: 300px;
+    max-width: 0em;
+    min-width: 20em;
+}
+.rocketbar__popup-menu
+.popup-menu-ornament {
+    width: 0 !important;
+}
+.rocketbar__popup-menu
+.rocketbar__popup-menu_options-group
+.popup-menu-ornament {
+    width: 1em !important;
 }
 .rocketbar__popup-menu
 .popup-separator-menu-item {
@@ -83,6 +98,17 @@
 .popup-menu-icon {
     margin-left: 10px;
 }
+.rocketbar__popup-menu
+.popup-menu-arrow,
+.rocketbar__popup-menu
+.popup-menu-icon {
+    icon-size: 1.1em !important;
+}
+.rocketbar__popup-menu
+.slider {
+    -barlevel-height: 0.25em;
+    -slider-handle-radius: 0.5em;
+}
 
 /* date menu */
 
@@ -91,9 +117,20 @@
     -minimum-hpadding: 0;
 }
 
+/* notification badge */
+
+.rocketbar__notification-badge {
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+    font-weight: bold;
+    text-align: center;
+}
+
 /* notification counter */
 
 .rocketbar__notification-counter {
     font-weight: bold;
     text-align: center;
+}
+.rocketbar__notification-counter:transition {
+    transition-duration: 0.3s;
 }

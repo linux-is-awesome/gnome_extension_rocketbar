@@ -15,6 +15,14 @@
             <default>true</default>
             <summary>Isolate Workspaces</summary>
         </key>
+        <key type="b" name="taskbar-show-all-windows">
+            <default>true</default>
+            <summary>Show All Windows</summary>
+        </key>
+        <key type="b" name="taskbar-enable-separator">
+            <default>true</default>
+            <summary>Always show separator between favorites and running apps</summary>
+        </key>
         <key type="b" name="appbutton-enable-tooltips">
             <default>true</default>
             <summary>Enable Tooltips</summary>
@@ -26,6 +34,10 @@
         <key type="b" name="appbutton-enable-notification-badges">
             <default>true</default>
             <summary>Enable Notification Badges</summary>
+        </key>
+        <key type="b" name="appbutton-enable-progress-bars">
+            <default>false</default>
+            <summary>Enable Progress Bars</summary>
         </key>
         <key type="b" name="appbutton-enable-sound-control">
             <default>false</default>
@@ -124,14 +136,6 @@
             <default>4</default>
             <summary>Active Indicators height</summary>
         </key>
-        <key type="i" name="indicator-roundness-inactive">
-            <default>4</default>
-            <summary>Inactive Indicators roundness</summary>
-        </key>
-        <key type="i" name="indicator-roundness-active">
-            <default>4</default>
-            <summary>Active Indicators roundness</summary>
-        </key>
         <key type="i" name="indicator-spacing-inactive">
             <default>2</default>
             <summary>Inactive Indicators spacing</summary>
@@ -150,12 +154,20 @@
         </key>
         <key type="i" name="indicator-display-limit">
             <default>3</default>
-            <summary>Max number of indicators to display for running apps</summary>
+            <summary>Max number of indicators to display for Inactive running apps</summary>
+        </key>
+        <key type="i" name="indicator-display-limit-active">
+            <default>3</default>
+            <summary>Max number of indicators to display for Active running apps</summary>
         </key>
         <!-- customize page: notification-badge -->
         <key type="s" name="notification-badge-color">
             <default>'rgb(255, 0, 0)'</default>
             <summary>Notification Badge color</summary>
+        </key>
+        <key type="s" name="notification-badge-font-color">
+            <default>'rgba(255, 255, 255)'</default>
+            <summary>Notification Badge font color</summary>
         </key>
         <key type="s" name="notification-badge-border-color">
             <default>'rgb(70, 70, 70)'</default>
@@ -166,12 +178,20 @@
             <summary>Notification Badge position</summary>
         </key>
         <key type="i" name="notification-badge-size">
-            <default>5</default>
+            <default>10</default>
             <summary>Notification Badge size</summary>
+        </key>
+        <key type="i" name="notification-badge-roundness">
+            <default>10</default>
+            <summary>Notification Badge roundness</summary>
         </key>
         <key type="i" name="notification-badge-margin">
             <default>7</default>
             <summary>Notification Badge margin</summary>
+        </key>
+        <key type="i" name="notification-badge-max-count">
+            <default>99</default>
+            <summary>Notification Badge max count to display</summary>
         </key>
         <!-- customize page: tooltip -->
         <key type="i" name="tooltip-show-delay">
@@ -246,6 +266,10 @@
             <default>'new_window'</default>
             <summary>Running apps activation behavior</summary>
         </key>
+        <key type="s" name="appbutton-demands-attention-behavior">
+            <default>'focus_active'</default>
+            <summary>Window Demands Attention behavior</summary>
+        </key>
         <key type="b" name="appbutton-enable-minimize-action">
             <default>true</default>
             <summary>Enable Minimize action</summary>
@@ -305,6 +329,10 @@
         <key type="b" name="lockscreen-primary-input">
             <default>false</default>
             <summary>Force primary input source on Lock Screen</summary>
+        </key>
+        <key type="i" name="lockscreen-animation-delay">
+            <default>50</default>
+            <summary>Lock Screen animation delay</summary>
         </key>
         <key type="b" name="switcherpopup-enable-show-delay">
             <default>false</default>

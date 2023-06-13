@@ -1,452 +1,305 @@
 /* exported NotificationCounter */
 
-//#region imports
+import GObject from 'gi://GObject';
+import St from 'gi://St';
+import Clutter from 'gi://Clutter';
+import { Main } from '../core/legacy.js';
+import { Context } from '../core/context.js';
+import { Event, Property } from '../core/enums.js';
+import { Component, ComponentEvent } from './base/component.js';
+import { Animation, AnimationDuration, AnimationType } from './base/animation.js';
+import { NotificationHandler } from '../services/notificationService.js';
+import { Config } from '../utils/config.js';
 
-const { GObject, St, Gtk, Clutter } = imports.gi;
-const Main = imports.ui.main;
+const MODULE_NAME = 'Rocketbar__NotificationCounter';
+const DATE_MENU_STYLE_CLASS = 'rocketbar__date-menu';
+const DND_SETTINGS_FIELD = 'show-banners';
+const CLOCK_DISPLAY_POSITION = 1;
+const COUNTER_STYLE_CLASS = 'rocketbar__notification-counter';
+const COUNTER_STYLE_PSEUDO_CLASS = 'transition';
+const COUNTER_EMPTY_COLOR = 'transparent';
+const COUNTER_EMPTY_BORDER_SIZE = 2;
+const COUNTER_LONG_VALUE_PADDING = 3;
+const COUNTER_DEFAULT_TEXT = '0';
 
-// custom modules import
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { NotificationHandler } = Me.imports.services.notificationService;
-const { Timeout } = Me.imports.utils.timeout;
-const { Connections } = Me.imports.utils.connections;
+/** @enum {string} */
+const DateMenuEvent = {
+    DndChanged: 'datemenu::dnd-changed'
+};
 
-//#endregion imports
+/** @enum {string} */
+const ConfigFields = {
+    hideEmpty: 'notification-counter-hide-empty',
+    centerClock: 'notification-counter-center-clock',
+    maxCount: 'notification-counter-max-count',
+    fontSize: 'notification-counter-font-size',
+    roundness: 'notification-counter-roundness',
+    margin: 'notification-counter-margin-top',
+    colorEmpty: 'notification-counter-color-empty',
+    colorNotEmpty: 'notification-counter-color-not-empty',
+    textColor: 'notification-counter-text-color',
+    colorEmptyDnd: 'notification-counter-color-empty-dnd',
+    colorNotEmptyDnd: 'notification-counter-color-not-empty-dnd',
+    textColorDnd: 'notification-counter-text-color-dnd'
+};
 
-class NotificationCounterContainer {
+/** @type {Object.<string, number|boolean|string>} */
+const CounterProps = {
+    name: `${MODULE_NAME}-Counter`,
+    style_class: COUNTER_STYLE_CLASS,
+    text: COUNTER_DEFAULT_TEXT,
+    visible: false,
+    x_align: Clutter.ActorAlign.CENTER,
+    y_align: Clutter.ActorAlign.CENTER,
+    ...AnimationType.OpacityMin
+};
 
-    constructor(notificationCounter, dndCallback) {
+/** @type {Object.<string, number|boolean|string>} */
+const SpacerProps = {
+    name: `${MODULE_NAME}-Spacer`,
+    text: COUNTER_DEFAULT_TEXT,
+    y_align: Clutter.ActorAlign.CENTER,
+    ...AnimationType.OpacityMin
+};
 
-        this._dateMenu = Main.panel.statusArea.dateMenu;
-        this._notificationCounter = notificationCounter;
-        this._dndCallback = dndCallback;
-        this._connections = null;
-        this._container = null;
+class DateMenu extends Component {
 
-        this._setNotificationCounter();
+    /**
+     * @param {{event: string}} data
+     * @returns {void}
+     */
+    #notifyHandler = (data) => ({
+        [ComponentEvent.Destroy]: this.#destroy
+    })[data?.event]?.call(this);
+
+    /** @type {DateMenuButton} */
+    #dateMenu = Main.panel?.statusArea?.dateMenu;
+
+    /** @type {string} */
+    #clockDisplayStyleClass = null;
+
+    /** @type {St.BoxLayout} */
+    get #container() {
+        return this.#dateMenu?.get_children()[0];
     }
 
-    destroy() {
-        this._removeNotificationCounter();
+    /** @type {boolean} */
+    get isDndEnabled() {
+        return this.#dateMenu?._indicator?._settings?.get_boolean(DND_SETTINGS_FIELD) === false;
     }
 
-    getDndState() {
-        return this._dateMenu?._indicator?._settings?.get_boolean('show-banners') === false;
+    constructor() {
+        super(new St.BoxLayout({ name: `${MODULE_NAME}-${DateMenu.name}` }));
+        this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
+        this.#initialize();
     }
 
-    _setNotificationCounter() {
-
-        if (this._container || !this._dateMenu || !this._dateMenu._clockDisplay) {
-            return;
-        }
-
-        this._connections = new Connections();
-
-        // hide the indicator and prevent it from displaying
-        // also handle Do not disturb state
-        this._connections.add(this._dateMenu._indicator, 'notify::visible', indicator => indicator.hide());
-        this._connections.add(this._dateMenu._indicator?._settings, 'changed::show-banners', () => this._dndCallback());
-        this._dateMenu._indicator?.hide();
-
-        // remember the class of the clock display
-        this._clockDisplayStyleClass = this._dateMenu._clockDisplay?.style_class;
-
-        // remove extra padding
-        this._dateMenu.add_style_class_name('rocketbar__date-menu');
-
-        // create a container for the notification counter with a delay
-        // the delay helps to avoid animations stuttering
-        this._initTimeout = Timeout.init().run(() => this._createContainer());
+    #initialize() {
+        if (!this.#dateMenu?._clockDisplay) return;
+        this.#clockDisplayStyleClass = this.#dateMenu._clockDisplay.get_style_class_name();
+        this.actor.set_style_class_name(this.#clockDisplayStyleClass);
+        this.#dateMenu._indicator?.hide();
+        this.#dateMenu._clockDisplay.set_style_class_name(null);
+        this.#dateMenu.add_style_class_name(DATE_MENU_STYLE_CLASS);
+        this.#addSignals();
+        this.#setParent();
     }
 
-    _createContainer() {
-
-        const dateMenuContainer = this._dateMenu.get_children()[0];
-
-        if (!dateMenuContainer) {
-            return;
-        }
-
-        // remove clock display from the original container
-        dateMenuContainer.remove_child(Main.panel.statusArea.dateMenu._clockDisplay);
-
-        // create a custom container and make it look as a panel button
-        this._container = new St.BoxLayout({
-            name: 'notification-counter_container',
-            style_class: this._clockDisplayStyleClass
-        });
-
-        // add items to the container
-        this._container.add_child(Main.panel.statusArea.dateMenu._clockDisplay);
-        this._container.add_child(this._notificationCounter);
-
-        // remove a css class from the clock display
-        // don't want it to look like a button anymore
-        this._dateMenu._clockDisplay.style_class = null;
-
-        dateMenuContainer.add_child(this._container);
+    #addSignals() {
+        const target = this.#dateMenu?._indicator;
+        if (!target) return;
+        Context.signals.add(this,
+            [target, Event.Visible, indicator => indicator?.hide()],
+            [target._settings, `changed::${DND_SETTINGS_FIELD}`, () => this.notifyChildren(DateMenuEvent.DndChanged)]);
     }
 
-    _removeNotificationCounter() {
+    #setParent() {
+        const container = this.#container;
+        if (!container || !this.#dateMenu?._clockDisplay) return;
+        const clockDisplayParent = this.#dateMenu._clockDisplay.get_parent();
+        if (clockDisplayParent && clockDisplayParent !== container) return;
+        if (clockDisplayParent) container.remove_child(this.#dateMenu._clockDisplay);
+        this.actor.add_child(this.#dateMenu._clockDisplay);
+        this.setParent(container, CLOCK_DISPLAY_POSITION);
+    }
 
-        this._initTimeout?.destroy();
-
-        this._connections?.destroy();
-
-        // restore the indicator
-        this._dateMenu?._indicator?._sync();
-
-        if (!this._container || !this._dateMenu || !this._dateMenu._clockDisplay) {
-            return;
-        }       
-
-        // remove children we don't want to destroy from the container
-        // before destroying the container itself
-        this._container.remove_all_children();
-        this._container.destroy();
-
-        const dateMenuContainer = this._dateMenu.get_children()[0];
-
-        if (!dateMenuContainer) {
-            return;
-        }
-
-        // restore the original css class for the clock display
-        this._dateMenu._clockDisplay.set_style_class_name(this._clockDisplayStyleClass);
-
-        // restore date menu padding
-        this._dateMenu.remove_style_class_name('rocketbar__date-menu');
-
-        // add the clock display into the original container
-        dateMenuContainer.insert_child_at_index(this._dateMenu._clockDisplay, 1);       
+    #destroy() {
+        Context.signals.removeAll(this);
+        this.actor?.remove_all_children();
+        this.#dateMenu?.remove_style_class_name(DATE_MENU_STYLE_CLASS);
+        this.#dateMenu?._clockDisplay?.set_style_class_name(this.#clockDisplayStyleClass);
+        this.#dateMenu?._indicator?._sync();
+        if (!this.#dateMenu?._clockDisplay) return;
+        if (this.#dateMenu._clockDisplay.get_parent()) return;
+        this.#container?.insert_child_at_index(this.#dateMenu._clockDisplay, CLOCK_DISPLAY_POSITION);
     }
 
 }
 
-var NotificationCounter = GObject.registerClass(
-    class Rocketbar__NotificationCounter extends St.BoxLayout {
-
-        _init(settings) {
-
-            super._init({ name: 'notification-counter' });
-
-            this._settings = settings;
-            this._totalCount = 0;
-            this._count = 0;
-            this._isDnd = false;
-
-            this._setConfig();
-
-            this._createCounter();
-
-            this._createConnections();
-
-            this._notificationHandler = new NotificationHandler(
-                count => this._setCount(count),
-                this._settings, null
-            );
-
-            this._container = new NotificationCounterContainer(this, () => this._updateDndState());
-        }
-
-        _createCounter() {
-
-            this._counter = new St.Label({
-                name: 'notification-counter_counter',
-                style_class: 'rocketbar__notification-counter',
-                x_align: Clutter.ActorAlign.CENTER,
-                y_align: Clutter.ActorAlign.CENTER,
-                text: '0',
-                opacity: 0,
-                visible: false
-            });
-
-            this._counter.set_pivot_point(0.5, 0.5);
-
-            // create a spacer to display between the clock display and the counter
-            const spacer = new St.Label({
-                name: 'notification-counter_spacer',
-                y_align: Clutter.ActorAlign.CENTER,
-                text: '0',
-                opacity: 0
-            });
-            // the spacer visibility should be controlled by the counter visibility
-            this._counter.bind_property('visible', spacer, 'visible', GObject.BindingFlags.SYNC_CREATE);
-
-            this.add_actor(spacer);
-            this.add_actor(this._counter);
-        }
-
-        _createConnections() {
-
-            this.connect('destroy', () => this._destroy());
-
-            this._connections = new Connections();
-
-            this._connections.add(Gtk.Settings.get_default(), 'notify::gtk-font-name', () => this._update());
-
-            this._connections.add(this, 'notify::mapped', () => {
-
-                // disconnect it to prevent from executing more than once
-                this._connections.remove('notify::mapped');
-
-                this._updateDndState();
-
-                // let's wait for notification service a bit
-                this._initTimeout = Timeout.idle(100).run(() => {
-                    // means we don't need to call the update
-                    // when the first update has been initiated by the notification service
-                    if (!this._updateTimeout) {
-                        this._update();
-                    }
-                });
-
-            });
-
-            // handle settings
-            this._connections.addScope(this._settings, [
-                'changed::notification-counter-hide-empty',
-                'changed::notification-counter-center-clock',
-                'changed::notification-counter-max-count',
-                'changed::notification-counter-font-size',
-                'changed::notification-counter-roundness',
-                'changed::notification-counter-margin-top',
-                'changed::notification-counter-color-empty',
-                'changed::notification-counter-color-not-empty',
-                'changed::notification-counter-text-color',
-                'changed::notification-counter-color-empty-dnd',
-                'changed::notification-counter-color-not-empty-dnd',
-                'changed::notification-counter-text-color-dnd'
-            ], () => this._handleSettings());
-        }
-
-        _handleSettings() {
-            const oldConfig = this._config || {};
-
-            this._setConfig();
-
-            if (this._config.hideEmpty !== oldConfig.hideEmpty ||
-                    this._config.centerClock !== oldConfig.centerClock) {
-                
-                if (this._canShow()) {
-                    this._counter.show();
-                } else {
-                    this._counter.hide()
-                }
-
-                this._updateClockMargin();
-    
-                return;
-            }
-
-            if (this._config.maxCount !== oldConfig.maxCount) {
-                
-                this._setCount(this._totalCount);
-
-                return;
-            }
-
-            this._updateStyle();
-
-            if (this._config.fontSize !== oldConfig.fontSize) {
-                this._updateClockMargin();
-            }
-        }
-
-        _setConfig() {
-            this._config = {
-                hideEmpty: this._settings.get_boolean('notification-counter-hide-empty'),
-                centerClock: this._settings.get_boolean('notification-counter-center-clock'),
-                maxCount: this._settings.get_int('notification-counter-max-count'),
-                fontSize: this._settings.get_int('notification-counter-font-size'),
-                roundness: this._settings.get_int('notification-counter-roundness'),
-                marginTop: this._settings.get_int('notification-counter-margin-top'),
-                colorEmpty: this._settings.get_string('notification-counter-color-empty'),
-                colorNotEmpty: this._settings.get_string('notification-counter-color-not-empty'),
-                textColor: this._settings.get_string('notification-counter-text-color'),
-                colorEmptyDnd: this._settings.get_string('notification-counter-color-empty-dnd'),
-                colorNotEmptyDnd: this._settings.get_string('notification-counter-color-not-empty-dnd'),
-                textColorDnd: this._settings.get_string('notification-counter-text-color-dnd')
-            };
-        }
-
-        _destroy() {
-
-            this._initTimeout?.destroy();
-            this._updateTimeout?.destroy();
-
-            this._connections.destroy();
-
-            this._counter.remove_all_transitions();
-
-            this._container?.destroy();
-            this._container = null;
-
-            this._notificationHandler?.destroy();
-        }
-
-        _setCount(count) {
-
-            this._totalCount = count;
-
-            if (count > this._config.maxCount) {
-                count = this._config.maxCount;
-            }
-
-            if (this._count === count) {
-                return;
-            }
-
-            this._count = count;
-
-            this._update();
-        }
-
-        _update() {
-
-            if (!this._container) {
-                return;
-            }
-
-            this._updateTimeout?.destroy();
-
-            if (!this._isValid()) {
-                // a workaround for the first update
-                this._updateTimeout = Timeout.idle(100).run(() => {
-                    this._update();
-                    this._updateTimeout = null;
-                });
-                return;
-            }
-
-            // the validation before calling the method is required
-            if (this._canShow()) {
-                this._updateClockMargin();
-            }
-
-            this._counter.remove_all_transitions();
-
-            // add a fancy animation
-            this._counter.ease({
-                scale_x: 0,
-                scale_y: 0,
-                duration: 100,
-                mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-                onComplete: () => {
-                
-                    // update the counter when it's hidden
-
-                    this._counter.text = this._count.toString();
-
-                    if (!this._canShow()) {
-                        this._updateClockMargin();
-                        this._counter.hide()
-                        return;
-                    }
-
-                    this._counter.show();
-
-                    this._updateStyle();
-
-                    this._updateClockMargin();
-
-                    this._counter.ease({
-                        opacity: 255,
-                        scale_x: 1,
-                        scale_y: 1,
-                        duration: 200,
-                        mode: Clutter.AnimationMode.EASE_OUT_QUAD
-                    });
-                }
-            });
-        }
-
-        _updateClockMargin() {
-
-            const parent = this.get_parent();
-
-            if (!parent) {
-                return;
-            }
-
-            if (!this._config.centerClock || !this._canShow()) {
-                parent.style = null;
-                return;
-            }
-
-            if (this.width) {
-                parent.style = `margin-left: ${this.width}px;`;
-            }
-
-        }
-
-        _canShow() {
-            return this._count || !this._config.hideEmpty;
-        }
-
-        _updateDndState() {
-
-            this._isDnd = this._container?.getDndState();
-
-            this._updateStyle();
-        }
-
-        _updateStyle() {
-
-            if (!this._isValid()) {
-                return;
-            }
-
-            const isNotEmpty = this._count > 0;
-            const isShort = this._count < 10;
-
-            const borderColor = (
-                this._isDnd ?
-                this._config.colorEmptyDnd :
-                this._config.colorEmpty
-            );
-
-            const backgroundColor = isNotEmpty ? (
-                this._isDnd ?
-                this._config.colorNotEmptyDnd :
-                this._config.colorNotEmpty
-            ) : 'transparent';
-
-            const textColor = isNotEmpty ? (
-                this._isDnd ?
-                this._config.textColorDnd :
-                this._config.textColor
-            ) : 'transparent';
-
-            // use predefined values for now
-            const padding = isShort ? 0 : 3;
-            const borderSize = isNotEmpty ? 0 : 2;
-
-            this._counter.style = (
-                `font-size: ${this._config.fontSize}px;` +
-                `padding: 0 ${padding}px;` +
-                `border: ${borderSize}px solid ${borderColor};` +
-                `border-radius: ${this._config.roundness}px;` +
-                `background-color: ${backgroundColor};` +
-                `color: ${textColor};`
-            );
-
-            let height = this._counter.height;
-
-            // do some kind of mathemagic
-            height = height - borderSize * 4;
-
-            this._counter.style += (
-                `height: ${height}px;` +
-                `min-width: ${height}px;` +
-                `margin-top: ${this._config.marginTop}px;`
-            );
-        }
-
-        _isValid() {
-            return this.mapped && this.get_stage() !== null;
-        }
-
+export class NotificationCounter extends Component {
+
+    /**
+     * @param {{event: string}} data
+     * @returns {void}
+     */
+    #notifyHandler = (data) => ({
+        [ComponentEvent.Destroy]: this.#destroy,
+        [ComponentEvent.Mapped]: () => Context.layout.queueAfterInit(this, () => this.#rerender()),
+        [ComponentEvent.Scale]: this.#rerender,
+        [DateMenuEvent.DndChanged]: this.#updateStyle
+    })[data?.event]?.call(this);
+
+    /** @type {St.Label} */
+    #counter = null;
+
+    /** @type {number} */
+    #count = 0;
+
+    /** @type {number} */
+    #totalCount = 0;
+
+    /** @type {Object.<string, string|number|boolean>} */
+    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
+
+    /** @type {DateMenu} */
+    #dateMenu = new DateMenu();
+
+    /** @type {NotificationHandler} */
+    #notificationHandler = new NotificationHandler(count => this.#setCount(count));
+
+    /** @type {boolean} */
+    get #isVisible() {
+        return this.#count > 0 || !this.#config.hideEmpty;
     }
-);
+
+    constructor() {
+        super(new St.BoxLayout({ name: MODULE_NAME }));
+        this.#createCounter();
+        this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
+        Context.signals.add(this, [St.Settings.get(), Event.FontName, () => this.#rerender()]);
+        Context.layout.requestInit(this, () => this.setParent(this.#dateMenu));
+    }
+
+    #destroy() {
+        Context.layout.removeClient(this);
+        Context.signals.removeAll(this);
+        this.#counter?.remove_all_transitions();
+        this.#dateMenu?.destroy();
+        this.#notificationHandler?.destroy();
+    }
+
+    #createCounter() {
+        const spacer = new St.Label(SpacerProps);
+        this.#counter = new St.Label(CounterProps);
+        this.#counter.set_pivot_point(0.5, 0.5);
+        this.#counter.bind_property(Property.Visible, spacer, Property.Visible, GObject.BindingFlags.SYNC_CREATE);
+        this.actor.add_child(spacer);
+        this.actor.add_child(this.#counter);
+    }
+
+    /**
+     * @param {string} settingsKey
+     */
+    #handleConfig(settingsKey) {
+        switch (settingsKey) {
+            case ConfigFields.hideEmpty:
+                if (this.#isVisible) {
+                    if (!this.#counter.visible) this.#rerender();
+                    return;
+                }
+                this.#counter.hide();
+            case ConfigFields.centerClock:
+                this.#updateClockMargin();
+                break;
+            case ConfigFields.maxCount:
+                this.#setCount(this.#totalCount);
+                break;
+            case ConfigFields.fontSize:
+                this.#updateStyle();
+                this.#updateClockMargin();
+                break;
+            default: this.#updateStyle();
+        }
+    }
+
+    /**
+     * @param {number} count
+     */
+    #setCount(count) {
+        if (!this.isValid) return; 
+        this.#totalCount = count;
+        if (count > this.#config.maxCount) {
+            count = this.#config.maxCount;
+        }
+        if (this.#count === count) return;
+        this.#count = count;
+        this.#rerender();
+    }
+
+    #rerender() {
+        if (!this.isMapped || Context.layout.isQueued(this)) return;
+        this.#counter.remove_all_transitions();
+        this.#counter.remove_style_pseudo_class(COUNTER_STYLE_PSEUDO_CLASS);
+        Animation(this.#counter, AnimationDuration.Faster, AnimationType.ScaleMin).then(() => {
+            if (!this.isValid) return;
+            this.#counter.text = `${this.#count}`;
+            if (!this.#isVisible) {
+                this.#counter.hide();
+                this.#updateClockMargin();
+                return;
+            }
+            this.#counter.show();
+            this.#updateStyle();
+            this.#updateClockMargin();
+            this.#counter.add_style_pseudo_class(COUNTER_STYLE_PSEUDO_CLASS);
+            Animation(this.#counter, AnimationDuration.Default, { ...AnimationType.ScaleMax, ...AnimationType.OpacityMax });
+        });
+    }
+
+    #updateClockMargin() {
+        const parent = this.parentActor;
+        if (!parent) return;
+        if (!this.#config.centerClock || !this.#isVisible) {
+            parent.set_style(null);
+            return;
+        }
+        const [width] = this.actor?.get_size();
+        if (!width) return;
+        parent.set_style(`margin-left: ${width / this.globalScale}px;`);
+    }
+
+    #updateStyle() {
+        const { borderColor, borderSize, backgroundColor, textColor, padding } = this.#getStyleValues();
+        const { fontSize, roundness, margin } = this.#config;
+        const scale = this.uiScale;
+        const globalScale = this.globalScale;
+        this.#counter.set_style(
+            `font-size: ${fontSize * scale}px;` +
+            `padding: 0 ${padding * scale}px;` +
+            `border-width: ${borderSize * scale}px;` +
+            `border-color: ${borderColor};` +
+            `border-radius: ${roundness * scale}px;` +
+            `background-color: ${backgroundColor};` +
+            `color: ${textColor};`
+        );
+        let [_, height] = this.#counter.get_size();
+        height = (height - Math.round(borderSize * scale * globalScale) * 4) / globalScale;
+        this.#counter.style += (
+            `height: ${height}px;` +
+            `min-width: ${height}px;` +
+            `${margin > 0 ? 'margin-top' : 'margin-bottom'}: ${Math.abs(margin)}px;`
+        );
+    }
+
+    #getStyleValues() {
+        const isDnd = this.#dateMenu?.isDndEnabled;
+        const isEmpty = !this.#count;
+        const padding = `${this.#count}`.length === 1 ? 0 : COUNTER_LONG_VALUE_PADDING;
+        const borderColor = isDnd ? this.#config.colorEmptyDnd : this.#config.colorEmpty;
+        const borderSize = isEmpty ? COUNTER_EMPTY_BORDER_SIZE : 0;
+        const backgroundColor = isEmpty ? COUNTER_EMPTY_COLOR : (isDnd ? this.#config.colorNotEmptyDnd : this.#config.colorNotEmpty);
+        const textColor = isEmpty ? COUNTER_EMPTY_COLOR : (isDnd ? this.#config.textColorDnd : this.#config.textColor);
+        return { borderColor, borderSize, backgroundColor, textColor, padding };
+    }
+
+}
