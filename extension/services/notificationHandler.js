@@ -2,16 +2,15 @@
 
 //#region imports
 
-const Main = imports.ui.main;
-const { FdoNotificationDaemonSource, GtkNotificationDaemonAppSource } = imports.ui.notificationDaemon;
-const { WindowAttentionSource } = imports.ui.windowAttentionHandler;
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import { FdoNotificationDaemonSource, GtkNotificationDaemonAppSource } from 'resource:///org/gnome/shell/ui/notificationDaemon.js';
+// TODO: fix this import
+// import { WindowAttentionSource } from 'resource:///org/gnome/shell/ui/windowAttentionHandler.js';
 
 // custom modules import
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { Timeout } = Me.imports.utils.timeout;
-const { Connections } = Me.imports.utils.connections;
-const { LauncherAPI } = Me.imports.utils.launcherAPI;
+import { Connections } from '../utils/connections.js';
+import { LauncherAPI } from '../utils/launcherAPI.js';
+import { Timeout } from '../utils/timeout.js';
 
 //#endregion imports
 
@@ -250,7 +249,8 @@ class NotificationService {
                 appId = source.app ? source.app.id : null;
             } else if (source instanceof GtkNotificationDaemonAppSource) {
                 appId = source._appId;
-            } else if (source instanceof WindowAttentionSource && this._config.countAttentionSources) {
+            // TODO: fix this
+            } else if (/* source instanceof WindowAttentionSource && */this._config.countAttentionSources) {
                 appId = source._app ? source._app.id : null;
             } else {
                 continue;
@@ -296,7 +296,7 @@ class NotificationService {
     }
 }
 
-var NotificationHandler = class {
+export class NotificationHandler {
 
     // static instance of NotificationService
     static _service = null;

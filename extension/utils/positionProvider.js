@@ -1,8 +1,8 @@
 /* exported PositionProvider */
 
-const Main = imports.ui.main;
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-var PositionProvider = class {
+export class PositionProvider {
 
     constructor(actor) {
         this._actor = actor;

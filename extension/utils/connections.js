@@ -1,6 +1,6 @@
 /* exported Connections */
 
-var Connections = class {
+export class Connections {
 
     constructor() {
         this._connections = new Map();

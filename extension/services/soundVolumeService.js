@@ -2,15 +2,15 @@
 
 //#region imports
 
-const { Gio, Gvc, Shell } = imports.gi;
-const Main = imports.ui.main;
-const Volume = imports.ui.status.volume;
+import Gio from 'gi://Gio';
+import Gvc from 'gi://Gvc';
+import Shell from 'gi://Shell';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as Volume from 'resource:///org/gnome/shell/ui/status/volume.js';
 
 // custom modules import
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { Connections } = Me.imports.utils.connections;
-const { Timeout } = Me.imports.utils.timeout;
+import { Connections } from '../utils/connections.js';
+import { Timeout } from '../utils/timeout.js';
 
 //#endregion imports
 
@@ -170,7 +170,7 @@ class SoundVolumeControlBase {
 
 //#region system wide control
 
-var SoundVolumeControl = class extends SoundVolumeControlBase {
+export class SoundVolumeControl extends SoundVolumeControlBase {
 
     constructor() {
         super();
@@ -480,7 +480,7 @@ class AppSoundVolumeService {
 
 }
 
-var AppSoundVolumeControl = class extends SoundVolumeControlBase {
+export class AppSoundVolumeControl extends SoundVolumeControlBase {
 
     static _service = null;
 

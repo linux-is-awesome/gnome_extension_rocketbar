@@ -2,17 +2,16 @@
 
 //#region imports
 
-const { Clutter, St } = imports.gi;
+import Clutter from 'gi://Clutter';
+import St from 'gi://St';
 
 // custom modules import
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { Config } = Me.imports.utils.config;
-const { Connections } = Me.imports.utils.connections;
+import { Config } from '../utils/config.js';
+import { Connections } from '../utils/connections.js';
 
 //#endregion imports
 
-var AppButtonIndicator = class {
+export class AppButtonIndicator {
 
     constructor(appButton, layout, settings) {
 

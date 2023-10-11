@@ -1,8 +1,8 @@
 /* exported LauncherAPI */
 
-const Gio = imports.gi.Gio;
+import Gio from 'gi://Gio';
 
-var LauncherAPI = class {
+export class LauncherAPI {
 
     static _instance = null;
 

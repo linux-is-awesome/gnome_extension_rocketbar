@@ -2,20 +2,18 @@
 
 //#region imports
 
-const { Clutter, St } = imports.gi;
-const Main = imports.ui.main;
+import Clutter from 'gi://Clutter';
+import St from 'gi://St';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 // custom modules import
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { Timeout } = Me.imports.utils.timeout;
-const { IconProvider } = Me.imports.utils.iconProvider;
+import { Timeout } from '../utils/timeout.js';
 
 //#endregion imports
 
 class TooltipCounter {
 
-    constructor(iconName, minCount) {
+    constructor(icon, minCount) {
 
         this._minCount = minCount || 0;
 
@@ -28,7 +26,7 @@ class TooltipCounter {
 
         this.actor.add_actor(new St.Icon({
             name: 'appButton-tooltip-counter-icon',
-            gicon: IconProvider.instance().getIcon(iconName)
+            gicon: icon
         }));
 
         this._label = new St.Label({
@@ -53,13 +51,14 @@ class TooltipCounter {
     }
 }
 
-var AppButtonTooltip = class {
+export class AppButtonTooltip {
 
     //#region public methods
 
-    constructor(appButton, settings) {
+    constructor(appButton, settings, iconProvider) {
 
         this._appButton = appButton;
+        this._iconProvider = iconProvider;
 
         this._maxWidth = settings.get_int('tooltip-max-width');
 
@@ -134,20 +133,20 @@ var AppButtonTooltip = class {
 
         // create windows counter
 
-        this._windowsCounter = new TooltipCounter('window-symbolic', 2);
+        this._windowsCounter = new TooltipCounter(this._iconProvider.getIcon('window-symbolic'), 2);
 
         this._tooltip.add_actor(this._windowsCounter.actor);
 
         // create notifications counter
 
-        this._notificationsCounter = new TooltipCounter('notification-symbolic', 1);
+        this._notificationsCounter = new TooltipCounter(this._iconProvider.getIcon('notification-symbolic'), 1);
 
         this._tooltip.add_actor(this._notificationsCounter.actor);
 
         // create sound icons
 
-        this._soundOutputVolume = new TooltipCounter('audio-speakers-symbolic');
-        this._soundInputVolume = new TooltipCounter('audio-input-microphone-symbolic');
+        this._soundOutputVolume = new TooltipCounter(this._iconProvider.getIcon('audio-speakers-symbolic'));
+        this._soundInputVolume = new TooltipCounter(this._iconProvider.getIcon('audio-input-microphone-symbolic'));
 
         this._tooltip.add_actor(this._soundOutputVolume.actor);
         this._tooltip.add_actor(this._soundInputVolume.actor);

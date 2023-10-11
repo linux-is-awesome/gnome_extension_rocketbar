@@ -1,6 +1,6 @@
 /* exported Config */
 
-var Config = class {
+export class Config {
 
     constructor(callback = () => null) {
         this._callback = callback;

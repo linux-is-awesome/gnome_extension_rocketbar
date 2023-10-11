@@ -1,28 +1,13 @@
 /* exported IconProvider */
 
-const { Gio, St, Gtk } = imports.gi;
-const ExtensionUtils = imports.misc.extensionUtils;
+import Gio from 'gi://Gio';
+import St from 'gi://St';
+import Gtk from 'gi://Gtk';
 
-var IconProvider = class {
-
-    static _instance = null;
-    
-    static instance() {
-
-        if (!IconProvider._instance) {
-            IconProvider._instance = new IconProvider();
-        }
-        
-        return IconProvider._instance;
-    }
-
-    static destroy() {
-        IconProvider._instance = null;
-    }
-
-    constructor() {
+export class IconProvider {
+    constructor(extensionPath) {
         this._iconTheme = new Gtk.IconTheme();
-        this._assetsPath = `${ExtensionUtils.getCurrentExtension().path}/assets/icons/`;
+        this._assetsPath = `${extensionPath}/assets/icons/`;
     }
 
     getIcon(iconName, iconSize) {

@@ -2,15 +2,16 @@
 
 //#region imports
 
-const { GObject, St, Gtk, Clutter } = imports.gi;
-const Main = imports.ui.main;
+import Clutter from 'gi://Clutter';
+import GObject from 'gi://GObject';
+import Gtk from 'gi://Gtk';
+import St from 'gi://St';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 // custom modules import
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { NotificationHandler } = Me.imports.services.notificationService;
-const { Timeout } = Me.imports.utils.timeout;
-const { Connections } = Me.imports.utils.connections;
+import { NotificationHandler } from '../services/notificationHandler.js';
+import { Timeout } from '../utils/timeout.js';
+import { Connections } from '../utils/connections.js';
 
 //#endregion imports
 
@@ -124,12 +125,12 @@ class NotificationCounterContainer {
 
 }
 
-var NotificationCounter = GObject.registerClass(
+export const NotificationCounter = GObject.registerClass(
     class Rocketbar__NotificationCounter extends St.BoxLayout {
 
-        _init(settings) {
+        constructor(settings) {
 
-            super._init({ name: 'notification-counter' });
+            super({ name: 'notification-counter' });
 
             this._settings = settings;
             this._totalCount = 0;

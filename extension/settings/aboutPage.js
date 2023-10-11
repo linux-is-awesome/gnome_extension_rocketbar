@@ -1,3 +1,4 @@
+import GObject from 'gi://GObject';
 const { GObject } = imports.gi;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();

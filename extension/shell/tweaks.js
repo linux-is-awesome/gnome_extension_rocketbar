@@ -2,25 +2,24 @@
 
 //#region imports
 
-const { Clutter, Meta } = imports.gi;
-const Main = imports.ui.main;
-const HotCorner = imports.ui.layout.HotCorner;
-const Keyboard = imports.ui.status.keyboard
-const SwitcherPopup = imports.ui.switcherPopup;
-const { WorkspaceSwitcherPopup } = imports.ui.workspaceSwitcherPopup;
+import Clutter from 'gi://Clutter';
+import Meta from 'gi://Meta';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import { HotCorner } from 'resource:///org/gnome/shell/ui/layout.js';
+import * as Keyboard from 'resource:///org/gnome/shell/ui/status/keyboard.js';
+import * as SwitcherPopup from 'resource:///org/gnome/shell/ui/switcherPopup.js';
+import { WorkspaceSwitcherPopup } from 'resource:///org/gnome/shell/ui/workspaceSwitcherPopup.js';
 
 // custom modules import
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { AppButtonMenu } = Me.imports.ui.appButtonMenu;
-const { SoundVolumeControl } = Me.imports.services.soundVolumeService;
-const { Connections } = Me.imports.utils.connections;
-const { ScrollHandler } = Me.imports.utils.scrollHandler;
-const { Timeout } = Me.imports.utils.timeout;
+import { AppButtonMenu } from '../ui/appButtonMenu.js';
+import { SoundVolumeControl } from '../services/soundVolumeService.js';
+import { Connections } from '../utils/connections.js';
+import { ScrollHandler } from '../utils/scrollHandler.js';
+import { Timeout } from '../utils/timeout.js';
 
 //#endregion imports
 
-var ShellTweaks = class {
+export class ShellTweaks {
 
     constructor(settings) {
 
