@@ -9,7 +9,7 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 // custom modules import
-import { NotificationHandler } from '../services/notificationHandler.js';
+import { NotificationHandler } from '../services/notificationService.js';
 import { Timeout } from '../utils/timeout.js';
 import { Connections } from '../utils/connections.js';
 
@@ -95,12 +95,12 @@ class NotificationCounterContainer {
 
         this._connections?.destroy();
 
-        // restore the indicator
-        this._dateMenu?._indicator?._sync();
-
         if (!this._container || !this._dateMenu || !this._dateMenu._clockDisplay) {
             return;
-        }       
+        }
+
+        // restore the indicator
+        this._dateMenu?._indicator?._sync();
 
         // remove children we don't want to destroy from the container
         // before destroying the container itself

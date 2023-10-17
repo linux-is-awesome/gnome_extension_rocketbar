@@ -17,7 +17,7 @@ import { AppButtonNotificationBadge } from './appButtonNotificationBadge.js';
 import { AppButtonMenu } from './appButtonMenu.js';
 import { AppButtonTooltip } from './appButtonTooltip.js';
 import { DominantColorExtractor } from '../utils/dominantColorExtractor.js';
-import { NotificationHandler } from '../services/notificationHandler.js';
+import { NotificationHandler } from '../services/notificationService.js';
 import { AppSoundVolumeControl } from '../services/soundVolumeService.js';
 import { Connections } from '../utils/connections.js';
 import { ScrollHandler } from '../utils/scrollHandler.js';

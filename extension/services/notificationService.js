@@ -3,9 +3,6 @@
 //#region imports
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import { FdoNotificationDaemonSource, GtkNotificationDaemonAppSource } from 'resource:///org/gnome/shell/ui/notificationDaemon.js';
-// TODO: fix this import
-// import { WindowAttentionSource } from 'resource:///org/gnome/shell/ui/windowAttentionHandler.js';
 
 // custom modules import
 import { Connections } from '../utils/connections.js';
@@ -78,6 +75,19 @@ class UnityDBusConnector {
     }
 
 }
+
+
+const APPID_REGEXP_STRING = /.desktop/g;
+
+function cleanAppId(appId) {
+    return appId?.replace(APPID_REGEXP_STRING, '');
+}
+
+const NotificationSource = {
+    FdoNotification: 'FdoNotificationDaemonSource',
+    GtkNotification: 'GtkNotificationDaemonAppSource',
+    WindowAttention: 'WindowAttentionSource'
+};
 
 class NotificationService {
 
@@ -243,18 +253,7 @@ class NotificationService {
 
             // count notifications for apps
 
-            let appId = null;
-
-            if (source instanceof FdoNotificationDaemonSource) {
-                appId = source.app ? source.app.id : null;
-            } else if (source instanceof GtkNotificationDaemonAppSource) {
-                appId = source._appId;
-            // TODO: fix this
-            } else if (/* source instanceof WindowAttentionSource && */this._config.countAttentionSources) {
-                appId = source._app ? source._app.id : null;
-            } else {
-                continue;
-            }
+            let appId = this._getNotificationAppId(source);
 
             if (!appId || unityAppIds.has(appId)) {
                 continue;
@@ -272,6 +271,18 @@ class NotificationService {
         }
 
         this._triggerHandlers();
+    }
+
+    _getNotificationAppId(source) {
+        if (source.constructor?.name === NotificationSource.FdoNotification) {
+            return cleanAppId(source.app?.id);
+        } else if (source.constructor?.name === NotificationSource.GtkNotification) {
+            return cleanAppId(source._appId);
+        } else if (source.constructor?.name === NotificationSource.WindowAttention) {
+            return cleanAppId(source._app?.id);
+        } else {
+            return null;
+        }
     }
 
     _resetCounts() {
@@ -307,7 +318,7 @@ export class NotificationHandler {
      */
     constructor(callback, settings, appId) {
         
-        this.appId = appId;
+        this.appId = cleanAppId(appId);
 
         this._callback = callback;
 
