@@ -2,15 +2,16 @@
 
 //#region imports
 
-const { GObject, St, Gtk, Clutter } = imports.gi;
-const Main = imports.ui.main;
+import Clutter from 'gi://Clutter';
+import GObject from 'gi://GObject';
+import Gtk from 'gi://Gtk';
+import St from 'gi://St';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 // custom modules import
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { NotificationHandler } = Me.imports.services.notificationService;
-const { Timeout } = Me.imports.utils.timeout;
-const { Connections } = Me.imports.utils.connections;
+import { NotificationHandler } from '../services/notificationService.js';
+import { Timeout } from '../utils/timeout.js';
+import { Connections } from '../utils/connections.js';
 
 //#endregion imports
 
@@ -94,12 +95,12 @@ class NotificationCounterContainer {
 
         this._connections?.destroy();
 
-        // restore the indicator
-        this._dateMenu?._indicator?._sync();
-
         if (!this._container || !this._dateMenu || !this._dateMenu._clockDisplay) {
             return;
-        }       
+        }
+
+        // restore the indicator
+        this._dateMenu?._indicator?._sync();
 
         // remove children we don't want to destroy from the container
         // before destroying the container itself
@@ -124,12 +125,12 @@ class NotificationCounterContainer {
 
 }
 
-var NotificationCounter = GObject.registerClass(
+export const NotificationCounter = GObject.registerClass(
     class Rocketbar__NotificationCounter extends St.BoxLayout {
 
-        _init(settings) {
+        constructor(settings) {
 
-            super._init({ name: 'notification-counter' });
+            super({ name: 'notification-counter' });
 
             this._settings = settings;
             this._totalCount = 0;

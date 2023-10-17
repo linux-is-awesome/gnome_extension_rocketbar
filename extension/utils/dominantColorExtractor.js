@@ -1,10 +1,8 @@
 /* exported DominantColorExtractor */
 
-const { Gio, St, GdkPixbuf } = imports.gi;
-
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { IconProvider } = Me.imports.utils.iconProvider;
+import Gio from 'gi://Gio';
+import St from 'gi://St';
+import GdkPixbuf from 'gi://GdkPixbuf';
 
 const DOMINANT_COLOR_SAMPLE_SIZE = 20;
 
@@ -12,9 +10,10 @@ const DOMINANT_COLOR_SAMPLE_SIZE = 20;
 * Credit: Dash to Dock
 * https://github.com/micheleg/dash-to-dock
 */
-var DominantColorExtractor = class {
+export class DominantColorExtractor {
 
-    constructor(icon) {
+    constructor(iconProvider, icon) {
+        this._iconProvider = iconProvider;
         this._icon = icon;
     }
 
@@ -136,7 +135,7 @@ var DominantColorExtractor = class {
         }
 
         // Get the pixel buffer from the icon theme
-        const iconInfo = IconProvider.instance().getIconInfo(
+        const iconInfo = this._iconProvider.getIconInfo(
             iconTexture.get_names()[0],
             DOMINANT_COLOR_SAMPLE_SIZE
         );

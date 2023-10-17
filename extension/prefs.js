@@ -1,29 +1,27 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { GeneralPage } = Me.imports.settings.generalPage;
-const { CustomizePage } = Me.imports.settings.customizePage;
-const { BehaviorPage } = Me.imports.settings.behaviorPage;
-const { AboutPage } = Me.imports.settings.aboutPage;
+import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-function init() {
-    ExtensionUtils.initTranslations();
-}
+import { GeneralPage } from './settings/generalPage.js';
+import { CustomizePage } from './settings/customizePage.js';
+import { BehaviorPage } from './settings/behaviorPage.js';
+import { AboutPage } from './settings/aboutPage.js';
 
-function fillPreferencesWindow(window) {
-    const settings = ExtensionUtils.getSettings();
+export default class RocketBarExtensionPreferences extends ExtensionPreferences {
+    fillPreferencesWindow(window) {
+        const settings = this.getSettings();
 
-    // enable search
-    window.set_search_enabled(true);
+        // enable search
+        window.set_search_enabled(true);
 
-    // resize the window
-    window.set_size_request(
-        window.default_width + 50,
-        window.default_height + 150
-    );
+        // resize the window
+        window.set_size_request(
+            window.default_width + 50,
+            window.default_height + 150
+        );
 
-    // create pages
-    window.add(new GeneralPage(settings));
-    window.add(new CustomizePage(settings));
-    window.add(new BehaviorPage(settings));
-    window.add(new AboutPage());
+        // create pages
+        window.add(new GeneralPage(settings));
+        window.add(new CustomizePage(settings));
+        window.add(new BehaviorPage(settings));
+        window.add(new AboutPage(this.metadata));
+    }
 }

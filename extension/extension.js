@@ -1,99 +1,77 @@
 //#region imports
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { Connections } = Me.imports.utils.connections;
-const { ShellTweaks } = Me.imports.shell.tweaks;
-const { Taskbar } = Me.imports.ui.taskbar;
-const { NotificationCounter } = Me.imports.ui.notificationCounter;
-const { IconProvider } = Me.imports.utils.iconProvider;
-const { LauncherAPI } = Me.imports.utils.launcherAPI;
+import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import { Connections } from './utils/connections.js';
+import { ShellTweaks } from './shell/tweaks.js';
+import { Taskbar } from './ui/taskbar.js';
+import { NotificationCounter } from './ui/notificationCounter.js';
+import { IconProvider } from './utils/iconProvider.js';
+import { LauncherAPI } from './utils/launcherAPI.js';
 
 //#endregion imports
 
-//#region variables
-
-let connections = null;
-let settings = null;
-let shellTweaks = null;
-let taskbar = null;
-let notificationCounter = null;
-
-//#endregion variables
-
 //#region main
 
-function init() {
-    ExtensionUtils.initTranslations();
-}
+export default class RocketBarExtension extends Extension {
+    enable() {
+        // call instance() to initialize dbus interface
+        // this should be done as soon as possible
+        // to make apps use the interface correctly
+        LauncherAPI.instance();
 
-function enable() {
+        this._settings = this.getSettings();
 
-    // call instance() to initialize dbus interface
-    // this should be done as soon as possible
-    // to make apps use the interface correctly
-    LauncherAPI.instance();
+        this._iconProvider = new IconProvider(this.path);
+        this._shellTweaks = new ShellTweaks(this._settings);
 
-    settings = ExtensionUtils.getSettings();
+        this._handleSettings();
 
-    shellTweaks = this._createModule(ShellTweaks);
-
-    this._handleSettings();
-
-    connections = new Connections();
-    connections.addScope(settings, [
-        'changed::taskbar-enabled',
-        'changed::notification-counter-enabled'
-    ], () => this._handleSettings());    
-}
-
-function disable() {
-
-    // destroy all
-    connections.destroy();
-    taskbar?.destroy();
-    notificationCounter?.destroy();
-    shellTweaks?.destroy();
-    settings?.run_dispose();
-    IconProvider.destroy();
-    LauncherAPI.destroy();
-
-    // and nullify all
-    taskbar = null;
-    notificationCounter = null;
-    shellTweaks = null;
-    settings = null;
-    connections = null;
-}
-
-function _handleSettings() {
-
-    const taskbarEnabled = settings.get_boolean('taskbar-enabled');
-    const notificationCounterEnabled = settings.get_boolean('notification-counter-enabled');
-
-    if (taskbarEnabled && !taskbar) {
-        taskbar = this._createModule(Taskbar);
-    } else if (!taskbarEnabled && taskbar) {
-        taskbar.destroy();
-        taskbar = null;
+        this._connections = new Connections();
+        this._connections.addScope(this._settings, [
+            'changed::taskbar-enabled',
+            'changed::notification-counter-enabled'
+        ], () => this._handleSettings());    
     }
 
-    if (notificationCounterEnabled && !notificationCounter) {
-        notificationCounter = this._createModule(NotificationCounter);
-    } else if (!notificationCounterEnabled && notificationCounter) {
-        notificationCounter.destroy();
-        notificationCounter = null;
+    disable() {
+        // destroy all
+        this._connections.destroy();
+        this._taskbar?.destroy();
+        this._notificationCounter?.destroy();
+        this._shellTweaks?.destroy();
+        this._settings?.run_dispose();
+        LauncherAPI.destroy();
+    
+        // and nullify all
+        this._taskbar = null;
+        this._notificationCounter = null;
+        this._shellTweaks = null;
+        this._settings = null;
+        this._connections = null;
+        this._iconProvider = null;
     }
 
+    _handleSettings() {
+
+        const taskbarEnabled = this._settings.get_boolean('taskbar-enabled');
+        const notificationCounterEnabled = this._settings.get_boolean('notification-counter-enabled');
+    
+        if (taskbarEnabled && !this._taskbar) {
+            this._taskbar = new Taskbar(this._settings, this._iconProvider);
+        } else if (!taskbarEnabled && this._taskbar) {
+            this._taskbar.destroy();
+            this._taskbar = null;
+        }
+    
+        if (notificationCounterEnabled && !this._notificationCounter) {
+            this._notificationCounter = new NotificationCounter(this._settings);
+        } else if (!notificationCounterEnabled && this._notificationCounter) {
+            this._notificationCounter.destroy();
+            this._notificationCounter = null;
+        }
+    
+    }
 }
 
-function _createModule(module) {
-    try {
-        return new module(settings);
-    } catch (e) {
-        logError(e, Me.metadata.name + ' Error');
-    }
-    return null;
-}
 
 //#endregion main

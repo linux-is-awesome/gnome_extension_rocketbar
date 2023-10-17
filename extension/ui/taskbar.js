@@ -2,22 +2,24 @@
 
 //#region imports
 
-const { Clutter, GObject, Shell, St, Meta } = imports.gi;
-const Main = imports.ui.main;
-const DND = imports.ui.dnd;
+import Clutter from 'gi://Clutter';
+import GObject from 'gi://GObject';
+import Meta from 'gi://Meta';
+import Shell from 'gi://Shell';
+import St from 'gi://St';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as DND from 'resource:///org/gnome/shell/ui/dnd.js';
 
 // custom modules import
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { PositionProvider } = Me.imports.utils.positionProvider;
-const { AppButton } = Me.imports.ui.appButton;
-const { Connections } = Me.imports.utils.connections;
-const { Favorites } = Me.imports.utils.favorites;
-const { Timeout } = Me.imports.utils.timeout;
+import { AppButton } from './appButton.js';
+import { Connections } from '../utils/connections.js';
+import { Favorites } from '../utils/favorites.js';
+import { PositionProvider } from '../utils/positionProvider.js';
+import { Timeout } from '../utils/timeout.js';
 
 //#endregion imports
 
-var Taskbar = GObject.registerClass(
+export const Taskbar = GObject.registerClass(
     class Rocketbar__Taskbar extends St.ScrollView {
 
         //#region static
@@ -28,7 +30,50 @@ var Taskbar = GObject.registerClass(
 
         //#endregion static
 
-        //#region public methods
+        //#region public methodss
+
+        constructor(settings, iconProvider) {
+            // init scroll view
+            super({
+                name: 'taskbar', 
+                style_class: 'hfade',
+                reactive: false // allow to handle scroll events on the panel
+            });
+            this.set_policy(St.PolicyType.EXTERNAL, St.PolicyType.NEVER);
+            this.clip_to_allocation = true;
+
+            // hide default app button in the panel
+            Main.panel.statusArea.appMenu?.container?.hide();
+
+            // used by app buttons to stop any kind of updates
+            this.isDestroying = false;
+
+            // set private properties
+            this._delegate = this;
+            this._settings = settings;
+            this._iconProvider = iconProvider;
+            this._isRendered = false; // for the first render execution
+            this._currentWorkspace = null;
+            this._activeAppButton = null;
+            this._workId = null;
+            this._positionProvider = new PositionProvider(this);
+
+            // caches
+            this._favoriteApps = null;
+            this._taskbarApps = null;
+
+            // create layout
+            this._createLayout();
+
+            // handle settings
+            this._handleSettings();
+
+            // create connections
+            this._createConnections();
+
+            // init render
+            this._initRender();
+        }
 
         handleDragOver(source) {
 
@@ -64,50 +109,7 @@ var Taskbar = GObject.registerClass(
 
         //#endregion public methods
     
-        //#region private methods
-
-        _init(settings) {
-
-            // init scroll view
-            super._init({
-                name: 'taskbar', 
-                style_class: 'hfade',
-                reactive: false // allow to handle scroll events on the panel
-            });
-            this.set_policy(St.PolicyType.EXTERNAL, St.PolicyType.NEVER);
-            this.clip_to_allocation = true;
-
-            // hide default app button in the panel
-            Main.panel.statusArea.appMenu.container.hide();
-
-            // used by app buttons to stop any kind of updates
-            this.isDestroying = false;
-
-            // set private properties
-            this._delegate = this;
-            this._settings = settings;
-            this._isRendered = false; // for the first render execution
-            this._currentWorkspace = null;
-            this._activeAppButton = null;
-            this._workId = null;
-            this._positionProvider = new PositionProvider(this);
-
-            // caches
-            this._favoriteApps = null;
-            this._taskbarApps = null;
-
-            // create layout
-            this._createLayout();
-
-            // handle settings
-            this._handleSettings();
-
-            // create connections
-            this._createConnections();
-
-            // init render
-            this._initRender();
-        }
+        //#region private method
 
         _createLayout() {
 
@@ -138,8 +140,8 @@ var Taskbar = GObject.registerClass(
 
             // prevent default appMenu from displaying on the panel
             this._connections.add(
-                Main.panel.statusArea.appMenu.container, 'notify::visible',
-                appMenu => appMenu.hide()
+                Main.panel.statusArea.appMenu?.container, 'notify::visible',
+                appMenu => appMenu?.hide()
             );
 
             // handle settings
@@ -359,7 +361,7 @@ var Taskbar = GObject.registerClass(
                     const enableAnimation = !this._isRendered || !isRestored;
                     // disable animation for restored app buttons
                     new AppButton(
-                        { app, isFavorite }, this._settings,
+                        { app, isFavorite }, this._settings, this._iconProvider,
                         (appButton, state) => this._handleAppButtonState(appButton, state)
                     ).setParent(this._layout, i, enableAnimation);
                     // remember position of the new button
@@ -574,7 +576,7 @@ var Taskbar = GObject.registerClass(
 
             // restore default app button in the panel
             if (!Main.overview.visible && !Main.sessionMode.isLocked) {
-                Main.panel.statusArea.appMenu.container.show();
+                Main.panel.statusArea.appMenu?.container?.show();
             }
         }
 

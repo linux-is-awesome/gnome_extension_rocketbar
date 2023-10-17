@@ -1,17 +1,15 @@
 /* exported Favorites */
 
-const { Shell } = imports.gi;
-const AppFavorites = imports.ui.appFavorites;
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { Connections } = Me.imports.utils.connections;
+import Shell from 'gi://Shell';
+import { getAppFavorites } from 'resource:///org/gnome/shell/ui/appFavorites.js';
+import { Connections } from './connections.js';
 
-var Favorites = class {
+export class Favorites {
 
     constructor(callback) {
         this._callback = callback;
         this._apps = null;
-        this._appFavorites = AppFavorites.getAppFavorites();
+        this._appFavorites = getAppFavorites();
         this._connections = new Connections();
         this._connections.add(Shell.AppSystem.get_default(), 'installed-changed', () => this._handleInstalledChanged());
         this._connections.add(this._appFavorites, 'changed', () => this._handleChanged());

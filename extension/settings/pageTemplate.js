@@ -1,6 +1,10 @@
-const { Adw, Gio, GLib, GObject, Gtk, Gdk } = imports.gi;
+import Adw from 'gi://Adw';
+import Gdk from 'gi://Gdk';
+import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
+import Gtk from 'gi://Gtk';
 
-var SettingsPageTemplate = GObject.registerClass(
+export const SettingsPageTemplate = GObject.registerClass(
     class Rocketbar__SettingsPageTemplate extends Adw.PreferencesPage {
 
         _init(params) {

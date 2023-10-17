@@ -1,8 +1,9 @@
 /* exported Timeout */
 
-const { GLib, Meta } = imports.gi;
+import GLib from 'gi://GLib';
+import Meta from 'gi://Meta';
 
-var Timeout = class {
+export class Timeout {
 
     static init() {
         return Timeout.idle(400);

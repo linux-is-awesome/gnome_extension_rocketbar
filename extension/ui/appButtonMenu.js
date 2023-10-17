@@ -2,24 +2,21 @@
 
 //#region imports
 
-const Main = imports.ui.main;
-const BoxPointer = imports.ui.boxpointer;
-const { Clutter, St } = imports.gi;
-const { AppMenu } = imports.ui.appMenu;
-const { Slider } = imports.ui.slider;
-const { PopupMenuSection,
-        PopupSeparatorMenuItem,
-        PopupSubMenuMenuItem,
-        PopupBaseMenuItem,
-        Ornament } = imports.ui.popupMenu;
+import Clutter from 'gi://Clutter';
+import St from 'gi://St';
 
-const _ = imports.misc.extensionUtils.gettext;
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as BoxPointer from 'resource:///org/gnome/shell/ui/boxpointer.js';
+import { AppMenu } from 'resource:///org/gnome/shell/ui/appMenu.js';
+import { Slider } from 'resource:///org/gnome/shell/ui/slider.js';
+import  { PopupMenuSection,
+    PopupSeparatorMenuItem,
+    PopupSubMenuMenuItem,
+    PopupBaseMenuItem,
+    Ornament } from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 // custom modules import
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { Timeout } = Me.imports.utils.timeout;
-const { IconProvider } = Me.imports.utils.iconProvider;
+import { Timeout } from '../utils/timeout.js';
 
 //#endregion imports
 
@@ -235,12 +232,14 @@ class AppButtonMenuBase extends AppMenu {
 
 }
 
-var AppButtonMenu = class extends AppButtonMenuBase {
+export class AppButtonMenu extends AppButtonMenuBase {
 
     //#region public methods
 
-    constructor(appButton, settings) {
+    constructor(appButton, settings, iconProvider) {
         super(appButton, settings);
+
+        this._iconProvider = iconProvider;
 
         this._addSoundControlSection();
 
@@ -645,7 +644,7 @@ var AppButtonMenu = class extends AppButtonMenuBase {
         return new Promise(resolve => St.Clipboard.get_default().get_text(
             St.ClipboardType.CLIPBOARD,
             (clipboard, iconPath) => resolve(
-                IconProvider.instance().getCustomIcon(iconPath) !== null ?
+                this._iconProvider.getCustomIcon(iconPath) !== null ?
                 iconPath : null
             )
         ));

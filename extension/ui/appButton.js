@@ -2,25 +2,26 @@
 
 //#region imports
 
-const { Clutter, GObject, Meta, Shell, St } = imports.gi;
-const Main = imports.ui.main;
-const DND = imports.ui.dnd;
-const IconGrid = imports.ui.iconGrid;
+import Clutter from 'gi://Clutter';
+import GObject from 'gi://GObject';
+import Meta from 'gi://Meta';
+import Shell from 'gi://Shell';
+import St from 'gi://St';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as DND from 'resource:///org/gnome/shell/ui/dnd.js';
+import * as IconGrid from 'resource:///org/gnome/shell/ui/iconGrid.js';
 
 // custom modules import
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { AppButtonIndicator } = Me.imports.ui.appButtonIndicator;
-const { AppButtonNotificationBadge } = Me.imports.ui.appButtonNotificationBadge;
-const { AppButtonMenu } = Me.imports.ui.appButtonMenu;
-const { AppButtonTooltip } = Me.imports.ui.appButtonTooltip;
-const { DominantColorExtractor } = Me.imports.utils.dominantColorExtractor;
-const { NotificationHandler } = Me.imports.services.notificationService;
-const { AppSoundVolumeControl } = Me.imports.services.soundVolumeService;
-const { Connections } = Me.imports.utils.connections;
-const { ScrollHandler } = Me.imports.utils.scrollHandler;
-const { Timeout } = Me.imports.utils.timeout;
-const { IconProvider } = Me.imports.utils.iconProvider;
+import { AppButtonIndicator } from './appButtonIndicator.js';
+import { AppButtonNotificationBadge } from './appButtonNotificationBadge.js';
+import { AppButtonMenu } from './appButtonMenu.js';
+import { AppButtonTooltip } from './appButtonTooltip.js';
+import { DominantColorExtractor } from '../utils/dominantColorExtractor.js';
+import { NotificationHandler } from '../services/notificationService.js';
+import { AppSoundVolumeControl } from '../services/soundVolumeService.js';
+import { Connections } from '../utils/connections.js';
+import { ScrollHandler } from '../utils/scrollHandler.js';
+import { Timeout } from '../utils/timeout.js';
 
 //#endregion imports
 
@@ -162,7 +163,7 @@ class AppButtonConfigOverride {
 
 }
 
-var AppButton = GObject.registerClass(
+export const AppButton = GObject.registerClass(
     class Rocketbar__AppButton extends St.Button {
 
         //#region static
@@ -173,6 +174,52 @@ var AppButton = GObject.registerClass(
         //#endregion static
 
         //#region public methods
+
+        constructor({ app, isFavorite }, settings, iconProvider, stateHandler) {
+
+            // init the button
+            super({
+                name: 'taskbar-appButton',
+                reactive: true,
+                can_focus: true,
+                button_mask: St.ButtonMask.ONE | St.ButtonMask.TWO | St.ButtonMask.THREE,
+                opacity: 0
+            });
+
+            // set public properties
+            this.app = app;
+            this.appId = app?.id;
+            this.isFavorite = isFavorite;
+            this.isActive = false;
+            this.activeWindow = null;
+            this.windows = 0;
+            this.notifications = 0;
+            this.dominantColor = null;
+            this.soundVolumeControl = null;
+            this.configOverride = new AppButtonConfigOverride(this.appId, settings, () => this._handleSettings());
+
+            // set private properties
+            this._settings = settings;
+            this._iconProvider = iconProvider;
+            this._delegate = this;
+            this._firstUpdateIconGeometry = true;
+            this._lastFocusedWindow = null;
+            this._stateHandler = stateHandler;
+
+            this._createLayout();
+
+            this._handleSettings();
+
+            this._createConnections();
+
+            this._createMenu();
+
+            // init notification handler
+            this._notificationHandler = new NotificationHandler(
+                count => this._setNotifications(count),
+                this._settings, this.appId
+            );
+        }
 
         setParent(parent, position, animation) {
 
@@ -233,51 +280,6 @@ var AppButton = GObject.registerClass(
 
         //#region private methods
 
-        _init({ app, isFavorite }, settings, stateHandler) {
-
-            // init the button
-            super._init({
-                name: 'taskbar-appButton',
-                reactive: true,
-                can_focus: true,
-                button_mask: St.ButtonMask.ONE | St.ButtonMask.TWO | St.ButtonMask.THREE,
-                opacity: 0
-            });
-
-            // set public properties
-            this.app = app;
-            this.appId = app?.id;
-            this.isFavorite = isFavorite;
-            this.isActive = false;
-            this.activeWindow = null;
-            this.windows = 0;
-            this.notifications = 0;
-            this.dominantColor = null;
-            this.soundVolumeControl = null;
-            this.configOverride = new AppButtonConfigOverride(this.appId, settings, () => this._handleSettings());
-
-            // set private properties
-            this._settings = settings;
-            this._delegate = this;
-            this._firstUpdateIconGeometry = true;
-            this._lastFocusedWindow = null;
-            this._stateHandler = stateHandler;
-
-            this._createLayout();
-
-            this._handleSettings();
-
-            this._createConnections();
-
-            this._createMenu();
-
-            // init notification handler
-            this._notificationHandler = new NotificationHandler(
-                count => this._setNotifications(count),
-                this._settings, this.appId
-            );
-        }
-
         _createLayout() {
 
             this._appIcon = new St.Bin({
@@ -305,7 +307,7 @@ var AppButton = GObject.registerClass(
         _createMenu() {
             this._createMenuTimeout = Timeout.low(300).run(() => {
 
-                this._menu = new AppButtonMenu(this, this._settings);
+                this._menu = new AppButtonMenu(this, this._settings, this._iconProvider);
 
                 this._connections.add(this._menu, 'open-state-changed', () => this._focus());
             });
@@ -1009,7 +1011,7 @@ var AppButton = GObject.registerClass(
 
             if (!this.dominantColor) {
 
-                this.dominantColor = new DominantColorExtractor(this._appIcon.get_child()).getColor();
+                this.dominantColor = new DominantColorExtractor(this._iconProvider, this._appIcon.get_child()).getColor();
 
                 AppButton._dominantColorCache[this.appId] = this.dominantColor;
             }
@@ -1023,7 +1025,7 @@ var AppButton = GObject.registerClass(
 
             const customIcon = (
                 this._config.customIconPath ?
-                IconProvider.instance().getCustomIcon(this._config.customIconPath) :
+                this._iconProvider.getCustomIcon(this._config.customIconPath) :
                 null
             ); 
 
@@ -1344,7 +1346,7 @@ var AppButton = GObject.registerClass(
                     return;
                 }
 
-                this._tooltip = new AppButtonTooltip(this, this._settings);
+                this._tooltip = new AppButtonTooltip(this, this._settings, this._iconProvider);
                 return;
             }
 

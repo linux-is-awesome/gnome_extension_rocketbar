@@ -1,9 +1,10 @@
 /* exported AppButtonIndicator */
 
-const { Clutter, St } = imports.gi;
-const IconGrid = imports.ui.iconGrid;
+import Clutter from 'gi://Clutter';
+import St from 'gi://St';
+import * as IconGrid from 'resource:///org/gnome/shell/ui/iconGrid.js';
 
-var AppButtonNotificationBadge = class {
+export class AppButtonNotificationBadge {
 
     constructor(appButton, layout, settings) {
 

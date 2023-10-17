@@ -1,8 +1,8 @@
 /* exported ScrollHandler */
 
-const { Clutter } = imports.gi;
+import Clutter from 'gi://Clutter';
 
-var ScrollHandler = class {
+export class ScrollHandler {
 
     constructor(actor, callback) {
 
