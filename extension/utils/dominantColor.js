@@ -22,9 +22,11 @@ const Pixbuf = (icon) => {
     if (typeof icon.get_names !== Type.Function) return null;
     const iconNames = icon.get_names();
     if (!iconNames.length) return null;
+    const iconName = iconNames[0];
     const iconTheme = Context.iconTheme;
-    if (typeof iconTheme.load_icon === Type.Function) return iconTheme.load_icon(iconNames[0], SAMPLE_SIZE, 0);
-    const iconInfo = iconTheme.lookup_icon(iconNames[0], null, SAMPLE_SIZE, 1, 1, 1);
+    if (!iconTheme.has_icon(iconName)) return null;
+    if (typeof iconTheme.load_icon === Type.Function) return iconTheme.load_icon(iconName, SAMPLE_SIZE, 0);
+    const iconInfo = iconTheme.lookup_icon(iconName, null, SAMPLE_SIZE, 1, 1, 1);
     return GdkPixbuf.Pixbuf.new_from_file(iconInfo.get_file().get_path());
 }
 
