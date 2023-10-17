@@ -1,9 +1,9 @@
-import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-import { GeneralPage } from './settings.generalPage.js';
-import { CustomizePage } from './settings.customizePage.js';
-import { BehaviorPage } from './settings.behaviorPage.js';
-import { AboutPage } from './settings.aboutPage.js';
+import { GeneralPage } from './settings/generalPage.js';
+import { CustomizePage } from './settings/customizePage.js';
+import { BehaviorPage } from './settings/behaviorPage.js';
+import { AboutPage } from './settings/aboutPage.js';
 
 export default class RocketBarExtensionPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
@@ -22,6 +22,6 @@ export default class RocketBarExtensionPreferences extends ExtensionPreferences 
         window.add(new GeneralPage(settings));
         window.add(new CustomizePage(settings));
         window.add(new BehaviorPage(settings));
-        window.add(new AboutPage());
+        window.add(new AboutPage(this.metadata));
     }
 }

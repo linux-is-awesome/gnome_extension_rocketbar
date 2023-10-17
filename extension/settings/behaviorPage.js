@@ -1,11 +1,9 @@
-const { GObject } = imports.gi;
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { SettingsPageTemplate } = Me.imports.settings.pageTemplate;
+import GObject from 'gi://GObject';
+import { gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-const _ = imports.misc.extensionUtils.gettext;
+import { SettingsPageTemplate } from './pageTemplate.js';
 
-var BehaviorPage = GObject.registerClass(
+export const BehaviorPage = GObject.registerClass(
     class Rocketbar__BehaviorPage extends SettingsPageTemplate {
 
         _init(settings) {

@@ -1,36 +1,33 @@
 import GObject from 'gi://GObject';
-const { GObject } = imports.gi;
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { SettingsPageTemplate } = Me.imports.settings.pageTemplate;
+import { gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-const _ = imports.misc.extensionUtils.gettext;
+import { SettingsPageTemplate } from './pageTemplate.js';
 
-var AboutPage = GObject.registerClass(
+export const AboutPage = GObject.registerClass(
     class Rocketbar__AboutPage extends SettingsPageTemplate {
 
-        _init() {
+        _init(metadata) {
             super._init({
                 title: _('About'),
                 name: 'AboutPage',
                 icon: 'help-about-symbolic'
             });
 
+            this._metadata = metadata;
+
             this._createLayout();
         }
 
         _createLayout() {
 
-            const metadata = Me.metadata;
-
             this.addGroup(null, [
-                this.createLabel(Me.metadata.name + _(' Version'),  Me.metadata.version + '.0'),
-                this.createLink(_('Release Notes'), metadata.url + '/releases')
+                this.createLabel(this._metadata.name + _(' Version'),  this._metadata.version + '.0'),
+                this.createLink(_('Release Notes'), this._metadata.url + '/releases')
             ]);
 
             this.addGroup(_('Useful Links'), [
-                this.createLink(_('Report an issue'), metadata.url + '/issues'),
-                this.createLink(_('Share your ideas'), metadata.url + '/discussions/categories/ideas')
+                this.createLink(_('Report an issue'), this._metadata.url + '/issues'),
+                this.createLink(_('Share your ideas'), this._metadata.url + '/discussions/categories/ideas')
             ]);
 
             this.addGroup(_('Credits'), [
