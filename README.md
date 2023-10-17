@@ -29,11 +29,6 @@
     
 Note: to get additional customization options for the GNOME Shell I would suggest to use [Just Perfection](https://extensions.gnome.org/extension/3843/just-perfection) extension.
 
-### Compatibility
-
-- Gnome 42+
-- Developed and tested using Manjaro Gnome
-
 -----
 
 ### Demonstration
@@ -81,6 +76,12 @@ OPTIONAL: to get the latest UNSTABLE version type: git checkout develop
 
 - push Alt + F2 and type 'r'
 - go to Extensions and enable Rocketbar there
+
+-----
+
+### Special thanks to
+
+- Gnome 45 support by [@laurentlbm](https://github.com/laurentlbm)
 
 -----
 
