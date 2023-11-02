@@ -197,7 +197,7 @@ export class Component {
     }
 
     /**
-     * @param {St.Widget} parent Component instances are supported as well
+     * @param {Component|St.Widget} parent
      * @param {number} [position] -1..0..999
      * @returns {this}
      */
