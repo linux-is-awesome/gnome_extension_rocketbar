@@ -2,16 +2,14 @@
 
 import Gio from 'gi://Gio';
 import St from 'gi://St';
-import Gtk from 'gi://Gtk';
 
 export class IconProvider {
     constructor(extensionPath) {
-        this._iconTheme = new Gtk.IconTheme();
+        this._iconTheme = new St.IconTheme();
         this._assetsPath = `${extensionPath}/assets/icons/`;
     }
 
     getIcon(iconName, iconSize) {
-
         const iconInfo = this.getIconInfo(iconName, iconSize);
 
         if (iconInfo) {
@@ -31,14 +29,7 @@ export class IconProvider {
     }
 
     getIconInfo(iconName, iconSize) {
-        if (this._iconTheme.set_custom_theme) {
-            this._iconTheme.set_custom_theme(St.Settings.get().gtkIconTheme);
-            return this._iconTheme.lookup_icon(iconName, iconSize, 0);
-        } else if (this._iconTheme.set_theme_name) {
-            this._iconTheme.set_theme_name(St.Settings.get().gtkIconTheme);
-            return this._iconTheme.lookup_icon(iconName, null, iconSize, 1, 1, 1);
-        }
-        return null;
+        return this._iconTheme.lookup_icon(iconName, iconSize, 0);
     }
 
     getCustomIcon(iconPath) {

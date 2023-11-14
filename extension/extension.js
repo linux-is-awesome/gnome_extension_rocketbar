@@ -39,7 +39,6 @@ export default class RocketBarExtension extends Extension {
         this._taskbar?.destroy();
         this._notificationCounter?.destroy();
         this._shellTweaks?.destroy();
-        this._settings?.run_dispose();
         LauncherAPI.destroy();
     
         // and nullify all

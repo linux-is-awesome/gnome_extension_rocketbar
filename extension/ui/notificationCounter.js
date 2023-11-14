@@ -4,7 +4,6 @@
 
 import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
-import Gtk from 'gi://Gtk';
 import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
@@ -185,7 +184,7 @@ export const NotificationCounter = GObject.registerClass(
 
             this._connections = new Connections();
 
-            this._connections.add(Gtk.Settings.get_default(), 'notify::gtk-font-name', () => this._update());
+            this._connections.add(St.Settings.get(), 'notify::font-name', () => this._update());
 
             this._connections.add(this, 'notify::mapped', () => {
 

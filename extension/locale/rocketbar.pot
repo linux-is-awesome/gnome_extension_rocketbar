@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-03-25 23:42+0300\n"
+"POT-Creation-Date: 2023-11-12 22:57+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,552 +17,552 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: settings/aboutPage.js:13
+#: settings/aboutPage.js:11
 msgid "About"
 msgstr ""
 
-#: settings/aboutPage.js:26
+#: settings/aboutPage.js:24
 msgid " Version"
 msgstr ""
 
-#: settings/aboutPage.js:27
+#: settings/aboutPage.js:25
 msgid "Release Notes"
 msgstr ""
 
-#: settings/aboutPage.js:30
+#: settings/aboutPage.js:28
 msgid "Useful Links"
 msgstr ""
 
-#: settings/aboutPage.js:31
+#: settings/aboutPage.js:29
 msgid "Report an issue"
 msgstr ""
 
-#: settings/aboutPage.js:32
+#: settings/aboutPage.js:30
 msgid "Share your ideas"
 msgstr ""
 
-#: settings/aboutPage.js:35
+#: settings/aboutPage.js:33
 msgid "Credits"
 msgstr ""
 
-#: settings/behaviorPage.js:14
+#: settings/behaviorPage.js:12
 msgid "Behavior"
 msgstr ""
 
-#: settings/behaviorPage.js:29
+#: settings/behaviorPage.js:27
 msgid "Notification Service"
 msgstr ""
 
-#: settings/behaviorPage.js:30
+#: settings/behaviorPage.js:28
 msgid "Enable Unity Launcher API support"
 msgstr ""
 
-#: settings/behaviorPage.js:31
+#: settings/behaviorPage.js:29
 msgid "Use Unity Launcher API DBus interface to count notifications for apps"
 msgstr ""
 
-#: settings/behaviorPage.js:32
+#: settings/behaviorPage.js:30
 msgid "Count Window Demands Attention notifications for apps"
 msgstr ""
 
-#: settings/behaviorPage.js:45 settings/generalPage.js:54
+#: settings/behaviorPage.js:43 settings/generalPage.js:52
 msgid "Overview"
 msgstr ""
 
-#: settings/behaviorPage.js:46
+#: settings/behaviorPage.js:44
 msgid "Enable empty space clicks in Overview"
 msgstr ""
 
-#: settings/behaviorPage.js:47
+#: settings/behaviorPage.js:45
 msgid ""
 "Left button click to close the Overview, Right button click to show the App "
 "Grid"
 msgstr ""
 
-#: settings/behaviorPage.js:51
+#: settings/behaviorPage.js:49
 msgid "Hot Corner"
 msgstr ""
 
-#: settings/behaviorPage.js:52
+#: settings/behaviorPage.js:50
 msgid "Enable Fullscreen Hot Corner"
 msgstr ""
 
-#: settings/behaviorPage.js:56
+#: settings/behaviorPage.js:54
 msgid "Lock Screen"
 msgstr ""
 
-#: settings/behaviorPage.js:57
+#: settings/behaviorPage.js:55
 msgid "Force primary input source on Lock Screen"
 msgstr ""
 
-#: settings/behaviorPage.js:58 settings/generalPage.js:48
+#: settings/behaviorPage.js:56 settings/generalPage.js:46
 msgid "Experimental feature"
 msgstr ""
 
-#: settings/behaviorPage.js:68 ui/appButtonMenu.js:418
+#: settings/behaviorPage.js:66 ui/appButtonMenu.js:417
 msgid "New window"
 msgstr ""
 
-#: settings/behaviorPage.js:69 ui/appButtonMenu.js:422
+#: settings/behaviorPage.js:67 ui/appButtonMenu.js:421
 msgid "Move windows"
 msgstr ""
 
-#: settings/behaviorPage.js:72 settings/customizePage.js:93
-#: settings/generalPage.js:39
+#: settings/behaviorPage.js:70 settings/customizePage.js:91
+#: settings/generalPage.js:37
 msgid "Taskbar"
 msgstr ""
 
-#: settings/behaviorPage.js:73
+#: settings/behaviorPage.js:71
 msgid "Enable Drag and Drop"
 msgstr ""
 
-#: settings/behaviorPage.js:74
+#: settings/behaviorPage.js:72
 msgid "Reorder apps in the taskbar using Drag and Drop"
 msgstr ""
 
-#: settings/behaviorPage.js:75
+#: settings/behaviorPage.js:73
 msgid "Enable Minimize action"
 msgstr ""
 
-#: settings/behaviorPage.js:76
+#: settings/behaviorPage.js:74
 msgid "Allow to minimize single app windows by clicking apps in the taskbar"
 msgstr ""
 
-#: settings/behaviorPage.js:77
+#: settings/behaviorPage.js:75
 msgid "Require click to open context menus"
 msgstr ""
 
-#: settings/behaviorPage.js:79
+#: settings/behaviorPage.js:77
 msgid "Middle click to toggle app sound mute"
 msgstr ""
 
-#: settings/behaviorPage.js:80
+#: settings/behaviorPage.js:78
 msgid ""
 "By default Middle click is used to open new app windows and to close the "
 "first app window when Ctrl is pressed"
 msgstr ""
 
-#: settings/behaviorPage.js:81
+#: settings/behaviorPage.js:79
 msgid "Scroll to change app sound volume"
 msgstr ""
 
-#: settings/behaviorPage.js:84
+#: settings/behaviorPage.js:82
 msgid "Scroll to cycle app windows"
 msgstr ""
 
-#: settings/behaviorPage.js:92
+#: settings/behaviorPage.js:90
 msgid "Running apps activation behavior"
 msgstr ""
 
-#: settings/behaviorPage.js:94
+#: settings/behaviorPage.js:92
 msgid ""
 "Controls the behavior when an app is running but has no windows on the "
 "active workspace, supports isolated workspaces only, can be configured "
 "separately for each app via an app menu"
 msgstr ""
 
-#: settings/behaviorPage.js:103 settings/behaviorPage.js:151
+#: settings/behaviorPage.js:101 settings/behaviorPage.js:149
 msgid "None"
 msgstr ""
 
-#: settings/behaviorPage.js:104
+#: settings/behaviorPage.js:102
 msgid "Change Sound Volume"
 msgstr ""
 
-#: settings/behaviorPage.js:105
+#: settings/behaviorPage.js:103
 msgid "Switch Workspace"
 msgstr ""
 
-#: settings/behaviorPage.js:108
+#: settings/behaviorPage.js:106
 msgid "Panel"
 msgstr ""
 
-#: settings/behaviorPage.js:109
+#: settings/behaviorPage.js:107
 msgid "Require click to activate menu buttons"
 msgstr ""
 
-#: settings/behaviorPage.js:110
+#: settings/behaviorPage.js:108
 msgid "Middle click to toggle sound mute"
 msgstr ""
 
-#: settings/behaviorPage.js:111
+#: settings/behaviorPage.js:109
 msgid "Press middle button on an empty space of the panel"
 msgstr ""
 
-#: settings/behaviorPage.js:112
+#: settings/behaviorPage.js:110
 msgid "Scroll action"
 msgstr ""
 
-#: settings/behaviorPage.js:119
+#: settings/behaviorPage.js:117
 msgid "Slowest"
 msgstr ""
 
-#: settings/behaviorPage.js:120
+#: settings/behaviorPage.js:118
 msgid "Slow"
 msgstr ""
 
-#: settings/behaviorPage.js:121
+#: settings/behaviorPage.js:119
 msgid "Normal"
 msgstr ""
 
-#: settings/behaviorPage.js:122
+#: settings/behaviorPage.js:120
 msgid "Fast"
 msgstr ""
 
-#: settings/behaviorPage.js:123
+#: settings/behaviorPage.js:121
 msgid "Faster"
 msgstr ""
 
-#: settings/behaviorPage.js:124
+#: settings/behaviorPage.js:122
 msgid "Turbo"
 msgstr ""
 
-#: settings/behaviorPage.js:127 ui/appButtonMenu.js:299
+#: settings/behaviorPage.js:125 ui/appButtonMenu.js:298
 msgid "Sound Volume Control"
 msgstr ""
 
-#: settings/behaviorPage.js:129
+#: settings/behaviorPage.js:127
 msgid "Volume change speed"
 msgstr ""
 
-#: settings/behaviorPage.js:133
+#: settings/behaviorPage.js:131
 msgid "Volume change speed when Ctrl pressed"
 msgstr ""
 
-#: settings/behaviorPage.js:152
+#: settings/behaviorPage.js:150
 msgid "Left Button"
 msgstr ""
 
-#: settings/behaviorPage.js:153
+#: settings/behaviorPage.js:151
 msgid "Right Button"
 msgstr ""
 
-#: settings/behaviorPage.js:154
+#: settings/behaviorPage.js:152
 msgid "Middle Button"
 msgstr ""
 
-#: settings/behaviorPage.js:157
+#: settings/behaviorPage.js:155
 msgid "Activities"
 msgstr ""
 
-#: settings/behaviorPage.js:159
+#: settings/behaviorPage.js:157
 msgid "Click Activities to show the App Grid"
 msgstr ""
 
-#: settings/behaviorPage.js:166
+#: settings/behaviorPage.js:164
 msgid "Switcher Popups"
 msgstr ""
 
-#: settings/behaviorPage.js:167
+#: settings/behaviorPage.js:165
 msgid "Override show delay"
 msgstr ""
 
-#: settings/behaviorPage.js:170 settings/customizePage.js:238
+#: settings/behaviorPage.js:168 settings/customizePage.js:236
 msgid "Show Delay"
 msgstr ""
 
-#: settings/behaviorPage.js:174
+#: settings/behaviorPage.js:172
 msgid "Do not grab focus"
 msgstr ""
 
-#: settings/customizePage.js:14 ui/appButtonMenu.js:319
+#: settings/customizePage.js:12 ui/appButtonMenu.js:318
 msgid "Customize"
 msgstr ""
 
-#: settings/customizePage.js:23
+#: settings/customizePage.js:21
 msgid "No customizations available"
 msgstr ""
 
-#: settings/customizePage.js:88
+#: settings/customizePage.js:86
 msgid "Left"
 msgstr ""
 
-#: settings/customizePage.js:89
+#: settings/customizePage.js:87
 msgid "Center"
 msgstr ""
 
-#: settings/customizePage.js:90
+#: settings/customizePage.js:88
 msgid "Right"
 msgstr ""
 
-#: settings/customizePage.js:95 settings/customizePage.js:154
-#: settings/customizePage.js:221
+#: settings/customizePage.js:93 settings/customizePage.js:152
+#: settings/customizePage.js:219
 msgid "Position"
 msgstr ""
 
-#: settings/customizePage.js:99
+#: settings/customizePage.js:97
 msgid "Position Offset"
 msgstr ""
 
-#: settings/customizePage.js:102
+#: settings/customizePage.js:100
 msgid "Preserve Position"
 msgstr ""
 
-#: settings/customizePage.js:103
+#: settings/customizePage.js:101
 msgid "Prevent position changes caused by other extensions in the panel"
 msgstr ""
 
-#: settings/customizePage.js:109
+#: settings/customizePage.js:107
 msgid "Backlight Color"
 msgstr ""
 
-#: settings/customizePage.js:112
+#: settings/customizePage.js:110
 msgid "App Buttons"
 msgstr ""
 
-#: settings/customizePage.js:114 ui/appButtonMenu.js:454
+#: settings/customizePage.js:112 ui/appButtonMenu.js:453
 msgid "Icon Size"
 msgstr ""
 
-#: settings/customizePage.js:116
+#: settings/customizePage.js:114
 msgid "Can be configured separately for each app via an app menu"
 msgstr ""
 
-#: settings/customizePage.js:119
+#: settings/customizePage.js:117
 msgid "Icon Horizontal Padding"
 msgstr ""
 
-#: settings/customizePage.js:123
+#: settings/customizePage.js:121
 msgid "Icon Vertical Padding"
 msgstr ""
 
-#: settings/customizePage.js:127 settings/customizePage.js:261
+#: settings/customizePage.js:125 settings/customizePage.js:259
 msgid "Roundness"
 msgstr ""
 
-#: settings/customizePage.js:131
+#: settings/customizePage.js:129
 msgid "Spacing"
 msgstr ""
 
-#: settings/customizePage.js:134
+#: settings/customizePage.js:132
 msgid "Dominant Color Backlight"
 msgstr ""
 
-#: settings/customizePage.js:139
+#: settings/customizePage.js:137
 msgid "Backlight Intensity"
 msgstr ""
 
-#: settings/customizePage.js:148
+#: settings/customizePage.js:146
 msgid "Top"
 msgstr ""
 
-#: settings/customizePage.js:149
+#: settings/customizePage.js:147
 msgid "Bottom"
 msgstr ""
 
-#: settings/customizePage.js:152
+#: settings/customizePage.js:150
 msgid "Indicators"
 msgstr ""
 
-#: settings/customizePage.js:158
+#: settings/customizePage.js:156
 msgid "Limit"
 msgstr ""
 
-#: settings/customizePage.js:160
+#: settings/customizePage.js:158
 msgid "The maximum number of indicators to display on top of app buttons"
 msgstr ""
 
-#: settings/customizePage.js:162
+#: settings/customizePage.js:160
 msgid "Active Dominant Color"
 msgstr ""
 
-#: settings/customizePage.js:164
+#: settings/customizePage.js:162
 msgid "Active Color"
 msgstr ""
 
-#: settings/customizePage.js:166
+#: settings/customizePage.js:164
 msgid "Inactive Dominant Color"
 msgstr ""
 
-#: settings/customizePage.js:168
+#: settings/customizePage.js:166
 msgid "Inactive Color"
 msgstr ""
 
-#: settings/customizePage.js:172
+#: settings/customizePage.js:170
 msgid "Inactive Width"
 msgstr ""
 
-#: settings/customizePage.js:176
+#: settings/customizePage.js:174
 msgid "Active Width"
 msgstr ""
 
-#: settings/customizePage.js:180
+#: settings/customizePage.js:178
 msgid "Inactive Height"
 msgstr ""
 
-#: settings/customizePage.js:184
+#: settings/customizePage.js:182
 msgid "Active Height"
 msgstr ""
 
-#: settings/customizePage.js:188
+#: settings/customizePage.js:186
 msgid "Inactive Roundness"
 msgstr ""
 
-#: settings/customizePage.js:192
+#: settings/customizePage.js:190
 msgid "Active Roundness"
 msgstr ""
 
-#: settings/customizePage.js:197
+#: settings/customizePage.js:195
 msgid "Inactive Spacing"
 msgstr ""
 
-#: settings/customizePage.js:201
+#: settings/customizePage.js:199
 msgid "Active Spacing"
 msgstr ""
 
-#: settings/customizePage.js:211
+#: settings/customizePage.js:209
 msgid "Top Left"
 msgstr ""
 
-#: settings/customizePage.js:212
+#: settings/customizePage.js:210
 msgid "Top Right"
 msgstr ""
 
-#: settings/customizePage.js:213
+#: settings/customizePage.js:211
 msgid "Bottom Left"
 msgstr ""
 
-#: settings/customizePage.js:214
+#: settings/customizePage.js:212
 msgid "Bottom Right"
 msgstr ""
 
-#: settings/customizePage.js:217
+#: settings/customizePage.js:215
 msgid "Notification Badges"
 msgstr ""
 
-#: settings/customizePage.js:218
+#: settings/customizePage.js:216
 msgid "Color"
 msgstr ""
 
-#: settings/customizePage.js:219
+#: settings/customizePage.js:217
 msgid "Border Color"
 msgstr ""
 
-#: settings/customizePage.js:225
+#: settings/customizePage.js:223
 msgid "Size"
 msgstr ""
 
-#: settings/customizePage.js:229
+#: settings/customizePage.js:227
 msgid "Margin"
 msgstr ""
 
-#: settings/customizePage.js:236
+#: settings/customizePage.js:234
 msgid "Tooltips"
 msgstr ""
 
-#: settings/customizePage.js:242
+#: settings/customizePage.js:240
 msgid "Max Width"
 msgstr ""
 
-#: settings/customizePage.js:249 settings/generalPage.js:29
+#: settings/customizePage.js:247 settings/generalPage.js:27
 msgid "Notification Counter"
 msgstr ""
 
-#: settings/customizePage.js:250
+#: settings/customizePage.js:248
 msgid "Hide when empty"
 msgstr ""
 
-#: settings/customizePage.js:251
+#: settings/customizePage.js:249
 msgid "Center clock"
 msgstr ""
 
-#: settings/customizePage.js:253
+#: settings/customizePage.js:251
 msgid "Max Count"
 msgstr ""
 
-#: settings/customizePage.js:257
+#: settings/customizePage.js:255
 msgid "Font Size"
 msgstr ""
 
-#: settings/customizePage.js:265
+#: settings/customizePage.js:263
 msgid "Top Margin"
 msgstr ""
 
-#: settings/customizePage.js:269
+#: settings/customizePage.js:267
 msgid "Empty Color"
 msgstr ""
 
-#: settings/customizePage.js:271
+#: settings/customizePage.js:269
 msgid "Not Empty Color"
 msgstr ""
 
-#: settings/customizePage.js:272
+#: settings/customizePage.js:270
 msgid "Text Color"
 msgstr ""
 
-#: settings/customizePage.js:274
+#: settings/customizePage.js:272
 msgid "Do Not Disturb - Empty Color"
 msgstr ""
 
-#: settings/customizePage.js:276
+#: settings/customizePage.js:274
 msgid "Do Not Disturb - Not Empty Color"
 msgstr ""
 
-#: settings/customizePage.js:277
+#: settings/customizePage.js:275
 msgid "Do Not Disturb - Text Color"
 msgstr ""
 
-#: settings/generalPage.js:14
+#: settings/generalPage.js:12
 msgid "General"
 msgstr ""
 
-#: settings/generalPage.js:30 settings/generalPage.js:40
+#: settings/generalPage.js:28 settings/generalPage.js:38
 msgid "Enabled"
 msgstr ""
 
-#: settings/generalPage.js:42
+#: settings/generalPage.js:40
 msgid "Show Favorites"
 msgstr ""
 
-#: settings/generalPage.js:43
+#: settings/generalPage.js:41
 msgid "Isolate Workspaces"
 msgstr ""
 
-#: settings/generalPage.js:44
+#: settings/generalPage.js:42
 msgid "Enable Indicators"
 msgstr ""
 
-#: settings/generalPage.js:45
+#: settings/generalPage.js:43
 msgid "Enable Notification Badges"
 msgstr ""
 
-#: settings/generalPage.js:46
+#: settings/generalPage.js:44
 msgid "Enable Tooltips"
 msgstr ""
 
-#: settings/generalPage.js:47
+#: settings/generalPage.js:45
 msgid "Enable Sound Volume Control"
 msgstr ""
 
-#: settings/generalPage.js:55
+#: settings/generalPage.js:53
 msgid "Kill the Dash"
 msgstr ""
 
-#: settings/generalPage.js:56
+#: settings/generalPage.js:54
 msgid ""
 "Hide the Dash from Overview and prevent it from rerendering behind the scene"
 msgstr ""
 
-#: ui/appButtonMenu.js:190
+#: ui/appButtonMenu.js:187
 msgid "Pin"
 msgstr ""
 
-#: ui/appButtonMenu.js:415
+#: ui/appButtonMenu.js:414
 msgid "Activation Behavior"
 msgstr ""
 
-#: ui/appButtonMenu.js:432
+#: ui/appButtonMenu.js:431
 msgid "Icon"
 msgstr ""
 
-#: ui/appButtonMenu.js:435
+#: ui/appButtonMenu.js:434
 msgid "Import"
 msgstr ""
 
-#: ui/appButtonMenu.js:446
+#: ui/appButtonMenu.js:445
 msgid "Reset to default"
 msgstr ""
 
-#: ui/appButtonMenu.js:460
+#: ui/appButtonMenu.js:459
 msgid "Reset all to default"
 msgstr ""
