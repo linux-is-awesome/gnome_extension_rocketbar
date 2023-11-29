@@ -14,6 +14,7 @@ export const ConfigFields = {
     isolateWorkspaces: 'taskbar-isolate-workspaces',
     showAllWindows: 'taskbar-show-all-windows',
     enableIndicators: 'appbutton-enable-indicators',
+    enableTooltips: 'appbutton-enable-tooltips',
     enableMinimizeAction: 'appbutton-enable-minimize-action',
     activateBehavior: 'appbutton-running-app-activate-behavior',
     demandsAttentionBehavior: 'appbutton-demands-attention-behavior',

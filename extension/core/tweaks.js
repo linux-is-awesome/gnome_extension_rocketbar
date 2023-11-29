@@ -573,6 +573,91 @@ class WindowSwitchScrollFixTweak extends Tweak {
 
 }
 
+class AppMenuTweak extends Tweak {
+
+    toggle() {
+        if (Context.signals.hasClient(this)) return;
+        Main.panel.statusArea.appMenu.container.hide();
+        Context.signals.add(this, [Main.panel.statusArea.appMenu.container, 'notify::visible', appMenu => appMenu.hide()]);
+    }
+
+    destroy() {
+        Context.signals.removeAll(this);
+        if (!Main.overview.visible && !Context.isSessionLocked) {
+            Main.panel.statusArea.appMenu.container.show();
+        }
+    }
+
+}
+
+class FullscreenPanelTweak extends Tweak {
+
+    toggle() {
+        if (Context.signals.hasClient(this)) return;
+        for (const actorData of Main.layoutManager._trackedActors) {
+            if (actorData.actor === Main.layoutManager.panelBox) {
+                actorData.trackFullscreen = false;
+                break;
+            }
+        }
+        Main.panel.reactive = true;
+        Main.panel.track_hover = true;
+
+        const handleHover = () => {
+            console.log('Panel hover', Main.panel.hover);
+            Main.layoutManager.panelBox.remove_all_transitions();
+            if (Main.panel.hover) {
+                Main.layoutManager.panelBox.ease({
+                    translation_y: 0,
+                    duration: 250,
+                    onComplete: () => Main.layoutManager._queueUpdateRegions()
+                });
+            } else {
+                Main.layoutManager.panelBox.ease({
+                    translation_y: -(Main.layoutManager.panelBox.height - 1),
+                    duration: 250,
+                    onComplete: () => Main.layoutManager._queueUpdateRegions()
+                });
+            }
+        };
+
+        const handleWindow = () => {
+            const currentWindow = global.display.focus_window;
+            const isFullscreen = currentWindow && currentWindow.is_fullscreen() && currentWindow.get_monitor() === 0;
+            //console.log('!We have a fullscreen window', isFullscreen);
+            Main.layoutManager.panelBox.remove_all_transitions();
+            if (isFullscreen) {
+                Main.layoutManager.panelBox.ease({
+                    translation_y: -(Main.layoutManager.panelBox.height - 1),
+                    duration: 250,
+                    onComplete: () => Main.layoutManager._queueUpdateRegions()
+                });
+                Context.signals.add(this, [Main.panel, 'notify::hover', handleHover]);
+                return;
+            }
+            Context.signals.remove(this, Main.panel);
+            Main.layoutManager.panelBox.translation_y = 0;
+            Main.layoutManager._queueUpdateRegions();
+        };
+
+        Context.signals.add(this, [
+            global.display,
+            'notify::focus-window', handleWindow,
+            'in-fullscreen-changed', handleWindow
+        ]);
+    }
+
+    destroy() {
+        Context.signals.removeAll(this);
+        for (const actorData of Main.layoutManager._trackedActors) {
+            if (actorData.actor === Main.layoutManager.panelBox) {
+                actorData.trackFullscreen = true;
+                break;
+            }
+        }
+    }
+}
+
 export class Tweaks {
 
     /** @type {Object.<string, string|number|boolean>} */
@@ -590,7 +675,9 @@ export class Tweaks {
         [PanelScrollTweak.name]: new PanelScrollTweak(),
         [PanelMiddleClickTweak.name]: new PanelMiddleClickTweak(),
         [LockscreenTweak.name]: new LockscreenTweak(),
-        [WindowSwitchScrollFixTweak.name]: new WindowSwitchScrollFixTweak()
+        [WindowSwitchScrollFixTweak.name]: new WindowSwitchScrollFixTweak(),
+        [AppMenuTweak.name]: new AppMenuTweak(),
+        [FullscreenPanelTweak.name]: new FullscreenPanelTweak()
     };
 
     /** @type {Object.<string, string>} */

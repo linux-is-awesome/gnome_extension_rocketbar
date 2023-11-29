@@ -17,6 +17,7 @@ import { AppSoundVolumeControl } from '../../services/soundVolumeService.js';
 import { NotificationHandler } from '../../services/notificationService.js';
 import { NotificationBadge } from './notificationBadge.js';
 import { ProgressBar } from './progressBar.js';
+import { TooltipTrigger } from './tooltip.js';
 import { AnimationType } from '../base/animation.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
@@ -151,6 +152,9 @@ export class AppButton extends RuntimeButton {
 
     /** @type {AppSoundVolumeControl} */
     #soundVolumeControl = null;
+
+    /** @type {TooltipTrigger} */
+    #tooltip = null;
 
     /** @type {number} */
     get #isAppRunning() {
@@ -311,6 +315,8 @@ export class AppButton extends RuntimeButton {
         this.#soundVolumeControl = null;
         this.#notificationHandler?.destroy();
         this.#notificationHandler = null;
+        this.#tooltip?.destroy();
+        this.#tooltip = null;
         this.#layout = null;
         this.#appIcon = null;
         this.#indicators = null;
@@ -380,7 +386,11 @@ export class AppButton extends RuntimeButton {
     }
 
     #toggleFeatures() {
-        const { enableIndicators, enableSoundControl, enableNotificationBadges, enableProgressBars } = this.#config;
+        const { enableIndicators,
+                enableSoundControl,
+                enableNotificationBadges,
+                enableProgressBars,
+                enableTooltips } = this.#config;
         const isStartupRequired = this.#isStartupRequired;
         if (enableSoundControl && !this.#soundVolumeControl) {
             this.#soundVolumeControl = new AppSoundVolumeControl(this.#app);
@@ -412,6 +422,12 @@ export class AppButton extends RuntimeButton {
         } else if (!enableProgressBars && this.#progressBar) {
             this.#progressBar.destroy();
             this.#progressBar = null;
+        }
+        if (enableTooltips && !this.#tooltip) {
+            this.#tooltip = new TooltipTrigger(this);
+        } else if (!enableTooltips && this.#tooltip) {
+            this.#tooltip.destroy();
+            this.#tooltip = null;
         }
     }
 
