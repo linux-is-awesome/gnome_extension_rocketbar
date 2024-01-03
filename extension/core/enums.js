@@ -1,5 +1,3 @@
-/* exported Event, Type, Property, Delay */
-
 /**
  * @enum {string} Standard GObject and Shell events to handle
  */
@@ -75,4 +73,12 @@ export const Delay = {
     Sleep: 300,
     Background: 500,
     Scheduled: 1000
+};
+
+/**
+ * @enum {string}
+ */
+export const SessionMode = {
+    Desktop: 'user',
+    Locksreen: 'unlock-dialog'
 };
