@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ "$1" = "new-window" ]; then
+    x-terminal-emulator -c "bash -c 'journalctl -f -o cat /usr/bin/gnome-shell'"
+    exit 0
+fi
+
+journalctl -f -o cat /usr/bin/gnome-shell

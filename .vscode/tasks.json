@@ -4,7 +4,18 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "./build",
+            "command": "cd scripts && ./build",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "build-dev",
+            "type": "shell",
+            "command": "cd scripts && ./build dev",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -15,7 +26,18 @@
         {
             "label": "install",
             "type": "shell",
-            "command": "./install",
+            "command": "cd scripts && ./install",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "install-dev",
+            "type": "shell",
+            "command": "cd scripts && ./install dev",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -35,9 +57,31 @@
             "problemMatcher": []
         },
         {
+            "label": "uninstall-dev",
+            "type": "shell",
+            "command": "cd scripts && ./uninstall dev",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "debug",
             "type": "shell",
-            "command": "journalctl -f -o cat /usr/bin/gnome-shell",
+            "command": "./scripts/debug",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "debug-terminal",
+            "type": "shell",
+            "command": "./scripts/debug new-window",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -48,7 +92,18 @@
         {
             "label": "update-pot",
             "type": "shell",
-            "command": "./update-pot",
+            "command": "cd scripts && ./update-pot",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "nested-shell",
+            "type": "shell",
+            "command": "env MUTTER_DEBUG_DUMMY_MODE_SPECS='1600x900@60.0' dbus-run-session -- gnome-shell --nested --wayland",
             "group": "build",
             "presentation": {
                 "reveal": "always",

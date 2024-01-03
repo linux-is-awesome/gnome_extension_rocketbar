@@ -1,0 +1,12 @@
+#!/bin/sh
+
+UUID=`cat ../extension/metadata.json | grep -oP '(?<="uuid": ")[^"]*'`
+
+if [ "$1" = "dev" ]; then
+    UUID=`cat ../extension-dev/metadata.json | grep -oP '(?<="uuid": ")[^"]*'`
+fi
+
+gnome-extensions uninstall $UUID
+
+# remove folder as a backup option
+rm -rf ~/.local/share/gnome-shell/extensions/$UUID

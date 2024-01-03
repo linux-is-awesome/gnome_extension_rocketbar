@@ -1,7 +1,0 @@
-#!/bin/bash
-
-./build
-
-gnome-extensions install --force *.shell-extension.zip
-
-rm *.shell-extension.zip

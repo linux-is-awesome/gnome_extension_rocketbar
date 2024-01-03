@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cd ../extension/locale
+
+msginit --locale $1
