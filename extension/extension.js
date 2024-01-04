@@ -1,21 +1,21 @@
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const INIT_MODULE_PATH = '/core/init.js';
+const DEFAULT_RUNTIME_PATH = '/core/context.js';
 
 export default class extends Extension {
 
     /**
-     * @typedef {import('./core/unit.js').default} Unit
-     * @type {Unit}
+     * @typedef {import('./core/context.js').default} Context
+     * @type {Context}
      */
     #runtime = null;
 
     /** @type {boolean} */
     #isEnabled = false;
 
-    /** @type {string} allows to override the path for development needs */
+    /** @type {string} Allows to override the path for development needs */
     get runtimePath() {
-        return INIT_MODULE_PATH;
+        return DEFAULT_RUNTIME_PATH;
     }
 
     enable() {
@@ -25,19 +25,9 @@ export default class extends Extension {
     }
 
     /**
-     * Note: `unlock-dialog` session mode is explicitly defined in the metadata.json file,
-     *       because the following modules of this extension have to be running on the lock screen (unless disabled via settings):
-     *       - Launcher API Service
-     *       - Notification Counter
-     *       - ...
-     *       The extension will not be running on the locksreen if none of these are enabled.
-     * 
-     *       Also, this method performs a check to prevent the extension from being disabled, and there is a reason for this check.
-     *       After starting user session and locking screen for the first time,
-     *       Gnome Shell turns the extension off and on for no reason 5-6 times.
-     *       This ONLY happens the first time the screen gets locked.
-     *       This behavior leads to performance issues and I want to avoid them as much as possible.
-     *       So, I let the `runtime` decide if it can be destroyed. The behavior is explained in code of the `runtime` itself.
+     * Note: Let the `runtime` decide if it can be destroyed or not.
+     *       Please note that by default destroy() function will return True.
+     *       But the user can change this behavior via the extension settings.
      */
     disable() {
         this.#isEnabled = false;
