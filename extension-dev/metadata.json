@@ -2,7 +2,7 @@
     "name": "Rocketbar Dev",
     "description": "Taskbar and misc additions for the GNOME Shell.",
     "uuid": "rocketbar.dev@chepkun.github.com",
-    "settings-schema": "org.gnome.shell.extensions.rocketbar-dev",
+    "settings-schema": "org.gnome.shell.extensions.rocketbar",
     "gettext-domain": "rocketbar",
     "url": "https://github.com/linux-is-awesome/gnome_extension_rocketbar",
     "version": 1,

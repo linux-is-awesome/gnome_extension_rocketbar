@@ -1,8 +1,8 @@
-import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import { Extension as ShellExtension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 const DEFAULT_RUNTIME_PATH = '/core/context.js';
 
-export default class extends Extension {
+export default class Extension extends ShellExtension {
 
     /**
      * @typedef {import('./core/context.js').default} Context
@@ -13,7 +13,7 @@ export default class extends Extension {
     /** @type {boolean} */
     #isEnabled = false;
 
-    /** @type {string} Allows to override the path for development needs */
+    /** @type {string} allows to override the path for development needs */
     get runtimePath() {
         return DEFAULT_RUNTIME_PATH;
     }
@@ -24,20 +24,19 @@ export default class extends Extension {
         this.#initialize();
     }
 
-    /**
-     * Note: Let the `runtime` decide if it can be destroyed or not.
-     *       Please note that by default destroy() function will return True.
-     *       But the user can change this behavior via the extension settings.
-     */
     disable() {
         this.#isEnabled = false;
-        if (!this.#runtime?.destroy()) return;
-        this.#runtime = null;
+        try {
+            this.#runtime?.destroy();
+            this.#runtime = null;
+        } catch (e) {
+            console.error(`${this.metadata.name} runtime destroy call failed.`, e);
+        }
     }
 
     /**
-     * Note: Using dynamic loading of the `runtime` module to reduce RAM/CPU consumption when the extension is not enabled.
-     *       This also allows to handle many unexpected behaviors and log error messages for troubleshooting.
+     * Note: Lazy loading of the `runtime` module to reduce resource consumption while the extension is not enabled.
+     *       Also allows to handle unexpected behaviors and log error messages for troubleshooting.
      */
     async #initialize() {
         try {
