@@ -46,6 +46,28 @@
             "problemMatcher": []
         },
         {
+            "label": "restart",
+            "type": "shell",
+            "command": "cd scripts && ./restart",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "restart-dev",
+            "type": "shell",
+            "command": "cd scripts && ./restart dev",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "uninstall",
             "type": "shell",
             "command": "./uninstall",
