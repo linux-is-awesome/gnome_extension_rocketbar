@@ -18,13 +18,3 @@ if [ "$1" = "dev" ]; then
 fi
 
 rm -rf *.shell-extension.zip
-
-if [ "$1" = "dev" ]; then
-    read -p "Press ENTER if you want to restart the extension now or type anything to skip: " V
-
-    if [ -z $V ]; then
-        gnome-extensions disable $UUID
-        sleep 1
-        gnome-extensions enable $UUID
-    fi
-fi
