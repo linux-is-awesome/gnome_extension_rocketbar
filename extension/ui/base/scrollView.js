@@ -1,10 +1,8 @@
-/* exported ScrollView */
-
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
-import { Context } from '../../core/context.js';
-import { Type, Event, Delay } from '../../core/enums.js';
+import Context from '../../core/context.js';
 import { Component } from './component.js';
+import { Type, Event, Delay } from '../../core/enums.js';
 import { Animation, AnimationDuration } from './animation.js';
 
 const FADE_EFFECT_NAME = 'fade';

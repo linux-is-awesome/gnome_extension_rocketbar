@@ -1,15 +1,12 @@
-/* exported ButtonEvent, Button, RuntimeButton */
-
 import GObject from 'gi://GObject';
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
-import { Context } from '../../core/context.js';
-import { Type, Event } from '../../core/enums.js';
+import Context from '../../core/context.js';
 import { Component, ComponentLocation } from './component.js';
-import { Property } from '../../core/enums.js';
-import { LongPressAction } from './longPressAction.js'; 
-import { Gradient } from '../../utils/gradient.js';
+import { LongPressAction } from './longPressAction.js';
+import { Type, Event, Property } from '../../core/enums.js';
 import { Animation, AnimationType, AnimationDuration } from './animation.js';
+import { Gradient } from '../../utils/gradient.js';
 
 const DEFAULT_STYLE_CLASS = 'panel-button rocketbar__button';
 

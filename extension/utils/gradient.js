@@ -1,5 +1,3 @@
-/* exported GradientDirection, Gradient */
-
 import { Type } from '../core/enums.js';
 
 const INTENSITY_MIN = 0;

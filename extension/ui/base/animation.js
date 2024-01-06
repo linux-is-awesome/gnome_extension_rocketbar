@@ -1,5 +1,3 @@
-/* exported AnimationDuration, AnimationType, Animation */
-
 import St from 'gi://St';
 import { Component } from './component.js';
 

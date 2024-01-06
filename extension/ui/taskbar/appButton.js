@@ -1,23 +1,22 @@
-/* exported AppButtonEvent, AppButton */
-
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Shell from 'gi://Shell';
-import { Main } from '../../core/legacy.js';
-import { Context } from '../../core/context.js';
-import { Event, Delay } from '../../core/enums.js';
+import { overview as Overview,
+         activateWindow as ActiveWindow } from 'resource:///org/gnome/shell/ui/main.js';
+import Context from '../../core/context.js';
 import { RuntimeButton, ButtonEvent } from '../base/button.js';
-import { ComponentEvent } from '../base/component.js';
 import { TaskbarClient } from '../../services/taskbarService.js';
-import { AppConfig, ConfigFields, ActivateBehavior, DemandsAttentionBehavior } from '../../utils/taskbar/appConfig.js';
 import { AppIcon, AppIconAnimation, AppIconEvent } from './appIcon.js';
-import { Indicators } from './indicators.js';
+import { AppConfig, ConfigFields, ActivateBehavior, DemandsAttentionBehavior } from '../../utils/taskbar/appConfig.js';
 import { Menu } from './menu.js';
-import { AppSoundVolumeControl } from '../../services/soundVolumeService.js';
-import { NotificationHandler } from '../../services/notificationService.js';
 import { NotificationBadge } from './notificationBadge.js';
 import { ProgressBar } from './progressBar.js';
 import { TooltipTrigger } from './tooltip.js';
+import { Indicators } from './indicators.js';
+import { NotificationHandler } from '../../services/notificationService.js';
+import { AppSoundVolumeControl } from '../../services/soundVolumeService.js';
+import { Event, Delay } from '../../core/enums.js';
+import { ComponentEvent } from '../base/component.js';
 import { AnimationType } from '../base/animation.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
@@ -66,7 +65,7 @@ class CycleWindowsQueue {
             if (!nextWindow) return;
         }
         if (!minimize || nextWindow.minimized ||
-            nextWindow !== this.#windows[0]) return Main.activateWindow(nextWindow);
+            nextWindow !== this.#windows[0]) return ActiveWindow(nextWindow);
         for (let i = 0, l = windows.length; i < l; ++i) windows[i].minimize();
         this.#windows = null;  
     }
@@ -173,8 +172,9 @@ export class AppButton extends RuntimeButton {
         const windows = this.#app.get_windows();
         if (windows.length === this.#windowsCount) return windows;
         const result = [];
-        for (let i = 0, l = windows.length; i < l; ++i)
+        for (let i = 0, l = windows.length; i < l; ++i) {
             if (this.#windows.has(windows[i])) result.push(windows[i]);
+        }
         return result;
     }
 
@@ -186,7 +186,7 @@ export class AppButton extends RuntimeButton {
     /**
      * Note: Using Math.round to match css width.
      * 
-     * @type {Meta.Rectangle}
+     * @type {Mtk.Rectangle}
      */
     get rect() {
         if (!this.isValid) return null;
@@ -208,9 +208,7 @@ export class AppButton extends RuntimeButton {
 
     /** @type {AppConfig} */
     get configProvider() {
-        if (!AppButton.#configProvider) {
-            AppButton.#configProvider = new AppConfig();
-        }
+        AppButton.#configProvider ??= new AppConfig();
         return AppButton.#configProvider;
     }
 
@@ -250,16 +248,16 @@ export class AppButton extends RuntimeButton {
         const oldValue = this.#isActive;
         const oldSuperValue = super.isActive;
         this.#isActive = value;
-        super.isActive = !Main.overview?._shown && value;
+        super.isActive = !Overview._shown && value;
         if (super.isActive !== oldSuperValue) {
             this.#updateBacklight();
             if (!this.#isStartupRequired) this.#indicators?.rerender();
         }
         if (this.#isActive === oldValue) return;
-        if (!this.#isActive) return Context.signals.remove(this, Main.overview);
+        if (!this.#isActive) return Context.signals.remove(this, Overview);
         if (!this.#isStartupRequired) this.notifyParents(AppButtonEvent.Reaction);
         Context.signals.add(this, [
-            Main.overview,
+            Overview,
             Event.OverviewShowing, () => { this.isActive = this.#isActive; },
             Event.OverviewHiding, () => { this.isActive = this.#isActive; }
         ]);
@@ -523,7 +521,7 @@ export class AppButton extends RuntimeButton {
     async #handleUrgentWindow(window) {
         if (!window || !this.#windows?.has(window) || window.has_focus()) return;
         if (this.#config.demandsAttentionBehavior === DemandsAttentionBehavior.FocusActive && !this.#isActive) return;
-        Main.activateWindow(window);
+        ActiveWindow(window);
     }
 
     /**
@@ -579,7 +577,7 @@ export class AppButton extends RuntimeButton {
         if (scrollDirection !== Clutter.ScrollDirection.UP &&
             scrollDirection !== Clutter.ScrollDirection.DOWN) return Clutter.EVENT_PROPAGATE;
         if (!this.#windowsCount || Context.jobs.hasClient(this)) return Clutter.EVENT_STOP;
-        if (Main.overview?.visible) Main.overview.hide();
+        if (Overview.visible) Overview.hide();
         Context.jobs.new(this, Delay.Sleep).destroy(() => null);
         this.#cycleWindows(false, scrollDirection === Clutter.ScrollDirection.UP);
         return Clutter.EVENT_STOP;
@@ -604,16 +602,16 @@ export class AppButton extends RuntimeButton {
                 case ActivateBehavior.MoveWindows: return this.#moveWindows();
                 case ActivateBehavior.FindWindow:
                     const sortedWindows = this.#app.get_windows();
-                    if (sortedWindows.length) return Main.activateWindow(sortedWindows[0]);
+                    if (sortedWindows.length) return ActiveWindow(sortedWindows[0]);
                 case ActivateBehavior.NewWindow:
                 default: return this.#openNewWindow(isOverview);
             }
         }
-        if (isOverview) return Main.activateWindow(this.#getPrimaryWindow(this.#sortedWindows));
+        if (isOverview) return ActiveWindow(this.#getPrimaryWindow(this.#sortedWindows));
         if (this.#windowsCount === 1) {
             const window = this.#sortedWindows[0];
             if (window.minimized || !window.has_focus() ||
-                isCtrlPressed || isMiddleButton) Main.activateWindow(window);
+                isCtrlPressed || isMiddleButton) ActiveWindow(window);
             else if (enableMinimizeAction) window.minimize();
             return;
         }
@@ -626,7 +624,7 @@ export class AppButton extends RuntimeButton {
      */
     #getClickDetails(params) {
         const { event, button } = params;
-        const isOverview = Main.overview?.visible;
+        const isOverview = Overview.visible;
         const isSecondaryButton = button === Clutter.BUTTON_SECONDARY;
         const isMiddleButton = button === Clutter.BUTTON_MIDDLE;
         const isCtrlPressed = (event?.get_state() & Clutter.ModifierType.CONTROL_MASK) !== 0;
@@ -638,7 +636,7 @@ export class AppButton extends RuntimeButton {
      */
     #openNewWindow(hideOverview = false) {
         this.#resetCycleWindowsQueue();
-        if (hideOverview) Main.overview?.hide();
+        if (hideOverview) Overview.hide();
         this.actor.animateLaunch();
         if (!this.#canOpenNewWindow) return this.#app.activate();
         this.#app.open_new_window(-1);
@@ -662,22 +660,21 @@ export class AppButton extends RuntimeButton {
         const sortedWindows = this.#app.get_windows();
         const workspace = this.#service.workspace
         for (const window of windows) window.change_workspace(workspace);
-        if (Main.overview?.visible || !sortedWindows.length) return;
-        Main.activateWindow(sortedWindows[0]);
+        if (Overview.visible || !sortedWindows.length) return;
+        ActiveWindow(sortedWindows[0]);
     }
 
     /**
      * @param {boolean} [minimize]
      * @param {boolean} [reverse]
+     * @returns {void}
      */
     #cycleWindows(minimize = true, reverse = false) {
         if (!this.#windowsCount) return;
         const sortedWindows = this.#sortedWindows;
-        if (!this.#isActive) return Main.activateWindow(this.#getPrimaryWindow(sortedWindows));
-        if (sortedWindows.length === 1) return Main.activateWindow(sortedWindows[0]);
-        if (!this.#cycleWindowsQueue) {
-            this.#cycleWindowsQueue = new CycleWindowsQueue();
-        }
+        if (!this.#isActive) return ActiveWindow(this.#getPrimaryWindow(sortedWindows));
+        if (sortedWindows.length === 1) return ActiveWindow(sortedWindows[0]);
+        this.#cycleWindowsQueue ??= new CycleWindowsQueue();
         this.#cycleWindowsQueue.next(sortedWindows, minimize, reverse);   
     }
 
@@ -701,7 +698,7 @@ export class AppButton extends RuntimeButton {
 
     /**
      * @param {Meta.Window} window
-     * @returns {[success: boolean, geometry: Meta.Rectangle]}
+     * @returns {[success: boolean, geometry: Mtk.Rectangle]}
      */
     #getWindowIconGeometry(window) {
         if (!window) return [false];

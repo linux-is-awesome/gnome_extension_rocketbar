@@ -1,10 +1,9 @@
-/* exported DefaultSoundVolumeControlClient, AppSoundVolumeControl */
-
 import Gio from 'gi://Gio';
 import Gvc from 'gi://Gvc';
 import Shell from 'gi://Shell';
-import { Main, Volume } from '../core/legacy.js';
-import { Context } from '../core/context.js';
+import { osdWindowManager as OsdWindowManager } from 'resource:///org/gnome/shell/ui/main.js';
+import { getMixerControl as MixerControl } from 'resource:///org/gnome/shell/ui/status/volume.js';
+import Context from '../core/context.js';
 import { Type, Delay } from '../core/enums.js';
 
 const SOUND_STREAM_MIN_VOLUME = 0;
@@ -94,7 +93,7 @@ class SoundStream {
         this.#stream = stream;
         this.#volumeMax = this.#stream.get_base_volume();
         if (this.#volumeMax) return;
-        this.#volumeMax = Volume.getMixerControl().get_vol_max_norm();
+        this.#volumeMax = MixerControl().get_vol_max_norm();
     }
 
     destroy() {
@@ -131,7 +130,7 @@ class SoundVolumeControl {
         const volumeLevel = isMuted ? SOUND_STREAM_MIN_VOLUME : stream.volume;
         const volumeIcon = this.#getVolumeIcon(volumeLevel);
         const monitorIndex = global.display.get_current_monitor();
-        Main.osdWindowManager.show(monitorIndex, volumeIcon, name ?? stream.name, volumeLevel);
+        OsdWindowManager.show(monitorIndex, volumeIcon, name ?? stream.name, volumeLevel);
     }
 
     /**
@@ -167,7 +166,7 @@ class DefaultSoundVolumeControl extends SoundVolumeControl {
 
     constructor() {
         super();
-        const mixer = Volume.getMixerControl();
+        const mixer = MixerControl();
         Context.signals.add(this, [mixer, MixerControlEvent.DefaultSinkChanged, (...args) => this.#setStream(...args)]);
         this.#setStream(mixer);
     }
@@ -218,19 +217,14 @@ export class DefaultSoundVolumeControlClient {
     static #control = null;
 
     constructor() {
-        if (!DefaultSoundVolumeControlClient.#clients) {
-            DefaultSoundVolumeControlClient.#clients = new Set();
-        }
-        if (!DefaultSoundVolumeControlClient.#control) {
-            DefaultSoundVolumeControlClient.#control = new DefaultSoundVolumeControl();
-        }
+        DefaultSoundVolumeControlClient.#clients ??= new Set();
+        DefaultSoundVolumeControlClient.#control ??= new DefaultSoundVolumeControl();
         DefaultSoundVolumeControlClient.#clients.add(this);
     }
 
     destroy() {
-        if (!DefaultSoundVolumeControlClient.#clients) return;
-        DefaultSoundVolumeControlClient.#clients.delete(this);
-        if (DefaultSoundVolumeControlClient.#clients.size) return;
+        DefaultSoundVolumeControlClient.#clients?.delete(this);
+        if (DefaultSoundVolumeControlClient.#clients?.size) return;
         DefaultSoundVolumeControlClient.#control?.destroy();
         DefaultSoundVolumeControlClient.#control = null;
         DefaultSoundVolumeControlClient.#clients = null;
@@ -244,7 +238,7 @@ export class DefaultSoundVolumeControlClient {
     }
 
     toggleMute() {
-        DefaultSoundVolumeControlClient.#control.toggleMute();
+        DefaultSoundVolumeControlClient.#control?.toggleMute();
     }
 
 }
@@ -281,7 +275,7 @@ class AppSoundVolumeService {
     #updateJob = Context.jobs.new(this, Delay.Background);
 
     constructor() {
-        const mixer = Volume.getMixerControl();
+        const mixer = MixerControl();
         Context.signals.add(this, [
             mixer,
             MixerControlEvent.StreamAdded, (...args) => this.#addStream(...args),
@@ -441,9 +435,7 @@ export class AppSoundVolumeControl extends SoundVolumeControl {
         if (app instanceof Shell.App === false) return;
         this.#app = app;
         this.#appName = app.get_name();
-        if (!AppSoundVolumeControl.#service) {
-            AppSoundVolumeControl.#service = new AppSoundVolumeService();
-        }
+        AppSoundVolumeControl.#service ??= new AppSoundVolumeService();
         AppSoundVolumeControl.#service.addControl(this);
     }
 

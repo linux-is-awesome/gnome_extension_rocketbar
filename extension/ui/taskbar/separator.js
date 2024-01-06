@@ -1,10 +1,8 @@
-/* exported Separator */
-
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
-import { Context } from '../../core/context.js';
-import { Type } from '../../core/enums.js';
+import Context from '../../core/context.js';
 import { Component, ComponentEvent } from '../base/component.js';
+import { Type } from '../../core/enums.js';
 import { Animation, AnimationDuration, AnimationType } from '../base/animation.js';
 import { Config } from '../../utils/config.js';
 
@@ -68,7 +66,7 @@ export class Separator extends Component {
     /**
      * Note: Using Math.round to match css width.
      * 
-     * @type {Meta.Rectangle}
+     * @type {Mtk.Rectangle}
      */
     get rect() {
         if (!this.isValid) return null;

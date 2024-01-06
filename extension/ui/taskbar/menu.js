@@ -1,12 +1,16 @@
-/* exported Menu */
-
 /** @typedef {import('./appButton.js').AppButton} AppButton */
 
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
-import { AppMenu, Slider, Ornament, ArrowIcon } from '../../core/legacy.js';
-import { PopupSubMenuMenuItem, PopupSeparatorMenuItem, PopupBaseMenuItem, PopupMenuSection } from '../../core/legacy.js';
-import { Context } from '../../core/context.js';
+import { AppMenu } from 'resource:///org/gnome/shell/ui/appMenu.js';
+import { arrowIcon as ArrowIcon,
+         Ornament,
+         PopupSubMenuMenuItem,
+         PopupSeparatorMenuItem,
+         PopupBaseMenuItem,
+         PopupMenuSection } from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import { Slider } from 'resource:///org/gnome/shell/ui/slider.js';
+import Context from '../../core/context.js';
 import { Delay, Event, Type } from '../../core/enums.js';
 import { ComponentLocation } from '../base/component.js';
 import { Config } from '../../utils/config.js';

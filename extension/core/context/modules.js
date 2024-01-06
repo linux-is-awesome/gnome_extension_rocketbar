@@ -1,11 +1,8 @@
-/* exported Modules */
-
-import { Context } from '../context.js';
+import Context from '../context.js';
 import { Config } from '../../utils/config.js';
 import { Type } from '../enums.js';
-import { Tweaks } from '../tweaks.js';
-import { Taskbar } from '../../ui/taskbar.js';
-import { NotificationCounter } from '../../ui/notificationCounter.js';
+import Taskbar from '../../ui/taskbar.js';
+import NotificationCounter from '../../ui/notificationCounter.js';
 
 /** @enum {string} */
 const ConfigFields = {
@@ -13,12 +10,10 @@ const ConfigFields = {
     NotificationCounter: 'notification-counter-enabled'
 };
 
-export class Modules {
+export default class Modules {
 
     /** @type {Object.<string, *>} */
     #modules = {
-        /** @type {Tweaks} */
-        Tweaks: this.#constructModule(Tweaks),
         /** @type {Taskbar} */
         Taskbar: null,
         /** @type {NotificationCounter} */
@@ -63,7 +58,7 @@ export class Modules {
         try {
             return new module();
         } catch (e) {
-            console.error(`${Context.metadata?.name} unable to construct module ${module?.name}.`, e);
+            Context.logError(`unable to construct module ${module?.name}.`, e);
         }
         return null;
     }
@@ -75,7 +70,7 @@ export class Modules {
         try {
             module?.destroy();
         } catch (e) {
-            console.error(`${Context.metadata?.name} unable to destroy module ${module?.constructor?.name}.`, e);
+            Context.logError(`unable to destroy module ${module?.constructor?.name}.`, e);
         }
     }
 

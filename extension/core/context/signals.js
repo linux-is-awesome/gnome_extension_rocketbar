@@ -1,8 +1,6 @@
-/* exported Signals */
-
 import { Type } from '../enums.js';
 
-export class Signals {
+export default class Signals {
 
     /** @type {Map<*, Set>} */
     #connections = new Map();
@@ -10,6 +8,7 @@ export class Signals {
     destroy() {
         if (!this.#connections) return;
         for (const [client, connections] of this.#connections) this.#disconnectAll(client, connections);
+        this.#connections.clear();
         this.#connections = null;
     }
 

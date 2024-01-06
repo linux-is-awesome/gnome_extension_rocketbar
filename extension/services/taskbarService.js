@@ -1,13 +1,17 @@
-/* exported TaskbarClient */
-
 import GObject from 'gi://GObject';
 import Clutter from 'gi://Clutter';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
-import { AppFavorites } from '../core/legacy.js';
-import { Context } from '../core/context.js';
+import { getAppFavorites as AppFavorites } from 'resource:///org/gnome/shell/ui/appFavorites.js';
+import Context from '../core/context.js';
 import { Event, Type, Delay } from '../core/enums.js';
 import { Config } from '../utils/config.js';
+
+const SUPPORTED_WINDOW_TYPES = [
+    Meta.WindowType.NORMAL,
+    Meta.WindowType.DIALOG,
+    Meta.WindowType.MODAL_DIALOG
+];
 
 /** @enum {string} */
 const ConfigFields = {
@@ -16,8 +20,8 @@ const ConfigFields = {
 
 class Favorites {
 
-    /** @type {AppFavorites.AppFavorites} */
-    #favorites = AppFavorites.getAppFavorites();
+    /** @type {AppFavorites} */
+    #favorites = AppFavorites();
 
     /** @type {Set<Shell.App>} */
     #apps = null;
@@ -27,6 +31,11 @@ class Favorites {
 
     /** @type {() => void} */
     #callback = null;
+
+    /** @type {ParentalControlsManager} */
+    get #parentalControlsManager() {
+        return this.#favorites?._parentalControlsManager;
+    }
 
     /** @type {Map<string, Shell.App>} */
     get appsById() {
@@ -81,7 +90,7 @@ class Favorites {
      */
     canAdd(app) {
         if (app instanceof Shell.App === false || !app.id || !app.app_info) return false;
-        const validationFunction = this.#favorites?._parentalControlsManager?.shouldShowApp;
+        const validationFunction = this.#parentalControlsManager?.shouldShowApp;
         if (typeof validationFunction !== Type.Function) return false;
         return validationFunction(app.app_info);
     }
@@ -114,11 +123,7 @@ class Favorites {
 class TaskbarService {
 
     /** @type {Set<Meta.WindowType>} */
-    #windowTypes = new Set([
-        Meta.WindowType.NORMAL,
-        Meta.WindowType.DIALOG,
-        Meta.WindowType.MODAL_DIALOG
-    ]);
+    #windowTypes = new Set(SUPPORTED_WINDOW_TYPES);
 
     /** @type {Shell.WindowTracker} */
     #windowTracker = Shell.WindowTracker.get_default();
@@ -136,7 +141,7 @@ class TaskbarService {
     #apps = new Map();
 
     /** @type {Map<Meta.Window, Shell.App>} */
-    #windows = Context.getSessionCache(this.constructor.name);
+    #windows = Context.getStorage(this.constructor.name);
 
     /** @type {Set<Shell.App>} */
     #trackedApps = new Set();
@@ -240,8 +245,7 @@ class TaskbarService {
             this.#favorites = null;
             return;
         }
-        if (this.#favorites) return;
-        this.#favorites = new Favorites(() => this.#trackAll(Delay.Queue));
+        this.#favorites ??= new Favorites(() => this.#trackAll(Delay.Queue));
     }
 
     #addWindows() {
@@ -395,8 +399,8 @@ class TaskbarService {
      * @param {Shell.App} app
      */
     #trackApp(app) {
-        if (!this.#workspace || !app || !this.#trackedApps ||
-            this.#trackedApps.has(app)) return;
+        if (!this.#workspace || !this.#trackedApps ||
+            !app || this.#trackedApps.has(app)) return;
         this.#trackedApps.add(app);
         this.#resetJob(Delay.Queue);
     }
@@ -489,12 +493,8 @@ export class TaskbarClient {
     constructor(callback, app) {
         if (typeof callback !== Type.Function) return;
         this.#callback = callback;
-        if (app instanceof Shell.App) {
-            this.#app = app;
-        }
-        if (!TaskbarClient.#service) {
-            TaskbarClient.#service = new TaskbarService();
-        }
+        this.#app = app instanceof Shell.App ? app : null;
+        TaskbarClient.#service ??= new TaskbarService();
         TaskbarClient.#service.addClient(this);
     }
 
@@ -511,14 +511,12 @@ export class TaskbarClient {
     /**
      * @param {boolean} [currentWorkspace]
      * @param {boolean} [skipTaskbar]
-     * @returns {Set<Meta.Window>|null}
+     * @returns {Set<Meta.Window>}
      */
     queryWindows(currentWorkspace = false, skipTaskbar = false) {
-        if (!TaskbarClient.#service) return null;
-        const windows = (
-            this.#app ? TaskbarClient.#service.apps.get(this.#app) :
-            new Set(TaskbarClient.#service.windows.keys())
-        );
+        const service = TaskbarClient.#service;
+        if (!service) return null;
+        const windows = this.#app ? service.apps.get(this.#app) : new Set(service.windows.keys());
         if (!windows?.size) return null;
         if (this.#testQuery(currentWorkspace, skipTaskbar)) return windows;
         const result = new Set();
@@ -532,14 +530,14 @@ export class TaskbarClient {
     /**
      * @param {boolean} [currentWorkspace]
      * @param {boolean} [skipTaskbar]
-     * @returns {Set<Shell.App>|null}
+     * @returns {Set<Shell.App>}
      */
     queryApps(currentWorkspace = false, skipTaskbar = false) {
-        if (!TaskbarClient.#service) return null;
-        if (this.#testQuery(currentWorkspace, skipTaskbar))
-            return new Set(this.#app ? [this.#app] : TaskbarClient.#service.apps.keys());
+        const service = TaskbarClient.#service;
+        if (!service) return null;
+        if (this.#testQuery(currentWorkspace, skipTaskbar)) return new Set(this.#app ? [this.#app] : service.apps.keys());
         if (this.#app) {
-            const windows = TaskbarClient.#service.apps.get(this.#app);
+            const windows = service.apps.get(this.#app);
             if (!windows?.size) return null;
             for (const window of windows) {
                 if (!this.#testWindow(window, currentWorkspace, skipTaskbar)) continue;
@@ -547,7 +545,7 @@ export class TaskbarClient {
             }
             return null;
         }
-        const windows = TaskbarClient.#service.windows;
+        const windows = service.windows;
         if (!windows?.size) return null;
         const result = new Set();
         for (const [window, app] of windows) {

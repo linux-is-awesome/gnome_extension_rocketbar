@@ -1,12 +1,10 @@
-/* exported AppIconAnimation, AppIconEvent, AppIcon */
-
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
-import { Context } from '../../core/context.js';
-import { Delay, Event, Type } from '../../core/enums.js';
+import Context from '../../core/context.js';
 import { Component, ComponentEvent, ComponentLocation } from '../base/component.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
+import { Delay, Event, Type } from '../../core/enums.js';
 import { DominantColor } from '../../utils/dominantColor.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppIcon';
@@ -67,7 +65,7 @@ export class AppIcon extends Component {
     #dominantColor = null;
 
     /** @type {Map<Shell.App, string>} */
-    #dominantColors = Context.getSessionCache(this.constructor.name);
+    #dominantColors = Context.getStorage(this.constructor.name);
 
     /** @type {Clutter.BrightnessContrastEffect} */
     #highlight = new Clutter.BrightnessContrastEffect(HighlightProps);

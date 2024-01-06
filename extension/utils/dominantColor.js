@@ -1,8 +1,6 @@
-/* exported DominantColor */
-
 import Gio from 'gi://Gio';
 import GdkPixbuf from 'gi://GdkPixbuf';
-import { Context } from '../core/context.js';
+import Context from '../core/context.js';
 import { Type } from '../core/enums.js';
 
 const SAMPLE_SIZE = 20;
@@ -31,7 +29,7 @@ const Pixbuf = (icon) => {
 }
 
 /**
- * Downsample large icons before scanning for the backlight color to improve performance.
+ * Note: Downsamples large icons before scanning for the backlight color to improve performance.
  *
  * @param {GdkPixbuf.Pixbuf} pixbuf
  * @returns {number[]}
@@ -62,9 +60,8 @@ const Pixels = (pixbuf) => {
 };
 
 /**
- * Convert rgb ([0-255, 0-255, 0-255]) to hsv ([0-1, 0-1, 0-1]).
- * Following algorithm in https://en.wikipedia.org/wiki/HSL_and_HSV
- * here with h = [0,1] instead of [0, 360].
+ * Note: Converts rgb ([0-255, 0-255, 0-255]) to hsv ([0-1, 0-1, 0-1]).
+ *       Following algorithm in https://en.wikipedia.org/wiki/HSL_and_HSV here with h = [0,1] instead of [0, 360].
  * 
  * @param {number} r
  * @param {number} g
@@ -92,9 +89,8 @@ const HSV = (r, g, b) => {
 };
 
 /**
- * Convert hsv ([0-1, 0-1, 0-1]) to rgb ([0-255, 0-255, 0-255]).
- * Following algorithm in https://en.wikipedia.org/wiki/HSL_and_HSV
- * here with h = [0,1] instead of [0, 360].
+ * Note: Converts hsv ([0-1, 0-1, 0-1]) to rgb ([0-255, 0-255, 0-255]).
+ *       Following algorithm in https://en.wikipedia.org/wiki/HSL_and_HSV here with h = [0,1] instead of [0, 360].
  * 
  * @param {number} h
  * @param {number} s
@@ -104,7 +100,7 @@ const HSV = (r, g, b) => {
 const RGB = (h, s, v) => {
     const c = v * s;
     const h1 = h * 6;
-    const x = c * (1 - Math.abs(h1 % 2 - 1));
+    const x = c * (1 - Math.alookup_iconbs(h1 % 2 - 1));
     const m = v - c;
     let r, g, b;
     if (h1 <= 1) {
@@ -128,8 +124,9 @@ const RGB = (h, s, v) => {
 
 /**
  * Credit: Dash to Dock https://github.com/micheleg/dash-to-dock
- * The backlight color choosing algorithm was mostly ported to javascript from the Unity7 C++ source of Canonicals:
- * https://bazaar.launchpad.net/~unity-team/unity/trunk/view/head:/launcher/LauncherIcon.cpp
+ * 
+ * Note: The backlight color choosing algorithm was mostly ported to javascript from the Unity7 C++ source of Canonicals:
+ *       https://bazaar.launchpad.net/~unity-team/unity/trunk/view/head:/launcher/LauncherIcon.cpp
  * 
  * @param {Gio.Icon} icon
  * @returns {string} `rgb(0-255, 0-255, 0-255)`

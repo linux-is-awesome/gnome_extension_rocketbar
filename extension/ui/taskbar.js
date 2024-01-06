@@ -1,17 +1,16 @@
-/* exported Taskbar */
-
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Shell from 'gi://Shell';
-import Meta from 'gi://Meta';
-import { Main, Dnd } from '../core/legacy.js';
-import { Context } from '../core/context.js';
+import Mtk from 'gi://Mtk';
+import { panel as MainPanel } from 'resource:///org/gnome/shell/ui/main.js';
+import { DragMotionResult } from 'resource:///org/gnome/shell/ui/dnd.js';
+import Context from '../core/context.js';
+import { TaskbarClient } from '../services/taskbarService.js';
+import { ScrollView } from './base/scrollView.js';
+import { Separator } from './taskbar/separator.js';
+import { AppButton, AppButtonEvent } from './taskbar/appButton.js';
 import { Type, Event, Delay } from '../core/enums.js';
 import { ComponentEvent } from './base/component.js';
-import { ScrollView } from './base/scrollView.js';
-import { TaskbarClient } from '../services/taskbarService.js';
-import { AppButton, AppButtonEvent } from './taskbar/appButton.js';
-import { Separator } from './taskbar/separator.js';
 import { Config } from '../utils/config.js';
 import { Animation, AnimationDuration } from './base/animation.js';
 
@@ -34,8 +33,8 @@ const AllocationProps = {
 /**
  * @typedef {import('./base/component.js').Component} Component
  * @param {Component} competitor
- * @param {Meta.Rectangle} [xyRect]
- * @returns {{rect: Meta.Rectangle, competitor: Component}}
+ * @param {Mtk.Rectangle} [xyRect]
+ * @returns {{rect: Mtk.Rectangle, competitor: Component}}
  */
 const DropCompetitor = (competitor, xyRect) => {
     const rect = competitor.rect;
@@ -65,7 +64,7 @@ class DragAndDropHandler {
     /** @type {() => void} */
     #destroyCallback = null;
 
-    /** @type {Meta.Rectangle} */
+    /** @type {Mtk.Rectangle} */
     get #parentRect() {
         const rect = this.#parent.rect;
         const [x, y] = this.#parent.actor.get_transformed_position();
@@ -182,7 +181,7 @@ class DragAndDropHandler {
     #handleDragActorPosition(actor) {
         if (!actor) return;
         const parentRect = this.#parent.rect;
-        const actorRect = new Meta.Rectangle();
+        const actorRect = new Mtk.Rectangle();
         [actorRect.x, actorRect.y] = actor.get_transformed_position();
         [actorRect.width, actorRect.height] = actor.get_transformed_size();
         const [parentContainsActor] = actorRect.intersect(parentRect);
@@ -305,7 +304,7 @@ class TaskbarAllocation {
 
 }
 
-export class Taskbar extends ScrollView {
+export default class Taskbar extends ScrollView {
 
     /**
      * @param {{event: string, params: *, target: *, sender: Component}} data
@@ -326,16 +325,16 @@ export class Taskbar extends ScrollView {
     #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey), true);
 
     /** @type {Map<Meta.Workspace, Set<Shell.App>>} */
-    #runningApps = Context.getSessionCache(this.constructor.name);
+    #runningApps = Context.getStorage(this.constructor.name);
 
     /** @type {Map<Shell.App, AppButton>} */
     #appButtons = new Map();
 
-    /** @type {AppButton|null} */
+    /** @type {AppButton} */
     #activeAppButton = null;
 
-    /** @type {Component|null} */
-    #scrollLock = null;
+    /** @type {Component} */
+    #scrollLock = null; Separator
 
     /** @type {TaskbarClient} */
     #service = new TaskbarClient(() => this.#rerender());
@@ -386,7 +385,7 @@ export class Taskbar extends ScrollView {
     }
 
     #setParent() {
-        this.setParent(Main.panel._leftBox, -1);
+        this.setParent(MainPanel._leftBox, -1);
     }
 
     /**
@@ -431,13 +430,13 @@ export class Taskbar extends ScrollView {
     /**
      * @param {*} target
      * @param {{x: number, y: number}} params
-     * @returns {Dnd.DragMotionResult|null}
+     * @returns {DragMotionResult|null}
      */
     #handleDragOver(target, params) {
         if (!this.isValid || !params || target?.app instanceof Shell.App === false) return;
         const isAppButton = target instanceof AppButton;
         if (isAppButton && !target.isValid) return;
-        const result = isAppButton ? Dnd.DragMotionResult.MOVE_DROP : Dnd.DragMotionResult.COPY_DROP;
+        const result = isAppButton ? DragMotionResult.MOVE_DROP : DragMotionResult.COPY_DROP;
         if (!isAppButton && this.#appButtons.has(target.app)) {
             const appButton = this.#appButtons.get(target.app);
             if (appButton.isValid) {

@@ -1,9 +1,7 @@
-/* exported ProgressBar */
-
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
-import { Event } from '../../core/enums.js';
 import { Component, ComponentEvent } from '../base/component.js';
+import { Event } from '../../core/enums.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_ProgressBar';

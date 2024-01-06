@@ -1,15 +1,13 @@
-/* exported NotificationCounter */
-
 import GObject from 'gi://GObject';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
-import { Main } from '../core/legacy.js';
-import { Context } from '../core/context.js';
-import { Event, Property } from '../core/enums.js';
+import { panel as MainPanel } from 'resource:///org/gnome/shell/ui/main.js';
+import Context from '../core/context.js';
 import { Component, ComponentEvent } from './base/component.js';
-import { Animation, AnimationDuration, AnimationType } from './base/animation.js';
 import { NotificationHandler } from '../services/notificationService.js';
 import { Config } from '../utils/config.js';
+import { Event, Property } from '../core/enums.js';
+import { Animation, AnimationDuration, AnimationType } from './base/animation.js';
 
 const MODULE_NAME = 'Rocketbar__NotificationCounter';
 const DATE_MENU_STYLE_CLASS = 'rocketbar__date-menu';
@@ -73,7 +71,7 @@ class DateMenu extends Component {
     })[data?.event]?.call(this);
 
     /** @type {DateMenuButton} */
-    #dateMenu = Main.panel?.statusArea?.dateMenu;
+    #dateMenu = MainPanel.statusArea?.dateMenu;
 
     /** @type {string} */
     #clockDisplayStyleClass = null;
@@ -136,7 +134,7 @@ class DateMenu extends Component {
 
 }
 
-export class NotificationCounter extends Component {
+export default class NotificationCounter extends Component {
 
     /**
      * @param {{event: string}} data

@@ -1,8 +1,6 @@
-/* exported NotificationHandler */
-
 import Shell from 'gi://Shell';
-import { Main } from '../core/legacy.js';
-import { Context } from '../core/context.js';
+import { messageTray as MessageTray } from 'resource:///org/gnome/shell/ui/main.js';
+import Context from '../core/context.js';
 import { Type, Delay } from '../core/enums.js';
 import { Config } from '../utils/config.js';
 
@@ -66,7 +64,7 @@ class NotificationService {
         this.#handleConfig();
         this.#initNotifications();
         Context.signals.add(this, [
-            Main.messageTray,
+            MessageTray,
             MessageTrayEvent.SourceAdded, (_, source) => this.#addNotification(source),
             MessageTrayEvent.SourceRemoved, (_, source) => this.#removeNotification(source),
             MessageTrayEvent.QueueChanged, () => this.#queueUpdate()
@@ -122,7 +120,7 @@ class NotificationService {
     }
 
     #initNotifications() {
-        const sources = Main.messageTray?.getSources();
+        const sources = MessageTray.getSources();
         if (!sources?.length) return;
         for (let i = 0, l = sources.length; i < l; ++i) this.#addNotification(sources[i]);
     }
@@ -242,7 +240,7 @@ export class NotificationHandler {
     get pids() {
         if (this.#pids?.length) return this.#pids;
         if (!this.appId) return null;
-        return Context.getSessionCache(this.constructor.name).get(this.#appId);
+        return Context.getStorage(this.constructor.name).get(this.#appId);
     }
 
     /**
@@ -252,12 +250,8 @@ export class NotificationHandler {
     constructor(callback, app) {
         if (typeof callback !== Type.Function) return; 
         this.#callback = callback;
-        if (app instanceof Shell.App) {
-            this.#app = app;
-        }
-        if (!NotificationHandler.#service) {
-            NotificationHandler.#service = new NotificationService();
-        }
+        this.#app = app instanceof Shell.App ? app : null;
+        NotificationHandler.#service ??= new NotificationService();
         NotificationHandler.#service.addHandler(this);
     }
 
@@ -283,7 +277,7 @@ export class NotificationHandler {
         this.#pids = this.#app.get_pids();
         if (!this.#pids?.length) return;
         if (`${oldPids}` === `${this.#pids}`) return;
-        Context.getSessionCache(this.constructor.name).set(this.#appId, this.#pids);
+        Context.getStorage(this.constructor.name).set(this.#appId, this.#pids);
         NotificationHandler.#service.triggerHandler(this);
     }
 

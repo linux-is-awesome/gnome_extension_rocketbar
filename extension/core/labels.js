@@ -1,6 +1,4 @@
-/* exported Labels */
-
-const _ = imports.misc.extensionUtils.gettext;
+import { gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 /** @enum {string} */
 export const Labels = {

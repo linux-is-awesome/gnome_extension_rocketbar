@@ -1,10 +1,8 @@
-/* exported LongPressAction */
-
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
-import { Type, Event } from '../../core/enums.js';
+import Context from '../../core/context.js';
 import { Component } from './component.js';
-import { Context } from '../../core/context.js';
+import { Type, Event } from '../../core/enums.js';
 
 const DEFAULT_LONG_PRESS_DELAY = 600;
 

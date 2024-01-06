@@ -1,9 +1,7 @@
-/* exported ComponentEvent, ComponentLocation, Component */
-
 import St from 'gi://St';
 import Gio from 'gi://Gio';
-import Meta from 'gi://Meta';
-import { Dnd } from '../../core/legacy.js'; 
+import Mtk from 'gi://Mtk';
+import * as Dnd from 'resource:///org/gnome/shell/ui/dnd.js';
 import { Type, Event } from '../../core/enums.js';
 
 const DRAG_TIMEOUT_THRESHOLD = 200;
@@ -99,7 +97,7 @@ export class Component {
         else ComponentLocation.Bottom;
     }
 
-    /** @type {Meta.Rectangle} */
+    /** @type {Mtk.Rectangle} */
     get monitorRect() {
         const monitorIndex = this.monitorIndex;
         if (monitorIndex < 0) return null;
@@ -113,10 +111,10 @@ export class Component {
         return global.display.get_monitor_index_for_rect(rect);
     }
 
-    /** @type {Meta.Rectangle} */
+    /** @type {Mtk.Rectangle} */
     get rect() {
         if (!this.isValid) return null;
-        const result = new Meta.Rectangle();
+        const result = new Mtk.Rectangle();
         [result.x, result.y] = this.#actor.get_transformed_position();
         [result.width, result.height] = this.#actor.get_transformed_size();
         return result;
@@ -490,9 +488,9 @@ export class Component {
         try {
             return this.#notifyCallback({ event, target, params, sender });
         } catch (e) {
-            logError(e, `Component notify failed for event ${event}`);
-            return null;
+            console.error(`Component notify failed for event ${event}`, e);
         }
+        return null;
     }
 
     /**

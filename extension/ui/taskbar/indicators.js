@@ -1,11 +1,9 @@
-/* exported Indicators */
-
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
-import { Main } from '../../core/legacy.js';
-import { Context } from '../../core/context.js';
-import { Event } from '../../core/enums.js';
+import { overview as Overview } from 'resource:///org/gnome/shell/ui/main.js';
+import Context from '../../core/context.js';
 import { Component, ComponentEvent } from '../base/component.js';
+import { Event } from '../../core/enums.js';
 import { Config } from '../../utils/config.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_Indicators';
@@ -393,7 +391,7 @@ export class Indicators extends Component {
 
     /** @type {boolean} */
     get #isActive() {
-        return !Main.overview?._shown && this.#appButton?.isActive;
+        return !Overview._shown && this.#appButton?.isActive;
     }
 
     /** @type {string} */

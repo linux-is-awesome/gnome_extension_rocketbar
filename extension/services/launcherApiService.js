@@ -1,7 +1,5 @@
-/* exported LauncherApiClient */
-
 import Gio from 'gi://Gio';
-import { Context } from '../core/context.js';
+import Context from '../core/context.js';
 import { Type } from '../core/enums.js';
 import { Config } from '../utils/config.js';
 
@@ -124,7 +122,7 @@ class LauncherApiService {
 
 }
 
-export class LauncherApiClient {
+export class LauncherApiProxy {
 
     /** @type {LauncherApiService} */
     #service = null;
@@ -153,11 +151,8 @@ export class LauncherApiClient {
     }
 
     destroy() {
-        if (!Context.isSessionLocked) {
-            this.#service?.destroy();
-            Context.getSessionCache(this.constructor.name).clear();
-        } else this.#service?.disconnect();
         Context.signals.removeAll(this);
+        this.#service?.destroy();
         this.#service = null;
         this.#notificationClients = null;
         this.#progressClients = null;
@@ -192,20 +187,14 @@ export class LauncherApiClient {
     }
 
     #handleConfig() {
+        console.log('Launcher API state', this.#config.enableLauncherApi);
         if (this.#config.enableLauncherApi && this.#service) return;
-        const sessionCache = Context.getSessionCache(this.constructor.name);
-        const service = sessionCache.get(LauncherApiService.name);
         if (!this.#config.enableLauncherApi) {
-            if (service instanceof LauncherApiService) service.destroy();
-            sessionCache.clear();
+            this.#service?.destroy();
             this.#service = null;
             return;
         }
-        this.#service = service;
-        if (this.#service instanceof LauncherApiService === false) {
-            this.#service = new LauncherApiService();
-            sessionCache.set(LauncherApiService.name, this.#service);
-        }
+        this.#service = new LauncherApiService();
         this.#service.connect(notifyType => this.#notifyClients(notifyType));
     }
 

@@ -1,9 +1,8 @@
-/* exported ConfigFields, ActivateBehavior, DemandsAttentionBehavior, AppIconSize, AppConfig */
-
 /** @typedef {Object.<string, string|number|boolean>} Config */
 /** @typedef {{config: Config, clients: Map<*, (settingsKey: string) => void>}} AppConfigDetails */
 
-import { Context } from '../../core/context.js';
+import Gio from 'gi://Gio';
+import Context from '../../core/context.js';
 import { Config } from '../config.js';
 import { Type } from '../../core/enums.js';
 
@@ -61,6 +60,9 @@ const DefaultConfigOverride = {
 
 export class AppConfig {
 
+    /** @type {Gio.Settings} */
+    #settings = Context.getSettings();
+
     /** @type {Map<Shell.App, AppConfigDetails>} */
     #appConfig = new Map();
 
@@ -70,18 +72,25 @@ export class AppConfig {
     /** @type {Config} */
     #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
 
+    /** @type {boolean} */
+    get #isDummyConfig() {
+        return this.#settings instanceof Gio.Settings === false;
+    }
+
     /** @type {Config} */
     get defaultConfig() {
         return this.#config;
     }
 
     constructor() {
-        const configOverride = Context.settings.get_string(CONFIG_OVERRIDE_SETTINGS_KEY);
+        const configOverride = this.#isDummyConfig ?
+                               this.#settings[CONFIG_OVERRIDE_SETTINGS_KEY] :
+                               this.#settings.get_string(CONFIG_OVERRIDE_SETTINGS_KEY);
         if (!configOverride?.length) return;
         try {
             this.#configOverride = JSON.parse(configOverride);
         } catch (e) {
-            console.error(Context.metadata?.name, e)
+            Context.logError(AppConfig.name, e);
         }
     }
 
@@ -98,6 +107,8 @@ export class AppConfig {
         if (!clients?.size) this.#appConfig.delete(app);
         if (this.#appConfig.size) return false;
         Context.signals.removeAll(this);
+        this.#appConfig = null;
+        this.#settings = null;
         return true;
     }
 
@@ -226,7 +237,8 @@ export class AppConfig {
     }
 
     async #saveConfigOverride() {
-        Context.settings.set_string(CONFIG_OVERRIDE_SETTINGS_KEY, JSON.stringify(this.#configOverride));
+        if (this.#isDummyConfig) return;
+        this.#settings.set_string(CONFIG_OVERRIDE_SETTINGS_KEY, JSON.stringify(this.#configOverride));
     }
     
 }

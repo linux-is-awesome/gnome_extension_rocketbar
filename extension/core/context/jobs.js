@@ -1,27 +1,18 @@
-/* exported Jobs */
-
 import GLib from 'gi://GLib';
-import Meta from 'gi://Meta';
-import { Context } from '../context.js';
+import Context from '../context.js';
 import { Type, Delay } from '../enums.js';
 
-/**
- * Note: Using compositor laters for Gnome 44+ instead of Meta functions.
- * 
- * TODO: stop using old Meta.laters.
- * 
- * @type {Meta.Laters}
- */
-const Laters = global.compositor?.get_laters() ?? {
-    add: (...args) => Meta.later_add(...args),
-    remove: (...args) => Meta.later_remove(...args)
-};
+const LATER_TYPE_BEFORE_REDRAW = 1;
+const LATER_TYPE_IDLE = 2;
 
 /** @type {Object.<string, number>} */
 const LaterType = {
-    [Delay.Redraw]: Meta.LaterType.BEFORE_REDRAW,
-    [Delay.Idle]: Meta.LaterType.IDLE
+    [Delay.Redraw]: LATER_TYPE_BEFORE_REDRAW,
+    [Delay.Idle]: LATER_TYPE_IDLE
 };
+
+/** @type {Meta.Laters} */
+const Laters = global.compositor.get_laters();
 
 class Job {
 
@@ -60,11 +51,11 @@ class Job {
     }
 
     /**
-     * @param {() => void} callback after destroy callback function
+     * @param {() => void} callback function to call after destroy
      * @returns {this|null}
      */
     destroy(callback) {
-        if (!this.#isValid) return;
+        if (!this.#isValid) return null;
         if (typeof callback === Type.Function) return this.then(() => this.destroy() ?? callback());
         this.reset();
         if (typeof this.#destroyCallback === Type.Function) this.#destroyCallback(this);
@@ -87,7 +78,7 @@ class Job {
      * @returns {this}
      */
     catch(callback) {
-        this.#job = this.#currentJob?.catch(typeof callback === Type.Function ? callback : e => console.error(Context.metadata?.name, e));
+        this.#job = this.#currentJob?.catch(typeof callback === Type.Function ? callback : e => Context.logError(Job.name, e));
         return this;
     }
 
@@ -140,7 +131,7 @@ class Job {
 
 }
 
-export class Jobs {
+export default class Jobs {
 
     /** @type {Map<*, Set<Job>>} */
     #jobs = new Map();
@@ -166,7 +157,7 @@ export class Jobs {
 
     /**
      * @param {*} client
-     * @return {boolean}
+     * @return {boolean}Context
      */
     hasClient(client) {
         return this.#jobs?.has(client);
