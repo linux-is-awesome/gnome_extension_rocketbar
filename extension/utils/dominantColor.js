@@ -7,10 +7,6 @@ const SAMPLE_SIZE = 20;
 const RGB_STRING_SPLITTER = ',';
 
 /**
- * Note: IconTheme.load_icon function is used for Gnome Shell versions prior to 44.
- * 
- * TODO: stop using IconTheme.load_icon function. 
- * 
  * @param {Gio.Icon} icon
  * @returns {GdkPixbuf.Pixbuf|null}
  */
@@ -23,9 +19,7 @@ const Pixbuf = (icon) => {
     const iconName = iconNames[0];
     const iconTheme = Context.iconTheme;
     if (!iconTheme.has_icon(iconName)) return null;
-    if (typeof iconTheme.load_icon === Type.Function) return iconTheme.load_icon(iconName, SAMPLE_SIZE, 0);
-    const iconInfo = iconTheme.lookup_icon(iconName, null, SAMPLE_SIZE, 1, 1, 1);
-    return GdkPixbuf.Pixbuf.new_from_file(iconInfo.get_file().get_path());
+    return iconTheme.load_icon(iconName, SAMPLE_SIZE, 0);
 }
 
 /**
@@ -100,7 +94,7 @@ const HSV = (r, g, b) => {
 const RGB = (h, s, v) => {
     const c = v * s;
     const h1 = h * 6;
-    const x = c * (1 - Math.alookup_iconbs(h1 % 2 - 1));
+    const x = c * (1 - Math.abs(h1 % 2 - 1));
     const m = v - c;
     let r, g, b;
     if (h1 <= 1) {
