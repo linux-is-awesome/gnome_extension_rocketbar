@@ -2,7 +2,7 @@ import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Shell from 'gi://Shell';
 import { overview as Overview,
-         activateWindow as ActiveWindow } from 'resource:///org/gnome/shell/ui/main.js';
+         activateWindow as FocusedWindow } from 'resource:///org/gnome/shell/ui/main.js';
 import Context from '../../core/context.js';
 import { RuntimeButton, ButtonEvent } from '../base/button.js';
 import { TaskbarClient } from '../../services/taskbarService.js';
@@ -65,7 +65,7 @@ class CycleWindowsQueue {
             if (!nextWindow) return;
         }
         if (!minimize || nextWindow.minimized ||
-            nextWindow !== this.#windows[0]) return ActiveWindow(nextWindow);
+            nextWindow !== this.#windows[0]) return FocusedWindow(nextWindow);
         for (let i = 0, l = windows.length; i < l; ++i) windows[i].minimize();
         this.#windows = null;  
     }
@@ -521,7 +521,7 @@ export class AppButton extends RuntimeButton {
     async #handleUrgentWindow(window) {
         if (!window || !this.#windows?.has(window) || window.has_focus()) return;
         if (this.#config.demandsAttentionBehavior === DemandsAttentionBehavior.FocusActive && !this.#isActive) return;
-        ActiveWindow(window);
+        FocusedWindow(window);
     }
 
     /**
@@ -602,16 +602,16 @@ export class AppButton extends RuntimeButton {
                 case ActivateBehavior.MoveWindows: return this.#moveWindows();
                 case ActivateBehavior.FindWindow:
                     const sortedWindows = this.#app.get_windows();
-                    if (sortedWindows.length) return ActiveWindow(sortedWindows[0]);
+                    if (sortedWindows.length) return FocusedWindow(sortedWindows[0]);
                 case ActivateBehavior.NewWindow:
                 default: return this.#openNewWindow(isOverview);
             }
         }
-        if (isOverview) return ActiveWindow(this.#getPrimaryWindow(this.#sortedWindows));
+        if (isOverview) return FocusedWindow(this.#getPrimaryWindow(this.#sortedWindows));
         if (this.#windowsCount === 1) {
             const window = this.#sortedWindows[0];
             if (window.minimized || !window.has_focus() ||
-                isCtrlPressed || isMiddleButton) ActiveWindow(window);
+                isCtrlPressed || isMiddleButton) FocusedWindow(window);
             else if (enableMinimizeAction) window.minimize();
             return;
         }
@@ -661,7 +661,7 @@ export class AppButton extends RuntimeButton {
         const workspace = this.#service.workspace
         for (const window of windows) window.change_workspace(workspace);
         if (Overview.visible || !sortedWindows.length) return;
-        ActiveWindow(sortedWindows[0]);
+        FocusedWindow(sortedWindows[0]);
     }
 
     /**
@@ -672,8 +672,8 @@ export class AppButton extends RuntimeButton {
     #cycleWindows(minimize = true, reverse = false) {
         if (!this.#windowsCount) return;
         const sortedWindows = this.#sortedWindows;
-        if (!this.#isActive) return ActiveWindow(this.#getPrimaryWindow(sortedWindows));
-        if (sortedWindows.length === 1) return ActiveWindow(sortedWindows[0]);
+        if (!this.#isActive) return FocusedWindow(this.#getPrimaryWindow(sortedWindows));
+        if (sortedWindows.length === 1) return FocusedWindow(sortedWindows[0]);
         this.#cycleWindowsQueue ??= new CycleWindowsQueue();
         this.#cycleWindowsQueue.next(sortedWindows, minimize, reverse);   
     }
