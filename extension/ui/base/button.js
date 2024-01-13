@@ -4,17 +4,11 @@ import St from 'gi://St';
 import Context from '../../core/context.js';
 import { Component, ComponentLocation } from './component.js';
 import { LongPressAction } from './longPressAction.js';
-import { Type, Event, Property } from '../../core/enums.js';
+import { Type, Event, Property, PseudoClass } from '../../core/enums.js';
 import { Animation, AnimationType, AnimationDuration } from './animation.js';
 import { Gradient } from '../../utils/gradient.js';
 
 const DEFAULT_STYLE_CLASS = 'panel-button rocketbar__button';
-
-/** @enum {string} */
-const PseudoClass = {
-    Focus: 'focus',
-    Active: 'active'
-};
 
 /** @enum {string} */
 const CssField = {

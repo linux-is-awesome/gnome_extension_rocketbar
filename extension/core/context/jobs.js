@@ -51,7 +51,7 @@ class Job {
     }
 
     /**
-     * @param {() => void} callback function to call after destroy
+     * @param {() => void} [callback] function to call after destroy
      * @returns {this|null}
      */
     destroy(callback) {
@@ -78,7 +78,8 @@ class Job {
      * @returns {this}
      */
     catch(callback) {
-        this.#job = this.#currentJob?.catch(typeof callback === Type.Function ? callback : e => Context.logError(Job.name, e));
+        this.#job = this.#currentJob?.catch(typeof callback === Type.Function ? callback :
+                                            e => Context.logError(`${Job.name} failed.`, e));
         return this;
     }
 

@@ -82,3 +82,12 @@ export const SessionMode = {
     Desktop: 'user',
     Locksreen: 'unlock-dialog'
 };
+
+/**
+ * @enum {string}
+ */
+export const PseudoClass = {
+    Focus: 'focus',
+    Active: 'active',
+    Insensitive: 'insensitive'
+};

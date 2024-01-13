@@ -47,7 +47,7 @@ export class AppIcon extends Component {
      * @param {{event: string}} data
      * @returns {void}
      */
-    #notifyHandler = (data) => ({
+    #notifyHandler = data => ({
         [ComponentEvent.Destroy]: this.#destroy,
         [ComponentEvent.Scale]: () => this.setSize(this.#size)
     })[data?.event]?.call(this);
@@ -97,7 +97,7 @@ export class AppIcon extends Component {
         this.#dominantColor = this.#dominantColors.get(this.#app);
         if (this.#dominantColors.has(this.#app)) return this.#dominantColor;
         this.#dominantColor = DominantColor(this.actor.get_gicon());
-        this.#dominantColors.set(this.#app, this.#dominantColor)
+        this.#dominantColors.set(this.#app, this.#dominantColor);
         return this.#dominantColor;
     }
 
@@ -118,11 +118,13 @@ export class AppIcon extends Component {
 
     /**
      * @param {number} size
+     * @returns {this}
      */
     setSize(size) {
-        if (typeof size !== Type.Number) return;
+        if (typeof size !== Type.Number) return this;
         this.#size = size;
         this.actor.set_icon_size(size * this.uiScale);
+        return this;
     }
 
     /**

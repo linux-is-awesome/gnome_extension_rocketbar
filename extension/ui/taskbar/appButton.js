@@ -502,6 +502,9 @@ export class AppButton extends RuntimeButton {
         this.isActive = this.#windowsCount ? this.#service.hasFocusedWindow : false;
     }
 
+    /**
+     * @param {Meta.Window} window
+     */
     #handleWindowState(window) {
         if (!this.isValid || !window || !this.#windows?.has(window)) return;
         this.#appIcon.animate(window.minimized ? AppIconAnimation.Deactivate : AppIconAnimation.Activate);
