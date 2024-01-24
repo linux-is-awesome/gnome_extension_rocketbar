@@ -3,9 +3,9 @@ import Gio from 'gi://Gio';
 
 /**
  * @param {string} path
- * @returns {string|null}
+ * @returns {string?}
  */
-export const RuntimeLocation = (path) => {
+export const RuntimeLocation = path => {
     if (!path) return null;
     const [success, output] = GLib.spawn_command_line_sync(`ls ${path}`);
     if (!success || !output) return null;
@@ -16,9 +16,9 @@ export const RuntimeLocation = (path) => {
 
 /**
  * @param {string} path
- * @returns {Object.<string, *>}
+ * @returns {{[key: string]: *}}
  */
-export const DummyConfig = (path) => {
+export const JSONConfig = path => {
     try {
         const configFile = Gio.File.new_for_path(path);
         const [success, contents] = configFile.load_contents(null);
