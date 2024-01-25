@@ -66,9 +66,9 @@ export class AppConfig extends SharedConfig {
     /** @type {{[appId: string]: Config}} */
     #configOverride = {};
 
-    /** @type {Config?} */
+    /** @type {Config} */
     get defaultConfig() {
-        return super.getConfig();
+        return super.getConfig() ?? {};
     }
 
     constructor() {
@@ -79,7 +79,7 @@ export class AppConfig extends SharedConfig {
 
     /**
      * @override
-     * @param {Shell.App} app
+     * @param {Shell.App?} app
      * @param {*} [client]
      * @returns {boolean}
      */
