@@ -15,7 +15,7 @@ const DUMMY_FIELD_PREFIX = '~';
  * @param {*} client
  * @param {{[configField: string]: string}} fields
  * @param {(settingsKey: string) => void} [callback]
- * @param {{path: string?, isAfter: boolean}} [options]
+ * @param {{path?: string?, isAfter?: boolean}} [options]
  * @returns {Config}
  */
 export const Config = (client, fields, callback, options = { path: null, isAfter: false }) => {
