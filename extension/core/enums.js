@@ -54,16 +54,6 @@ export const Property = {
 };
 
 /**
- * @enum {string} Standard javascript types
- */
-export const Type = {
-    Function: 'function',
-    String: 'string',
-    Number: 'number',
-    Boolean: 'boolean'
-};
-
-/**
  * @enum {number}
  */
 export const Delay = {
@@ -76,7 +66,7 @@ export const Delay = {
 };
 
 /**
- * @enum {string}
+ * @enum {string} Shell session modes
  */
 export const SessionMode = {
     Desktop: 'user',
