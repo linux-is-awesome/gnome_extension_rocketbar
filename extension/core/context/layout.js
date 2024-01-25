@@ -1,34 +1,41 @@
-/* exported LayoutManager */
+/**
+ * JSDoc types
+ *
+ * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupMenu} PopupMenu
+ * @typedef {import('resource:///org/gnome/shell/ui/boxpointer.js').BoxPointer} BoxPointer
+ * @typedef {import('../shell.js').DummyEventEmitter} DummyEventEmitter
+ */
 
 import St from 'gi://St';
-import { Main } from '../legacy.js';
-import { Context } from '../context.js';
-import { Type, Event, Delay } from '../enums.js';
+import Context from '../context.js';
+import { MainLayout, MainPanel } from '../shell.js';
 import { Component } from '../../ui/base/component.js';
+import { Event, Delay } from '../enums.js';
 
-export class LayoutManager {
+export default class LayoutManager {
 
-    /** @type {Map<*, () => void>} */
+    /** @type {Map<*, (() => void)?>?} */
     #clients = new Map();
 
     /** @type {boolean} */
     get isStartingUp() {
-        return Main.layoutManager?._startingUp;
+        return MainLayout._startingUp ?? false;
     }
 
     destroy() {
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
+        this.#clients?.clear();
         this.#clients = null;
     }
 
     /**
-     * @param {PopupMenu} menu
+     * @param {PopupMenu|DummyEventEmitter} menu
      */
     addMenu(menu) {
-        if (!menu) return;
+        if (!menu?.actor) return;
         try {
-            Main.panel?.menuManager?.addMenu(menu);
+            MainPanel.menuManager?.addMenu(menu);
             this.addOverlay(menu.actor);
         } catch (e) {
             console.error(`${Context.metadata?.name} unable to add menu.`, e);
@@ -36,12 +43,12 @@ export class LayoutManager {
     }
 
     /**
-     * @param {PopupMenu} menu
+     * @param {PopupMenu|DummyEventEmitter} menu
      */
     removeMenu(menu) {
-        if (!menu) return;
+        if (!menu?.actor) return;
         try {
-            Main.panel?.menuManager?.removeMenu(menu);
+            MainPanel.menuManager?.removeMenu(menu);
             this.removeOverlay(menu.actor);
         } catch (e) {
             console.error(`${Context.metadata?.name} unable to remove menu.`, e);
@@ -49,25 +56,25 @@ export class LayoutManager {
     }
 
     /**
-     * @param {St.Widget} actor
+     * @param {St.Widget|Component<St.Widget>} actor
      */
     addOverlay(actor) {
-        if (actor instanceof Component) {
-            actor = actor.actor;
+        if (actor instanceof Component && actor.isValid) {
+            actor = actor.actor ?? actor;
         }
         if (actor instanceof St.Widget === false) return;
-        Main.layoutManager?.uiGroup?.add_actor(actor);
+        MainLayout.uiGroup?.add_actor(actor);
     }
 
     /**
-     * @param {St.Widget} actor
+     * @param {St.Widget|Component<St.Widget>} actor
      */
     removeOverlay(actor) {
         if (actor instanceof Component) {
-            actor = actor.actor;
+            actor = actor.actor ?? actor;
         }
         if (actor instanceof St.Widget === false) return;
-        Main.layoutManager?.uiGroup?.remove_actor(actor);
+        MainLayout.uiGroup?.remove_actor(actor);
     }
 
     /**
@@ -76,8 +83,8 @@ export class LayoutManager {
      */
     requestInit(client, callback) {
         if (!this.#clients || !client ||
-            typeof callback !== Type.Function ||
-            typeof this.#clients.get(client) === Type.Function) return;
+            typeof callback !== 'function' ||
+            typeof this.#clients.get(client) === 'function') return;
         if (!this.isStartingUp) {
             this.#clients.set(client, null);
             callback();
@@ -85,7 +92,7 @@ export class LayoutManager {
         }
         this.#clients.set(client, callback);
         if (Context.signals.hasClient(this)) return;
-        Context.signals.add(this, [Main.layoutManager, Event.StartupComplete, () => this.#initClients()]);
+        Context.signals.add(this, [MainLayout, Event.StartupComplete, () => this.#initClients()]);
     }
 
     /**
@@ -94,8 +101,8 @@ export class LayoutManager {
      */
     queueAfterInit(client, callback) {
         if (!client || !this.#clients?.has(client) ||
-            typeof callback !== Type.Function ||
-            typeof this.#clients.get(client) === Type.Function) return;
+            typeof callback !== 'function' ||
+            typeof this.#clients.get(client) === 'function') return;
         this.#clients.set(client, callback);
         Context.jobs.removeAll(this).new(this, Delay.Background).destroy(() => this.#handleAfterInit()).catch();
     }
@@ -105,7 +112,7 @@ export class LayoutManager {
      * @returns {boolean}
      */
     isQueued(client) {
-        return typeof this.#clients?.get(client) === Type.Function; 
+        return typeof this.#clients?.get(client) === 'function';
     }
 
     /**
@@ -133,7 +140,7 @@ export class LayoutManager {
         if (!this.#clients?.size) return;
         for (const [client, callback] of this.#clients) {
             this.#clients.set(client, null);
-            if (typeof callback === Type.Function) callback();
+            if (typeof callback === 'function') callback();
         }
     }
 

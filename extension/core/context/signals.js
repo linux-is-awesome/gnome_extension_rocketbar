@@ -1,15 +1,12 @@
-/* exported Signals */
+export default class Signals {
 
-import { Type } from '../enums.js';
-
-export class Signals {
-
-    /** @type {Map<*, Set>} */
+    /** @type {Map<*, Set>?} */
     #connections = new Map();
 
     destroy() {
         if (!this.#connections) return;
         for (const [client, connections] of this.#connections) this.#disconnectAll(client, connections);
+        this.#connections.clear();
         this.#connections = null;
     }
 
@@ -20,10 +17,10 @@ export class Signals {
      */
     add(client, ...scope) {
         if (!this.#isValid(client, scope)) return this;
-        const connections = this.#connections.get(client) ?? new Set();
+        const connections = this.#connections?.get(client) ?? new Set();
         if (scope.length === 1) this.#add(client, connections, scope[0]);
         else for (let i = 0, l = scope.length; i < l; ++i) this.#add(client, connections, scope[i]);
-        if (connections.size) this.#connections.set(client, connections);
+        if (connections.size) this.#connections?.set(client, connections);
         return this;
     }
 
@@ -34,15 +31,15 @@ export class Signals {
      */
     remove(client, ...targets) {
         if (!this.#isValid(client, targets)) return this;
-        const connections = this.#connections.get(client);
+        const connections = this.#connections?.get(client);
         if (!connections) return this;
         for (let i = 0, l = targets.length; i < l; ++i) {
             const target = targets[i];
-            if (!connections.has(target)) continue; 
-            if (typeof target?.disconnectObject === Type.Function) target.disconnectObject(client);
+            if (!connections.has(target)) continue;
+            if (typeof target?.disconnectObject === 'function') target.disconnectObject(client);
             connections.delete(target);
         }
-        if (!connections.size) this.#connections.delete(client);
+        if (!connections.size) this.#connections?.delete(client);
         return this;
     }
 
@@ -61,10 +58,10 @@ export class Signals {
 
     /**
      * @param {*} client
-     * @return {boolean}
+     * @returns {boolean}
      */
     hasClient(client) {
-        return this.#connections?.has(client);
+        return this.#connections?.has(client) ?? false;
     }
 
     /**
@@ -73,10 +70,10 @@ export class Signals {
      * @param {*[]} scope
      */
     #add(client, connections, scope) {
-        if (!Array.isArray(scope) || !scope.length) return; 
+        if (!Array.isArray(scope) || !scope.length) return;
         const [target] = scope.splice(0, 1);
         if (connections.has(target)) return;
-        if (typeof target?.connectObject !== Type.Function) return;
+        if (typeof target?.connectObject !== 'function') return;
         target.connectObject(...scope, client);
         connections.add(target);
     }
@@ -87,14 +84,14 @@ export class Signals {
      */
     #disconnectAll(client, connections) {
         for (const target of connections) {
-            if (typeof target?.disconnectObject !== Type.Function) continue;
+            if (typeof target?.disconnectObject !== 'function') continue;
             target.disconnectObject(client);
         }
     }
 
     /**
-     * @param {*} client 
-     * @param {Array} scope
+     * @param {*} client
+     * @param {*[]} scope
      * @returns {boolean}
      */
     #isValid(client, scope) {

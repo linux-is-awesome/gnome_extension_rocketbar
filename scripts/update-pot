@@ -1,0 +1,7 @@
+#!/bin/sh
+
+cd ../extension
+
+FILE_NAME=`cat ./metadata.json | grep -oP '(?<="gettext-domain": ")[^"]*'`
+
+xgettext --output=./locale/$FILE_NAME.pot ./*/*.js

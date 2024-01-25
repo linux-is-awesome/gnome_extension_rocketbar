@@ -1,8 +1,11 @@
-/* exported LauncherApiClient */
+/**
+ * JSDoc types
+ *
+ * @typedef {import('gi://GLib').Variant} GLib.Variant
+ */
 
 import Gio from 'gi://Gio';
-import { Context } from '../core/context.js';
-import { Type } from '../core/enums.js';
+import Context from '../core/context.js';
 import { Config } from '../utils/config.js';
 
 const DBUS_NAME = 'com.canonical.Unity';
@@ -21,17 +24,17 @@ const ConfigFields = {
 const LauncherApiNotify = {
     Notifications: 'notifications',
     Progress: 'progress'
-}
+};
 
 class LauncherApiService {
 
-    /** @type {number} */
+    /** @type {number?} */
     #dbusId = null;
 
-    /** @type {number} */
+    /** @type {number?} */
     #signalId = null;
 
-    /** @type {(notifyType: LauncherApiNotify) => void} */
+    /** @type {((notifyType: LauncherApiNotify) => void)?} */
     #callback = null;
 
     /** @type {Map<string, number>} */
@@ -54,11 +57,11 @@ class LauncherApiService {
         this.#dbusId = Gio.DBus.session.own_name(
             DBUS_NAME,
             Gio.BusNameOwnerFlags.ALLOW_REPLACEMENT | Gio.BusNameOwnerFlags.REPLACE,
-            null, () => { this.#dbusId = null; }
+            null, () => (this.#dbusId = null)
         );
         this.#signalId = Gio.DBus.session.signal_subscribe(
             null, DBUS_SIGNAL_SOURCE, null, null, null, Gio.DBusSignalFlags.NONE,
-            (_,__,___,____,_____, params) => this.#update(params)
+            (_, __, ___, ____, _____, params) => this.#update(params)
         );
     }
 
@@ -68,14 +71,13 @@ class LauncherApiService {
         if (this.#signalId) Gio.DBus.session.signal_unsubscribe(this.#signalId);
         this.#dbusId = null;
         this.#signalId = null;
-        this.#notifications = null;
     }
 
     /**
      * @param {(notifyType: LauncherApiNotify) => void} callback
      */
     connect(callback) {
-        if (typeof callback !== Type.Function) return;
+        if (typeof callback !== 'function') return;
         this.#callback = callback;
     }
 
@@ -88,6 +90,7 @@ class LauncherApiService {
      */
     #update(params) {
         if (!this.#notifications || !params) return;
+        /** @type {[appUri: string, props: {[key: string]: GLib.Variant}]} */
         const [appUri, props] = params.deepUnpack();
         const appId = appUri?.replace(APPID_REGEXP_STRING, '');
         if (!appId || !props) return;
@@ -105,7 +108,7 @@ class LauncherApiService {
         if (count) this.#notifications.set(appId, count);
         else if (!this.#notifications.has(appId)) return;
         else this.#notifications.delete(appId);
-        if (typeof this.#callback === Type.Function) this.#callback(LauncherApiNotify.Notifications);
+        if (typeof this.#callback === 'function') this.#callback(LauncherApiNotify.Notifications);
     }
 
     /**
@@ -113,39 +116,41 @@ class LauncherApiService {
      * @param {number} value
      */
     #handleProgress(appId, value) {
-        value = +parseFloat(value).toFixed(PROGRESS_VALUE_DECIMAL_PLACES) || 0;
+        value = +parseFloat(`${value}`).toFixed(PROGRESS_VALUE_DECIMAL_PLACES) || 0;
         const oldValue = this.#progress.get(appId) ?? 0;
         if (value === oldValue || (value === 1 && !this.#progress.has(appId))) return;
         if (value) this.#progress.set(appId, value);
         else if (!this.#progress.has(appId)) return;
         else this.#progress.delete(appId);
-        if (typeof this.#callback === Type.Function) this.#callback(LauncherApiNotify.Progress);
+        if (typeof this.#callback === 'function') this.#callback(LauncherApiNotify.Progress);
     }
 
 }
 
-export class LauncherApiClient {
+export class LauncherApiProxy {
 
-    /** @type {LauncherApiService} */
+    /** @type {LauncherApiService?} */
     #service = null;
 
-    /** @type {Map<*, () => void>} */
+    /** @type {Map<*, () => void>?} */
     #notificationClients = new Map();
 
-    /** @type {Map<*, () => void>} */
+    /** @type {Map<*, () => void>?} */
     #progressClients = new Map();
 
-    /** @type {Object.<string, string|number|boolean>} */
+    /** @type {Config} */
     #config = Config(this, ConfigFields, () => this.#handleConfig());
 
     /** @type {Map<string, number>} */
     get notifications() {
-        return this.#service?.notifications;
+        if (!this.#service) throw new Error(`${this.constructor.name} is invalid`);
+        return this.#service.notifications;
     }
 
     /** @type {Map<string, number>} */
     get progress() {
-        return this.#service?.progress;
+        if (!this.#service) throw new Error(`${this.constructor.name} is invalid`);
+        return this.#service.progress;
     }
 
     constructor() {
@@ -153,12 +158,11 @@ export class LauncherApiClient {
     }
 
     destroy() {
-        if (!Context.isSessionLocked) {
-            this.#service?.destroy();
-            Context.getSessionCache(this.constructor.name).clear();
-        } else this.#service?.disconnect();
         Context.signals.removeAll(this);
+        this.#service?.destroy();
         this.#service = null;
+        this.#notificationClients?.clear();
+        this.#progressClients?.clear();
         this.#notificationClients = null;
         this.#progressClients = null;
     }
@@ -169,7 +173,7 @@ export class LauncherApiClient {
      */
     connectNotifications(client, callback) {
         if (!this.#notificationClients) return;
-        if (typeof callback !== Type.Function || this.#notificationClients.has(client)) return;
+        if (typeof callback !== 'function' || this.#notificationClients.has(client)) return;
         this.#notificationClients.set(client, callback);
     }
 
@@ -179,7 +183,7 @@ export class LauncherApiClient {
      */
     connectProgress(client, callback) {
         if (!this.#progressClients) return;
-        if (typeof callback !== Type.Function || this.#progressClients.has(client)) return;
+        if (typeof callback !== 'function' || this.#progressClients.has(client)) return;
         this.#progressClients.set(client, callback);
     }
 
@@ -193,19 +197,12 @@ export class LauncherApiClient {
 
     #handleConfig() {
         if (this.#config.enableLauncherApi && this.#service) return;
-        const sessionCache = Context.getSessionCache(this.constructor.name);
-        const service = sessionCache.get(LauncherApiService.name);
         if (!this.#config.enableLauncherApi) {
-            if (service instanceof LauncherApiService) service.destroy();
-            sessionCache.clear();
+            this.#service?.destroy();
             this.#service = null;
             return;
         }
-        this.#service = service;
-        if (this.#service instanceof LauncherApiService === false) {
-            this.#service = new LauncherApiService();
-            sessionCache.set(LauncherApiService.name, this.#service);
-        }
+        this.#service = new LauncherApiService();
         this.#service.connect(notifyType => this.#notifyClients(notifyType));
     }
 

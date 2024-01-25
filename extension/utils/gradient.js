@@ -1,7 +1,3 @@
-/* exported GradientDirection, Gradient */
-
-import { Type } from '../core/enums.js';
-
 const INTENSITY_MIN = 0;
 const INTENSITY_MAX = 10;
 const COLOR_REGEXP_STRING = /[^\d,]/g;
@@ -25,7 +21,7 @@ export const GradientDirection = {
  * @returns {string}
  */
 export const Gradient = (colorString, intensity = INTENSITY_MAX, ratio = INTENSITY_MIN, direction = GradientDirection.Vertical) => {
-    if (typeof colorString !== Type.String) return '';
+    if (typeof colorString !== 'string') return '';
     /** @type {string[]} */
     const color = colorString.replace(COLOR_REGEXP_STRING, '').split(COLOR_STRING_SPLITTER);
     color.length = COLOR_STRING_LENGTH;
@@ -37,5 +33,5 @@ export const Gradient = (colorString, intensity = INTENSITY_MAX, ratio = INTENSI
     const endOpacity = intensity / INTENSITY_MAX;
     /** @type {string} */
     const endColor = `rgba(${[...color, endOpacity].join(COLOR_STRING_SPLITTER)})`;
-    return `${GRADIENT_STRING_DIRECTION}:${direction};${GRADIENT_STRING_START}:${startColor};${GRADIENT_STRING_END}:${endColor};`
+    return `${GRADIENT_STRING_DIRECTION}:${direction};${GRADIENT_STRING_START}:${startColor};${GRADIENT_STRING_END}:${endColor};`;
 };

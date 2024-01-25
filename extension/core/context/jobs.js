@@ -1,51 +1,49 @@
-/* exported Jobs */
+/**
+ * JSDoc types
+ *
+ * @typedef {Job} Jobs.Job
+ * @typedef {import('gi://Meta').Laters} Meta.Laters
+ */
 
 import GLib from 'gi://GLib';
-import Meta from 'gi://Meta';
-import { Context } from '../context.js';
-import { Type, Delay } from '../enums.js';
+import Context from '../context.js';
+import { Delay } from '../enums.js';
 
-/**
- * Note: Using compositor laters for Gnome 44+ instead of Meta functions.
- * 
- * TODO: stop using old Meta.laters.
- * 
- * @type {Meta.Laters}
- */
-const Laters = global.compositor?.get_laters() ?? {
-    add: (...args) => Meta.later_add(...args),
-    remove: (...args) => Meta.later_remove(...args)
-};
+const LATER_TYPE_BEFORE_REDRAW = 1;
+const LATER_TYPE_IDLE = 2;
 
-/** @type {Object.<string, number>} */
+/** @type {{[delay: string]: number}} */
 const LaterType = {
-    [Delay.Redraw]: Meta.LaterType.BEFORE_REDRAW,
-    [Delay.Idle]: Meta.LaterType.IDLE
+    [Delay.Redraw]: LATER_TYPE_BEFORE_REDRAW,
+    [Delay.Idle]: LATER_TYPE_IDLE
 };
+
+/** @type {Meta.Laters} */
+const Laters = global.compositor.get_laters();
 
 class Job {
 
-    /** @type {number} */
+    /** @type {number?} */
     #id = null;
 
-    /** @type {Promise} */
+    /** @type {Promise<void>?} */
     #job = null;
 
-    /** @type {number} */
+    /** @type {number?} */
     #delay = null;
 
-    /** @type {(job: this) => void} */
+    /** @type {((job: this) => void)?} */
     #destroyCallback = null;
 
     /** @type {boolean} */
     get #isValid() {
-        return typeof this.#destroyCallback === Type.Function && typeof this.#delay === Type.Number;
+        return typeof this.#destroyCallback === 'function' && typeof this.#delay === 'number';
     }
 
-    /** @type {Promise} */
+    /** @type {Promise<void>?} */
     get #currentJob() {
-        if (this.#job) return this.#job;
         if (!this.#isValid) return null;
+        if (this.#job) return this.#job;
         this.#job = new Promise(resolve => this.#queue(resolve));
         return this.#job;
     }
@@ -60,17 +58,17 @@ class Job {
     }
 
     /**
-     * @param {() => void} callback after destroy callback function
-     * @returns {this|null}
+     * @param {() => void} [callback] function to call after destroy
+     * @returns {this}
      */
     destroy(callback) {
-        if (!this.#isValid) return;
-        if (typeof callback === Type.Function) return this.then(() => this.destroy() ?? callback());
+        if (!this.#isValid) return this;
+        if (typeof callback === 'function') return this.then(() => (this.destroy(), callback()));
         this.reset();
-        if (typeof this.#destroyCallback === Type.Function) this.#destroyCallback(this);
+        if (typeof this.#destroyCallback === 'function') this.#destroyCallback(this);
         this.#delay = null;
         this.#destroyCallback = null;
-        return null;
+        return this;
     }
 
     /**
@@ -78,16 +76,17 @@ class Job {
      * @returns {this}
      */
     then(callback) {
-        this.#job = this.#currentJob?.then(callback);
+        this.#job = this.#currentJob?.then(callback) ?? null;
         return this;
     }
 
     /**
-     * @param {(error) => void} [callback]
+     * @param {(...args) => void} [callback]
      * @returns {this}
      */
     catch(callback) {
-        this.#job = this.#currentJob?.catch(typeof callback === Type.Function ? callback : e => console.error(Context.metadata?.name, e));
+        this.#job = this.#currentJob?.catch(typeof callback === 'function' ? callback :
+                                            e => Context.logError(`${Job.name} failed.`, e)) ?? null;
         return this;
     }
 
@@ -96,7 +95,7 @@ class Job {
      * @returns {this}
      */
     finally(callback) {
-        this.#job = this.#currentJob?.finally(callback);
+        this.#job = this.#currentJob?.finally(callback) ?? null;
         return this;
     }
 
@@ -107,28 +106,39 @@ class Job {
     reset(delay) {
         this.#job = null;
         if (this.#id) this.#dequeue();
-        if (typeof delay !== Type.Number) return this;
+        if (typeof delay !== 'number') return this;
         this.#delay = delay;
         return this;
     }
 
     /**
-     * @param {() => void} callback,
+     * @param {(...args) => void} callback
      */
     #queue(callback) {
-        const handler = () => { this.#id = null; callback(); };
         switch (this.#delay) {
             case Delay.Redraw:
             case Delay.Idle:
-                this.#id = Laters.add(LaterType[this.#delay], handler);
+                this.#id = Laters.add(LaterType[this.#delay], () => this.#resolve(callback));
                 break;
             default:
-                this.#id = GLib.timeout_add(GLib.PRIORITY_DEFAULT_IDLE, this.#delay, handler);
+                this.#id = GLib.timeout_add(GLib.PRIORITY_DEFAULT_IDLE, this.#delay ?? 0,
+                                            () => this.#resolve(callback));
         }
     }
 
+    /**
+     * @param {(...args) => void} callback
+     * @returns {boolean}
+     */
+    #resolve(callback) {
+        this.#id = null;
+        callback();
+        return false;
+    }
+
     #dequeue() {
-        if (this.#id) switch (this.#delay) {
+        if (!this.#id) return;
+        switch (this.#delay) {
             case Delay.Redraw:
             case Delay.Idle:
                 Laters.remove(this.#id);
@@ -140,9 +150,9 @@ class Job {
 
 }
 
-export class Jobs {
+export default class Jobs {
 
-    /** @type {Map<*, Set<Job>>} */
+    /** @type {Map<*, Set<Job>>?} */
     #jobs = new Map();
 
     destroy() {
@@ -160,16 +170,16 @@ export class Jobs {
      * @returns {Job}
      */
     new(client, delay = Delay.Idle) {
-        if (!this.#jobs) return null;
+        if (!this.#jobs) throw new Error(`${this.constructor.name} unable to create a new ${Job.name}.`);
         return this.#add(client, new Job(job => this.#remove(client, job), delay));
     }
 
     /**
      * @param {*} client
-     * @return {boolean}
+     * @returns {boolean}
      */
     hasClient(client) {
-        return this.#jobs?.has(client);
+        return this.#jobs?.has(client) ?? false;
     }
 
     /**
@@ -177,8 +187,8 @@ export class Jobs {
      * @returns {this}
      */
     removeAll(client) {
-        if (!client) return this;
-        const jobs = this.#jobs?.get(client);
+        if (!client || !this.#jobs) return this;
+        const jobs = this.#jobs.get(client);
         if (!jobs) return this;
         this.#jobs.delete(client);
         for (const job of jobs) job.destroy();
@@ -191,9 +201,9 @@ export class Jobs {
      * @returns {Job}
      */
     #add(client, job) {
-        const jobs = this.#jobs.get(client) ?? new Set();
+        const jobs = this.#jobs?.get(client) ?? new Set();
         jobs.add(job);
-        this.#jobs.set(client, jobs);
+        this.#jobs?.set(client, jobs);
         return job;
     }
 
@@ -205,7 +215,7 @@ export class Jobs {
         const jobs = this.#jobs?.get(client);
         if (!jobs) return;
         if (jobs.has(job)) jobs.delete(job);
-        if (!jobs.size) this.#jobs.delete(client);
+        if (!jobs.size) this.#jobs?.delete(client);
     }
 
 }

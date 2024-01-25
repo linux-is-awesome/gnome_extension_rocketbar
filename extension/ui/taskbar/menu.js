@@ -1,79 +1,63 @@
-/* exported Menu */
-
-/** @typedef {import('./appButton.js').AppButton} AppButton */
+/**
+ * JSDoc types
+ *
+ * @typedef {import('./appButton.js').AppButton} AppButton
+ * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupBaseMenuItem} PopupBaseMenuItem
+ * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupMenuItem} PopupMenuItem
+ * @typedef {import('resource:///org/gnome/shell/ui/boxpointer.js').PopupAnimation} BoxPointer.PopupAnimation
+ */
 
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
-import { AppMenu, Slider, Ornament, ArrowIcon } from '../../core/legacy.js';
-import { PopupSubMenuMenuItem, PopupSeparatorMenuItem, PopupBaseMenuItem, PopupMenuSection } from '../../core/legacy.js';
-import { Context } from '../../core/context.js';
-import { Delay, Event, Type } from '../../core/enums.js';
+import { AppMenu } from 'resource:///org/gnome/shell/ui/appMenu.js';
+import { PopupSeparatorMenuItem } from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import Context from '../../core/context.js';
+import { SliderMenuItem, CollapsibleGroup, ChildMenu } from '../base/menu.js';
+import { Delay, Event } from '../../core/enums.js';
 import { ComponentLocation } from '../base/component.js';
 import { Config } from '../../utils/config.js';
+import { FileSelector } from '../../utils/zenity.js';
 import { ActivateBehavior, DemandsAttentionBehavior, AppIconSize } from '../../utils/taskbar/appConfig.js';
-import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { Labels } from '../../core/labels.js';
 
 const UNWANTED_STYLE_CLASS = 'app-menu';
 const DEFAULT_STYLE_CLASS = 'rocketbar__popup-menu';
-const SECTION_TITLE_STYLE_CLASS = 'rocketbar__popup-menu_section-title';
-const OPTIONS_GROUP_STYLE_CLASS = 'rocketbar__popup-menu_options-group';
-const SLIDER_ICON_STYLE_CLASS = 'popup-menu-icon';
-const EXPANDER_STYLE_CLASS = 'popup-menu-item-expander';
-const INACTIVE_MENU_ITEM_STYLE_PSEUDO_CLASS = 'insensitive';
 const ICON_PATH_REGEXP_STRING = /^\/(.)*(\.(svg|png))$/;
 const ICON_PATH_SEPARATOR = '/';
+const ICON_FILE_TYPE_FILTER = `${Labels.Icon} | *.svg *.png`;
 
-const ICON_SIZE_CONFIG_FIELD = 'iconSize';
-const ICON_PATH_CONFIG_FIELD = 'iconPath';
-const ACTIVATE_BEHAVIOR_CONFIG_FIELD = 'activateBehavior';
-const DEMANDS_ATTENTION_BEHAVIOR_CONFIG_FIELD = 'demandsAttentionBehavior';
-
-/** @type {Object.<string, boolean>} */
+/** @type {{[prop: string]: boolean}} */
 const DefaultProps = {
     favoritesSection: true,
     showSingleWindows: true
 };
 
-/** @type {Object.<string, boolean>} */
-const SliderMenuItemProps = {
-    activate: false
-};
-
-/** @type {Object.<string, string>} */
-const SliderIconProps = {
-    style_class: SLIDER_ICON_STYLE_CLASS
-};
-
-/** @type {Object.<string, boolean|number>} */
-const SliderValueProps = {
-    y_expand: true,
-    y_align: Clutter.ActorAlign.CENTER
-};
-
-/** @type {Object.<string, boolean|string>} */
-const MenuItemExpanderProps = {
-    style_class: EXPANDER_STYLE_CLASS,
-    x_expand: true
-};
-
-/** @type {Object.<number, number>} */
+/** @type {{[position: string]: number}} */
 const MenuPosition = {
     [ComponentLocation.Top]: St.Side.TOP,
     [ComponentLocation.Bottom]: St.Side.BOTTOM
 };
 
-/** @type {Object.<string, string>} */
-const ActivateBehaviorCheckboxGroup = {
+/** @type {{[value: string]: string}} */
+const ActivateBehaviorRadioGroup = {
     [ActivateBehavior.NewWindow]: Labels.NewWindow,
     [ActivateBehavior.FindWindow]: Labels.FindWindow,
     [ActivateBehavior.MoveWindows]: Labels.MoveWindows
 };
 
-/** @type {Object.<string, string>} */
-const DemandsAttentionBehaviorCheckboxGroup = {
+/** @type {{[value: string]: string}} */
+const DemandsAttentionBehaviorRadioGroup = {
     [DemandsAttentionBehavior.FocusActive]: Labels.FocusActive,
     [DemandsAttentionBehavior.FocusAll]: Labels.FocusAll
+};
+
+/** @enum {string} */
+const ConfigField = {
+    IconSize: 'iconSize',
+    IconPath: 'iconPath',
+    IconSizeOffset: 'iconSizeOffset',
+    ActivateBehavior: 'activateBehavior',
+    DemandsAttentionBehavior: 'demandsAttentionBehavior'
 };
 
 /** @enum {string} */
@@ -88,283 +72,37 @@ const SoundVolumeIcon = {
     Input: 'audio-input-microphone-symbolic'
 };
 
-class SliderMenuItem {
+class SoundVolumeControlGroup extends CollapsibleGroup {
 
-    /** @type {PopupBaseMenuItem} */
-    #actor = new PopupBaseMenuItem(SliderMenuItemProps);
-
-    /** @type {Slider} */
-    #slider = new Slider(0);
-
-    /** @type {St.Icon} */
-    #icon = new St.Icon(SliderIconProps);
-
-    /** @type {St.Label} */
-    #value = new St.Label(SliderValueProps);
-
-    /** @type {PopupBaseMenuItem} */
-    get actor() {
-        return this.#actor;
-    }
-
-    /** @type {Slider} */
-    get slider() {
-        return this.#slider;
-    }
-
-    /** @param {string} value */
-    set icon(value) {
-        if (typeof value !== Type.String) this.#icon.set_icon_name(null);
-        else this.#icon.set_icon_name(value);
-    }
-
-    /** @param {number} value */
-    set value(value) {
-        if (typeof value !== Type.Number) this.#value.set_text(null);
-        else this.#value.set_text(Math.round(value).toString());
-    }
-
-    /**
-     * @param {(menuItem: SliderMenuItem) => void} callback
-     * @param {string} [icon]
-     * @param {number} [value]
-     */
-    constructor(callback, icon, value) {
-        this.#actor.setOrnament(Ornament.HIDDEN);
-        this.#actor.add_child(this.#icon);
-        this.#actor.add_child(this.#slider);
-        this.#actor.add_child(this.#value);
-        this.icon = icon;
-        this.value = value;
-        this.#actor.connect(Event.KeyPress, (_, event) => this.#slider.emit(Event.KeyPress, event));
-        if (typeof callback !== Type.Function) return;
-        this.#slider.connect(Event.ValueChanged, () => callback(this));
-    }
-
-}
-
-class MenuSection {
-
-    /** @type {PopupSubMenuMenuItem} */
-    #actor = null;
-
-    /** @type {PopupSubMenuMenuItem} */
-    get actor() {
-        return this.#actor;
-    }
-
-    /** @type {PopupSubMenu} */
-    get menu() {
-        return this.#actor?.menu;
-    }
-
-    /** @type {boolean} */
-    get isOpen() {
-        return this.#actor?.menu?.isOpen;
-    }
-
-    /**
-     * @param {string} [title]
-     */
-    constructor(title) {
-        this.#actor = new PopupSubMenuMenuItem(title);
-        this.#actor.connect(Event.Destroy, () => { this.#actor = null; });
-    }
-
-}
-
-class ChildMenu extends PopupMenuSection {
-
-    /** @type {Set<PopupBaseMenuItem>} */
-    #hiddenMenuItems = new Set();
-
-    /** @type {PopupBaseMenuItem} */
-    #titleMenuItem = null;
-
-    /** @type {St.Icon} */
-    #arrowLeft = ArrowIcon(St.Side.LEFT);
-
-    /** @type {St.Icon} */
-    #arrowRight = ArrowIcon(St.Side.RIGHT);
-
-    /** @type {PopupMenuSection} */
-    #menu = new PopupMenuSection();
-
-    /** @type {PopupMenuSection} */
-    get menu() {
-        return this.#menu;
-    }
-
-    /**
-     * @param {string} title
-     */
-    constructor(title) {
-        super();
-        this.isOpen = false;
-        this.#menu.actor.hide();
-        this.#arrowLeft.hide();
-        this.#titleMenuItem = this.addAction(title, () => this.toggle());
-        this.#titleMenuItem.add_child(new St.Bin(MenuItemExpanderProps));
-        this.#titleMenuItem.insert_child_at_index(this.#arrowLeft, 0);
-        this.#titleMenuItem.add_child(this.#arrowRight);
-        this.addMenuItem(this.#menu);
-    }
-
-    destroy() {
-        super.destroy();
-        this.#menu = null;
-        this.#titleMenuItem = null;
-        this.#arrowLeft = null;
-        this.#arrowRight = null;
-        Context.signals.removeAll(this);
-    }
-
-    /**
-     * Note: Prevent undesirable behavior when the parent menu calls this function.
-     */
-    itemActivated() {}
-
-    /**
-     * Note: Prevent undesirable behavior when the parent menu calls this function.
-     */
-    open() {}
-
-    /**
-     * Note: Set closed flag if parent menu is closed but don't handle state.
-     */
-    close() {
-        this.isOpen = false;
-        super.close();
-    }
-
-    toggle() {
-        this.isOpen = !this.isOpen;
-        if (this.isOpen) super.open();
-        this.#handleState();
-        if (this.isOpen) return;
-        super.close();
-    }
-
-    /**
-     * @param {PopupBaseMenuItem} menuItem
-     * @param {boolean} isActive
-     */
-    setItemActiveState(menuItem, isActive = true) {
-        if (menuItem instanceof PopupBaseMenuItem === false) return;
-        menuItem._activatable = isActive;
-        if (isActive) menuItem.remove_style_pseudo_class(INACTIVE_MENU_ITEM_STYLE_PSEUDO_CLASS);
-        else menuItem.add_style_pseudo_class(INACTIVE_MENU_ITEM_STYLE_PSEUDO_CLASS);
-    }
-
-    /**
-     * @param {string} title
-     * @param {Object.<string, string>} items
-     * @param {(value: string, items: Object.<string, string>) => void} callback
-     * @returns {(value: string) => PopupBaseMenuItem[]}
-     */
-    addCheckboxGroup(title, items, callback) {
-        const group = new Map();
-        const separator = this.addSeparator(title);
-        /** @param {string} value */
-        const handler = value => {
-            const result = [separator];
-            for (const [itemValue, item] of group) {
-                if (itemValue === value) item.setOrnament(Ornament.DOT);
-                else item.setOrnament(Ornament.NONE);
-                result.push(item);
-            }
-            if (typeof callback === Type.Function) callback(value, items);
-            return result;
-        };
-        for (const value in items) group.set(value, this.#menu.addAction(items[value], () => handler(value)));
-        return handler;
-    }
-
-    /**
-     * @param {string} [title]
-     * @returns {PopupSeparatorMenuItem}
-     */
-    addSeparator(title = null) {
-        const separator = new PopupSeparatorMenuItem(title);
-        if (title) separator.add_style_class_name(SECTION_TITLE_STYLE_CLASS);
-        this.#menu.addMenuItem(separator);
-        return separator;
-    }
-
-    #handleState() {
-        const parentMenu = this._getTopMenu();
-        const parentActor = parentMenu?.actor;
-        if (!parentMenu.isOpen || !parentActor) return;
-        parentActor.remove_all_transitions();
-        const location = parentActor._arrowSide;
-        const translation = parentMenu._boxPointer?.get_theme_node()?.get_length('-arrow-rise') ?? 0;
-        const mode = Clutter.AnimationMode.LINEAR;
-        Animation(parentActor, AnimationDuration.Fast, { ...AnimationType.OpacityMin, mode }).then(() => {
-            parentMenu._openedSubMenu?.close();
-            this.#toggleVisibility();
-            this.#titleMenuItem?.grab_key_focus();
-            parentActor.translation_y = location === St.Side.BOTTOM ? translation : -translation;
-            Animation(parentActor, AnimationDuration.Fast, { ...AnimationType.OpacityMax, ...AnimationType.TranslationReset, mode });
-        });
-        if (!this.isOpen || Context.signals.hasClient(this)) return;
-        Context.signals.add(this, [parentMenu, Event.MenuClosed, () => this.#toggleVisibility()]);
-    }
-
-    #toggleVisibility() {
-        if (!this.isOpen) {
-            this.#menu.actor.hide();
-            this.#arrowLeft.hide();
-            this.#arrowRight.show();
-            if (!this.#hiddenMenuItems.size) return;
-            for (const menuItem of this.#hiddenMenuItems) menuItem.show();
-            return this.#hiddenMenuItems.clear();
-        }
-        this.#menu.actor.show();
-        this.#arrowLeft.show();
-        this.#arrowRight.hide();
-        const menuItems = this.actor?.get_parent()?.get_children();
-        if (!menuItems) return;
-        for (let i = 0, l = menuItems.length; i < l; ++i) {
-            const menuItem = menuItems[i];
-            if (menuItem === this.actor) continue;
-            if (menuItem instanceof St.ScrollView || !menuItem.visible) continue;
-            this.#hiddenMenuItems.add(menuItem);
-            menuItem.hide();
-        }
-    }
-
-}
-
-class SoundVolumeControlSection extends MenuSection {
-
-    /** @type {AppButton} */
+    /** @type {AppButton?} */
     #appButton = null;
 
-    /** @type {SliderMenuItem} */
+    /** @type {SliderMenuItem?} */
     #inputVolumeSlider = new SliderMenuItem(menuItem => this.#setVolume(menuItem), SoundVolumeIcon.Input);
 
-    /** @type {SliderMenuItem} */
+    /** @type {SliderMenuItem?} */
     #outputVolumeSlider = new SliderMenuItem(menuItem => this.#setVolume(menuItem), SoundVolumeIcon.Output);
 
     /** @type {boolean} */
     #isSyncing = false;
 
     /**
-     * @param {AppButton} appButton
+     * @param {AppButton?} appButton
      */
     constructor(appButton) {
         super(Labels.SoundVolumeControl);
         this.#appButton = appButton;
-        this.menu.addMenuItem(this.#inputVolumeSlider.actor);
-        this.menu.addMenuItem(this.#outputVolumeSlider.actor);
+        this.actor.connect(Event.Destroy, () => this.#destroy());
+        this.menu.addMenuItem(this.#inputVolumeSlider?.actor);
+        this.menu.addMenuItem(this.#outputVolumeSlider?.actor);
         this.menu.connect(Event.OpenStateChanged, () => this.#syncVolume());
-        this.actor.connect(Event.Destroy, () => { this.#appButton = null; });
     }
 
     update() {
-        if (!this.actor) return;
+        if (!this.actor || !this.#inputVolumeSlider || !this.#outputVolumeSlider) return;
         const soundVolumeControl = this.#appButton?.soundVolumeControl;
-        if (!soundVolumeControl?.hasInput && !soundVolumeControl?.hasOutput) return this.actor.hide();
+        if (!soundVolumeControl?.hasInput &&
+            !soundVolumeControl?.hasOutput) return this.actor.hide();
         else this.actor.show();
         this.#inputVolumeSlider.actor.visible = soundVolumeControl.hasInput;
         this.#outputVolumeSlider.actor.visible = soundVolumeControl.hasOutput;
@@ -386,8 +124,8 @@ class SoundVolumeControlSection extends MenuSection {
         }
     }
 
-    async #syncVolume() {
-        if (!this.isOpen) return;
+    #syncVolume() {
+        if (!this.isOpen || !this.#inputVolumeSlider || !this.#outputVolumeSlider) return;
         const soundVolumeControl = this.#appButton?.soundVolumeControl;
         if (!soundVolumeControl) return;
         this.#isSyncing = true;
@@ -396,90 +134,160 @@ class SoundVolumeControlSection extends MenuSection {
         this.#isSyncing = false;
     }
 
+    #destroy() {
+        this.#appButton = null;
+        this.#inputVolumeSlider = null;
+        this.#outputVolumeSlider = null;
+    }
+
 }
 
-class CustomizeSection extends ChildMenu {
+class CustomizeChildMenu extends ChildMenu {
 
-    /** @type {AppButton} */
+    /** @type {AppButton?} */
     #appButton = null;
 
-    /** @type {SliderMenuItem} */
-    #iconSizeSlider = new SliderMenuItem(menuItem => this.#setIconSize(menuItem), null, AppIconSize.Min);
-
-    /** @type {(value: string) => PopupBaseMenuItem[]} */
+    /** @type {((value: string, isDefault: boolean) => (PopupBaseMenuItem|CollapsibleGroup)[])?} */
     #activateBehavior = null;
 
-    /** @type {(value: string) => PopupBaseMenuItem[]} */
+    /** @type {((value: string, isDefault: boolean) => (PopupBaseMenuItem|CollapsibleGroup)[])?} */
     #demandsAttentionBehavior = null;
 
-    /** @type {PopupMenuItem} */
+    /** @type {((iconSize: number, defaultIconSize: number, isDefault: boolean) => void)?} */
+    #iconSize = null;
+
+    /** @type {((iconPath: string?) => void)?} */
+    #customIcon = null;
+
+    /** @type {PopupMenuItem?} */
     #importIconItem = null;
 
-    /** @type {PopupMenuItem} */
-    #resetIconItem = null;
-
-    /** @type {PopupMenuItem} */
+    /** @type {PopupMenuItem?} */
     #resetAllItem = null;
 
     /** @type {boolean} */
     #isSyncing = false;
 
-    /** @type {Object.<string, string|number|boolean>} */
+    /** @type {Config?} */
     #config = null;
 
-    /** @type {string} */
+    /** @type {string?} */
     #clipboardIconPath = null;
 
     /**
-     * @param {AppButton} appButton
+     * @param {AppButton?} appButton
      */
     constructor(appButton) {
         super(Labels.Customize);
         this.#appButton = appButton;
-        this.#createMenuItems();
-        this.menu.itemActivated = () => {};
-        this.menu.actor.add_style_class_name(OPTIONS_GROUP_STYLE_CLASS);
+        this.actor.connect(Event.Destroy, () => this.#destroy());
         this.menu.connect(Event.OpenStateChanged, () => this.#sync());
-        this.actor.connect(Event.Destroy, () => { this.#appButton = null; });
+        this.menu.itemActivated = () => {};
+    }
+
+    /**
+     * @override
+     */
+    toggle() {
+        if (!this.#resetAllItem) this.#createMenuItems();
+        super.toggle();
+    }
+
+    #destroy() {
+        Context.jobs.removeAll(this);
+        this.#appButton = null;
+        this.#activateBehavior = null;
+        this.#demandsAttentionBehavior = null;
+        this.#iconSize = null;
+        this.#customIcon = null;
+        this.#importIconItem = null;
+        this.#resetAllItem = null;
     }
 
     #createMenuItems() {
-        const menu = this.menu;
-        this.#activateBehavior = this.addCheckboxGroup(
-            Labels.ActivateBehavior, ActivateBehaviorCheckboxGroup,
-            (...args) => this.#setCheckboxValue(...args));
-        this.#demandsAttentionBehavior = this.addCheckboxGroup(
-            Labels.DemandsAttentionBehavior, DemandsAttentionBehaviorCheckboxGroup,
-            (...args) => this.#setCheckboxValue(...args));
-        this.addSeparator(Labels.IconSize);
-        menu.addMenuItem(this.#iconSizeSlider.actor);
-        this.addSeparator(Labels.CustomIcon);
-        this.#importIconItem = menu.addAction(Labels.NoIconInClipboard, () => this.#importIcon());
-        this.#resetIconItem = menu.addAction(Labels.ResetToDefault, () => this.#resetIcon());
+        this.#activateBehavior = this.addRadioGroup(
+            Labels.ActivateBehavior, ActivateBehaviorRadioGroup,
+            (...args) => this.#setRadioGroupValue(...args), true);
+        this.#demandsAttentionBehavior = this.addRadioGroup(
+            Labels.DemandsAttentionBehavior, DemandsAttentionBehaviorRadioGroup,
+            (...args) => this.#setRadioGroupValue(...args), true);
+        this.#customIcon = this.#addCustomIconGroup();
+        this.#iconSize = this.#addIconSizeSlider();
         this.addSeparator();
-        this.#resetAllItem = menu.addAction(Labels.ResetAllToDefault, () => this.#resetAll());
+        this.#resetAllItem = this.menu.addAction(Labels.ResetAllToDefault, () => this.#resetAll());
+    }
+
+    /**
+     * @returns {(iconPath: string?) => void}
+     */
+    #addCustomIconGroup() {
+        const separator = this.addSeparator(Labels.CustomIcon);
+        const collapsible = this.addCollapsibleGroup(Labels.NotSelected);
+        const collapsibleMenu = collapsible.menu;
+        collapsibleMenu.itemActivated = () => {};
+        collapsibleMenu.addAction(Labels.SelectIcon, () => this.#selectIcon());
+        this.#importIconItem = collapsibleMenu.addAction(Labels.IconFromClipboard, () => {
+            if (typeof this.#clipboardIconPath !== 'string') return;
+            this.#setCustomIcon(this.#clipboardIconPath);
+        });
+        this.setItemActiveState(this.#importIconItem, false);
+        const resetIconItem = collapsibleMenu.addAction(Labels.ResetToDefault, () => this.#setCustomIcon());
+        return iconPath => {
+            const isEmptyIconPath = typeof iconPath !== 'string' || !iconPath.trim();
+            collapsible.title = isEmptyIconPath ? Labels.NotSelected : iconPath.split(ICON_PATH_SEPARATOR).pop();
+            this.setChangedIndicator(separator, !isEmptyIconPath);
+            this.setItemActiveState(resetIconItem, !isEmptyIconPath);
+        };
+    }
+
+    /**
+     * @returns {(iconSize: number, defaultIconSize: number, isDefault: boolean) => void}
+     */
+    #addIconSizeSlider() {
+        const separator = this.addSeparator(Labels.IconSize);
+        const iconSizeSlider = new SliderMenuItem(
+            menuItem => (this.#setIconSize(menuItem), this.setChangedIndicator(separator)),
+            null, AppIconSize.Min);
+        this.menu.addMenuItem(iconSizeSlider.actor);
+        return (iconSize, defaultIconSize, isDefault) => {
+            if (typeof iconSize !== 'number' || typeof defaultIconSize !== 'number') return;
+            const slider = iconSizeSlider.slider;
+            const offset = AppIconSize.Max - AppIconSize.Min;
+            slider.overdriveStart = (defaultIconSize - AppIconSize.Min) / offset;
+            slider.value = (iconSize - AppIconSize.Min) / offset;
+            this.setChangedIndicator(separator, !isDefault);
+        };
     }
 
     #resetAll() {
-        if (!this.#appButton) return;
-        this.#appButton.configProvider?.resetConfigOverride(this.#appButton.app);
+        const app = this.#appButton?.app;
+        if (!app) return;
+        this.#appButton?.configProvider?.resetConfigOverride(app);
         this.#sync();
     }
 
     #sync() {
-        if (!this.isOpen) return;
+        if (!this.isOpen ||
+            typeof this.#activateBehavior !== 'function' ||
+            typeof this.#demandsAttentionBehavior !== 'function' ||
+            typeof this.#iconSize !== 'function' ||
+            typeof this.#customIcon !== 'function') return;
         const app = this.#appButton?.app;
         const configProvider = this.#appButton?.configProvider;
         if (!configProvider || !app) return;
-        if (!this.#config) {
-            this.#config = configProvider.getConfig(app);
-        }
-        const config = this.#config;
+        this.#config ??= configProvider.getConfig(app);
+        if (!this.#config) return;
         this.#isSyncing = true;
-        this.#activateBehavior(config[ACTIVATE_BEHAVIOR_CONFIG_FIELD]).forEach(item => item.visible = config.isolateWorkspaces);
-        this.#demandsAttentionBehavior(config[DEMANDS_ATTENTION_BEHAVIOR_CONFIG_FIELD]);
-        this.#setIconSizeSliderPosition(config[ICON_SIZE_CONFIG_FIELD], configProvider.defaultConfig[ICON_SIZE_CONFIG_FIELD]);
-        this.setItemActiveState(this.#resetIconItem, typeof config[ICON_PATH_CONFIG_FIELD] === Type.String);
+        const config = this.#config;
+        const defaultConfig = configProvider.defaultConfig;
+        this.#activateBehavior(config[ConfigField.ActivateBehavior],
+                              !configProvider.hasConfigOverride(app, ConfigField.ActivateBehavior))
+                              .forEach(item => (item.visible = config.isolateWorkspaces));
+        this.#demandsAttentionBehavior(config[ConfigField.DemandsAttentionBehavior],
+                                       !configProvider.hasConfigOverride(app, ConfigField.DemandsAttentionBehavior));
+        this.#iconSize(config[ConfigField.IconSize], defaultConfig[ConfigField.IconSize],
+                       !configProvider.hasConfigOverride(app, ConfigField.IconSizeOffset));
+        this.#customIcon(config[ConfigField.IconPath]);
         this.setItemActiveState(this.#resetAllItem, configProvider.hasConfigOverride(app));
         this.#scanClipboard();
         this.#isSyncing = false;
@@ -491,67 +299,66 @@ class CustomizeSection extends ChildMenu {
             const isValidIcon = ICON_PATH_REGEXP_STRING.test(iconPath ?? null);
             this.#clipboardIconPath = isValidIcon ? iconPath : null;
             this.setItemActiveState(this.#importIconItem, isValidIcon);
-            if (!isValidIcon) {
-                this.#importIconItem.label.set_text(Labels.NoIconInClipboard);
-                return this.#importIconItem.setOrnament(Ornament.NONE);
-            }
-            const iconName = iconPath.split(ICON_PATH_SEPARATOR).pop();
-            this.#importIconItem.label.set_text(iconName);
-            if (this.#config[ICON_PATH_CONFIG_FIELD] === iconPath) this.#importIconItem.setOrnament(Ornament.NONE);
-            else this.#importIconItem.setOrnament(Ornament.CHECK);
         });
     }
 
-    #setIconSizeSliderPosition(iconSize, defaultIconSize) {
-        if (typeof iconSize !== Type.Number || typeof defaultIconSize !== Type.Number) return;
-        const slider = this.#iconSizeSlider.slider;
-        const offset = AppIconSize.Max - AppIconSize.Min;
-        slider.overdriveStart = (defaultIconSize - AppIconSize.Min) / offset;
-        slider.value = (iconSize - AppIconSize.Min) / offset;
-    }
-
-    #setIconSize(menuItem) {
-        const slider = menuItem.slider;
-        const iconSize = Math.round((AppIconSize.Max - AppIconSize.Min) * slider.value) + AppIconSize.Min;
-        menuItem.value = iconSize;
-        if (this.#isSyncing || !this.#appButton) return;
-        const job = Context.jobs.removeAll(this).new(this, Delay.Sleep);
-        job.destroy(() => this.#setConfigOverride(ICON_SIZE_CONFIG_FIELD, iconSize)).catch();
-    }
-
-    #setCheckboxValue(value, group) {
+    /**
+     * @param {string} value
+     * @param {{[value: string]: string}} group
+     */
+    #setRadioGroupValue(value, group) {
         if (this.#isSyncing || !this.#appButton) return;
         let field = null;
         switch (group) {
-            case ActivateBehaviorCheckboxGroup:
-                field = ACTIVATE_BEHAVIOR_CONFIG_FIELD;
+            case ActivateBehaviorRadioGroup:
+                field = ConfigField.ActivateBehavior;
                 break;
-            case DemandsAttentionBehaviorCheckboxGroup:
-                field = DEMANDS_ATTENTION_BEHAVIOR_CONFIG_FIELD;
+            case DemandsAttentionBehaviorRadioGroup:
+                field = ConfigField.DemandsAttentionBehavior;
                 break;
         }
         if (!field || !value) return;
         this.#setConfigOverride(field, value);
     }
 
-    #importIcon() {
-        if (typeof this.#clipboardIconPath !== Type.String) return;
-        this.#setConfigOverride(ICON_PATH_CONFIG_FIELD, this.#clipboardIconPath);
-        this.#importIconItem.setOrnament(Ornament.NONE);
-        this.setItemActiveState(this.#resetIconItem, true);
+    async #selectIcon() {
+        if (!this.#config) return;
+        this.parentMenu?.toggle();
+        const iconPath = await FileSelector(Labels.SelectIcon, ICON_FILE_TYPE_FILTER, this.#config[ConfigField.IconPath]);
+        if (typeof iconPath !== 'string') return;
+        this.#setCustomIcon(iconPath);
     }
 
-    #resetIcon() {
-        this.#setConfigOverride(ICON_PATH_CONFIG_FIELD, null);
-        this.setItemActiveState(this.#resetIconItem, false);
-        if (typeof this.#clipboardIconPath !== Type.String) return;
-        this.#importIconItem.setOrnament(Ornament.CHECK);
+    /**
+     * @param {string|null} iconPath
+     */
+    #setCustomIcon(iconPath = null) {
+        this.#setConfigOverride(ConfigField.IconPath, iconPath ?? null);
+        if (typeof this.#customIcon !== 'function') return;
+        this.#customIcon(iconPath);
     }
 
+    /**
+     * @param {SliderMenuItem} menuItem
+     */
+    #setIconSize(menuItem) {
+        const slider = menuItem.slider;
+        const iconSize = Math.round((AppIconSize.Max - AppIconSize.Min) * slider.value) + AppIconSize.Min;
+        menuItem.value = iconSize;
+        if (this.#isSyncing || !this.#appButton) return;
+        const job = Context.jobs.removeAll(this).new(this, Delay.Sleep);
+        job.destroy(() => this.#setConfigOverride(ConfigField.IconSize, iconSize)).catch();
+    }
+
+    /**
+     * @param {string} field
+     * @param {string|number|boolean|null} value
+     */
     #setConfigOverride(field, value) {
+        const app = this.#appButton?.app;
         const configProvider = this.#appButton?.configProvider;
-        if (!configProvider) return;
-        configProvider.setConfigOverride(this.#appButton.app, field, value);
+        if (!app || !configProvider) return;
+        configProvider.setConfigOverride(app, field, value);
         this.setItemActiveState(this.#resetAllItem);
     }
 
@@ -559,16 +366,16 @@ class CustomizeSection extends ChildMenu {
 
 export class Menu extends AppMenu {
 
-    /** @type {AppButton} */
+    /** @type {AppButton?} */
     #appButton = null;
 
     /** @type {boolean} */
     #hasValidAppId = true;
 
-    /** @type {SoundVolumeControlSection} */
-    #soundVolumeControlSection = null;
+    /** @type {SoundVolumeControlGroup?} */
+    #soundVolumeControlGroup = null;
 
-    /** @type {Object.<string, boolean>} */
+    /** @type {Config} */
     #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
 
     /**
@@ -579,38 +386,43 @@ export class Menu extends AppMenu {
         this.#appButton = appButton;
         this.actor.remove_style_class_name(UNWANTED_STYLE_CLASS);
         this.actor.add_style_class_name(DEFAULT_STYLE_CLASS);
-        this.setApp(appButton.app);
-        this.#hasValidAppId = this._appSystem?.lookup_app(this._app?.id) ? true : false;
-        this.#createSections();
+        const app = appButton?.app;
+        if (app) this.setApp(app);
+        this.#hasValidAppId = app?.id ? !!this._appSystem?.lookup_app(app.id) : false;
+        this.#createMenuItems();
         this._updateDetailsVisibility();
     }
 
     /**
      * Note: There is a bug in the AppMenu that leads to exceptions while destroying the menu.
-     *       Set this._app as null to avoid the exceptions. 
+     *       Set this._app as null to avoid the exceptions.
+     *
+     * @override
      */
     destroy() {
         Context.signals.removeAll(this);
         this.close(false);
         this._app?.disconnectObject(this);
         this._app = null;
-        this.#soundVolumeControlSection = null;
+        this.#appButton  = null;
+        this.#soundVolumeControlGroup = null;
         super.destroy();
     }
 
     /**
+     * @override
      * @param {BoxPointer.PopupAnimation} animation
      */
     open(animation) {
-        this.actor._arrowSide = MenuPosition[this.#appButton.location];
-        this.#soundVolumeControlSection?.update();
+        this.actor._arrowSide = MenuPosition[this.#appButton?.location ?? ComponentLocation.Top];
+        this.#soundVolumeControlGroup?.update();
         super.open(animation);
     }
 
-    #createSections() {
-        this.#soundVolumeControlSection = new SoundVolumeControlSection(this.#appButton);
-        this.addMenuItem(this.#soundVolumeControlSection.actor);
-        if (this.#hasValidAppId) this.addMenuItem(new CustomizeSection(this.#appButton));
+    #createMenuItems() {
+        this.#soundVolumeControlGroup = new SoundVolumeControlGroup(this.#appButton);
+        this.addMenuItem(this.#soundVolumeControlGroup.actor);
+        if (this.#hasValidAppId) this.addMenuItem(new CustomizeChildMenu(this.#appButton));
         this.addMenuItem(new PopupSeparatorMenuItem());
         this.moveMenuItem(this._quitItem, this.numMenuItems);
     }
@@ -626,14 +438,14 @@ export class Menu extends AppMenu {
             case ConfigFields.showFavorites:
                 this._updateFavoriteItem();
                 break;
-            default: return;
         }
     }
 
     /**
+     * @override
      * @param {*} actor
      * @param {Clutter.Event} event
-     * @returns {number}
+     * @returns {boolean}
      */
     _onKeyPress(actor, event) {
         const key = event?.get_key_symbol();
@@ -642,6 +454,9 @@ export class Menu extends AppMenu {
         return super._onKeyPress(actor, event);
     }
 
+    /**
+     * @override
+     */
     _updateFavoriteItem() {
         super._updateFavoriteItem();
         if (!this._toggleFavoriteItem?.visible) return;
@@ -651,6 +466,9 @@ export class Menu extends AppMenu {
         this._toggleFavoriteItem.label?.set_text(Labels.Pin);
     }
 
+    /**
+     * @override
+     */
     _updateWindowsSection() {
         if (!this._app) return;
         if (!this.#config.isolateWorkspaces) return super._updateWindowsSection();
@@ -664,9 +482,19 @@ export class Menu extends AppMenu {
         this._app = origin;
     }
 
+    /**
+     * @override
+     */
     _updateDetailsVisibility() {
         if (this._app && this.#hasValidAppId) super._updateDetailsVisibility();
         else this._detailsItem.hide();
+    }
+
+    /**
+     * @override
+     */
+    _animateLaunch() {
+        this.#appButton?.animateLaunch();
     }
 
 }

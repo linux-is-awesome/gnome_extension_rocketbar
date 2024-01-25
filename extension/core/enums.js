@@ -1,5 +1,3 @@
-/* exported Event, Type, Property, Delay */
-
 /**
  * @enum {string} Standard GObject and Shell events to handle
  */
@@ -56,16 +54,6 @@ export const Property = {
 };
 
 /**
- * @enum {string} Standard javascript types
- */
-export const Type = {
-    Function: 'function',
-    String: 'string',
-    Number: 'number',
-    Boolean: 'boolean'
-};
-
-/**
  * @enum {number}
  */
 export const Delay = {
@@ -75,4 +63,21 @@ export const Delay = {
     Sleep: 300,
     Background: 500,
     Scheduled: 1000
+};
+
+/**
+ * @enum {string} Shell session modes
+ */
+export const SessionMode = {
+    Desktop: 'user',
+    Locksreen: 'unlock-dialog'
+};
+
+/**
+ * @enum {string}
+ */
+export const PseudoClass = {
+    Focus: 'focus',
+    Active: 'active',
+    Insensitive: 'insensitive'
 };

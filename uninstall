@@ -1,5 +1,0 @@
-#!/bin/bash
-
-uuid=`cat ./extension/metadata.json | grep -oP '(?<="uuid": ")[^"]*'`
-
-gnome-extensions uninstall $uuid

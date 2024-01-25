@@ -1,42 +1,39 @@
-/* exported DominantColor */
-
 import Gio from 'gi://Gio';
 import GdkPixbuf from 'gi://GdkPixbuf';
-import { Context } from '../core/context.js';
-import { Type } from '../core/enums.js';
+import Context from '../core/context.js';
 
 const SAMPLE_SIZE = 20;
 const RGB_STRING_SPLITTER = ',';
 
 /**
- * Note: IconTheme.load_icon function is used for Gnome Shell versions prior to 44.
- * 
- * TODO: stop using IconTheme.load_icon function. 
- * 
  * @param {Gio.Icon} icon
- * @returns {GdkPixbuf.Pixbuf|null}
+ * @returns {GdkPixbuf.Pixbuf?}
  */
-const Pixbuf = (icon) => {
-    if (icon instanceof Gio.Icon === false) return null;
-    if (typeof icon.get_file === Type.Function) return GdkPixbuf.Pixbuf.new_from_file(icon.get_file().get_path());
-    if (typeof icon.get_names !== Type.Function) return null;
-    const iconNames = icon.get_names();
-    if (!iconNames.length) return null;
-    const iconName = iconNames[0];
-    const iconTheme = Context.iconTheme;
-    if (!iconTheme.has_icon(iconName)) return null;
-    if (typeof iconTheme.load_icon === Type.Function) return iconTheme.load_icon(iconName, SAMPLE_SIZE, 0);
-    const iconInfo = iconTheme.lookup_icon(iconName, null, SAMPLE_SIZE, 1, 1, 1);
-    return GdkPixbuf.Pixbuf.new_from_file(iconInfo.get_file().get_path());
-}
+const Pixbuf = icon => {
+    try {
+        if (icon instanceof Gio.Icon === false) return null;
+        if (icon instanceof Gio.FileIcon)
+            return GdkPixbuf.Pixbuf.new_from_file(icon.get_file().get_path() ?? '');
+        if (icon instanceof Gio.ThemedIcon === false) return null;
+        const iconNames = icon.get_names();
+        if (!iconNames.length) return null;
+        const iconName = iconNames[0];
+        const iconTheme = Context.iconTheme;
+        if (!iconTheme.has_icon(iconName)) return null;
+        return iconTheme.load_icon(iconName, SAMPLE_SIZE, 0);
+    } catch (e) {
+        Context.logError(`${Pixbuf.name} loading failed.`, e);
+    }
+    return null;
+};
 
 /**
- * Downsample large icons before scanning for the backlight color to improve performance.
+ * Note: Downsamples large icons before scanning for the backlight color to improve performance.
  *
  * @param {GdkPixbuf.Pixbuf} pixbuf
- * @returns {number[]}
+ * @returns {Uint8Array|number[]}
  */
-const Pixels = (pixbuf) => {
+const Pixels = pixbuf => {
     const pixels = pixbuf.get_pixels();
     const width = pixbuf.get_width();
     const height = pixbuf.get_height();
@@ -62,10 +59,9 @@ const Pixels = (pixbuf) => {
 };
 
 /**
- * Convert rgb ([0-255, 0-255, 0-255]) to hsv ([0-1, 0-1, 0-1]).
- * Following algorithm in https://en.wikipedia.org/wiki/HSL_and_HSV
- * here with h = [0,1] instead of [0, 360].
- * 
+ * Note: Converts rgb ([0-255, 0-255, 0-255]) to hsv ([0-1, 0-1, 0-1]).
+ *       Following algorithm in https://en.wikipedia.org/wiki/HSL_and_HSV here with h = [0,1] instead of [0, 360].
+ *
  * @param {number} r
  * @param {number} g
  * @param {number} b
@@ -85,17 +81,16 @@ const HSV = (r, g, b) => {
     } else {
         h = (r - g) / c + 4;
     }
-    h = h / 6;
+    h /= 6;
     v = M / 255;
     s = M === 0 ? 0 : c / M;
     return [h, s, v];
 };
 
 /**
- * Convert hsv ([0-1, 0-1, 0-1]) to rgb ([0-255, 0-255, 0-255]).
- * Following algorithm in https://en.wikipedia.org/wiki/HSL_and_HSV
- * here with h = [0,1] instead of [0, 360].
- * 
+ * Note: Converts hsv ([0-1, 0-1, 0-1]) to rgb ([0-255, 0-255, 0-255]).
+ *       Following algorithm in https://en.wikipedia.org/wiki/HSL_and_HSV here with h = [0,1] instead of [0, 360].
+ *
  * @param {number} h
  * @param {number} s
  * @param {number} v
@@ -108,17 +103,17 @@ const RGB = (h, s, v) => {
     const m = v - c;
     let r, g, b;
     if (h1 <= 1) {
-        r = c + m, g = x + m, b = m;
+        [r, g, b] = [c + m, x + m, m];
     } else if (h1 <= 2) {
-        r = x + m, g = c + m, b = m;
+        [r, g, b] = [x + m, c + m, m];
     } else if (h1 <= 3) {
-        r = m, g = c + m, b = x + m;
+        [r, g, b] = [m, c + m, x + m];
     } else if (h1 <= 4) {
-        r = m, g = x + m, b = c + m;
+        [r, g, b] = [m, x + m, c + m];
     } else if (h1 <= 5) {
-        r = x + m, g = m, b = c + m;
+        [r, g, b] = [x + m, m, c + m];
     } else {
-        r = c + m, g = m, b = x + m;
+        [r, g, b] = [c + m, m, x + m];
     }
     r = Math.round(r * 255);
     g = Math.round(g * 255);
@@ -128,13 +123,14 @@ const RGB = (h, s, v) => {
 
 /**
  * Credit: Dash to Dock https://github.com/micheleg/dash-to-dock
- * The backlight color choosing algorithm was mostly ported to javascript from the Unity7 C++ source of Canonicals:
- * https://bazaar.launchpad.net/~unity-team/unity/trunk/view/head:/launcher/LauncherIcon.cpp
- * 
+ *
+ * Note: The backlight color choosing algorithm was mostly ported to javascript from the Unity7 C++ source of Canonicals:
+ *       https://bazaar.launchpad.net/~unity-team/unity/trunk/view/head:/launcher/LauncherIcon.cpp
+ *
  * @param {Gio.Icon} icon
- * @returns {string} `rgb(0-255, 0-255, 0-255)`
+ * @returns {string?} `rgb(0-255, 0-255, 0-255)`
  */
-export const DominantColor = (icon) => {
+export const DominantColor = icon => {
     if (icon instanceof Gio.Icon === false) return null;
     const pixbuf = Pixbuf(icon);
     if (!pixbuf) return null;
@@ -155,7 +151,7 @@ export const DominantColor = (icon) => {
         bTotal += b * relevance;
         total += relevance;
     }
-    total = total * 255;
+    total *= 255;
     const r = rTotal / total * 255;
     const g = gTotal / total * 255;
     const b = bTotal / total * 255;

@@ -1,0 +1,30 @@
+extends:
+    - ./.gnome-shell/lint/eslintrc-gjs.yml
+    - ./.gnome-shell/lint/eslintrc-shell.yml
+parserOptions:
+    sourceType: module
+rules:
+    nonblock-statement-body-position: off
+    no-fallthrough: off
+    indent: off
+    camelcase: off
+    object-curly-spacing: off
+    no-case-declarations: off
+    padded-blocks: off
+    no-implicit-coercion: off
+    no-undef: off
+    curly: off
+    object-curly-newline: off
+    consistent-return: off
+    no-nested-ternary: off
+    comma-dangle:
+        - error
+        - never
+    no-console:
+        - error
+        - allow:
+            - warn
+            - error
+    operator-linebreak:
+        - error
+        - after

@@ -1,141 +1,175 @@
-/* exported Context */
+/**
+ * JSDoc types
+ *
+ * @typedef {import('gi://Gio').Settings} Gio.Settings
+ * @typedef {import('../extension.js').default} Extension
+ */
 
 import St from 'gi://St';
-import Gtk from 'gi://Gtk';
-import { ExtensionUtils, Main } from './legacy.js';
-import { LayoutManager } from './context/layout.js';
-import { Modules } from './context/modules.js';
-import { Jobs } from './context/jobs.js';
-import { Signals } from './context/signals.js';
-import { LauncherApiClient } from '../services/launcherApiService.js';
+import { Session, MainLayout } from './shell.js';
+import Jobs from './context/jobs.js';
+import Signals from './context/signals.js';
+import LayoutManager from './context/layout.js';
+import Modules from './context/modules.js';
+import { LauncherApiProxy } from '../services/launcherApiService.js';
+import { SessionMode } from './enums.js';
 
-const CUSTOM_ICONS_PATH = '/assets/icons/';
+const SETTINGS_SCHEMA_KEY = 'settings-schema';
 
-export class Context {
+export default class Context {
 
-    /**
-     * Persistent cache to keep some data until user session end/shell restart
-     * @type {Map<*, Map>}
-     */
-    static #sessionCache = null;
-
-    /** @type {Context} */
+    /** @type {Context?} */
     static #instance = null;
 
-    /** @type {{path: string, metadata: Object.<string, string>}} */
-    #extensionInfo = ExtensionUtils.getCurrentExtension();
+    /** @type {Map<*, Map>?} a persistent cache to keep some data until the user's session ends or the extension gets disabled by the user */
+    static #sessionStorage = null;
 
-    /** @type {Gio.Settings} */
-    #settings = ExtensionUtils.getSettings();
-
-    /** @type {LayoutManager} */
-    #layoutManager = null;
-
-    /** @type {Modules} */
-    #modules = null;
-
-    /** @type {Jobs} */
-    #jobs = null;
-
-    /** @type {Signals} */
-    #signals = null;
-
-    /** @type {St.IconTheme|Gtk.IconTheme} */
-    #iconTheme = null;
-
-    /** @type {LauncherApiClient} */
-    #launcherApi = null;
-
-    /** @type {string} */
-    static get path() {
-        return Context.#getInstance().#extensionInfo?.path;
+    /** @type {Context} */
+    static get instance() {
+        if (!this.#instance) throw new Error(`${this.name} has no instance.`);
+        return this.#instance;
     }
 
-    /** @type {Object.<string, string>} */
+    /** @type {{[key: string]: *}} */
     static get metadata() {
-        return Context.#getInstance().#extensionInfo?.metadata;
-    }
-
-    /** @type {Gio.Settings} */
-    static get settings() {
-        return Context.#getInstance().#settings;
-    }
-
-    /** @type {LayoutManager} */
-    static get layout() {
-        const instance = Context.#getInstance();
-        if (instance.#layoutManager) return instance.#layoutManager;
-        instance.#layoutManager = new LayoutManager();
-        return instance.#layoutManager;
+        return this.instance.#extension?.metadata;
     }
 
     /** @type {Jobs} */
     static get jobs() {
-        const instance = Context.#getInstance();
-        if (instance.#jobs) return instance.#jobs;
-        instance.#jobs = new Jobs();
+        const instance = this.instance;
+        instance.#jobs ??= new Jobs();
         return instance.#jobs;
     }
 
     /** @type {Signals} */
     static get signals() {
-        const instance = Context.#getInstance();
-        if (instance.#signals) return instance.#signals;
-        instance.#signals = new Signals();
+        const instance = this.instance;
+        instance.#signals ??= new Signals();
         return instance.#signals;
     }
 
-    /** @type {St.IconTheme|Gtk.IconTheme} */
-    static get iconTheme() {
-        return Context.#getInstance().#iconTheme;
+    /** @type {LayoutManager} */
+    static get layout() {
+        const instance = this.instance;
+        instance.#layoutManager ??= new LayoutManager();
+        return instance.#layoutManager;
     }
 
-    /** @type {LauncherApiClient} */
+    /** @type {St.IconTheme} */
+    static get iconTheme() {
+        const instance = this.instance;
+        instance.#iconTheme ??= new St.IconTheme();
+        return instance.#iconTheme;
+    }
+
+    /** @type {St.Settings} */
+    static get systemSettings() {
+        const instance = this.instance;
+        instance.#systemSettings ??= St.Settings.get();
+        return instance.#systemSettings;
+    }
+
+    /** @type {LauncherApiProxy?} */
     static get launcherApi() {
-        return Context.#getInstance().#launcherApi;
+        return this.instance.#launcherApi;
     }
 
     /** @type {boolean} */
     static get isSessionLocked() {
-        return Main.sessionMode?.isLocked || Main.layoutManager?.screenShieldGroup?.visible;
+        return Session.currentMode === SessionMode.Locksreen ||
+               MainLayout.screenShieldGroup?.visible === true;
+    }
+
+    /**
+     * @param {string?} [path]
+     * @returns {Gio.Settings?}
+     */
+    static getSettings(path) {
+        try {
+            const extension = this.instance.#extension;
+            if (!extension) return null;
+            const schemaId = path ? `${extension.metadata[SETTINGS_SCHEMA_KEY]}.${path}` : '';
+            const storage = this.getStorage(this.name);
+            if (storage.has(schemaId)) return storage.get(schemaId);
+            const settings = extension.getSettings(schemaId);
+            storage.set(schemaId, settings);
+            return settings;
+        } catch (e) {
+            this.logError(`unable to load settings for the path ${path}`);
+        }
+        return null;
     }
 
     /**
      * @param {*} client
      * @returns {Map}
      */
-    static getSessionCache(client) {
-        if (!client) return null;
-        if (!Context.#sessionCache) {
-            Context.#sessionCache = new Map();
-        }
-        if (!Context.#sessionCache.has(client)) Context.#sessionCache.set(client, new Map());
-        return Context.#sessionCache.get(client);
+    static getStorage(client) {
+        if (!this.#instance) throw new Error(`${this.name} is invalid.`);
+        if (!client) throw new Error(`${this.name}.getStorage requires a client reference.`);
+        this.#sessionStorage ??= new Map();
+        const clientStorage = this.#sessionStorage.get(client) ?? new Map();
+        this.#sessionStorage.set(client, clientStorage);
+        return clientStorage;
     }
 
-    /** 
-     * @returns {Context}
+    /**
+     * @param {string?} [message]
+     * @param {?} [error]
      */
-    static #getInstance() {
-        if (Context.#instance instanceof Context) return Context.#instance;
-        return new Context();
+    static logError(message, error) {
+        console.error(`${this.metadata?.name ?? this.name} ${message ?? ''}`, error ?? '');
     }
 
-    constructor() {
-        if (Context.#instance instanceof Context) throw new Error(`${Context.name} already has an instance`);
+    /** @type {Extension?} */
+    #extension = null;
+
+    /** @type {Jobs?} */
+    #jobs = null;
+
+    /** @type {Signals?} */
+    #signals = null;
+
+    /** @type {LayoutManager?} */
+    #layoutManager = null;
+
+    /** @type {Modules?} */
+    #modules = null;
+
+    /** @type {LauncherApiProxy?} */
+    #launcherApi = null;
+
+    /** @type {St.IconTheme?} */
+    #iconTheme = null;
+
+    /** @type {St.Settings?} */
+    #systemSettings = null;
+
+    /**
+     * @param {Extension} extension
+     */
+    constructor(extension) {
+        if (Context.#instance) throw new Error(`${Context.name} already has an instance.`);
+        if (!extension) throw new Error(`${Context.name} requires an instance of the extension class.`);
         Context.#instance = this;
-        this.#iconTheme = St.IconTheme ? new St.IconTheme() : Gtk.IconTheme.get_default();
-        this.#launcherApi = new LauncherApiClient();
+        this.#extension = extension;
+        this.#launcherApi = new LauncherApiProxy();
         this.#modules = new Modules();
     }
 
+    /**
+     * TODO: Uncomment the first line of the function to allow the extension to work on lockscreen.
+     *       I think there is no way to pass the review with the uncommented line, so need to think about the solution later.
+     */
     destroy() {
+        // if (Context.isSessionLocked) throw new Error(`${Context.name} destroy prevented.`);
         try {
             this.#destroy();
         } catch (e) {
-            console.error(`${this.#extensionInfo?.metadata?.name} unable to destroy ${Context.name}.`, e);
+            Context.logError(`unable to destroy ${Context.name}.`, e);
         } finally {
-            this.#extensionInfo = null;
+            this.#extension = null;
             Context.#instance = null;
         }
     }
@@ -152,25 +186,31 @@ export class Context {
         this.#launcherApi?.destroy();
         this.#launcherApi = null;
         this.#iconTheme = null;
-        this.#settings?.run_dispose();
-        this.#settings = null;
-        this.#cleanSessionCache();
+        this.#systemSettings = null;
+        this.#cleanSessionStorage();
     }
 
-    #cleanSessionCache() {
-        if (!Context.#sessionCache) return;
+    /**
+     * Note: Removes all data from the storage if the extension gets disabled by the user.
+     *       But keeps it if the Shell disables the extension in order restore the data later.
+     */
+    #cleanSessionStorage() {
+        const sessionStorage = Context.#sessionStorage;
+        if (!sessionStorage) return;
         if (!Context.isSessionLocked) {
-            Context.#sessionCache = null;
+            sessionStorage.clear();
+            Context.#sessionStorage = null;
             return;
         }
-        const clients = [...Context.#sessionCache.keys()];
+        sessionStorage.delete(Context.name);
+        const clients = [...sessionStorage.keys()];
         for (let i = 0, l = clients.length; i < l; ++i) {
             const client = clients[i];
-            if (Context.#sessionCache.get(client)?.size) continue;
-            Context.#sessionCache.delete(client);
+            if (sessionStorage.get(client)?.size) continue;
+            sessionStorage.delete(client);
         }
-        if (Context.#sessionCache.size) return;
-        Context.#sessionCache = null;
+        if (sessionStorage.size) return;
+        Context.#sessionStorage = null;
     }
 
 }

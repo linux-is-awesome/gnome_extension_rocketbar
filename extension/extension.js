@@ -1,37 +1,60 @@
-/* exported init */
+/**
+ * JSDoc types
+ *
+ * @typedef {import('./core/context.js').default} Context
+ */
 
-class Extension {
+import { Extension as ShellExtension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-    /**
-     * @typedef {import('./core/context.js').Context} Context
-     * @type {Context}
-     */
-    #instance = null;
+const DEFAULT_RUNTIME_PATH = '/core/context.js';
 
-    constructor() {
-        imports.misc.extensionUtils.initTranslations();
+export default class Extension extends ShellExtension {
+
+    /** @type {Context?} */
+    #runtime = null;
+
+    /** @type {boolean} */
+    #isEnabled = false;
+
+    /** @type {string} allows to override the path for development needs */
+    get runtimePath() {
+        return DEFAULT_RUNTIME_PATH;
     }
 
     /**
-     * Note: setTimeout is a temporary workaround for Gnome 44.
-     *       Without it session won't start for some reason.
-     * 
-     * TODO: remove setTimeout.
+     * @override
      */
     enable() {
-        setTimeout(() => import('./core/context.js').then(({ Context }) => {
-            this.#instance = new Context();
-        }).catch(e => {
-            const extension = imports.misc.extensionUtils.getCurrentExtension();
-            console.error(`${extension.metadata.name} initialization failed.`, e);
-        }));
+        this.#isEnabled = true;
+        if (this.#runtime) return;
+        this.#initialize();
     }
 
+    /**
+     * @override
+     */
     disable() {
-        this.#instance?.destroy();
-        this.#instance = null;
+        this.#isEnabled = false;
+        try {
+            this.#runtime?.destroy();
+            this.#runtime = null;
+        } catch (e) {
+            console.error(`${this.metadata.name} runtime destroy call failed.`, e);
+        }
+    }
+
+    /**
+     * Note: Lazy loading of the `runtime` module to reduce resource consumption while the extension is not enabled.
+     *       Also allows to handle unexpected behaviors and log error messages for troubleshooting.
+     */
+    async #initialize() {
+        try {
+            const runtimeModule = await import(`.${this.runtimePath}`);
+            if (!this.#isEnabled || this.#runtime) return;
+            this.#runtime = new runtimeModule.default(this);
+        } catch (e) {
+            console.error(`${this.metadata.name} initialization failed.`, e);
+        }
     }
 
 }
-
-var init = () => new Extension();

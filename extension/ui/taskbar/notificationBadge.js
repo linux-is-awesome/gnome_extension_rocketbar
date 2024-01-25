@@ -1,8 +1,12 @@
-/* exported NotificationBadge */
+/**
+ * JSDoc types
+ *
+ * @typedef {import('./appButton.js').AppButton} AppButton
+ */
 
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
-import { Context } from '../../core/context.js';
+import Context from '../../core/context.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { Config } from '../../utils/config.js';
@@ -23,7 +27,7 @@ const BadgePosition = {
     BottomRight: 'bottom_right'
 };
 
-/** @enum {Object.<string, *>} */
+/** @enum {{[animation: string]: *}} */
 const BadgeAnimation = {
     Show: { ...AnimationType.OpacityMax, ...AnimationType.ScaleMax },
     Hide: { ...AnimationType.OpacityMin, ...AnimationType.ScaleMin, mode: Clutter.AnimationMode.EASE_OUT_QUAD },
@@ -42,14 +46,14 @@ const ConfigFields = {
     maxCount: 'notification-badge-max-count'
 };
 
-/** @type {Object.<string, number|boolean|string>} */
+/** @type {{[prop: string]: *}} */
 const DefaultProps = {
     name: MODULE_NAME,
     x_expand: true,
     y_expand: true
 };
 
-/** @type {Object.<string, number|boolean|string>} */
+/** @type {{[prop: string]: *}} */
 const BadgeProps = {
     name: `${MODULE_NAME}-Badge`,
     style_class: STYLE_CLASS,
@@ -61,27 +65,27 @@ const BadgeProps = {
     ...AnimationType.ScaleMin
 };
 
+/**
+ * @augments Component<St.Bin>
+ */
 export class NotificationBadge extends Component {
 
     /**
      * @param {{event: string}} data
      * @returns {void}
      */
-    #notifyHandler = (data) => ({
+    #notifyHandler = data => ({
         [ComponentEvent.Destroy]: this.#destroy,
         [ComponentEvent.Scale]: this.#updateStyle
     })[data?.event]?.call(this);
 
-    /** @type {St.Label} */
+    /** @type {St.Label?} */
     #badge = new St.Label(BadgeProps);
 
-    /** @type {Object.<string, string|number|boolean>} */
+    /** @type {Config} */
     #config = Config(this, ConfigFields, () => this.#updateStyle());
 
-    /**
-     * @typedef {import('./appButton.js').AppButton} AppButton
-     * @type {AppButton}
-     */
+    /** @type {AppButton?} */
     #appButton = null;
 
     /**
@@ -90,26 +94,29 @@ export class NotificationBadge extends Component {
     constructor(appButton) {
         super(new St.Bin(DefaultProps));
         this.actor.set_child(this.#badge);
-        this.#badge.set_pivot_point(0.5, 0.5);
+        this.#badge?.set_pivot_point(0.5, 0.5);
         this.#appButton = appButton;
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
     }
 
     rerender() {
-        if (!this.isValid) return;
+        if (!this.isValid || !this.#badge || !this.#appButton) return;
         const count = this.#appButton.notificationsCount;
         const oldVisible = this.#badge.visible;
         const visible = count > 0;
         if (!visible && !oldVisible) return;
         this.#badge.remove_all_transitions();
-        if (!visible) return Animation(this.#badge, AnimationDuration.Default, BadgeAnimation.Hide).then(() =>
-                             this.#badge.set({ visible }));
+        if (!visible) {
+            Animation(this.#badge, AnimationDuration.Default, BadgeAnimation.Hide).then(() =>
+                      this.#badge?.set({ visible }));
+            return;
+        }
         const { maxCount } = this.#config;
-        const text = `${ count > maxCount ? maxCount : count }`;
+        const text = `${count > maxCount ? maxCount : count}`;
         this.#badge.set({ text, visible });
         this.#updateStyle();
-        if (oldVisible === visible) return this.#blink();
-        Animation(this.#badge, AnimationDuration.Fast, BadgeAnimation.Show);
+        if (oldVisible === visible) this.#blink();
+        else Animation(this.#badge, AnimationDuration.Fast, BadgeAnimation.Show);
     }
 
     #destroy() {
@@ -119,13 +126,14 @@ export class NotificationBadge extends Component {
         this.#appButton = null;
     }
 
-    async #blink() {
-        let i = 0;
-        while (i < BLINK_DURATION) {
-            await Animation(this.#badge, AnimationDuration.Slower, BadgeAnimation.Blink).then(() =>
-                  Animation(this.#badge, AnimationDuration.Slower, BadgeAnimation.Show));
-            i++;
-        }
+    /**
+     * @param {number} [duration]
+     */
+    async #blink(duration = 0) {
+        if (!this.#badge || duration >= BLINK_DURATION) return;
+        await Animation(this.#badge, AnimationDuration.Slower, BadgeAnimation.Blink);
+        await Animation(this.#badge, AnimationDuration.Slower, BadgeAnimation.Show);
+        this.#blink(++duration);
     }
 
     #updateStyle() {
@@ -133,8 +141,8 @@ export class NotificationBadge extends Component {
         const { color, fontColor, borderColor, margin, size, roundness, position } = this.#config;
         const scale = this.uiScale;
         const fontSize = Math.max(size - BORDER_SIZE * 2, FONT_SIZE_MIN) * scale;
-        const padding = this.#badge.text.length === 1 ? 0 : LONG_VALUE_PADDING * scale;
-        const margins = (
+        const padding = this.#badge?.text?.length === 1 ? 0 : LONG_VALUE_PADDING * scale;
+        const margins =
             position === BadgePosition.TopLeft ?
             `margin-top: ${margin * scale}px; margin-left: ${margin * scale}px;` :
             position === BadgePosition.TopRight ?
@@ -142,8 +150,7 @@ export class NotificationBadge extends Component {
             position === BadgePosition.BottomLeft ?
             `margin-bottom: ${margin * scale}px; margin-left: ${margin * scale}px;` :
             position === BadgePosition.BottomRight ?
-            `margin-bottom: ${margin * scale}px; margin-right: ${margin * scale}px;` : ''
-        );
+            `margin-bottom: ${margin * scale}px; margin-right: ${margin * scale}px;` : '';
         this.#badge.set_style(
             `background-color: ${color};` +
             `color: ${fontColor};` +
@@ -160,15 +167,15 @@ export class NotificationBadge extends Component {
 
     #updateAlignment() {
         const { position } = this.#config;
-        const x_align = (
-            position === BadgePosition.TopLeft || position === BadgePosition.BottomLeft ?
-            Clutter.ActorAlign.START : Clutter.ActorAlign.END
-        );
-        const y_align = (
-            position === BadgePosition.TopLeft || position === BadgePosition.TopRight ?
-            Clutter.ActorAlign.START : Clutter.ActorAlign.END
-        );
-        this.#badge.set({ x_align, y_align });
+        const x_align = position === BadgePosition.TopLeft ||
+                        position === BadgePosition.BottomLeft ?
+                        Clutter.ActorAlign.START :
+                        Clutter.ActorAlign.END;
+        const y_align = position === BadgePosition.TopLeft ||
+                        position === BadgePosition.TopRight ?
+                        Clutter.ActorAlign.START :
+                        Clutter.ActorAlign.END;
+        this.#badge?.set({ x_align, y_align });
     }
 
 }
