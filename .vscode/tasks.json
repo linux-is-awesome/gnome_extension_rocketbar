@@ -46,17 +46,6 @@
             "problemMatcher": []
         },
         {
-            "label": "nested-shell",
-            "type": "shell",
-            "command": "env MUTTER_DEBUG_DUMMY_MODE_SPECS='1920x1000@60.0' dbus-run-session -- gnome-shell --nested --wayland",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            },
-            "problemMatcher": []
-        },
-        {
             "label": "update-pot",
             "type": "shell",
             "command": "./update-pot",
