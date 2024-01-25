@@ -9,6 +9,7 @@ export const Labels = {
     DemandsAttentionBehavior: _('Demands Attention Behavior'),
     CustomIcon: _('Custom Icon'),
     IconSize: _('Icon Size'),
+    IconFromClipboard: _('Icon From Clipboard'),
     NoIconInClipboard: _('No Icon Found in Clipboard'),
     ResetToDefault: _('Reset To Default'),
     ResetAllToDefault: _('Reset All To Default'),
@@ -16,5 +17,8 @@ export const Labels = {
     FindWindow: _('Find Window'),
     MoveWindows: _('Move Windows'),
     FocusActive: _('Set Focus When Active'),
-    FocusAll: _('Always Set Focus')
+    FocusAll: _('Always Set Focus'),
+    SelectIcon: _('Select Icon'),
+    Icon: _('Icon'),
+    NotSelected: _('Not Selected')
 };
