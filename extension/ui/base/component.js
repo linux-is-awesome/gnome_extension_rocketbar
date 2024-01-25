@@ -1,11 +1,17 @@
+/**
+ * JSDoc types
+ *
+ * @typedef {import('gi://Gio').Settings} Gio.Settings
+ * @typedef {import('gi://Clutter').Actor} Clutter.Actor
+ */
+
 import St from 'gi://St';
-import Gio from 'gi://Gio';
 import Mtk from 'gi://Mtk';
 import * as Dnd from 'resource:///org/gnome/shell/ui/dnd.js';
-import { Type, Event } from '../../core/enums.js';
+import { MainLayout } from '../../core/shell.js';
+import { Event } from '../../core/enums.js';
 
 const DRAG_TIMEOUT_THRESHOLD = 200;
-const UI_SETTINGS_SCHEMA_ID = 'org.gnome.desktop.interface';
 const UI_SCALE_SETTINGS_KEY = 'text-scaling-factor';
 
 /**
@@ -34,27 +40,30 @@ export const ComponentLocation = {
     Bottom: 1
 };
 
+/**
+ * @template {St.Widget} ComponentActor
+ */
 export class Component {
 
     /** @type {boolean} */
     #isValid = true;
 
-    /** @type {St.Widget} */
+    /** @type {ComponentActor?} */
     #actor = null;
 
-    /** @type {Component} */
+    /** @type {Component<St.Widget>?} */
     #parent = null;
 
-    /** @type {Dnd._Draggable} */
+    /** @type {Dnd._Draggable?} */
     #draggable = null;
 
-    /** @type {(args: { event: string, params: *, target: *, sender: * }) => *} */
+    /** @type {((args: { event: string, params: *, target: *, sender: * }) => *)?} */
     #notifyCallback = null;
 
     /** @type {number} */
     #defaultPosition = 0;
 
-    /** @type {number} */
+    /** @type {number?} */
     #positionHandlerId = null;
 
     /** @type {boolean} */
@@ -63,41 +72,54 @@ export class Component {
     /** @type {*} */
     #dragMonitor = null;
 
-    /** @type {St.ThemeContext} */
+    /** @type {St.ThemeContext?} */
     #themeContext = null;
 
-    /** @type {Gio.Settings} */
+    /** @type {Gio.Settings?} */
     #uiSettings = null;
 
-    /** @type {St.Widget} */
+    /** @type {boolean} */
+    get isValid() {
+        return this.#isValid && this.#actor instanceof St.Widget;
+    }
+
+    /** @type {boolean} */
+    get isMapped() {
+        return this.#isValid && this.#actor?.mapped === true && this.#actor.get_stage() !== null;
+    }
+
+    /** @type {ComponentActor} */
     get actor() {
+        if (!this.#actor) throw new Error(`${this.constructor.name} is not valid.`);
         return this.#actor;
     }
 
-    /** @type {St.Widget} */
-    get parentActor() {
-        const parent = this.parent;
-        return this.#isComponent(parent) ? parent.#actor : parent;
-    }
-
-    /** @type {Component|St.Widget} */
+    /** @type {St.Widget|Component<St.Widget>|null} */
     get parent() {
         if (!this.isMapped) return null;
-        const actorParent = this.#actor.get_parent();
-        return this.#isComponent(actorParent?._delegate) ?? actorParent;
+        const result = this.#actor?.get_parent() ?? null;
+        if (result?._delegate instanceof Component) return result._delegate;
+        if (result instanceof St.Widget) return result;
+        return null;
+    }
+
+    /** @type {St.Widget?} */
+    get parentActor() {
+        const parent = this.parent;
+        if (parent instanceof Component) return parent.#actor;
+        return parent;
     }
 
     /** @type {ComponentLocation} */
     get location() {
-        const monitorRect = this.monitorRect;
-        if (!monitorRect) return null;
         const rect = this.rect;
-        const monitorCenter = (monitorRect.y + monitorRect.height) / 2;
-        if (rect.y < monitorCenter) return ComponentLocation.Top;
-        else ComponentLocation.Bottom;
+        const monitorRect = rect ? this.monitorRect : null;
+        if (!rect || !monitorRect ||
+            rect.y < (monitorRect.y + monitorRect.height) / 2) return ComponentLocation.Top;
+        return ComponentLocation.Bottom;
     }
 
-    /** @type {Mtk.Rectangle} */
+    /** @type {Mtk.Rectangle?} */
     get monitorRect() {
         const monitorIndex = this.monitorIndex;
         if (monitorIndex < 0) return null;
@@ -111,23 +133,12 @@ export class Component {
         return global.display.get_monitor_index_for_rect(rect);
     }
 
-    /** @type {Mtk.Rectangle} */
+    /** @type {Mtk.Rectangle?} */
     get rect() {
-        if (!this.isValid) return null;
-        const result = new Mtk.Rectangle();
-        [result.x, result.y] = this.#actor.get_transformed_position();
-        [result.width, result.height] = this.#actor.get_transformed_size();
-        return result;
-    }
-
-    /** @type {boolean} */
-    get isMapped() {
-        return this.isValid && this.#actor.mapped === true && this.#actor.get_stage() !== null;
-    }
-
-    /** @type {boolean} */
-    get isValid() {
-        return this.#isValid && this.#actor instanceof St.Widget;
+        if (!this.#isValid || !this.#actor) return null;
+        const [x, y] = this.#actor.get_transformed_position();
+        const [width, height] = this.#actor.get_transformed_size();
+        return new Mtk.Rectangle({x, y, width, height});
     }
 
     /** @type {number} */
@@ -143,9 +154,9 @@ export class Component {
     get uiScale() {
         if (!this.#actor) return 0;
         if (this.#uiSettings) return this.#uiSettings.get_double(UI_SCALE_SETTINGS_KEY);
-        this.#uiSettings = new Gio.Settings({ schema_id: UI_SETTINGS_SCHEMA_ID });
-        this.#uiSettings.connectObject(`changed::${UI_SCALE_SETTINGS_KEY}`, () => this.notifySelf(ComponentEvent.Scale), this.#actor);
-        return this.#uiSettings.get_double(UI_SCALE_SETTINGS_KEY);
+        this.#uiSettings = MainLayout._interfaceSettings ?? null;
+        this.#uiSettings?.connectObject(`changed::${UI_SCALE_SETTINGS_KEY}`, () => this.notifySelf(ComponentEvent.Scale), this.#actor);
+        return this.#uiSettings?.get_double(UI_SCALE_SETTINGS_KEY) ?? 0;
     }
 
     /** @param {number} value 0..999 */
@@ -170,11 +181,11 @@ export class Component {
     }
 
     /**
-     * @param {St.Widget} actor
+     * @param {ComponentActor} actor
      */
     constructor(actor) {
         if (actor instanceof St.Widget === false) {
-            throw new Error(`Unable to construct the component, ${actor} is not an instance of St.Widget`);
+            throw new Error(`Unable to construct ${this.constructor.name}, ${actor} is not an instance of St.Widget.`);
         }
         this.#actor = actor;
         this.#actor._delegate = this;
@@ -186,7 +197,7 @@ export class Component {
     }
 
     /**
-     * @param {Object.<string, *>} props
+     * @param {{[prop: string]: *}} props
      * @returns {this}
      */
     setProps(props) {
@@ -195,14 +206,15 @@ export class Component {
     }
 
     /**
-     * @param {Component|St.Widget} parent
+     * @param {St.Widget|Component<St.Widget>} parent
      * @param {number} [position] -1..0..999
      * @returns {this}
      */
     setParent(parent, position = -1) {
-        if (!this.isValid || typeof position !== Type.Number) return this;
+        if (!this.#isValid || !this.#actor ||
+            typeof position !== 'number') return this;
         let parentComponent = null;
-        if (this.#isComponent(parent)) {
+        if (parent instanceof Component) {
             parentComponent = parent;
             parent = parent.actor;
         }
@@ -234,24 +246,25 @@ export class Component {
      * @returns {this}
      */
     setSize(width = -1, height = -1) {
-        if (typeof width === Type.Number &&
-            typeof height === Type.Number) this.#actor?.set_size(width, height);
+        if (typeof width === 'number' &&
+            typeof height === 'number') this.#actor?.set_size(width, height);
         return this;
     }
 
     /**
      * @param {string} event
      * @param {(...args) => *} callback
-     * @returns {number|string}
+     * @returns {number|string|null}
      */
     connect(event, callback) {
-        if (typeof event !== Type.String ||
-            typeof callback !== Type.Function) return null;
+        if (!this.#actor ||
+            typeof event !== 'string' ||
+            typeof callback !== 'function') return null;
         if (event === ComponentEvent.Notify) {
             this.#notifyCallback = callback;
             return event;
         }
-        return this.#actor?.connect(event, callback);
+        return this.#actor.connect(event, callback) ?? null;
     }
 
     /**
@@ -259,12 +272,8 @@ export class Component {
      * @returns {this}
      */
     disconnect(id) {
-        if (typeof id === Type.Number) {
-            this.#actor?.disconnect(id);
-            return this;
-        }
-        if (typeof id !== Type.String) return this;
-        if (id === ComponentEvent.Notify) {
+        if (typeof id === 'number') this.#actor?.disconnect(id);
+        else if (id === ComponentEvent.Notify) {
             this.#notifyCallback = null;
         }
         return this;
@@ -285,13 +294,13 @@ export class Component {
      * @returns {this}
      */
     notifyChildren(event, params) {
-        if (typeof event !== Type.String) return this;
+        if (typeof event !== 'string') return this;
         const children = this.#actor?.get_children();
         if (!children?.length) return this;
         for (let i = 0, l = children.length; i < l; ++i) {
-            /** @type {Component} */
+            /** @type {Component<St.Widget>} */
             const child = children[i]._delegate;
-            if (!this.#isComponent(child)) continue;
+            if (child instanceof Component === false) continue;
             if (child.#notifySelf(event, child, params, this)) break;
         }
         return this;
@@ -300,7 +309,7 @@ export class Component {
     /**
      * @param {string} event a custom event
      * @param {*} [params]
-     * @returns {this}
+     * @returns {*}
      */
     notifySelf(event, params) {
         return this.#notifySelf(event, this, params);
@@ -308,7 +317,7 @@ export class Component {
 
     /**
      * @param {*} source
-     * @param {St.Widget} [actor]
+     * @param {Clutter.Actor} [actor]
      * @param {number} [x]
      * @param {number} [y]
      * @returns {boolean}
@@ -320,7 +329,7 @@ export class Component {
 
     /**
      * @param {*} source
-     * @param {St.Widget} [actor]
+     * @param {Clutter.Actor} [actor]
      * @param {number} [x]
      * @param {number} [y]
      * @returns {Dnd.DragMotionResult}
@@ -331,14 +340,14 @@ export class Component {
     }
 
     /**
-     * @returns {St.Widget}
+     * @returns {Clutter.Actor}
      */
     getDragActor() {
         return this.#notifySelf(ComponentEvent.DragActorRequest) ?? this.#actor;
     }
 
     /**
-     * @returns {St.Widget}
+     * @returns {Clutter.Actor}
      */
     getDragActorSource() {
         return this.#notifySelf(ComponentEvent.DragActorSourceRequest) ?? this.#actor;
@@ -353,14 +362,13 @@ export class Component {
     }
 
     #destroy() {
+        if (!this.#isValid || !this.#actor) return;
         this.#isValid = false;
         this.#actor?.remove_all_transitions();
         this.#setDragEvents(false);
         this.#notifySelf(ComponentEvent.Destroy);
-        if (!this.#actor) return;
         this.#themeContext?.disconnectObject(this.#actor);
         this.#uiSettings?.disconnectObject(this.#actor);
-        this.#uiSettings?.run_dispose();
         this.#themeContext = null;
         this.#uiSettings = null;
         this.#actor._delegate = null;
@@ -370,7 +378,7 @@ export class Component {
 
     #setMappedHandler() {
         const handlerId = this.#actor?.connect(Event.Mapped, () => {
-            this.#actor?.disconnect(handlerId);
+            if (handlerId) this.#actor?.disconnect(handlerId);
             this.#notifySelf(ComponentEvent.Mapped);
         });
     }
@@ -385,7 +393,7 @@ export class Component {
         this.#positionHandlerId = this.#actor?.connect(Event.Position, () => {
             if (!this.#setPosition(this.#defaultPosition)) return;
             this.#notifySelf(ComponentEvent.PositionLock);
-        });
+        }) ?? null;
     }
 
     /**
@@ -393,7 +401,7 @@ export class Component {
      * @returns {boolean}
      */
     #setPosition(position) {
-        if (typeof position !== Type.Number) return false;
+        if (!this.#actor || typeof position !== 'number') return false;
         const parentActor = this.parentActor;
         if (!parentActor) return false;
         const maxPosition = parentActor.get_n_children() - 1;
@@ -402,7 +410,8 @@ export class Component {
         }
         const actorAtIndex = parentActor.get_child_at_index(position);
         if (actorAtIndex === this.#actor) return false;
-        const componentAtIndex = this.#isComponent(actorAtIndex?._delegate);
+        const delegateAtIndex = actorAtIndex?._delegate;
+        const componentAtIndex = delegateAtIndex instanceof Component ? delegateAtIndex : null;
         if (componentAtIndex && componentAtIndex.#positionHandlerId) return false;
         parentActor.set_child_at_index(this.#actor, position);
         return true;
@@ -413,7 +422,7 @@ export class Component {
      */
     #setDragEvents(enabled) {
         if (this.#dragMonitor) Dnd.removeDragMonitor(this.#dragMonitor);
-        if (this.#draggable) this.#actor.disconnectObject(this.#draggable);
+        if (this.#draggable) this.#actor?.disconnectObject(this.#draggable);
         this.#draggable?.disconnectAll();
         this.#draggable = null;
         this.#dragMonitor = null;
@@ -452,19 +461,20 @@ export class Component {
     /**
      * @param {string} event a custom event
      * @param {*} [params]
-     * @param {Component} [sender=this]
+     * @param {Component<St.Widget>} [sender]
      * @returns {this}
      */
     #notifyParents(event, params, sender = this) {
-        if (typeof event !== Type.String) return this;
+        if (typeof event !== 'string') return this;
         const parent = this.#parent ?? this.#getNearestParentComponent();
         if (!parent || parent.#notifySelf(event, parent, params, sender)) return this;
-        return parent.#notifyParents(event, params, sender);
+        parent.#notifyParents(event, params, sender);
+        return this;
     }
 
     /**
-     * @param {Component|St.Widget} parent
-     * @returns {Component|null}
+     * @param {St.Widget|Component<St.Widget>|null} [parent]
+     * @returns {Component<St.Widget>?}
      */
     #getNearestParentComponent(parent = this.parent) {
         if (!parent) return null;
@@ -473,32 +483,25 @@ export class Component {
             nextParent = parent.get_parent();
             parent = nextParent?._delegate;
         }
-        return this.#isComponent(parent) ?? this.#getNearestParentComponent(nextParent);
+        return parent instanceof Component ? parent :
+               nextParent instanceof St.Widget ? this.#getNearestParentComponent(nextParent) : null;
     }
 
     /**
      * @param {string} event a custom event
-     * @param {*} [target=this]
+     * @param {*} [target]
      * @param {*} [params]
-     * @param {Component} [sender=this]
+     * @param {Component<St.Widget>} [sender]
      * @returns {*}
      */
     #notifySelf(event, target = this, params, sender = this) {
-        if (typeof this.#notifyCallback !== Type.Function) return null;
+        if (typeof this.#notifyCallback !== 'function') return null;
         try {
             return this.#notifyCallback({ event, target, params, sender });
         } catch (e) {
             console.error(`Component notify failed for event ${event}`, e);
         }
         return null;
-    }
-
-    /**
-     * @param {*} source 
-     * @returns {Component|null}
-     */
-    #isComponent(source) {
-        return source instanceof Component ? source : null;
     }
 
 }

@@ -1,14 +1,36 @@
+/**
+ * JSDoc types
+ *
+ * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupMenu & { connect: (...args) => void}} PopupMenu
+ * @typedef {import('resource:///org/gnome/shell/ui/boxpointer.js').PopupAnimation} BoxPointer.PopupAnimation
+ */
+
 import GObject from 'gi://GObject';
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import Context from '../../core/context.js';
+import { DummyEventEmitter } from '../../core/shell.js';
 import { Component, ComponentLocation } from './component.js';
 import { LongPressAction } from './longPressAction.js';
-import { Type, Event, Property, PseudoClass } from '../../core/enums.js';
+import { Event, Property, PseudoClass } from '../../core/enums.js';
 import { Animation, AnimationType, AnimationDuration } from './animation.js';
 import { Gradient } from '../../utils/gradient.js';
 
 const DEFAULT_STYLE_CLASS = 'panel-button rocketbar__button';
+
+/** @type {{[prop: string]: *}} */
+const DefaultProps = {
+    reactive: true,
+    can_focus: true,
+    button_mask: St.ButtonMask.ONE | St.ButtonMask.TWO | St.ButtonMask.THREE,
+    style_class: DEFAULT_STYLE_CLASS
+};
+
+/** @type {{[prop: string]: *}} */
+const RuntimeButtonProps = {
+    width: 0,
+    ...AnimationType.OpacityMin
+};
 
 /** @enum {string} */
 const CssField = {
@@ -22,15 +44,7 @@ const CssField = {
     BackgroundGradient: 'background-gradient'
 };
 
-/** @type {Object.<string, boolean|number|string>} */
-const DefaultProps = {
-    reactive: true,
-    can_focus: true,
-    button_mask: St.ButtonMask.ONE | St.ButtonMask.TWO | St.ButtonMask.THREE,
-    style_class: DEFAULT_STYLE_CLASS
-};
-
-/** @type {Object.<string, number|string>} */
+/** @enum {number|string} */
 const DefaultStyle = {
     spacingBefore: 0,
     spacingAfter: 1,
@@ -42,12 +56,6 @@ const DefaultStyle = {
     backlightRatio: 1
 };
 
-/** @type {Object.<string, number>} */
-const RuntimeButtonProps = {
-    width: 0,
-    ...AnimationType.OpacityMin
-};
-
 /** @enum {string} */
 export const ButtonEvent = {
     Click: 'button::click',
@@ -57,25 +65,26 @@ export const ButtonEvent = {
     RequestMenu: 'button::request-menu'
 };
 
-class DummyEventEmitter {
-    connectObject(){}
-    disconnectObject(){}
-}
-
 class ButtonMenuTrigger extends DummyEventEmitter {
 
-    /** @type {Button} */
+    /** @type {Button?} */
     #button = null;
 
-    /** @type {DummyEventEmitter} */
+    /** @type {DummyEventEmitter?} */
     #actor = new DummyEventEmitter();
 
-    /** @type {Button} */
+    /**
+     * @override
+     * @type {St.Button?}
+     */
     get sourceActor() {
-        return this.#button.actor;
+        return this.#button?.actor ?? null;
     }
 
-    /** @type {DummyEventEmitter} */
+    /**
+     * @override
+     * @type {DummyEventEmitter?}
+     */
     get actor() {
         return this.#actor;
     }
@@ -91,18 +100,24 @@ class ButtonMenuTrigger extends DummyEventEmitter {
     }
 
     /**
-     * @param {BoxPointer.PopupAnimation} animation
-     * @returns {PopupMenu|null}
+     * @override
+     * @param {BoxPointer.PopupAnimation} [animation]
+     * @returns {PopupMenu?}
      */
     open(animation) {
+        if (!this.#button) return null;
         const menu = this.#button?.notifySelf(ButtonEvent.RequestMenu);
-        if (typeof menu?.open !== Type.Function || typeof menu?.toggle !== Type.Function) return null;
+        if (typeof menu?.open !== 'function' ||
+            typeof menu?.toggle !== 'function') return null;
         this.#button.menu = menu;
         if (animation) menu.open(animation);
         else menu.toggle();
         return menu;
     }
 
+    /**
+     * @override
+     */
     destroy() {
         if (!this.#actor) return;
         Context.signals.removeAll(this);
@@ -113,7 +128,7 @@ class ButtonMenuTrigger extends DummyEventEmitter {
 
     /**
      * @param {Clutter.Event} event
-     * @returns {number}
+     * @returns {boolean}
      */
     #keyPress(event) {
         let state = event.get_state();
@@ -121,21 +136,25 @@ class ButtonMenuTrigger extends DummyEventEmitter {
         state &= ~Clutter.ModifierType.MOD2_MASK;
         state &= Clutter.ModifierType.MODIFIER_MASK;
         if (state) return Clutter.EVENT_PROPAGATE;
-        const key = this.#button.location === ComponentLocation.Top ? Clutter.KEY_Down : Clutter.KEY_Up;
+        const key = this.#button?.location === ComponentLocation.Top ? Clutter.KEY_Down : Clutter.KEY_Up;
         if (event.get_key_symbol() !== key) return Clutter.EVENT_PROPAGATE;
         const menu = this.open();
         if (!menu) return Clutter.EVENT_PROPAGATE;
-        if (typeof menu.actor?.navigate_focus === Type.Function)
+        if (typeof menu.actor?.navigate_focus === 'function')
             menu.actor.navigate_focus(null, St.DirectionType.TAB_FORWARD, false);
         return Clutter.EVENT_STOP;
     }
 
 }
 
+/**
+ * @template {St.Widget} ButtonDisplay
+ * @augments Component<St.Button>
+ */
 export class Button extends Component {
 
-    /** @type {St.Widget} */
-    #display = this;
+    /** @type {ButtonDisplay|St.Button?} */
+    #display = this.actor;
 
     /** @type {boolean} */
     #isActive = false;
@@ -143,24 +162,24 @@ export class Button extends Component {
     /** @type {boolean} */
     #hasFocus = false;
 
-    /** @type {Map<string, string>} */
+    /** @type {Map<string, string>?} */
     #css = null;
 
-    /** @type {LongPressAction} */
+    /** @type {LongPressAction?} */
     #longPressAction = new LongPressAction(this, event => this.#longPress(event));
 
-    /** @type {ButtonMenuTrigger} */
+    /** @type {ButtonMenuTrigger?} */
     #menuTrigger = new ButtonMenuTrigger(this);
 
-    /** @type {PopupMenu} */
+    /** @type {PopupMenu?} */
     #menu = null;
 
-    /** @type {St.Widget} */
+    /** @type {ButtonDisplay|St.Button} */
     get display() {
-        return this.#display;
+        return this.#display ?? this.actor;
     }
 
-    /** @type {PopupMenu} */
+    /** @type {PopupMenu?} */
     get menu() {
         return this.#menu;
     }
@@ -177,7 +196,7 @@ export class Button extends Component {
 
     /** @param {boolean} value */
     set isActive(value) {
-        if (this.#isActive === value) return;
+        if (!this.#display || this.#isActive === value) return;
         this.#isActive = value;
         if (this.#isActive) this.#display.add_style_pseudo_class(PseudoClass.Active);
         else this.#display.remove_style_pseudo_class(PseudoClass.Active);
@@ -186,8 +205,8 @@ export class Button extends Component {
     /** @param {PopupMenu} menu */
     set menu(menu) {
         if (this.#menu ||
-            typeof menu?.open !== Type.Function ||
-            typeof menu?.connect !== Type.Function) return;
+            typeof menu?.open !== 'function' ||
+            typeof menu?.connect !== 'function') return;
         this.#menuTrigger?.destroy();
         this.#menuTrigger = null;
         this.#menu = menu;
@@ -196,8 +215,8 @@ export class Button extends Component {
     }
 
     /**
-     * @param {St.Widget} [display]
-     * @param {string} [name]
+     * @param {ButtonDisplay?} [display]
+     * @param {string?} [name]
      */
     constructor(display, name = null) {
         super(new St.Button({ name, ...DefaultProps }));
@@ -206,46 +225,47 @@ export class Button extends Component {
         this.connect(Event.Clicked, () => this.#click());
         this.connect(Event.FocusIn, () => this.#focus());
         this.connect(Event.FocusOut, () => this.#focus());
-        this.#setDisplay(display, name);
+        if (display) this.#setDisplay(display, name);
     }
 
     /**
-     * @param {DefaultStyle} [style]
+     * @param {{[prop: string]: string|number}} [style]
      * @returns {this}
      */
     overrideStyle(style = DefaultStyle) {
-        if (!this.isValid) return this;
+        if (!this.#display) return this;
         const actor = this.actor;
         const scale = this.uiScale;
         const css = new Map();
         const { spacingBefore, spacingAfter, roundness, height, width,
                 backlightColor, backlightIntensity, backlightRatio = DefaultStyle.backlightRatio } = style;
         if (this.#display === actor) {
-            if (typeof spacingBefore === Type.Number) css.set(CssField.MarginLeft, `${CssField.MarginLeft}:${spacingBefore * scale}px;`);
-            if (typeof spacingAfter === Type.Number) css.set(CssField.MarginRight, `${CssField.MarginRight}:${spacingAfter * scale}px;`);
+            if (typeof spacingBefore === 'number') css.set(CssField.MarginLeft, `${CssField.MarginLeft}:${spacingBefore * scale}px;`);
+            if (typeof spacingAfter === 'number') css.set(CssField.MarginRight, `${CssField.MarginRight}:${spacingAfter * scale}px;`);
         } else {
-            const css = [];
-            if (typeof spacingBefore === Type.Number) css.push(`${CssField.PaddingLeft}:${spacingBefore * scale}px;`);
-            if (typeof spacingAfter === Type.Number) css.push(`${CssField.PaddingRight}:${spacingAfter * scale}px;`);
-            if (css.length) actor.set_style(css.join(''));
+            const actorCss = [];
+            if (typeof spacingBefore === 'number') actorCss.push(`${CssField.PaddingLeft}:${spacingBefore * scale}px;`);
+            if (typeof spacingAfter === 'number') actorCss.push(`${CssField.PaddingRight}:${spacingAfter * scale}px;`);
+            if (actorCss.length) actor.set_style(actorCss.join(''));
         }
-        if (typeof roundness === Type.Number) css.set(CssField.BorderRadius, `${CssField.BorderRadius}:${roundness * scale}px;`);
-        if (typeof height === Type.Number && height > 0) {
+        if (typeof roundness === 'number') css.set(CssField.BorderRadius, `${CssField.BorderRadius}:${roundness * scale}px;`);
+        if (typeof height === 'number' && height > 0) {
             this.#display.set({ y_expand: false });
             css.set(CssField.Height, `${CssField.Height}:${height * scale}px;`);
         } else if (height === 0) {
             this.#display.set({ y_expand: true });
             this.#css?.delete(CssField.Height);
         }
-        if (typeof width === Type.Number && width > 0) {
+        if (typeof width === 'number' && width > 0) {
             this.#display.set({ x_expand: false });
             css.set(CssField.Width, `${CssField.Width}:${width * scale}px;`);
         } else if (width === 0) {
             this.#display.set({ x_expand: true });
             this.#css?.delete(CssField.Width);
         }
-        if (typeof backlightColor === Type.String &&
-            typeof backlightIntensity === Type.Number && backlightIntensity > 0) {
+        if (typeof backlightColor === 'string' &&
+            typeof backlightIntensity === 'number' &&
+            typeof backlightRatio === 'number' && backlightIntensity > 0) {
             css.set(CssField.BackgroundGradient, Gradient(backlightColor, backlightIntensity, backlightRatio));
         } else if (backlightIntensity === 0) {
             this.#css?.delete(CssField.BackgroundGradient);
@@ -267,8 +287,8 @@ export class Button extends Component {
     }
 
     /**
-     * @param {St.Widget} display
-     * @param {string} [name]
+     * @param {ButtonDisplay} display
+     * @param {string?} [name]
      */
     #setDisplay(display, name) {
         if (display instanceof St.Widget === false) return;
@@ -276,7 +296,7 @@ export class Button extends Component {
         this.#display.set({ style_class: DEFAULT_STYLE_CLASS, y_expand: true, x_expand: true });
         this.actor.set_style_class_name(null);
         this.actor.bind_property(Property.Hover, this.#display, Property.Hover, GObject.BindingFlags.SYNC_CREATE);
-        if (typeof name !== Type.String) return;
+        if (typeof name !== 'string') return;
         this.#display.set({ name: `${name}-Display` });
     }
 
@@ -303,7 +323,8 @@ export class Button extends Component {
     }
 
     #focus() {
-        this.#hasFocus = this.actor.has_key_focus() || this.#menu?.isOpen;
+        if (!this.#display) return;
+        this.#hasFocus = this.actor.has_key_focus() || this.#menu?.isOpen || false;
         if (this.#hasFocus) this.#display.add_style_pseudo_class(PseudoClass.Focus);
         else this.#display.remove_style_pseudo_class(PseudoClass.Focus);
         this.notifySelf(ButtonEvent.Focus);
@@ -316,6 +337,10 @@ export class Button extends Component {
 
 }
 
+/**
+ * @template {St.Widget} ButtonDisplay
+ * @augments Button<ButtonDisplay>
+ */
 export class RuntimeButton extends Button {
 
     /** @type {boolean} */
@@ -324,8 +349,8 @@ export class RuntimeButton extends Button {
     }
 
     /**
-     * @param {St.Widget} [display]
-     * @param {string} [name]
+     * @param {ButtonDisplay?} [display]
+     * @param {string?} [name]
      */
     constructor(display, name = null) {
         super(display, name);
@@ -335,15 +360,20 @@ export class RuntimeButton extends Button {
     /**
      * @param {number} width
      * @param {number} [opacity]
-     * @returns {Promise}
+     * @returns {Promise<void>?}
      */
-    async fadeIn(width, opacity = AnimationType.OpacityMax.opacity) {
+    fadeIn(width, opacity = AnimationType.OpacityMax.opacity) {
         if (!width || this.isFadeInDone) return null;
         const animationParams = { opacity, width, mode: Clutter.AnimationMode.EASE_OUT_QUAD };
-        return Animation(this, AnimationDuration.Default, animationParams).then(() => this.setSize());
+        return Animation(this, AnimationDuration.Default, animationParams).then(() => {
+            this.setSize();
+        });
     }
 
-    async fadeOut() {
+    /**
+     * @returns {Promise<void>}
+     */
+    fadeOut() {
         const animationParams = { ...RuntimeButtonProps, mode: Clutter.AnimationMode.EASE_OUT_QUAD };
         return Animation(this, AnimationDuration.Slow, animationParams);
     }

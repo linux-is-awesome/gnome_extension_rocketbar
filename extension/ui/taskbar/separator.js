@@ -1,8 +1,13 @@
+/**
+ * JSDoc types
+ *
+ * @typedef {import('gi://Mtk').Rectangle} Mtk.Rectangle
+ */
+
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Context from '../../core/context.js';
 import { Component, ComponentEvent } from '../base/component.js';
-import { Type } from '../../core/enums.js';
 import { Animation, AnimationDuration, AnimationType } from '../base/animation.js';
 import { Config } from '../../utils/config.js';
 
@@ -17,7 +22,7 @@ const ConfigFields = {
     spacingAfter: 'appbutton-spacing'
 };
 
-/** @type {Object.<string, boolean|number|string>} */
+/** @type {{[prop: string]: *}} */
 const DefaultProps = {
     name: MODULE_NAME,
     reactive: true,
@@ -26,23 +31,26 @@ const DefaultProps = {
     opacity: AnimationType.OpacityMin.opacity
 };
 
-/** @type {Object.<string, boolean|number|string>} */
+/** @type {{[prop: string]: *}} */
 const BodyProps = {
     name: `${MODULE_NAME}-Body`,
     y_align: Clutter.ActorAlign.CENTER,
     x_align: Clutter.ActorAlign.CENTER
 };
 
+/**
+ * @augments Component<St.Bin>
+ */
 export class Separator extends Component {
 
     /**
      * @param {{event: string}} data
      * @returns {void}
      */
-    #notifyHandler = (data) => ({
+    #notifyHandler = data => ({
         [ComponentEvent.Destroy]: this.#destroy,
         [ComponentEvent.Scale]: this.#handleConfig,
-        [ComponentEvent.Mapped]: () => this.#updateStyle() ?? this.#handleState()
+        [ComponentEvent.Mapped]: () => (this.#updateStyle(), this.#handleState())
     })[data?.event]?.call(this);
 
     /** @type {boolean} */
@@ -51,10 +59,10 @@ export class Separator extends Component {
     /** @type {boolean} */
     #isVisible = false;
 
-    /** @type {St.Widget} */
+    /** @type {St.Widget?} */
     #body = new St.Widget(BodyProps);
 
-    /** @type {Object.<string, string|number|boolean>} */
+    /** @type {Config} */
     #config = Config(this, ConfigFields, () => this.#handleConfig());
 
     /** @type {number} */
@@ -65,12 +73,14 @@ export class Separator extends Component {
 
     /**
      * Note: Using Math.round to match css width.
-     * 
-     * @type {Mtk.Rectangle}
+     *
+     * @override
+     * @type {Mtk.Rectangle?}
      */
     get rect() {
         if (!this.isValid) return null;
         const result = super.rect;
+        if (!result) return null;
         const { spacingAfter } = this.#config;
         result.width = Math.round((this.#width + spacingAfter) * this.uiScale * this.globalScale);
         return result;
@@ -78,11 +88,11 @@ export class Separator extends Component {
 
     /**
      * Note: This property forces Separator to be shown or hidden.
-     * 
+     *
      * @param {boolean} value
      */
     set isVisible(value) {
-        if (typeof value !== Type.Boolean) return;
+        if (typeof value !== 'boolean') return;
         this.#isToggled = false;
         if (value === this.#isVisible) return;
         this.#isVisible = value;
@@ -116,7 +126,7 @@ export class Separator extends Component {
     }
 
     #updateStyle() {
-        if (!this.isValid) return;
+        if (!this.isValid || !this.#body) return;
         const { iconSize, spacingAfter } = this.#config;
         const scale = this.uiScale;
         this.actor.set_style(
@@ -138,11 +148,15 @@ export class Separator extends Component {
         if (!this.#isVisible && opacity === AnimationType.OpacityMin.opacity) return;
         this.actor.remove_all_transitions();
         const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
-        if (!this.#isVisible) return Animation(this, AnimationDuration.Slow, { ...DefaultProps, mode }) &&
-                                     this.notifyParents(ComponentEvent.Destroy);
-        const width = this.rect.width;
+        if (!this.#isVisible) {
+            Animation(this, AnimationDuration.Slow, { ...DefaultProps, mode });
+            this.notifyParents(ComponentEvent.Destroy);
+            return;
+        }
+        const width = this.rect?.width ?? BODY_WIDTH;
         this.notifyParents(ComponentEvent.Mapped);
-        Animation(this, AnimationDuration.Default, { ...AnimationType.OpacityMax, width, mode }).then(() => this.setSize());
+        Animation(this, AnimationDuration.Default, { ...AnimationType.OpacityMax, width, mode })
+                 .then(() => this.setSize());
     }
 
 }

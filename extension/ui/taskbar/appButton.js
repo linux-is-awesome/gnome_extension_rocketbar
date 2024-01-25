@@ -1,8 +1,17 @@
+/**
+ * JSDoc types
+ *
+ * @typedef {import('gi://Meta').Window} Meta.Window
+ * @typedef {import('gi://Mtk').Rectangle} Mtk.Rectangle
+ * @typedef {import('../../core/context/jobs.js').Jobs.Job} Job
+ * @typedef {import('../../utils/config.js').Config} Config
+ */
+
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Shell from 'gi://Shell';
-import { overview as Overview,
-         activateWindow as FocusedWindow } from 'resource:///org/gnome/shell/ui/main.js';
+import { activateWindow as FocusedWindow } from 'resource:///org/gnome/shell/ui/main.js';
+import { Overview } from '../../core/shell.js';
 import Context from '../../core/context.js';
 import { RuntimeButton, ButtonEvent } from '../base/button.js';
 import { TaskbarClient } from '../../services/taskbarService.js';
@@ -21,7 +30,7 @@ import { AnimationType } from '../base/animation.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
 
-/** @type {Object.<string, string|boolean>} */
+/** @type {{[prop: string]: *}} */
 const LayoutProps = {
     name: `${MODULE_NAME}-Layout`,
     x_expand: true,
@@ -35,7 +44,7 @@ export const AppButtonEvent = {
 
 class CycleWindowsQueue {
 
-    /** @type {Meta.Window[]} */
+    /** @type {Meta.Window[]?} */
     #windows = null;
 
     /** @type {boolean} */
@@ -43,8 +52,8 @@ class CycleWindowsQueue {
 
     /**
      * @param {Meta.Window[]} windows
-     * @param {boolean} [reverse]
      * @param {boolean} [minimize]
+     * @param {boolean} [reverse]
      */
     next(windows, minimize = true, reverse = false) {
         if (!windows?.length) return;
@@ -55,7 +64,8 @@ class CycleWindowsQueue {
         let nextWindow = windows[0];
         if (!nextWindow.minimized) {
             let windowIndex = this.#windows.indexOf(nextWindow);
-            if (reverse) windowIndex--; else windowIndex++;
+            if (reverse) windowIndex--;
+            else windowIndex++;
             if (windowIndex === this.#windows.length) {
                 windowIndex = 0;
             } else if (windowIndex < 0) {
@@ -67,32 +77,35 @@ class CycleWindowsQueue {
         if (!minimize || nextWindow.minimized ||
             nextWindow !== this.#windows[0]) return FocusedWindow(nextWindow);
         for (let i = 0, l = windows.length; i < l; ++i) windows[i].minimize();
-        this.#windows = null;  
+        this.#windows = null;
     }
 
 }
 
+/**
+ * @augments RuntimeButton<St.Bin>
+ */
 export class AppButton extends RuntimeButton {
 
-    /** @type {AppConfig} */
+    /** @type {AppConfig?} */
     static #configProvider = null;
 
     /**
      * @param {{event: string, params: *}} data
      * @returns {void}
      */
-    #notifyHandler = (data) => ({
+    #notifyHandler = data => ({
         [ComponentEvent.Destroy]: this.#destroy,
         [ComponentEvent.Mapped]: this.#handleMapped,
-        [ComponentEvent.DragActorRequest]: () => this.#appIcon.dragActor,
-        [ComponentEvent.DragActorSourceRequest]: () => this.#appIcon.actor,
+        [ComponentEvent.DragActorRequest]: () => this.#appIcon?.dragActor,
+        [ComponentEvent.DragActorSourceRequest]: () => this.#appIcon?.actor,
         [ComponentEvent.Scale]: this.#updateStyle,
         [ButtonEvent.Press]: this.#press,
         [ButtonEvent.LongPress]: () => this.#longPress(data?.params),
-        [ButtonEvent.Click]: () => this.#click(data?.params) ?? true,
+        [ButtonEvent.Click]: () => this.#click(data?.params),
         [ButtonEvent.RequestMenu]: () => new Menu(this),
         [ButtonEvent.Focus]: () => this.notifyParents(AppButtonEvent.Reaction),
-        [AppIconEvent.DominantColorChanged]: () => this.#updateBacklight() ?? this.#indicators?.rerender() ?? true
+        [AppIconEvent.DominantColorChanged]: () => (this.#updateBacklight(), this.#indicators?.rerender(), true)
     })[data?.event]?.call(this);
 
     /** @type {boolean} */
@@ -104,25 +117,25 @@ export class AppButton extends RuntimeButton {
     /** @type {boolean} */
     #isDropCandidate = false;
 
-    /** @type {Object.<string, string|number|boolean>} */
+    /** @type {Config?} */
     #config = null;
 
-    /** @type {Job} */
+    /** @type {Job?} */
     #destroyJob = null;
 
-    /** @type {Shell.App} */
+    /** @type {Shell.App?} */
     #app = null;
 
-    /** @type {AppIcon} */
+    /** @type {AppIcon?} */
     #appIcon = null;
 
-    /** @type {St.Widget} */
-    #layout = new St.Widget({ ...LayoutProps, layout_manager: new Clutter.BinLayout() });
+    /** @type {St.Widget?} */
+    #layout = null;
 
-    /** @type {TaskbarClient} */
+    /** @type {TaskbarClient?} */
     #service = null;
 
-    /** @type {Set<Meta.Window>} */
+    /** @type {Set<Meta.Window>?} */
     #windows = null;
 
     /** @type {number} */
@@ -134,40 +147,40 @@ export class AppButton extends RuntimeButton {
     /** @type {number} */
     #progress = 0;
 
-    /** @type {CycleWindowsQueue} */
+    /** @type {CycleWindowsQueue?} */
     #cycleWindowsQueue = null;
 
-    /** @type {Indicators} */
+    /** @type {Indicators?} */
     #indicators = null;
 
-    /** @type {NotificationHandler} */
+    /** @type {NotificationHandler?} */
     #notificationHandler = null;
 
-    /** @type {NotificationBadge} */
+    /** @type {NotificationBadge?} */
     #notificationBadge = null;
 
-    /** @type {ProgressBar} */
+    /** @type {ProgressBar?} */
     #progressBar = null;
 
-    /** @type {AppSoundVolumeControl} */
+    /** @type {AppSoundVolumeControl?} */
     #soundVolumeControl = null;
 
-    /** @type {TooltipTrigger} */
+    /** @type {TooltipTrigger?} */
     #tooltip = null;
 
-    /** @type {number} */
+    /** @type {boolean} */
     get #isAppRunning() {
-        return this.#windowsCount || this.#app?.state === Shell.AppState.RUNNING;
+        return !!this.#windowsCount || this.#app?.state === Shell.AppState.RUNNING;
     }
 
     /** @type {boolean} */
     get #canOpenNewWindow() {
-        return this.#app?.can_open_new_window() && this.#isAppRunning;
+        return !!this.#app?.can_open_new_window() && this.#isAppRunning;
     }
 
-    /** @type {Meta.Window[]} */
+    /** @type {Meta.Window[]?} */
     get #sortedWindows() {
-        if (!this.#app || !this.#windowsCount) return null;
+        if (!this.#app || !this.#windows || !this.#windowsCount) return null;
         if (this.#windowsCount === 1) return [...this.#windows];
         const windows = this.#app.get_windows();
         if (windows.length === this.#windowsCount) return windows;
@@ -185,23 +198,28 @@ export class AppButton extends RuntimeButton {
 
     /**
      * Note: Using Math.round to match css width.
-     * 
-     * @type {Mtk.Rectangle}
+     *
+     * @override
+     * @type {Mtk.Rectangle?}
      */
     get rect() {
         if (!this.isValid) return null;
         const result = super.rect;
-        const { spacingAfter, width } = this.#config;
+        if (!result) return null;
+        const { spacingAfter, width } = this.#config ?? {};
         result.width = Math.round((width + spacingAfter) * this.uiScale * this.globalScale);
         return result;
     }
 
-    /** @type {Shell.App} */
+    /** @type {Shell.App?} */
     get app() {
         return this.#app;
     }
 
-    /** @type {boolean} */
+    /**
+     * @override
+     * @type {boolean}
+     */
     get isActive() {
         return this.#isActive;
     }
@@ -227,12 +245,12 @@ export class AppButton extends RuntimeButton {
         return this.#progress;
     }
 
-    /** @type {string} */
+    /** @type {string?} */
     get dominantColor() {
-        return this.#appIcon?.dominantColor;
+        return this.#appIcon?.dominantColor ?? null;
     }
 
-    /** @type {AppSoundVolumeControl} */
+    /** @type {AppSoundVolumeControl?} */
     get soundVolumeControl() {
         return this.#soundVolumeControl;
     }
@@ -242,7 +260,10 @@ export class AppButton extends RuntimeButton {
         return this.#isFavorite;
     }
 
-    /** @param {boolean} value */
+    /**
+     * @override
+     * @param {boolean} value
+     */
     set isActive(value) {
         if (!this.isValid) return;
         const oldValue = this.#isActive;
@@ -254,12 +275,15 @@ export class AppButton extends RuntimeButton {
             if (!this.#isStartupRequired) this.#indicators?.rerender();
         }
         if (this.#isActive === oldValue) return;
-        if (!this.#isActive) return Context.signals.remove(this, Overview);
+        if (!this.#isActive) {
+            Context.signals.remove(this, Overview);
+            return;
+        }
         if (!this.#isStartupRequired) this.notifyParents(AppButtonEvent.Reaction);
         Context.signals.add(this, [
             Overview,
-            Event.OverviewShowing, () => { this.isActive = this.#isActive; },
-            Event.OverviewHiding, () => { this.isActive = this.#isActive; }
+            Event.OverviewShowing, () => (this.isActive = this.#isActive),
+            Event.OverviewHiding, () => (this.isActive = this.#isActive)
         ]);
     }
 
@@ -269,18 +293,21 @@ export class AppButton extends RuntimeButton {
      */
     constructor(app, isDropCandidate = false) {
         super(new St.Bin(), MODULE_NAME);
+        this.#layout = new St.Widget({ ...LayoutProps, layout_manager: new Clutter.BinLayout() });
         this.#layout.add_child(this.display);
         this.actor.set_child(this.#layout);
         this.dragEvents = true;
-        this.#isDropCandidate = isDropCandidate;
         this.#app = app;
+        this.#isDropCandidate = isDropCandidate;
+        this.actor.set_reactive(!isDropCandidate);
         this.#config = this.configProvider.getConfig(app, this, settingsKey => this.#handleConfig(settingsKey));
-        this.#appIcon = new AppIcon(app, this.#config.iconPath).setParent(this.display);
-        this.actor.animateLaunch = () => this.#appIcon.animate(AppIconAnimation.Activate);
+        this.#appIcon = new AppIcon(app, this.#config?.iconPath).setParent(this.display);
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
-        if (this.#isDropCandidate) this.actor.set_reactive(!this.#isDropCandidate);
     }
 
+    /**
+     * @override
+     */
     destroy() {
         if (!this.isValid) return;
         this.#service?.destroy();
@@ -296,8 +323,28 @@ export class AppButton extends RuntimeButton {
         this.#abortDestroy();
     }
 
+    /**
+     * Note: This function is exposed to simulate AppDisplay's behavior inside the Shell.
+     */
     activate() {
-        this.#click({});
+        this.#click();
+    }
+
+    /**
+     * Note: This function is exposed to simulate AppDisplay's behavior inside the Shell.
+     */
+    animateLaunch() {
+        this.#appIcon?.animate(AppIconAnimation.Activate);
+    }
+
+    /**
+     * Note: This function is exposed to simulate AppDisplay's behavior inside the Shell.
+     *
+     * @param {number} x
+     * @param {number} y
+     */
+    animateLaunchAtPos(x, y) {
+        console.warn('TODO: animateLaunchAtPos', x, y);
     }
 
     #destroy() {
@@ -315,11 +362,13 @@ export class AppButton extends RuntimeButton {
         this.#notificationHandler = null;
         this.#tooltip?.destroy();
         this.#tooltip = null;
+        this.#windows?.clear();
+        this.#windows = null;
         this.#layout = null;
         this.#appIcon = null;
         this.#indicators = null;
-        this.#windows = null;
         this.#destroyJob = null;
+        this.#config = null;
     }
 
     #handleMapped() {
@@ -345,10 +394,10 @@ export class AppButton extends RuntimeButton {
     }
 
     /**
-     * @param {string} settingsKey
+     * @param {string?} [settingsKey]
      */
     #handleConfig(settingsKey) {
-        if (!this.isValid) return;
+        if (!this.#config || !this.#appIcon) return;
         switch (settingsKey) {
             case ConfigFields.enableMinimizeAction:
             case ConfigFields.activateBehavior:
@@ -384,6 +433,7 @@ export class AppButton extends RuntimeButton {
     }
 
     #toggleFeatures() {
+        if (!this.#config || !this.#app || !this.#layout) return;
         const { enableIndicators,
                 enableSoundControl,
                 enableNotificationBadges,
@@ -430,12 +480,14 @@ export class AppButton extends RuntimeButton {
     }
 
     #updateStyle() {
+        if (!this.#config) return;
         const { spacingAfter, roundness, width, height } = this.#config;
         this.overrideStyle({ spacingAfter, roundness, width, height });
         this.notifyParents(ComponentEvent.Mapped);
     }
 
     #updateBacklight() {
+        if (!this.#config) return;
         let { backlightColor, backlightIntensity, backlightDominantColor } = this.#config;
         if (!super.isActive) backlightIntensity = 0;
         else if (backlightDominantColor) backlightColor = this.dominantColor ?? backlightColor;
@@ -443,12 +495,12 @@ export class AppButton extends RuntimeButton {
     }
 
     #handleAppState() {
-        if (!this.isMapped || !this.#service) return;
+        if (!this.isMapped || !this.#service || !this.#config) return;
         const { isolateWorkspaces, showAllWindows } = this.#config;
-        const isFavorite = this.#service.favorites?.apps?.has(this.#app) ?? false;
+        const isFavorite = !!this.#app && !!this.#service.favorites?.apps?.has(this.#app);
         this.#windows = this.#service.queryWindows(isolateWorkspaces, showAllWindows);
         this.#windowsCount = this.#windows?.size ?? 0;
-        this.#notificationHandler.updatePids();
+        this.#notificationHandler?.updatePids();
         this.#soundVolumeControl?.update();
         if (!isFavorite && !this.#windowsCount) return this.#queueDestroy();
         this.#isFavorite = isFavorite;
@@ -475,20 +527,21 @@ export class AppButton extends RuntimeButton {
     #queueStartup() {
         const isWorkspaceChanged = this.#service?.isWorkspaceChanged ?? false;
         Context.jobs.new(this).destroy(() => {
-            const targetWidth = this.rect.width;
-            const { opacity } = this.#isDropCandidate ? AnimationType.OpacityDown : {};
-            this.fadeIn(targetWidth, opacity).then(() => !isWorkspaceChanged && this.#rerenderChildren())
-                                             .finally(() => this.#isActive && Context.jobs.new(this, Delay.Queue).destroy(() =>
-                                                            this.notifyParents(AppButtonEvent.Reaction)).catch());
+            const targetWidth = this.rect?.width ?? 0;
+            const { opacity } = this.#isDropCandidate ? AnimationType.OpacityDown : AnimationType.OpacityMax;
+            this.fadeIn(targetWidth, opacity)?.then(() =>
+                !isWorkspaceChanged && this.#rerenderChildren()).finally(() =>
+                this.#isActive && Context.jobs.new(this, Delay.Queue).destroy(() =>
+                this.notifyParents(AppButtonEvent.Reaction)).catch());
             if (isWorkspaceChanged) this.#rerenderChildren();
         }).catch();
     }
 
     #queueDestroy() {
         if (this.#destroyJob) return;
-        this.#destroyJob = Context.jobs.removeAll(this).new(this).destroy(() =>
-        this.fadeOut().finally(() => super.destroy()) &&
-        this.notifyParents(ComponentEvent.Destroy)).catch();
+        this.#destroyJob = Context.jobs.removeAll(this).new(this).destroy(() => (
+        this.fadeOut().finally(() => super.destroy()),
+        this.notifyParents(ComponentEvent.Destroy))).catch();
     }
 
     #rerenderChildren() {
@@ -507,11 +560,11 @@ export class AppButton extends RuntimeButton {
      */
     #handleWindowState(window) {
         if (!this.isValid || !window || !this.#windows?.has(window)) return;
-        this.#appIcon.animate(window.minimized ? AppIconAnimation.Deactivate : AppIconAnimation.Activate);
+        this.#appIcon?.animate(window.minimized ? AppIconAnimation.Deactivate : AppIconAnimation.Activate);
     }
 
-    async #handleWindows() {
-        if (!this.isValid || !this.#windowsCount) return;
+    #handleWindows() {
+        if (!this.isValid || !this.#windows || !this.#windowsCount) return;
         for (const window of this.#windows) {
             window.get_icon_geometry = () => this.#getWindowIconGeometry(window);
             if (window.demands_attention) this.#handleUrgentWindow(window);
@@ -521,9 +574,9 @@ export class AppButton extends RuntimeButton {
     /**
      * @param {Meta.Window} window
      */
-    async #handleUrgentWindow(window) {
+    #handleUrgentWindow(window) {
         if (!window || !this.#windows?.has(window) || window.has_focus()) return;
-        if (this.#config.demandsAttentionBehavior === DemandsAttentionBehavior.FocusActive && !this.#isActive) return;
+        if (this.#config?.demandsAttentionBehavior === DemandsAttentionBehavior.FocusActive && !this.#isActive) return;
         FocusedWindow(window);
     }
 
@@ -539,21 +592,24 @@ export class AppButton extends RuntimeButton {
         const canHandleProgress = this.#isAppRunning;
         if (!canHandleProgress && !this.#progress) return;
         const appId = this.#notificationHandler?.appId;
-        const progress = canHandleProgress ? Context.launcherApi?.progress?.get(appId) ?? 0 : 0;
+        const progress = canHandleProgress && appId ?
+                         Context.launcherApi?.progress?.get(appId) ?? 0 : 0;
         if (progress === this.#progress) return;
         this.#progress = progress;
         if (!this.#isStartupRequired) this.#progressBar?.rerender();
     }
 
     #hover() {
+        if (!this.#appIcon) return;
         this.#appIcon.isHighlighted = this.actor.hover;
         this.#resetCycleWindowsQueue();
         this.notifyParents(AppButtonEvent.Reaction);
     }
 
     #press() {
-        if (this.actor.pressed) this.#appIcon.animate(AppIconAnimation.Press);
-        else this.#appIcon.animate(AppIconAnimation.Release).finally(() => {
+        if (this.actor.pressed) this.#appIcon?.animate(AppIconAnimation.Press);
+        else this.#appIcon?.animate(AppIconAnimation.Release)?.finally(() => {
+            if (!this.#appIcon) return;
             this.#appIcon.isHighlighted = this.actor.hover;
         });
     }
@@ -564,8 +620,8 @@ export class AppButton extends RuntimeButton {
      */
     #longPress(params) {
         if (!params || !params.event) return false;
-        params.button = params.event.get_button();
-        const { isMiddleButton, isCtrlPressed } = this.#getClickDetails(params);
+        const button = params.event.get_button();
+        const { isMiddleButton, isCtrlPressed } = this.#getClickDetails({ ...params, button });
         if (!isMiddleButton && !isCtrlPressed) return false;
         if (isCtrlPressed) this.#closeWindows(true);
         return true;
@@ -573,7 +629,7 @@ export class AppButton extends RuntimeButton {
 
     /**
      * @param {Clutter.Event} event
-     * @returns {number}
+     * @returns {boolean}
      */
     #scroll(event) {
         const scrollDirection = event?.get_scroll_direction();
@@ -588,49 +644,57 @@ export class AppButton extends RuntimeButton {
     }
 
     /**
-     * @param {{ event: Clutter.Event, button: number }} params
-     * @returns {void}
+     * @param {{ event: Clutter.Event, button: number }} [params]
+     * @returns {boolean}
      */
     #click(params) {
-        if (!params || this.#service?.isPending) return;
-        const { isOverview, isSecondaryButton, isMiddleButton, isCtrlPressed } = this.#getClickDetails(params);
+        if (this.#service?.isPending || !this.#config) return false;
+        const { isOverview,
+                isSecondaryButton,
+                isMiddleButton,
+                isCtrlPressed } = this.#getClickDetails(params);
         if (isSecondaryButton) return false;
-        if (isCtrlPressed && isMiddleButton) return this.#closeWindows();
+        if (isCtrlPressed && isMiddleButton) return this.#closeWindows(), true;
         const newWindow = this.#canOpenNewWindow && (isCtrlPressed || isMiddleButton);
-        if (newWindow || !this.#isAppRunning) return this.#openNewWindow(!isCtrlPressed && !isMiddleButton && isOverview);
+        if (newWindow || !this.#isAppRunning) {
+            return this.#openNewWindow(!isCtrlPressed && !isMiddleButton && isOverview), true;
+        }
         const { isolateWorkspaces, activateBehavior, enableMinimizeAction } = this.#config;
         if (!this.#windowsCount) {
-            if (!isolateWorkspaces) return this.#openNewWindow(isOverview); 
+            if (!isolateWorkspaces) return this.#openNewWindow(isOverview), true;
             switch (activateBehavior) {
-                case ActivateBehavior.MoveWindows: return this.#moveWindows();
+                case ActivateBehavior.MoveWindows: return this.#moveWindows(), true;
                 case ActivateBehavior.FindWindow:
-                    const sortedWindows = this.#app.get_windows();
-                    if (sortedWindows.length) return FocusedWindow(sortedWindows[0]);
+                    const sortedWindows = this.#app?.get_windows();
+                    if (sortedWindows?.length) return FocusedWindow(sortedWindows[0]), true;
                 case ActivateBehavior.NewWindow:
-                default: return this.#openNewWindow(isOverview);
+                default: return this.#openNewWindow(isOverview), true;
             }
         }
-        if (isOverview) return FocusedWindow(this.#getPrimaryWindow(this.#sortedWindows));
+        const sortedWindows = this.#sortedWindows;
+        if (!sortedWindows?.length) return true;
+        if (isOverview) return FocusedWindow(this.#getPrimaryWindow(sortedWindows)), true;
         if (this.#windowsCount === 1) {
-            const window = this.#sortedWindows[0];
+            const window = sortedWindows[0];
             if (window.minimized || !window.has_focus() ||
                 isCtrlPressed || isMiddleButton) FocusedWindow(window);
             else if (enableMinimizeAction) window.minimize();
-            return;
+            return true;
         }
         this.#cycleWindows(enableMinimizeAction);
+        return true;
     }
 
     /**
-     * @param {{ event: Clutter.Event, button: number }} params
-     * @returns {Object.<string, boolean>}
+     * @param {{ event: Clutter.Event, button: number }} [params]
+     * @returns {{[key: string]: boolean}}
      */
     #getClickDetails(params) {
-        const { event, button } = params;
+        const { event, button } = params ?? {};
         const isOverview = Overview.visible;
         const isSecondaryButton = button === Clutter.BUTTON_SECONDARY;
         const isMiddleButton = button === Clutter.BUTTON_MIDDLE;
-        const isCtrlPressed = (event?.get_state() & Clutter.ModifierType.CONTROL_MASK) !== 0;
+        const isCtrlPressed = !event ? false : (event.get_state() & Clutter.ModifierType.CONTROL_MASK) !== 0;
         return { isOverview, isSecondaryButton, isMiddleButton, isCtrlPressed };
     }
 
@@ -640,9 +704,9 @@ export class AppButton extends RuntimeButton {
     #openNewWindow(hideOverview = false) {
         this.#resetCycleWindowsQueue();
         if (hideOverview) Overview.hide();
-        this.actor.animateLaunch();
-        if (!this.#canOpenNewWindow) return this.#app.activate();
-        this.#app.open_new_window(-1);
+        this.animateLaunch();
+        if (!this.#canOpenNewWindow) return this.#app?.activate();
+        this.#app?.open_new_window(-1);
     }
 
     /**
@@ -657,13 +721,14 @@ export class AppButton extends RuntimeButton {
     }
 
     #moveWindows() {
-        const windows = this.#service.queryWindows(false, true);
+        const windows = this.#service?.queryWindows(false, true);
         if (!windows?.size) return;
-        this.actor.animateLaunch();
-        const sortedWindows = this.#app.get_windows();
-        const workspace = this.#service.workspace
+        this.animateLaunch();
+        const workspace = this.#service?.workspace;
+        if (!workspace) return;
+        const sortedWindows = this.#app?.get_windows();
         for (const window of windows) window.change_workspace(workspace);
-        if (Overview.visible || !sortedWindows.length) return;
+        if (Overview.visible || !sortedWindows?.length) return;
         FocusedWindow(sortedWindows[0]);
     }
 
@@ -675,10 +740,11 @@ export class AppButton extends RuntimeButton {
     #cycleWindows(minimize = true, reverse = false) {
         if (!this.#windowsCount) return;
         const sortedWindows = this.#sortedWindows;
+        if (!sortedWindows?.length) return;
         if (!this.#isActive) return FocusedWindow(this.#getPrimaryWindow(sortedWindows));
         if (sortedWindows.length === 1) return FocusedWindow(sortedWindows[0]);
         this.#cycleWindowsQueue ??= new CycleWindowsQueue();
-        this.#cycleWindowsQueue.next(sortedWindows, minimize, reverse);   
+        this.#cycleWindowsQueue.next(sortedWindows, minimize, reverse);
     }
 
     #resetCycleWindowsQueue() {
@@ -701,11 +767,11 @@ export class AppButton extends RuntimeButton {
 
     /**
      * @param {Meta.Window} window
-     * @returns {[success: boolean, geometry: Mtk.Rectangle]}
+     * @returns {[success: boolean, geometry: Mtk.Rectangle|null]}
      */
     #getWindowIconGeometry(window) {
-        if (!window) return [false];
-        if (this.#appIcon) return [true, this.#appIcon.rect];
+        if (!window) return [false, null];
+        if (this.#appIcon) return [true, this.#appIcon?.rect];
         window.get_icon_geometry = window.constructor.prototype.get_icon_geometry;
         return window.get_icon_geometry();
     }

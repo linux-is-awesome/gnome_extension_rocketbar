@@ -1,17 +1,25 @@
+/**
+ * JSDoc types
+ *
+ * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupMenu} PopupMenu
+ * @typedef {import('resource:///org/gnome/shell/ui/boxpointer.js').BoxPointer} BoxPointer
+ * @typedef {import('../shell.js').DummyEventEmitter} DummyEventEmitter
+ */
+
 import St from 'gi://St';
-import { panel as MainPanel,
-         layoutManager as MainLayout } from 'resource:///org/gnome/shell/ui/main.js';
 import Context from '../context.js';
-import { Type, Event, Delay } from '../enums.js';
+import { MainLayout, MainPanel } from '../shell.js';
+import { Component } from '../../ui/base/component.js';
+import { Event, Delay } from '../enums.js';
 
 export default class LayoutManager {
 
-    /** @type {Map<*, () => void>} */
+    /** @type {Map<*, (() => void)?>?} */
     #clients = new Map();
 
     /** @type {boolean} */
     get isStartingUp() {
-        return MainLayout._startingUp;
+        return MainLayout._startingUp ?? false;
     }
 
     destroy() {
@@ -22,10 +30,10 @@ export default class LayoutManager {
     }
 
     /**
-     * @param {PopupMenu} menu
+     * @param {PopupMenu|DummyEventEmitter} menu
      */
     addMenu(menu) {
-        if (!menu) return;
+        if (!menu?.actor) return;
         try {
             MainPanel.menuManager?.addMenu(menu);
             this.addOverlay(menu.actor);
@@ -35,10 +43,10 @@ export default class LayoutManager {
     }
 
     /**
-     * @param {PopupMenu} menu
+     * @param {PopupMenu|DummyEventEmitter} menu
      */
     removeMenu(menu) {
-        if (!menu) return;
+        if (!menu?.actor) return;
         try {
             MainPanel.menuManager?.removeMenu(menu);
             this.removeOverlay(menu.actor);
@@ -48,17 +56,23 @@ export default class LayoutManager {
     }
 
     /**
-     * @param {St.Widget} actor
+     * @param {St.Widget|Component<St.Widget>} actor
      */
     addOverlay(actor) {
+        if (actor instanceof Component && actor.isValid) {
+            actor = actor.actor ?? actor;
+        }
         if (actor instanceof St.Widget === false) return;
         MainLayout.uiGroup?.add_actor(actor);
     }
 
     /**
-     * @param {St.Widget} actor
+     * @param {St.Widget|Component<St.Widget>} actor
      */
     removeOverlay(actor) {
+        if (actor instanceof Component) {
+            actor = actor.actor ?? actor;
+        }
         if (actor instanceof St.Widget === false) return;
         MainLayout.uiGroup?.remove_actor(actor);
     }
@@ -69,8 +83,8 @@ export default class LayoutManager {
      */
     requestInit(client, callback) {
         if (!this.#clients || !client ||
-            typeof callback !== Type.Function ||
-            typeof this.#clients.get(client) === Type.Function) return;
+            typeof callback !== 'function' ||
+            typeof this.#clients.get(client) === 'function') return;
         if (!this.isStartingUp) {
             this.#clients.set(client, null);
             callback();
@@ -87,8 +101,8 @@ export default class LayoutManager {
      */
     queueAfterInit(client, callback) {
         if (!client || !this.#clients?.has(client) ||
-            typeof callback !== Type.Function ||
-            typeof this.#clients.get(client) === Type.Function) return;
+            typeof callback !== 'function' ||
+            typeof this.#clients.get(client) === 'function') return;
         this.#clients.set(client, callback);
         Context.jobs.removeAll(this).new(this, Delay.Background).destroy(() => this.#handleAfterInit()).catch();
     }
@@ -98,7 +112,7 @@ export default class LayoutManager {
      * @returns {boolean}
      */
     isQueued(client) {
-        return typeof this.#clients?.get(client) === Type.Function; 
+        return typeof this.#clients?.get(client) === 'function';
     }
 
     /**
@@ -126,7 +140,7 @@ export default class LayoutManager {
         if (!this.#clients?.size) return;
         for (const [client, callback] of this.#clients) {
             this.#clients.set(client, null);
-            if (typeof callback === Type.Function) callback();
+            if (typeof callback === 'function') callback();
         }
     }
 

@@ -1,7 +1,13 @@
+/**
+ * JSDoc types
+ *
+ * @typedef {import('../core/context/jobs.js').Jobs.Job} Job
+ */
+
 import Shell from 'gi://Shell';
-import { messageTray as MessageTray } from 'resource:///org/gnome/shell/ui/main.js';
 import Context from '../core/context.js';
-import { Type, Delay } from '../core/enums.js';
+import { MessageTray } from '../core/shell.js';
+import { Delay } from '../core/enums.js';
 import { Config } from '../utils/config.js';
 
 const APPID_REGEXP_STRING = /.desktop/g;
@@ -29,11 +35,11 @@ const NotificationSource = {
 
 class NotificationService {
 
-    /**        
+    /**
      * @param {MessageTray.Source} source
-     * @returns {string|null}
+     * @returns {string?}
      */
-    #notificationAppId = (source) => ({
+    #notificationAppId = source => ({
         [NotificationSource.FdoNotification]: source.app?.id,
         [NotificationSource.GtkNotification]: source._appId,
         [NotificationSource.WindowAttention]: source._app?.id
@@ -42,7 +48,7 @@ class NotificationService {
     /** @type {Set<MessageTray.Source>} */
     #notifications = new Set();
 
-    /** @type {Set<NotificationHandler>} */
+    /** @type {Set<NotificationHandler>?} */
     #handlers = new Set();
 
     /** @type {Map<string|number, number>} */
@@ -54,10 +60,10 @@ class NotificationService {
     /** @type {number} */
     #totalCount = 0;
 
-    /** @type {Job} */
+    /** @type {Job?} */
     #updateJob = Context.jobs.new(this, Delay.Background);
 
-    /** @type {Object.<string, string|number|boolean>} */
+    /** @type {Config} */
     #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
 
     constructor() {
@@ -110,7 +116,7 @@ class NotificationService {
     }
 
     /**
-     * @param {string} settingsKey 
+     * @param {string} [settingsKey]
      */
     #handleConfig(settingsKey) {
         if (settingsKey === ConfigFields.countAttentionSources) return this.#queueUpdate();
@@ -159,7 +165,7 @@ class NotificationService {
     #update() {
         if (!this.#handlers) return;
         this.#totalCount = 0;
-        this.#hasCountByPid = false; 
+        this.#hasCountByPid = false;
         const launcherApiCount = Context.launcherApi?.notifications;
         if (!launcherApiCount) this.#countForApps.clear();
         else this.#countForApps = new Map([...launcherApiCount]);
@@ -188,12 +194,12 @@ class NotificationService {
      *       Probably can be useful for other apps as well.
      *       It doesn't allow to count notifications for separate Chrome windows separately.
      *       Doesn't help to count notifications for Flatpak apps without dbus access.
-     * 
+     *
      * @param {NotificationHandler} handler
      */
     #triggerHandler(handler) {
         const appId = handler.appId;
-        if (typeof appId !== Type.String) return handler.setCount(this.#totalCount);
+        if (typeof appId !== 'string') return handler.setCount(this.#totalCount);
         let count = this.#countForApps.get(appId) ?? 0;
         if (count || !this.#hasCountByPid) return handler.setCount(count);
         const pids = handler.pids;
@@ -208,34 +214,34 @@ class NotificationService {
 
 export class NotificationHandler {
 
-    /** @type {NotificationService} */
+    /** @type {NotificationService?} */
     static #service = null;
 
-    /** @type {(count: number) => void} */
+    /** @type {((count: number) => void)?} */
     #callback = null;
 
-    /** @type {Shell.App} */
+    /** @type {Shell.App?} */
     #app = null;
 
-    /** @type {string|null} */
+    /** @type {string?} */
     #appId = null;
 
-    /** @type {number[]} */
+    /** @type {number[]?} */
     #pids = null;
 
-    /** @type {number} */
+    /** @type {number?} */
     #count = null;
 
-    /** @type {string|null} */
+    /** @type {string?} */
     get appId() {
         if (!this.#app) return null;
         if (this.#appId) return this.#appId;
-        this.#appId = this.#app.id?.replace(APPID_REGEXP_STRING, '');
+        this.#appId = this.#app.id?.replace(APPID_REGEXP_STRING, '') ?? null;
         return this.#appId;
     }
 
     /**
-     * @type {number[]|null}
+     * @type {number[]?}
      */
     get pids() {
         if (this.#pids?.length) return this.#pids;
@@ -245,10 +251,10 @@ export class NotificationHandler {
 
     /**
      * @param {(count: number) => void} callback
-     * @param {Shell.App} [app]
+     * @param {Shell.App?} [app]
      */
     constructor(callback, app) {
-        if (typeof callback !== Type.Function) return; 
+        if (typeof callback !== 'function') return;
         this.#callback = callback;
         this.#app = app instanceof Shell.App ? app : null;
         NotificationHandler.#service ??= new NotificationService();
@@ -268,24 +274,23 @@ export class NotificationHandler {
     /**
      * Note: This is a special function to call outside this class and catch pids of the running app.
      *       So basically the app should be running at some point, otherwise it may not get notifications count.
-     *       Caching pids to restore notifications count for the app after session unlock.
      *       Usually all windows of a single app share the same pid.
      */
-    async updatePids() {
-        if (!this.appId) return null;
+    updatePids() {
+        if (!this.appId) return;
         const oldPids = this.#pids ?? [];
-        this.#pids = this.#app.get_pids();
+        this.#pids = this.#app?.get_pids() ?? null;
         if (!this.#pids?.length) return;
         if (`${oldPids}` === `${this.#pids}`) return;
         Context.getStorage(this.constructor.name).set(this.#appId, this.#pids);
-        NotificationHandler.#service.triggerHandler(this);
+        NotificationHandler.#service?.triggerHandler(this);
     }
 
     /**
      * @param {number} count
      */
     setCount(count) {
-        if (typeof this.#callback !== Type.Function) return; 
+        if (typeof this.#callback !== 'function') return;
         if (this.#count === count) return;
         this.#count = count;
         this.#callback(count);

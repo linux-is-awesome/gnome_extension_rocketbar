@@ -1,13 +1,16 @@
+/**
+ * JSDoc types
+ *
+ * @typedef {import('./core/context.js').default} Context
+ */
+
 import { Extension as ShellExtension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 const DEFAULT_RUNTIME_PATH = '/core/context.js';
 
 export default class Extension extends ShellExtension {
 
-    /**
-     * @typedef {import('./core/context.js').default} Context
-     * @type {Context}
-     */
+    /** @type {Context?} */
     #runtime = null;
 
     /** @type {boolean} */
@@ -18,12 +21,18 @@ export default class Extension extends ShellExtension {
         return DEFAULT_RUNTIME_PATH;
     }
 
+    /**
+     * @override
+     */
     enable() {
         this.#isEnabled = true;
         if (this.#runtime) return;
         this.#initialize();
     }
 
+    /**
+     * @override
+     */
     disable() {
         this.#isEnabled = false;
         try {

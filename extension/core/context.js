@@ -1,6 +1,12 @@
+/**
+ * JSDoc types
+ *
+ * @typedef {import('gi://Gio').Settings} Gio.Settings
+ * @typedef {import('../extension.js').default} Extension
+ */
+
 import St from 'gi://St';
-import { sessionMode as UserSession,
-         layoutManager as MainLayout } from 'resource:///org/gnome/shell/ui/main.js';
+import { Session, MainLayout } from './shell.js';
 import Jobs from './context/jobs.js';
 import Signals from './context/signals.js';
 import LayoutManager from './context/layout.js';
@@ -12,19 +18,19 @@ const SETTINGS_SCHEMA_KEY = 'settings-schema';
 
 export default class Context {
 
-    /** @type {Context} */
+    /** @type {Context?} */
     static #instance = null;
 
-    /** @type {Map<*, Map>} a persistent cache to keep some data until the user's session ends or the extension gets disabled by the user */
+    /** @type {Map<*, Map>?} a persistent cache to keep some data until the user's session ends or the extension gets disabled by the user */
     static #sessionStorage = null;
 
     /** @type {Context} */
     static get instance() {
-        if (!this.#instance) new Error(`${this.name} has no instance.`);
+        if (!this.#instance) throw new Error(`${this.name} has no instance.`);
         return this.#instance;
     }
 
-    /** @type {Object.<string, *>} */
+    /** @type {{[key: string]: *}} */
     static get metadata() {
         return this.instance.#extension?.metadata;
     }
@@ -50,31 +56,40 @@ export default class Context {
         return instance.#layoutManager;
     }
 
-    /** @type {LauncherApiProxy} */
+    /** @type {St.IconTheme} */
+    static get iconTheme() {
+        const instance = this.instance;
+        instance.#iconTheme ??= new St.IconTheme();
+        return instance.#iconTheme;
+    }
+
+    /** @type {St.Settings} */
+    static get systemSettings() {
+        const instance = this.instance;
+        instance.#systemSettings ??= St.Settings.get();
+        return instance.#systemSettings;
+    }
+
+    /** @type {LauncherApiProxy?} */
     static get launcherApi() {
         return this.instance.#launcherApi;
     }
 
-    /** @type {St.IconTheme} */
-    static get iconTheme() {
-        return this.instance.#iconTheme;
-    }
-
     /** @type {boolean} */
     static get isSessionLocked() {
-        return UserSession.currentMode === SessionMode.Locksreen ||
-               MainLayout.screenShieldGroup?.visible;
+        return Session.currentMode === SessionMode.Locksreen ||
+               MainLayout.screenShieldGroup?.visible === true;
     }
 
     /**
-     * @param {string} [path]
-     * @returns {Gio.Settings}
+     * @param {string?} [path]
+     * @returns {Gio.Settings?}
      */
     static getSettings(path) {
         try {
             const extension = this.instance.#extension;
             if (!extension) return null;
-            const schemaId = path ? `${extension.metadata[SETTINGS_SCHEMA_KEY]}.${path}` : null;
+            const schemaId = path ? `${extension.metadata[SETTINGS_SCHEMA_KEY]}.${path}` : '';
             const storage = this.getStorage(this.name);
             if (storage.has(schemaId)) return storage.get(schemaId);
             const settings = extension.getSettings(schemaId);
@@ -91,43 +106,45 @@ export default class Context {
      * @returns {Map}
      */
     static getStorage(client) {
-        if (!client) return null;
+        if (!this.#instance) throw new Error(`${this.name} is invalid.`);
+        if (!client) throw new Error(`${this.name}.getStorage requires a client reference.`);
         this.#sessionStorage ??= new Map();
-        if (!this.#sessionStorage.has(client)) this.#sessionStorage.set(client, new Map());
-        return this.#sessionStorage.get(client);
+        const clientStorage = this.#sessionStorage.get(client) ?? new Map();
+        this.#sessionStorage.set(client, clientStorage);
+        return clientStorage;
     }
 
     /**
-     * @param {string} [message]
-     * @param {Error} [error]
+     * @param {string?} [message]
+     * @param {?} [error]
      */
     static logError(message, error) {
         console.error(`${this.metadata?.name ?? this.name} ${message ?? ''}`, error ?? '');
     }
 
-    /**
-     * @typedef {import('../extension.js').default} Extension
-     * @type {Extension}
-     */
+    /** @type {Extension?} */
     #extension = null;
 
-    /** @type {Jobs} */
+    /** @type {Jobs?} */
     #jobs = null;
 
-    /** @type {Signals} */
+    /** @type {Signals?} */
     #signals = null;
 
-    /** @type {LayoutManager} */
+    /** @type {LayoutManager?} */
     #layoutManager = null;
 
-    /** @type {Modules} */
+    /** @type {Modules?} */
     #modules = null;
 
-    /** @type {LauncherApiProxy} */
+    /** @type {LauncherApiProxy?} */
     #launcherApi = null;
 
-    /** @type {St.IconTheme} */
-    #iconTheme = new St.IconTheme();
+    /** @type {St.IconTheme?} */
+    #iconTheme = null;
+
+    /** @type {St.Settings?} */
+    #systemSettings = null;
 
     /**
      * @param {Extension} extension
@@ -139,7 +156,6 @@ export default class Context {
         this.#extension = extension;
         this.#launcherApi = new LauncherApiProxy();
         this.#modules = new Modules();
-        console.log('Context created');
     }
 
     /**
@@ -156,7 +172,6 @@ export default class Context {
             this.#extension = null;
             Context.#instance = null;
         }
-        console.log('Context destroyed');
     }
 
     #destroy() {
@@ -166,11 +181,12 @@ export default class Context {
         this.#layoutManager = null;
         this.#jobs?.destroy();
         this.#jobs = null;
-        this.#signals?.destroy();``
+        this.#signals?.destroy();
         this.#signals = null;
         this.#launcherApi?.destroy();
         this.#launcherApi = null;
         this.#iconTheme = null;
+        this.#systemSettings = null;
         this.#cleanSessionStorage();
     }
 
@@ -194,7 +210,6 @@ export default class Context {
             sessionStorage.delete(client);
         }
         if (sessionStorage.size) return;
-        console.log('Session storage removed');
         Context.#sessionStorage = null;
     }
 

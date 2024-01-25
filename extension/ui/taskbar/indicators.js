@@ -1,7 +1,15 @@
+/**
+ * JSDoc types
+ *
+ * @typedef {import('gi://cairo').Context} cairo.Context
+ * @typedef {import('../../core/context/jobs.js').Jobs.Job} Job
+ * @typedef {import('./appButton.js').AppButton} AppButton
+ */
+
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
-import { overview as Overview } from 'resource:///org/gnome/shell/ui/main.js';
 import Context from '../../core/context.js';
+import { Overview } from '../../core/shell.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Event } from '../../core/enums.js';
 import { Config } from '../../utils/config.js';
@@ -36,7 +44,7 @@ const ConfigFields = {
     position: 'indicator-position'
 };
 
-/** @type {Object.<string, number|boolean|string>} */
+/** @type {{[prop: string]: *}} */
 const DefaultProps = {
     name: MODULE_NAME,
     x_expand: true,
@@ -45,7 +53,7 @@ const DefaultProps = {
     y_align: Clutter.ActorAlign.FILL
 };
 
-/** @type {Object.<string, number|boolean|string>} */
+/** @type {{[prop: string]: *}} */
 const BackendParams = {
     scale: 1,
     count: 0,
@@ -59,7 +67,7 @@ const BackendParams = {
 
 class IndicatorBase {
 
-    /** @type {IndicatorBase} */
+    /** @type {IndicatorBase?} */
     #parent = null;
 
     /** @type {number} */
@@ -73,7 +81,7 @@ class IndicatorBase {
 
     /** @type {boolean} */
     get isValid() {
-        return this.#size || this.#targetSize;
+        return !!this.#size || !!this.#targetSize;
     }
 
     /** @type {number} */
@@ -87,7 +95,7 @@ class IndicatorBase {
     }
 
     /**
-     * @param {IndicatorBase} [parent]
+     * @param {IndicatorBase?} [parent]
      * @param {number} [size]
      */
     constructor(parent = null, size = 0) {
@@ -96,10 +104,10 @@ class IndicatorBase {
     }
 
     /**
-     * @param {number} targetSize
+     * @param {{[param: string]: number}} params
      */
-    update(targetSize) {
-        this.#targetSize = targetSize ?? 0;
+    update(params) {
+        this.#targetSize = params?.size ?? 0;
         this.#updateAnimationStep();
     }
 
@@ -138,7 +146,7 @@ class Indicator extends IndicatorBase {
     /** @type {number} */
     #scale = 1;
 
-    /** @type {IndicatorBase} */
+    /** @type {IndicatorBase?} */
     #spacer = null;
 
     /** @type {number} */
@@ -151,12 +159,18 @@ class Indicator extends IndicatorBase {
         return Math.max(super.size - this.#weight, -(this.#weight - this.#scale));
     }
 
-    /** @type {number} */
+    /**
+     * @override
+     * @type {number}
+     */
     get size() {
-        return this.#index > 0 ? super.size + this.#spacer.size : this.#drawSize;
+        return this.#index > 0 ? super.size + (this.#spacer?.size ?? 0) : this.#drawSize;
     }
 
-    /** @type {number} */
+    /**
+     * @override
+     * @type {number}
+     */
     get diff() {
         return Math.abs(super.diff) + Math.abs(this.#spacer?.diff ?? 0);
     }
@@ -169,15 +183,19 @@ class Indicator extends IndicatorBase {
         this.#index = index ?? 0;
     }
 
+    /**
+     * @override
+     */
     destroy() {
         this.#spacer?.destroy();
         super.destroy();
     }
 
     /**
-     * @param {Object.<string, number>} params
+     * @override
+     * @param {{[param: string]: number}} params
      */
-    update(params = {}) {
+    update(params) {
         if (!params) return;
         const { size, weight, scale, spacing, count } = params;
         this.#weight = Math.max(weight ?? 0, 1);
@@ -188,31 +206,32 @@ class Indicator extends IndicatorBase {
         } else if (count === 1) {
             this.#spacer = null;
         }
-        this.#spacer?.update(spacing);
-        super.update(Math.max(size ?? 0, this.#weight));
+        this.#spacer?.update({ size: spacing });
+        super.update({size: Math.max(size ?? 0, this.#weight)});
     }
 
     /**
+     * @override
      * @returns {boolean}
      */
     animate() {
         const diff = super.diff;
         const spacerDiff = this.#spacer?.diff ?? 0;
         if (diff < 0 && spacerDiff < 0) {
-            return this.#spacer.animate() || super.animate();
+            return this.#spacer?.animate() || super.animate();
         } else if (diff > 0 && spacerDiff > 0) {
-            return super.animate() || this.#spacer.animate();
+            return this.#spacer?.animate() || super.animate();
         } else if ((diff < 0 || diff > 0) && spacerDiff) {
-            const spacerResult = this.#spacer.animate();
-            return super.animate() || spacerResult;
+            const spacerResult = this.#spacer?.animate();
+            return spacerResult || super.animate();
         }
-        return super.animate() || this.#spacer?.animate();
+        return this.#spacer?.animate() || super.animate();
     }
 
     /**
      * Note: If spacing is 0, all indicators are drawn as a single line.
      *       It's not a bug!
-     * 
+     *
      * @param {cairo.Context} canvas
      * @param {number} x
      * @param {number} y
@@ -221,7 +240,7 @@ class Indicator extends IndicatorBase {
     draw(canvas, x, y, indicators) {
         if (this.#index === 0 || super.size > 0) {
             const drawSize = this.#drawSize + (
-                this.#index > 0 && !this.#spacer.size ?
+                this.#index > 0 && !this.#spacer?.size ?
                 indicators[this.#index - 1].#size : 0
             );
             const arcX = x - drawSize;
@@ -240,22 +259,22 @@ class Indicator extends IndicatorBase {
 
 class IndicatorsBackend {
 
-    /** @type {St.DrawingArea} */
+    /** @type {St.DrawingArea?} */
     #actor = null;
 
-    /** @type {cairo.Context} */
+    /** @type {cairo.Context?} */
     #canvas = null;
 
-    /** @type {Clutter.Color} */
+    /** @type {Clutter.Color?} */
     #color = null;
 
-    /** @type {Indicator[]} */
+    /** @type {Indicator[]?} */
     #indicators = [];
 
     /** @type {BackendParams} */
     #params = BackendParams;
 
-    /** @type {Job} */
+    /** @type {Job?} */
     #job = Context.jobs.new(this, ANIMATION_INTERVAL);
 
     /**
@@ -276,8 +295,8 @@ class IndicatorsBackend {
      * @param {BackendParams} params
      */
     update(params = BackendParams) {
-        if (!this.#canUpdate(params)) return;
-        this.#job.reset();
+        if (!this.#indicators || !this.#canUpdate(params)) return;
+        this.#job?.reset();
         const { scale, count, size, weight, spacing } = params;
         if (count > this.#indicators.length) {
             this.#indicators.length = count;
@@ -295,7 +314,7 @@ class IndicatorsBackend {
     }
 
     rerender() {
-        if (!this.#indicators?.length) return;
+        if (!this.#actor || !this.#indicators?.length) return;
         this.#canvas = this.#actor?.get_context();
         if (!this.#canvas) return;
         const { color, weight, offset, position } = this.#params;
@@ -309,13 +328,13 @@ class IndicatorsBackend {
         for (let i = 0, l = this.#indicators.length; i < l; ++i) {
             const indicator = this.#indicators[i];
             x += indicator.size / 2;
-            if (i === l - 1) indicator.draw(this.#canvas, x, y, this.#indicators)
+            if (i === l - 1) indicator.draw(this.#canvas, x, y, this.#indicators);
         }
         this.#finish();
     }
 
     /**
-     * @param {Object.<string, *>} params
+     * @param {{[param: string]: *}} params
      * @returns {boolean}
      */
     #canUpdate(params) {
@@ -335,7 +354,8 @@ class IndicatorsBackend {
     }
 
     #animate() {
-        this.#job.reset().then(() => {
+        this.#job?.reset().then(() => {
+            if (!this.#indicators) return;
             this.#triggerRerender();
             const validIndicators = [];
             let animationsCount = 0;
@@ -346,7 +366,7 @@ class IndicatorsBackend {
             }
             if (animationsCount) return this.#animate();
             this.#indicators = validIndicators;
-            this.#job.reset().then(() => this.#triggerRerender());
+            this.#job?.reset().then(() => this.#triggerRerender());
         }).catch();
     }
 
@@ -363,35 +383,35 @@ class IndicatorsBackend {
 
 }
 
+/**
+ * @augments Component<St.DrawingArea>
+ */
 export class Indicators extends Component {
 
     /**
      * @param {{event: string}} data
      * @returns {void}
      */
-    #notifyHandler = (data) => ({
+    #notifyHandler = data => ({
         [ComponentEvent.Destroy]: this.#destroy,
         [ComponentEvent.Scale]: this.rerender
     })[data?.event]?.call(this);
 
-    /**
-     * @typedef {import('./appButton.js').AppButton} AppButton
-     * @type {AppButton}
-     */
+    /** @type {AppButton?} */
     #appButton = null;
 
     /** @type {number} */
     #count = 0;
 
-    /** @type {Object.<string, string|number|boolean>} */
+    /** @type {Config} */
     #config = Config(this, ConfigFields, () => this.rerender());
 
-    /** @type {IndicatorsBackend} */
+    /** @type {IndicatorsBackend?} */
     #backend = new IndicatorsBackend(this.actor);
 
     /** @type {boolean} */
     get #isActive() {
-        return !Overview._shown && this.#appButton?.isActive;
+        return !Overview._shown && !!this.#appButton?.isActive;
     }
 
     /** @type {string} */
@@ -419,7 +439,7 @@ export class Indicators extends Component {
         const weight = (isActive ? weightActive : weightInactive) * scale;
         const offset = (isActive ? offsetActive : offsetInactive) * scale;
         return { ...BackendParams, ...{ scale, count, color, size, spacing, weight, offset, position } };
-    };
+    }
 
     /**
      * @param {AppButton} appButton
@@ -433,7 +453,7 @@ export class Indicators extends Component {
 
     rerender() {
         if (!this.isMapped) return;
-        const count = this.#appButton?.windowsCount;
+        const count = this.#appButton?.windowsCount ?? 0;
         if (!count && !this.#count) return;
         this.#count = count;
         this.#backend?.update(this.#backendParams);
