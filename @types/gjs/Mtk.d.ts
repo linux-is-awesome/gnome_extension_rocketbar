@@ -89,21 +89,21 @@ declare module 'gi://Mtk' {
         /**
          * Creates a new rectangle
          * @constructor 
-         * @param x X coordinate of the top left corner
-         * @param y Y coordinate of the top left corner
-         * @param width Width of the rectangle
-         * @param height Height of the rectangle
+         * @param params.x X coordinate of the top left corner
+         * @param params.y Y coordinate of the top left corner
+         * @param params.width Width of the rectangle
+         * @param params.height Height of the rectangle
          */
-        constructor(x: number, y: number, width: number, height: number)
+        constructor(params?: {x?: number, y?: number, width?: number, height?: number})
         /**
          * Creates a new rectangle
          * @constructor 
-         * @param x X coordinate of the top left corner
-         * @param y Y coordinate of the top left corner
-         * @param width Width of the rectangle
-         * @param height Height of the rectangle
+         * @param params.x X coordinate of the top left corner
+         * @param params.y Y coordinate of the top left corner
+         * @param params.width Width of the rectangle
+         * @param params.height Height of the rectangle
          */
-        static new(x: number, y: number, width: number, height: number): Rectangle
+        static new(params?: { x?: number, y?: number, width?: number, height?: number }): Rectangle
         static from_graphene_rect(rect: Graphene.Rect, rounding_strategy: RoundingStrategy): /* dest */ Rectangle
     }
 
