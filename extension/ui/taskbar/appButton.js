@@ -323,8 +323,23 @@ export class AppButton extends RuntimeButton {
         this.#abortDestroy();
     }
 
-    activate() {
-        this.#click();
+    /**
+     * @param {ActivateBehavior?} [activateBehavior]
+     */
+    activate(activateBehavior) {
+        switch (activateBehavior) {
+            case ActivateBehavior.MoveWindows:
+                this.#moveWindows();
+                break;
+            case ActivateBehavior.FindWindow:
+                const sortedWindows = this.#app?.get_windows();
+                if (sortedWindows?.length) FocusedWindow(sortedWindows[0]);
+                break;
+            case ActivateBehavior.NewWindow:
+            default:
+                const isOverview = Overview.visible;
+                this.#openNewWindow(isOverview);
+        }
     }
 
     /**
@@ -667,27 +682,21 @@ export class AppButton extends RuntimeButton {
      */
     #click(params) {
         if (this.#service?.isPending || !this.#config) return false;
-        const { isOverview,
-                isSecondaryButton,
+        const { isSecondaryButton,
                 isMiddleButton,
                 isCtrlPressed } = this.#getClickDetails(params);
         if (isSecondaryButton) return false;
         if (isCtrlPressed && isMiddleButton) return this.#closeWindows(), true;
         const newWindow = this.#canOpenNewWindow && (isCtrlPressed || isMiddleButton);
+        const isOverview = Overview.visible;
         if (newWindow || !this.#isAppRunning) {
-            return this.#openNewWindow(!isCtrlPressed && !isMiddleButton && isOverview), true;
+            this.#openNewWindow(!isCtrlPressed && !isMiddleButton && isOverview);
+            return true;
         }
         const { isolateWorkspaces, activateBehavior, enableMinimizeAction } = this.#config;
         if (!this.#windowsCount) {
-            if (!isolateWorkspaces) return this.#openNewWindow(isOverview), true;
-            switch (activateBehavior) {
-                case ActivateBehavior.MoveWindows: return this.#moveWindows(), true;
-                case ActivateBehavior.FindWindow:
-                    const sortedWindows = this.#app?.get_windows();
-                    if (sortedWindows?.length) return FocusedWindow(sortedWindows[0]), true;
-                case ActivateBehavior.NewWindow:
-                default: return this.#openNewWindow(isOverview), true;
-            }
+            this.activate(isolateWorkspaces ? activateBehavior : ActivateBehavior.NewWindow);
+            return true;
         }
         const sortedWindows = this.#sortedWindows;
         if (!sortedWindows?.length) return true;
@@ -709,11 +718,10 @@ export class AppButton extends RuntimeButton {
      */
     #getClickDetails(params) {
         const { event, button } = params ?? {};
-        const isOverview = Overview.visible;
         const isSecondaryButton = button === Clutter.BUTTON_SECONDARY;
         const isMiddleButton = button === Clutter.BUTTON_MIDDLE;
         const isCtrlPressed = !event ? false : (event.get_state() & Clutter.ModifierType.CONTROL_MASK) !== 0;
-        return { isOverview, isSecondaryButton, isMiddleButton, isCtrlPressed };
+        return { isSecondaryButton, isMiddleButton, isCtrlPressed };
     }
 
     /**
@@ -741,9 +749,9 @@ export class AppButton extends RuntimeButton {
     #moveWindows() {
         const windows = this.#service?.queryWindows(false, true);
         if (!windows?.size) return;
-        this.animateLaunch();
         const workspace = this.#service?.workspace;
         if (!workspace) return;
+        this.animateLaunch();
         const sortedWindows = this.#app?.get_windows();
         for (const window of windows) window.change_workspace(workspace);
         if (Overview.visible || !sortedWindows?.length) return;
