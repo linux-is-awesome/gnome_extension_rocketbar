@@ -10,7 +10,7 @@ import { Session, MainLayout } from './shell.js';
 import Jobs from './context/jobs.js';
 import Signals from './context/signals.js';
 import LayoutManager from './context/layout.js';
-import Modules from './context/modules.js';
+import ModulesManager from './context/modules.js';
 import { LauncherApiProxy } from '../services/launcherApiService.js';
 import { SessionMode } from './enums.js';
 
@@ -52,8 +52,8 @@ export default class Context {
     /** @type {LayoutManager} */
     static get layout() {
         const instance = this.instance;
-        instance.#layoutManager ??= new LayoutManager();
-        return instance.#layoutManager;
+        instance.#layout ??= new LayoutManager();
+        return instance.#layout;
     }
 
     /** @type {St.IconTheme} */
@@ -132,9 +132,9 @@ export default class Context {
     #signals = null;
 
     /** @type {LayoutManager?} */
-    #layoutManager = null;
+    #layout = null;
 
-    /** @type {Modules?} */
+    /** @type {ModulesManager?} */
     #modules = null;
 
     /** @type {LauncherApiProxy?} */
@@ -155,7 +155,7 @@ export default class Context {
         Context.#instance = this;
         this.#extension = extension;
         this.#launcherApi = new LauncherApiProxy();
-        this.#modules = new Modules();
+        this.#modules = new ModulesManager();
     }
 
     /**
@@ -177,8 +177,8 @@ export default class Context {
     #destroy() {
         this.#modules?.destroy();
         this.#modules = null;
-        this.#layoutManager?.destroy();
-        this.#layoutManager = null;
+        this.#layout?.destroy();
+        this.#layout = null;
         this.#jobs?.destroy();
         this.#jobs = null;
         this.#signals?.destroy();
