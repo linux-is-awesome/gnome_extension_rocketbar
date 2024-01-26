@@ -26,7 +26,7 @@ import { NotificationHandler } from '../../services/notificationService.js';
 import { AppSoundVolumeControl } from '../../services/soundVolumeService.js';
 import { Event, Delay } from '../../core/enums.js';
 import { ComponentEvent } from '../base/component.js';
-import { AnimationType } from '../base/animation.js';
+import { Animation, AnimationDuration, AnimationType } from '../base/animation.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
 
@@ -323,9 +323,6 @@ export class AppButton extends RuntimeButton {
         this.#abortDestroy();
     }
 
-    /**
-     * Note: This function is exposed to simulate AppDisplay's behavior inside the Shell.
-     */
     activate() {
         this.#click();
     }
@@ -344,7 +341,28 @@ export class AppButton extends RuntimeButton {
      * @param {number} y
      */
     animateLaunchAtPos(x, y) {
-        console.warn('TODO: animateLaunchAtPos', x, y);
+        if (!this.#appIcon ||
+            typeof x !== 'number' ||
+            typeof y !== 'number') return;
+        const monitorRect = this.monitorRect;
+        if (!monitorRect) return;
+        const actor = this.#appIcon.dragActor;
+        Context.layout.addOverlay(actor);
+        actor.set_position(x, y);
+        actor.set_pivot_point(0.5, 0.5);
+        const [width, height] = actor.get_size();
+        const scaledWidth = width * AnimationType.ScaleTriple.scale_x;
+        const scaledHeight = height * AnimationType.ScaleTriple.scale_y;
+        const scaledX = x - (scaledWidth - width) / 2;
+        const scaledY = y - (scaledHeight - height) / 2;
+        const originX = Math.min(Math.max(scaledX, monitorRect.x),
+                                 monitorRect.x + monitorRect.width - scaledWidth) - scaledX;
+        const originY = Math.min(Math.max(scaledY, monitorRect.y),
+                                 monitorRect.y + monitorRect.height - scaledHeight) - scaledY;
+        const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
+        const animationParams = { ...AnimationType.OpacityMin, ...AnimationType.ScaleTriple,
+                                  translation_x: originX, translation_y: originY, mode };
+        Animation(actor, AnimationDuration.Slow, animationParams).finally(() => actor.destroy());
     }
 
     #destroy() {
@@ -615,7 +633,7 @@ export class AppButton extends RuntimeButton {
     }
 
     /**
-     * @param {{ event: Clutter.Event }} params
+     * @param {{event: Clutter.Event}} params
      * @returns {boolean}
      */
     #longPress(params) {
@@ -644,7 +662,7 @@ export class AppButton extends RuntimeButton {
     }
 
     /**
-     * @param {{ event: Clutter.Event, button: number }} [params]
+     * @param {{event: Clutter.Event, button: number}} [params]
      * @returns {boolean}
      */
     #click(params) {
@@ -686,7 +704,7 @@ export class AppButton extends RuntimeButton {
     }
 
     /**
-     * @param {{ event: Clutter.Event, button: number }} [params]
+     * @param {{event: Clutter.Event, button: number}} [params]
      * @returns {{[key: string]: boolean}}
      */
     #getClickDetails(params) {

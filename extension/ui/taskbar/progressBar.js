@@ -128,7 +128,7 @@ export class ProgressBar extends Component {
         canvas.$dispose();
         if (actor.opacity === AnimationType.OpacityMax.opacity) return;
         actor.remove_all_transitions();
-        this.setProps({ ...AnimationType.OpacityMax, ...AnimationType.ScaleMax });
+        this.setProps({ ...AnimationType.OpacityMax, ...AnimationType.ScaleNormal });
     }
 
     /**

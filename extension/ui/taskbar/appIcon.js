@@ -37,7 +37,7 @@ const HighlightProps = {
 /** @enum {{[animation: string]: *}} */
 export const AppIconAnimation = {
     Press: { duration: AnimationDuration.Fast, params: AnimationType.ScaleDown },
-    Release: { duration: AnimationDuration.Fast, params: AnimationType.ScaleMax },
+    Release: { duration: AnimationDuration.Fast, params: AnimationType.ScaleNormal },
     Activate: { duration: AnimationDuration.Fast, offset: 3 },
     Deactivate: { duration: AnimationDuration.Fast, offset: -3 }
 };

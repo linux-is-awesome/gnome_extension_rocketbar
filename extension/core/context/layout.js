@@ -63,7 +63,7 @@ export default class LayoutManager {
             actor = actor.actor ?? actor;
         }
         if (actor instanceof St.Widget === false) return;
-        MainLayout.uiGroup?.add_actor(actor);
+        MainLayout.uiGroup?.add_child(actor);
     }
 
     /**
@@ -74,7 +74,7 @@ export default class LayoutManager {
             actor = actor.actor ?? actor;
         }
         if (actor instanceof St.Widget === false) return;
-        MainLayout.uiGroup?.remove_actor(actor);
+        MainLayout.uiGroup?.remove_child(actor);
     }
 
     /**

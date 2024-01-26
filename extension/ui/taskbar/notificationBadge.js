@@ -29,7 +29,7 @@ const BadgePosition = {
 
 /** @enum {{[animation: string]: *}} */
 const BadgeAnimation = {
-    Show: { ...AnimationType.OpacityMax, ...AnimationType.ScaleMax },
+    Show: { ...AnimationType.OpacityMax, ...AnimationType.ScaleNormal },
     Hide: { ...AnimationType.OpacityMin, ...AnimationType.ScaleMin, mode: Clutter.AnimationMode.EASE_OUT_QUAD },
     Blink: { ...AnimationType.OpacityDown, mode: Clutter.AnimationMode.EASE_OUT_QUAD }
 };

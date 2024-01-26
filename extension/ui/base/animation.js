@@ -20,7 +20,9 @@ export const AnimationDuration = {
 
 /** @enum {{[animation: string]: *}} */
 export const AnimationType = {
-    ScaleMax: { scale_x: 1, scale_y: 1 },
+    ScaleTriple: { scale_x: 2, scale_y: 2 },
+    ScaleDouble: { scale_x: 2, scale_y: 2 },
+    ScaleNormal: { scale_x: 1, scale_y: 1 },
     ScaleDown: { scale_x: 0.85, scale_y: 0.85 },
     ScaleMin: { scale_x: 0, scale_y: 0 },
     ScaleXMin: { scale_x: 0 },
