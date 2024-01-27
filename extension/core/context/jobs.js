@@ -133,7 +133,7 @@ class Job {
     #resolve(callback) {
         this.#id = null;
         callback();
-        return false;
+        return GLib.SOURCE_REMOVE;
     }
 
     #dequeue() {
