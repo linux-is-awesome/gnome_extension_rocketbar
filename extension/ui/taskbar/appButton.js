@@ -686,7 +686,10 @@ export class AppButton extends RuntimeButton {
                 isMiddleButton,
                 isCtrlPressed } = this.#getClickDetails(params);
         if (isSecondaryButton) return false;
-        if (isCtrlPressed && isMiddleButton) return this.#closeWindows(), true;
+        if (isCtrlPressed && isMiddleButton) {
+            this.#closeWindows();
+            return true;
+        }
         const newWindow = this.#canOpenNewWindow && (isCtrlPressed || isMiddleButton);
         const isOverview = Overview.visible;
         if (newWindow || !this.#isAppRunning) {
@@ -700,15 +703,14 @@ export class AppButton extends RuntimeButton {
         }
         const sortedWindows = this.#sortedWindows;
         if (!sortedWindows?.length) return true;
-        if (isOverview) return FocusedWindow(this.#getPrimaryWindow(sortedWindows)), true;
-        if (this.#windowsCount === 1) {
+        if (isOverview) FocusedWindow(this.#getPrimaryWindow(sortedWindows));
+        else if (this.#windowsCount === 1) {
             const window = sortedWindows[0];
-            if (window.minimized || !window.has_focus() ||
-                isCtrlPressed || isMiddleButton) FocusedWindow(window);
+            const canFocus = window.minimized || !window.has_focus() ||
+                             isCtrlPressed || isMiddleButton;
+            if (canFocus) FocusedWindow(window);
             else if (enableMinimizeAction) window.minimize();
-            return true;
-        }
-        this.#cycleWindows(enableMinimizeAction);
+        } else this.#cycleWindows(enableMinimizeAction);
         return true;
     }
 
