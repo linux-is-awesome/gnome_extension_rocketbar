@@ -10,7 +10,7 @@
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import { AppMenu } from 'resource:///org/gnome/shell/ui/appMenu.js';
-import { PopupSeparatorMenuItem } from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import { PopupMenuSection, PopupSeparatorMenuItem } from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import Context from '../../core/context.js';
 import { SliderMenuItem, CollapsibleGroup, ChildMenu } from '../base/menu.js';
 import { Delay, Event } from '../../core/enums.js';
@@ -372,8 +372,14 @@ export class Menu extends AppMenu {
     /** @type {boolean} */
     #hasValidAppId = true;
 
+    /** @type {boolean} */
+    #isWindowsSectionUpdateQueued = false;
+
     /** @type {SoundVolumeControlGroup?} */
     #soundVolumeControlGroup = null;
+
+    /** @type {PopupMenuSection?} */
+    #moreActionsSection = null;
 
     /** @type {Config} */
     #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
@@ -387,9 +393,9 @@ export class Menu extends AppMenu {
         this.actor.remove_style_class_name(UNWANTED_STYLE_CLASS);
         this.actor.add_style_class_name(DEFAULT_STYLE_CLASS);
         const app = appButton?.app;
-        if (app) this.setApp(app);
         this.#hasValidAppId = app?.id ? !!this._appSystem?.lookup_app(app.id) : false;
         this.#createMenuItems();
+        if (app) this.setApp(app);
         this._updateDetailsVisibility();
     }
 
@@ -406,6 +412,7 @@ export class Menu extends AppMenu {
         this._app = null;
         this.#appButton  = null;
         this.#soundVolumeControlGroup = null;
+        this.#moreActionsSection = null;
         super.destroy();
     }
 
@@ -415,6 +422,8 @@ export class Menu extends AppMenu {
      */
     open(animation) {
         this.actor._arrowSide = MenuPosition[this.#appButton?.location ?? ComponentLocation.Top];
+        if (this.#isWindowsSectionUpdateQueued ||
+            this.#config.isolateWorkspaces) this._updateWindowsSection();
         this.#soundVolumeControlGroup?.update();
         super.open(animation);
     }
@@ -425,6 +434,20 @@ export class Menu extends AppMenu {
         if (this.#hasValidAppId) this.addMenuItem(new CustomizeChildMenu(this.#appButton));
         this.addMenuItem(new PopupSeparatorMenuItem());
         this.moveMenuItem(this._quitItem, this.numMenuItems);
+        if (this.#hasValidAppId) this.#createMoreActionsSection();
+    }
+
+    #createMoreActionsSection() {
+        const menuItemAbove = this._actionSection?.actor ?? null;
+        this.#moreActionsSection = new PopupMenuSection();
+        this.#moreActionsSection._updateSeparatorVisibility = () => {};
+        this.#moreActionsSection.addMenuItem(new PopupSeparatorMenuItem());
+        this.#moreActionsSection.addAction(Labels.FindWindow, () =>
+            this.#appButton?.activate(ActivateBehavior.FindWindow));
+        this.#moreActionsSection.addAction(Labels.MoveWindows, () =>
+            this.#appButton?.activate(ActivateBehavior.MoveWindows));
+        this.addMenuItem(this.#moreActionsSection);
+        this.box.set_child_above_sibling(this.#moreActionsSection.actor, menuItemAbove);
     }
 
     /**
@@ -469,17 +492,35 @@ export class Menu extends AppMenu {
     /**
      * @override
      */
+    _queueUpdateWindowsSection() {
+        if (this.isOpen) super._queueUpdateWindowsSection();
+        this.#isWindowsSectionUpdateQueued = !this.isOpen;
+    }
+
+    /**
+     * @override
+     */
     _updateWindowsSection() {
+        this.#isWindowsSectionUpdateQueued = false;
         if (!this._app) return;
-        if (!this.#config.isolateWorkspaces) return super._updateWindowsSection();
-        const origin = this._app;
+        if (!this.#config.isolateWorkspaces) {
+            this.#moreActionsSection?.actor?.hide();
+            super._updateWindowsSection();
+            return;
+        }
         const workspace = global.workspace_manager.get_active_workspace();
+        const appWindows = this._app.get_windows() ?? [];
+        const workspaceWindows = appWindows.filter(window => window.get_workspace() === workspace);
+        const origin = this._app;
         this._app = {
-            get_windows: () => origin.get_windows().filter(window => window.get_workspace() === workspace),
+            get_windows: () => workspaceWindows,
             get_name: () => origin.get_name()
         };
         super._updateWindowsSection();
         this._app = origin;
+        if (!this.#moreActionsSection?.actor) return;
+        const canShowMoreActions = !!appWindows.length && !workspaceWindows.length;
+        this.#moreActionsSection.actor.visible = canShowMoreActions;
     }
 
     /**
