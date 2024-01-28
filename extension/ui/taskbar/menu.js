@@ -21,7 +21,7 @@ import { ActivateBehavior, DemandsAttentionBehavior, AppIconSize } from '../../u
 import { Labels } from '../../core/labels.js';
 
 const UNWANTED_STYLE_CLASS = 'app-menu';
-const DEFAULT_STYLE_CLASS = 'rocketbar__popup-menu';
+const STYLE_CLASS = 'rocketbar__popup-menu';
 const ICON_PATH_REGEXP_STRING = /^\/(.)*(\.(svg|png))$/;
 const ICON_PATH_SEPARATOR = '/';
 const ICON_FILE_TYPE_FILTER = `${Labels.Icon} | *.svg *.png`;
@@ -391,7 +391,7 @@ export class Menu extends AppMenu {
         super(appButton.actor, St.Side.TOP, DefaultProps);
         this.#appButton = appButton;
         this.actor.remove_style_class_name(UNWANTED_STYLE_CLASS);
-        this.actor.add_style_class_name(DEFAULT_STYLE_CLASS);
+        this.actor.add_style_class_name(STYLE_CLASS);
         const app = appButton?.app;
         this.#hasValidAppId = app?.id ? !!this._appSystem?.lookup_app(app.id) : false;
         this.#createMenuItems();

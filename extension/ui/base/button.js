@@ -16,14 +16,21 @@ import { Event, Property, PseudoClass } from '../../core/enums.js';
 import { Animation, AnimationType, AnimationDuration } from './animation.js';
 import { Gradient } from '../../utils/gradient.js';
 
-const DEFAULT_STYLE_CLASS = 'panel-button rocketbar__button';
+const STYLE_CLASS = 'panel-button rocketbar__button';
 
 /** @type {{[prop: string]: *}} */
 const DefaultProps = {
     reactive: true,
     can_focus: true,
     button_mask: St.ButtonMask.ONE | St.ButtonMask.TWO | St.ButtonMask.THREE,
-    style_class: DEFAULT_STYLE_CLASS
+    style_class: STYLE_CLASS
+};
+
+/** @type {{[prop: string]: *}} */
+const DisplayProps = {
+    y_expand: true,
+    x_expand: true,
+    style_class: STYLE_CLASS
 };
 
 /** @type {{[prop: string]: *}} */
@@ -301,7 +308,7 @@ export class Button extends Component {
     #setDisplay(display, name) {
         if (display instanceof St.Widget === false) return;
         this.#display = display;
-        this.#display.set({ style_class: DEFAULT_STYLE_CLASS, y_expand: true, x_expand: true });
+        this.#display.set(DisplayProps);
         this.actor.set_style_class_name(null);
         this.actor.bind_property(Property.Hover, this.#display, Property.Hover, GObject.BindingFlags.SYNC_CREATE);
         if (typeof name !== 'string') return;
