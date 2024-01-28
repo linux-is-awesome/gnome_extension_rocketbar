@@ -141,16 +141,14 @@ export class LauncherApiProxy {
     /** @type {Config} */
     #config = Config(this, ConfigFields, () => this.#handleConfig());
 
-    /** @type {Map<string, number>} */
+    /** @type {Map<string, number>?} */
     get notifications() {
-        if (!this.#service) throw new Error(`${this.constructor.name} is invalid`);
-        return this.#service.notifications;
+        return this.#service?.notifications ?? null;
     }
 
-    /** @type {Map<string, number>} */
+    /** @type {Map<string, number>?} */
     get progress() {
-        if (!this.#service) throw new Error(`${this.constructor.name} is invalid`);
-        return this.#service.progress;
+        return this.#service?.progress ?? null;
     }
 
     constructor() {
