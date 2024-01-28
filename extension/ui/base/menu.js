@@ -152,8 +152,8 @@ export class CollapsibleGroup {
 
 export class ChildMenu extends PopupMenuSection {
 
-    /** @type {Set<Clutter.Actor>?} */
-    #hiddenMenuItems = new Set();
+    /** @type {Map<Clutter.Actor, boolean>?} */
+    #hiddenMenuItems = new Map();
 
     /** @type {PopupBaseMenuItem?} */
     #titleMenuItem = null;
@@ -365,10 +365,25 @@ export class ChildMenu extends PopupMenuSection {
         for (let i = 0, l = menuItems.length; i < l; ++i) {
             const menuItem = menuItems[i];
             if (menuItem === this.actor) continue;
-            if (menuItem instanceof St.ScrollView || !menuItem.visible) continue;
-            this.#hiddenMenuItems.add(menuItem);
-            menuItem.hide();
+            if (menuItem instanceof St.ScrollView) continue;
+            this.#hideMenuItem(menuItem);
         }
+    }
+
+    /**
+     * @param {Clutter.Actor} menuItem
+     */
+    #hideMenuItem(menuItem) {
+        if (!this.#hiddenMenuItems) return;
+        const isVisible = menuItem.visible;
+        if (this.#hiddenMenuItems.get(menuItem) === isVisible) return;
+        this.#hiddenMenuItems.set(menuItem, isVisible);
+        if (isVisible) {
+            menuItem.disconnectObject(this);
+            menuItem.hide();
+            return;
+        }
+        menuItem.connectObject(Event.Visible, () => this.#hideMenuItem(menuItem), this);
     }
 
     #hide() {
@@ -376,8 +391,11 @@ export class ChildMenu extends PopupMenuSection {
         this.#arrowLeft?.hide();
         this.#arrowRight?.show();
         if (!this.#hiddenMenuItems?.size) return;
-        for (const menuItem of this.#hiddenMenuItems) menuItem.show();
-        return this.#hiddenMenuItems.clear();
+        for (const [menuItem, visible] of this.#hiddenMenuItems) {
+            menuItem.disconnectObject(this);
+            menuItem.visible = visible;
+        }
+        this.#hiddenMenuItems.clear();
     }
 
 }
