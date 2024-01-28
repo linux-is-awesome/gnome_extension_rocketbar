@@ -1,0 +1,14 @@
+{
+    "notification-counter-hide-empty": false,
+    "notification-counter-center-clock": true,
+    "notification-counter-max-count": 999,
+    "notification-counter-font-size": 10,
+    "notification-counter-roundness": 10,
+    "notification-counter-margin-top": -1,
+    "notification-counter-color-empty": "white",
+    "notification-counter-color-not-empty": "white",
+    "notification-counter-text-color": "rgb(0, 0, 0)",
+    "notification-counter-color-empty-dnd": "rgba(255, 255, 255, 0.8)",
+    "notification-counter-color-not-empty-dnd": "rgba(255, 255, 255, 0.8)",
+    "notification-counter-text-color-dnd": "rgb(0, 0, 0)"
+}

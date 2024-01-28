@@ -16,6 +16,7 @@ import { Event, Property } from '../core/enums.js';
 import { Animation, AnimationDuration, AnimationType } from './base/animation.js';
 
 const MODULE_NAME = 'Rocketbar__NotificationCounter';
+const CONFIG_PATH = 'notification-counter';
 const DATE_MENU_STYLE_CLASS = 'rocketbar__date-menu';
 const DND_SETTINGS_FIELD = 'show-banners';
 const CLOCK_DISPLAY_POSITION = 1;
@@ -172,7 +173,7 @@ export default class NotificationCounter extends Component {
     #totalCount = 0;
 
     /** @type {Config} */
-    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
+    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey), { path: CONFIG_PATH });
 
     /** @type {DateMenu} */
     #dateMenu = new DateMenu();

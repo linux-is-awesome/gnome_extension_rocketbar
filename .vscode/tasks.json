@@ -132,6 +132,17 @@
                 "panel": "shared"
             },
             "problemMatcher": []
+        },
+        {
+            "label": "load-default-settings",
+            "type": "shell",
+            "command": "cd scripts && ./load-default-settings",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
         }
     ]
 }

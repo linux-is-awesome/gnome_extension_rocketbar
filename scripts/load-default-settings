@@ -1,0 +1,9 @@
+#!/bin/sh
+
+cd ../extension
+
+PATH=/`cat ./metadata.json | grep -oP '(?<="settings-schema": ")[^"]*' | sed -r 's/[.]/\//g'`/
+
+cd ./schemas
+
+/bin/dconf load $PATH < defaults.ini
