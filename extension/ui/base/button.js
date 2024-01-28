@@ -107,8 +107,7 @@ class ButtonMenuTrigger extends DummyEventEmitter {
     open(animation) {
         if (!this.#button) return null;
         const menu = this.#button?.notifySelf(ButtonEvent.RequestMenu);
-        if (typeof menu?.open !== 'function' ||
-            typeof menu?.toggle !== 'function') return null;
+        if (!this.isValidMenu(menu)) return null;
         this.#button.menu = menu;
         if (animation) menu.open(animation);
         else menu.toggle();
@@ -127,6 +126,16 @@ class ButtonMenuTrigger extends DummyEventEmitter {
     }
 
     /**
+     * @param {*} menu
+     * @returns {boolean}
+     */
+    isValidMenu(menu) {
+        return menu && typeof menu.open === 'function' &&
+                       typeof menu.toggle === 'function' &&
+                       typeof menu.connect === 'function';
+    }
+
+    /**
      * @param {Clutter.Event} event
      * @returns {boolean}
      */
@@ -140,8 +149,9 @@ class ButtonMenuTrigger extends DummyEventEmitter {
         if (event.get_key_symbol() !== key) return Clutter.EVENT_PROPAGATE;
         const menu = this.open();
         if (!menu) return Clutter.EVENT_PROPAGATE;
-        if (typeof menu.actor?.navigate_focus === 'function')
+        if (typeof menu.actor?.navigate_focus === 'function') {
             menu.actor.navigate_focus(null, St.DirectionType.TAB_FORWARD, false);
+        }
         return Clutter.EVENT_STOP;
     }
 
@@ -204,9 +214,7 @@ export class Button extends Component {
 
     /** @param {PopupMenu} menu */
     set menu(menu) {
-        if (this.#menu ||
-            typeof menu?.open !== 'function' ||
-            typeof menu?.connect !== 'function') return;
+        if (this.#menu || !this.#menuTrigger?.isValidMenu(menu)) return;
         this.#menuTrigger?.destroy();
         this.#menuTrigger = null;
         this.#menu = menu;
