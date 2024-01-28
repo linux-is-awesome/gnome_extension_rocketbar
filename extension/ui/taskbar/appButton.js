@@ -533,9 +533,9 @@ export class AppButton extends RuntimeButton {
         const isFavorite = !!this.#app && !!this.#service.favorites?.apps?.has(this.#app);
         this.#windows = this.#service.queryWindows(isolateWorkspaces, showAllWindows);
         this.#windowsCount = this.#windows?.size ?? 0;
+        if (!isFavorite && !this.#windowsCount) return this.#queueDestroy();
         this.#notificationHandler?.updatePids();
         this.#soundVolumeControl?.update();
-        if (!isFavorite && !this.#windowsCount) return this.#queueDestroy();
         this.#isFavorite = isFavorite;
         if (!this.#isActive || !this.#windowsCount) this.#handleFocusedWindow();
         if (this.#windowsCount) this.#handleWindows();
