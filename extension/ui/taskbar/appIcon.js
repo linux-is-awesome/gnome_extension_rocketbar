@@ -38,8 +38,8 @@ const HighlightProps = {
 export const AppIconAnimation = {
     Press: { duration: AnimationDuration.Fast, params: AnimationType.ScaleDown },
     Release: { duration: AnimationDuration.Fast, params: AnimationType.ScaleNormal },
-    Activate: { duration: AnimationDuration.Fast, offset: 3 },
-    Deactivate: { duration: AnimationDuration.Fast, offset: -3 }
+    Activate: { duration: AnimationDuration.Fast, translation_y: 3 },
+    Deactivate: { duration: AnimationDuration.Fast, translation_y: -3 }
 };
 
 /** @enum {string} */
@@ -141,10 +141,10 @@ export class AppIcon extends Component {
 
     /**
      * @param {AppIconAnimation} animation
-     * @returns {Promise<void>?}
+     * @returns {Promise<void>}
      */
-    animate(animation) {
-        if (!this.isMapped) return null;
+    async animate(animation) {
+        if (!this.isMapped) return;
         switch (animation) {
             case AppIconAnimation.Press:
                 this.isHighlighted = false;
@@ -152,12 +152,12 @@ export class AppIcon extends Component {
                 return Animation(this, animation.duration, animation.params);
             case AppIconAnimation.Activate:
             case AppIconAnimation.Deactivate:
-                const offsetMultiplier = this.location === ComponentLocation.Top ? 1 : -1;
-                const translation_y = animation.offset * offsetMultiplier * this.uiScale * this.globalScale;
+                if (!Context.systemSettings.enableAnimations) return;
                 const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
-                return Animation(this, animation.duration, { translation_y, mode }).then(() =>
-                       Animation(this, animation.duration, { ...AnimationType.TranslationReset, mode }));
-            default: return null;
+                const location = this.location === ComponentLocation.Top ? 1 : -1;
+                const translation_y = animation.translation_y * location * this.uiScale * this.globalScale;
+                await Animation(this, animation.duration, { translation_y, mode });
+                await Animation(this, animation.duration, { ...AnimationType.TranslationReset, mode });
         }
     }
 

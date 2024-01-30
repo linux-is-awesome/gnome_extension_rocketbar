@@ -36,13 +36,13 @@ export const AnimationType = {
  * @param {St.Adjustment} actor
  * @param {number} duration
  * @param {{[param: string]: *}} params
- * @returns {Promise<void>}
+ * @returns {Promise<void>?}
  */
 const AdjustmentAnimation = (actor, duration, params) => {
     const value = params.value ?? 0;
     delete params.value;
     const canAnimate = duration > AnimationDuration.Disabled && Context.systemSettings.enableAnimations;
-    if (!canAnimate) return new Promise(resolve => (actor.set_value(value), resolve()));
+    if (!canAnimate) return actor.set_value(value), null;
     return new Promise(resolve => actor.ease(value, { ...params, duration, onComplete: resolve }));
 };
 
@@ -50,15 +50,11 @@ const AdjustmentAnimation = (actor, duration, params) => {
  * @param {St.Widget|BoxPointer} actor
  * @param {number} duration
  * @param {{[param: string]: *}} params
- * @returns {Promise<void>}
+ * @returns {Promise<void>?}
  */
 const WidgetAnimation = (actor, duration, params) => {
     const canAnimate = duration > AnimationDuration.Disabled && Context.systemSettings.enableAnimations;
-    if (!canAnimate) {
-        delete params.delay;
-        delete params.mode;
-        return new Promise(resolve => (actor.set(params), resolve()));
-    }
+    if (!canAnimate) return actor.set(params), null;
     return new Promise(resolve => actor.ease({ ...params, duration, onComplete: resolve }));
 };
 
@@ -69,12 +65,13 @@ const WidgetAnimation = (actor, duration, params) => {
  * @returns {Promise<void>}
  */
 export const Animation = (actor, duration, params) => {
-    params ??= {};
+    params = { ...params ?? {} };
     duration ??= AnimationDuration.Disabled;
     if (actor instanceof Component && actor.isValid) {
         actor = actor.actor ?? actor;
     }
-    if (actor instanceof St.Widget) return WidgetAnimation(actor, duration, params);
-    if (actor instanceof St.Adjustment) return AdjustmentAnimation(actor, duration, params);
-    return new Promise(resolve => resolve());
+    const result = actor instanceof St.Widget ? WidgetAnimation(actor, duration, params) :
+                   actor instanceof St.Adjustment ? AdjustmentAnimation(actor, duration, params) :
+                   null;
+    return result ?? new Promise(resolve => resolve());
 };
