@@ -59,8 +59,9 @@ export default class LayoutManager {
      * @param {St.Widget|Component<St.Widget>} actor
      */
     addOverlay(actor) {
-        if (actor instanceof Component && actor.isValid) {
-            actor = actor.actor ?? actor;
+        if (actor instanceof Component && MainLayout.uiGroup) {
+            actor.setParent(MainLayout.uiGroup);
+            return;
         }
         if (actor instanceof St.Widget === false) return;
         MainLayout.uiGroup?.add_child(actor);
