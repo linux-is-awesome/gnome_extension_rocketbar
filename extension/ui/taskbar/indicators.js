@@ -220,12 +220,12 @@ class Indicator extends IndicatorBase {
         if (diff < 0 && spacerDiff < 0) {
             return this.#spacer?.animate() || super.animate();
         } else if (diff > 0 && spacerDiff > 0) {
-            return this.#spacer?.animate() || super.animate();
+            return super.animate() || !!this.#spacer?.animate();
         } else if ((diff < 0 || diff > 0) && spacerDiff) {
             const spacerResult = this.#spacer?.animate();
-            return spacerResult || super.animate();
+            return super.animate() || !!spacerResult;
         }
-        return this.#spacer?.animate() || super.animate();
+        return super.animate() || !!this.#spacer?.animate();
     }
 
     /**
