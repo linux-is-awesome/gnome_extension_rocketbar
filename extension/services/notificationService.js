@@ -153,7 +153,7 @@ class NotificationService {
 
     #queueUpdate() {
         if (!this.#updateJob) return;
-        this.#updateJob.reset().then(() => this.#update()).catch();
+        this.#updateJob.reset().queue(() => this.#update());
     }
 
     /**

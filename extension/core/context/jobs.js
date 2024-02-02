@@ -26,48 +26,51 @@ class Job {
     /** @type {number?} */
     #id = null;
 
-    /** @type {Promise<void>?} */
+    /** @type {Promise<boolean>?} */
     #job = null;
+
+    /** @type {((isFinished: boolean) => void)?} */
+    #resolver = null;
 
     /** @type {number?} */
     #delay = null;
 
     /** @type {((job: this) => void)?} */
-    #destroyCallback = null;
+    #destroyHandler = null;
 
     /** @type {boolean} */
     get #isValid() {
-        return typeof this.#destroyCallback === 'function' && typeof this.#delay === 'number';
+        return typeof this.#destroyHandler === 'function' &&
+               typeof this.#delay === 'number';
     }
 
-    /** @type {Promise<void>?} */
+    /** @type {Promise<boolean>?} */
     get #currentJob() {
         if (!this.#isValid) return null;
-        if (this.#job) return this.#job;
-        this.#job = new Promise(resolve => this.#queue(resolve));
+        this.#job ??= new Promise(resolve => this.#start(resolve));
         return this.#job;
     }
 
     /**
-     * @param {(job: Job) => void} destroyCallback
-     * @param {number} [delay]
+     * @param {(job: Job) => void} destroyHandler
+     * @param {number?} [delay]
      */
-    constructor(destroyCallback, delay = Delay.Idle) {
-        this.#destroyCallback = destroyCallback;
-        this.#delay = delay;
+    constructor(destroyHandler, delay) {
+        this.#destroyHandler = destroyHandler;
+        this.#delay = delay ?? Delay.Idle;
     }
 
     /**
-     * @param {() => void} [callback] function to call after destroy
+     * @param {(() => void)?} [callback] a function to call after destroy
      * @returns {this}
      */
     destroy(callback) {
         if (!this.#isValid) return this;
-        if (typeof callback === 'function') return this.then(() => (this.destroy(), callback()));
-        this.reset();
-        if (typeof this.#destroyCallback === 'function') this.#destroyCallback(this);
+        if (typeof callback === 'function') return this.queue(() => (this.destroy(), callback()));
+        this.#abort();
+        if (this.#destroyHandler) this.#destroyHandler(this);
         this.#delay = null;
-        this.#destroyCallback = null;
+        this.#destroyHandler = null;
         return this;
     }
 
@@ -75,77 +78,56 @@ class Job {
      * @param {() => void} callback
      * @returns {this}
      */
-    then(callback) {
-        this.#job = this.#currentJob?.then(callback) ?? null;
+    queue(callback) {
+        if (typeof callback !== 'function') return this;
+        this.#job = this.#currentJob?.then(isFinished => {
+            if (isFinished) callback();
+            return isFinished;
+        }) ?? this.#job;
         return this;
     }
 
     /**
-     * @param {(...args) => void} [callback]
-     * @returns {this}
-     */
-    catch(callback) {
-        this.#job = this.#currentJob?.catch(typeof callback === 'function' ? callback :
-                                            e => Context.logError(`${Job.name} failed.`, e)) ?? null;
-        return this;
-    }
-
-    /**
-     * @param {() => void} callback
-     * @returns {this}
-     */
-    finally(callback) {
-        this.#job = this.#currentJob?.finally(callback) ?? null;
-        return this;
-    }
-
-    /**
-     * @param {number} [delay]
+     * @param {number?} [delay]
      * @returns {this}
      */
     reset(delay) {
-        this.#job = null;
-        if (this.#id) this.#dequeue();
+        this.#abort();
         if (typeof delay !== 'number') return this;
         this.#delay = delay;
         return this;
     }
 
     /**
-     * @param {(...args) => void} callback
+     * @param {(isFinished: boolean) => void} resolver
      */
-    #queue(callback) {
-        switch (this.#delay) {
-            case Delay.Redraw:
-            case Delay.Idle:
-                this.#id = Laters.add(LaterType[this.#delay], () => this.#resolve(callback));
-                break;
-            default:
-                this.#id = GLib.timeout_add(GLib.PRIORITY_DEFAULT_IDLE, this.#delay ?? 0,
-                                            () => this.#resolve(callback));
+    #start(resolver) {
+        this.#resolver = resolver;
+        const delay = this.#delay ?? Delay.Idle;
+        this.#id = delay === Delay.Redraw || delay === Delay.Idle ?
+                   Laters.add(LaterType[delay], () => this.#finish()) :
+                   GLib.timeout_add(GLib.PRIORITY_DEFAULT_IDLE, delay, () => this.#finish());
+    }
+
+    #abort() {
+        if (this.#id) {
+            if (this.#delay === Delay.Redraw || this.#delay === Delay.Idle) Laters.remove(this.#id);
+            else GLib.source_remove(this.#id);
         }
+        this.#finish(false);
     }
 
     /**
-     * @param {(...args) => void} callback
+     * @param {boolean} [result]
      * @returns {boolean}
      */
-    #resolve(callback) {
+    #finish(result = true) {
         this.#id = null;
-        callback();
+        this.#job?.catch(e => Context.logError(`${Job.name} failed.`, e));
+        if (typeof this.#resolver === 'function') this.#resolver(result);
+        this.#resolver = null;
+        this.#job = null;
         return GLib.SOURCE_REMOVE;
-    }
-
-    #dequeue() {
-        if (!this.#id) return;
-        switch (this.#delay) {
-            case Delay.Redraw:
-            case Delay.Idle:
-                Laters.remove(this.#id);
-                break;
-            default: GLib.source_remove(this.#id);
-        }
-        this.#id = null;
     }
 
 }

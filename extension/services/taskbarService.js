@@ -194,7 +194,7 @@ class TaskbarService {
     }
 
     constructor() {
-        Context.jobs.new(this).destroy(() => this.#initialize()).catch();
+        Context.jobs.new(this).destroy(() => this.#initialize());
     }
 
     /**
@@ -339,7 +339,7 @@ class TaskbarService {
     #addWindowAsync(window) {
         if (!this.#windows || !this.#isValidWindow(window)) return;
         if (this.#windows.has(window)) return this.#trackApp(this.#windows.get(window) ?? null);
-        Context.jobs.new(window).destroy(() => this.#addWindow(window)).catch();
+        Context.jobs.new(window).destroy(() => this.#addWindow(window));
     }
 
     /**
@@ -373,7 +373,7 @@ class TaskbarService {
         if (!this.#windows || !this.#isValidWindow(window)) return;
         Context.jobs.removeAll(window);
         if (!this.#windows.has(window)) return;
-        Context.jobs.new(window).destroy(() => this.#removeWindow(window)).catch();
+        Context.jobs.new(window).destroy(() => this.#removeWindow(window));
     }
 
     /**
@@ -423,7 +423,7 @@ class TaskbarService {
      * @param {number} [delay]
      */
     #resetJob(delay = Delay.Idle) {
-        this.#notifyJob.reset(delay).then(() => this.#notifyClients()).catch();
+        this.#notifyJob.reset(delay).queue(() => this.#notifyClients());
     }
 
     #notifyClients() {

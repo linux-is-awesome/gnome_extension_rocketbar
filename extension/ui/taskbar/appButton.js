@@ -566,17 +566,17 @@ export class AppButton extends RuntimeButton {
                 if (!isShown) return;
                 if (!isWorkspaceChanged) this.#rerenderChildren();
                 if (this.#isActive) Context.jobs.new(this, Delay.Queue).destroy(() =>
-                this.notifyParents(AppButtonEvent.Reaction)).catch();
+                this.notifyParents(AppButtonEvent.Reaction));
             });
             if (isWorkspaceChanged) this.#rerenderChildren();
-        }).catch();
+        });
     }
 
     #queueDestroy() {
         if (this.#destroyJob) return;
         this.#destroyJob = Context.jobs.removeAll(this).new(this).destroy(() => (
         this.fadeOut().then(isHidden => isHidden && super.destroy()),
-        this.notifyParents(ComponentEvent.Destroy))).catch();
+        this.notifyParents(ComponentEvent.Destroy)));
     }
 
     #rerenderChildren() {

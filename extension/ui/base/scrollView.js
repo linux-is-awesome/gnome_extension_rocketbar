@@ -87,8 +87,8 @@ export class ScrollView extends Component {
         this.#layout = new St.BoxLayout();
         super.actor.add_actor(this.#layout);
         super.actor.connect(Event.Destroy, () => this.#destroy());
-        this.#scroll?.connect(Event.AdjustmentChanged, () => this.#handleScrollJob?.reset().then(() =>
-                                                             this.#handleScrollSize()).catch());
+        this.#scroll?.connect(Event.AdjustmentChanged, () => this.#handleScrollJob?.reset().queue(() =>
+                                                             this.#handleScrollSize()));
         if (typeof name !== 'string') return;
         this.#layout.set_name(`${name}-Layout`);
     }

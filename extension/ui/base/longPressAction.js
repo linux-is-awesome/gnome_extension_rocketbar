@@ -50,7 +50,7 @@ export class LongPressAction {
     #handlePress() {
         this.#event = Clutter.get_current_event();
         if (typeof this.#callback !== 'function') return Clutter.EVENT_PROPAGATE;
-        Context.jobs.new(this, this.#delay).destroy(() => this.#handleDelay()).catch();
+        Context.jobs.new(this, this.#delay).destroy(() => this.#handleDelay());
         return Clutter.EVENT_PROPAGATE;
     }
 

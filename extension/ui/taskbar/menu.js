@@ -347,7 +347,7 @@ class CustomizeChildMenu extends ChildMenu {
         menuItem.value = iconSize;
         if (this.#isSyncing || !this.#appButton) return;
         const job = Context.jobs.removeAll(this).new(this, Delay.Sleep);
-        job.destroy(() => this.#setConfigOverride(ConfigField.IconSize, iconSize)).catch();
+        job.destroy(() => this.#setConfigOverride(ConfigField.IconSize, iconSize));
     }
 
     /**

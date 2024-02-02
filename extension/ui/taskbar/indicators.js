@@ -354,7 +354,7 @@ class IndicatorsBackend {
     }
 
     #animate() {
-        this.#job?.reset().then(() => {
+        this.#job?.reset().queue(() => {
             if (!this.#indicators) return;
             this.#triggerRerender();
             const validIndicators = [];
@@ -366,8 +366,8 @@ class IndicatorsBackend {
             }
             if (animationsCount) return this.#animate();
             this.#indicators = validIndicators;
-            this.#job?.reset().then(() => this.#triggerRerender());
-        }).catch();
+            this.#job?.reset().queue(() => this.#triggerRerender());
+        });
     }
 
     #finish() {

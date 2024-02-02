@@ -280,7 +280,7 @@ class TaskbarAllocation {
         if (!rect) return;
         const { width } = source.rect;
         this.#allocation.set(source, width);
-        this.#job?.reset(Delay.Redraw).then(() => this.update()).catch();
+        this.#job?.reset(Delay.Redraw).queue(() => this.update());
     }
 
     /**
@@ -290,7 +290,7 @@ class TaskbarAllocation {
         if (!source || !this.#allocation?.has(source)) return;
         this.#allocation.delete(source);
         const delay = this.#isDragMode ? Delay.Scheduled : Delay.Redraw;
-        this.#job?.reset(delay).then(() => this.update()).catch();
+        this.#job?.reset(delay).queue(() => this.update());
     }
 
     async update() {

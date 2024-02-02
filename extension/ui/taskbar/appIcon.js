@@ -173,7 +173,7 @@ export class AppIcon extends Component {
 
     #handleIconTheme() {
         this.#dominantColors.clear();
-        Context.jobs.removeAll(this).new(this, Delay.Background).destroy(() => this.#setIcon()).catch();
+        Context.jobs.removeAll(this).new(this, Delay.Background).destroy(() => this.#setIcon());
     }
 
     /**

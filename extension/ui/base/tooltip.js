@@ -44,7 +44,7 @@ export class Tooltip extends Component {
     #layout = null;
 
     /** @type {Job?} */
-    #toggleDelay = Context.jobs.new(super.actor);
+    #job = Context.jobs.new(super.actor);
 
     /** @type {{x: number, y: number, width: number, height: number}} */
     get #rect() {
@@ -80,14 +80,13 @@ export class Tooltip extends Component {
     show() {
         if (this.isMapped) return;
         const delay = Tooltip.#shownTooltip ? DEFAULT_HIDE_DELAY : DEFAULT_SHOW_DELAY;
-        this.#toggleDelay?.reset(delay).then(() =>
-            Context.layout.addOverlay(super.actor)).catch();
+        this.#job?.reset(delay).queue(() => Context.layout.addOverlay(super.actor));
     }
 
     hide() {
-        this.#toggleDelay?.reset(DEFAULT_HIDE_DELAY);
+        this.#job?.reset(DEFAULT_HIDE_DELAY);
         if (!this.isMapped) return;
-        this.#toggleDelay?.then(() => this.#fadeOut()).catch();
+        this.#job?.queue(() => this.#fadeOut());
     }
 
     rerender() {
@@ -95,8 +94,8 @@ export class Tooltip extends Component {
     }
 
     #destroy() {
-        this.#toggleDelay?.destroy();
-        this.#toggleDelay = null;
+        this.#job?.destroy();
+        this.#job = null;
         this.#layout = null;
         this.#sourceActor = null;
         Tooltip.#shownTooltip = null;
@@ -120,7 +119,7 @@ export class Tooltip extends Component {
      */
     async #fadeOut(animate = true) {
         if (!this.isMapped) return;
-        this.#toggleDelay?.reset();
+        this.#job?.reset();
         super.actor.remove_all_transitions();
         if (!animate) {
             this.setProps(AnimationType.OpacityMin).setSize();

@@ -105,7 +105,7 @@ export default class LayoutManager {
             typeof callback !== 'function' ||
             typeof this.#clients.get(client) === 'function') return;
         this.#clients.set(client, callback);
-        Context.jobs.removeAll(this).new(this, Delay.Background).destroy(() => this.#handleAfterInit()).catch();
+        Context.jobs.removeAll(this).new(this, Delay.Background).destroy(() => this.#handleAfterInit());
     }
 
     /**
