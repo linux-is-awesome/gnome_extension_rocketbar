@@ -3,12 +3,14 @@ import { Config } from '../../utils/config.js';
 
 /** @type {{[field: string]: string}} */
 const Modules = {
+    TweakKillDash: '../../tweaks/killDash.js',
     Taskbar: '../../ui/taskbar.js',
     NotificationCounter: '../../ui/notificationCounter.js'
 };
 
 /** @type {{[field: string]: string}} */
 const ConfigFields = {
+    TweakKillDash: 'overview-kill-dash',
     Taskbar: 'taskbar-enabled',
     NotificationCounter: 'notification-counter-enabled'
 };

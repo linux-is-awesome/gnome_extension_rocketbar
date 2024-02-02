@@ -56,5 +56,7 @@
     "notification-counter-enabled": true,
 
     "notification-service-enable-unity-dbus": true,
-    "notification-service-count-attention-sources": false
+    "notification-service-count-attention-sources": false,
+
+    "overview-kill-dash": true
 }

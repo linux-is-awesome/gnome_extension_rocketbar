@@ -13,6 +13,7 @@ if [ "$1" = "dev" ]; then
                         --extra-source ../extension/services/\
                         --extra-source ../extension/utils/\
                         --extra-source ../extension/core/\
+                        --extra-source ../extension/tweaks/\
                         --extra-source ../extension/settings/\
                         --extra-source ../extension/stylesheet.css/\
                         --out-dir ../
@@ -30,5 +31,6 @@ gnome-extensions pack --force\
                       --extra-source services/\
                       --extra-source utils/\
                       --extra-source core/\
+                      --extra-source tweaks/\
                       --extra-source settings/\
                       --out-dir ../
