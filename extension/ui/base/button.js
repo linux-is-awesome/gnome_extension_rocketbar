@@ -375,18 +375,19 @@ export class RuntimeButton extends Button {
     /**
      * @param {number} width
      * @param {number} [opacity]
-     * @returns {Promise<void>?}
+     * @returns {Promise<boolean>?}
      */
     fadeIn(width, opacity = AnimationType.OpacityMax.opacity) {
         if (!width || this.isFadeInDone) return null;
         const animationParams = { opacity, width, mode: Clutter.AnimationMode.EASE_OUT_QUAD };
-        return Animation(this, AnimationDuration.Default, animationParams).then(() => {
-            this.setSize();
+        return Animation(this, AnimationDuration.Default, animationParams).then(isShown => {
+            if (isShown) this.setSize();
+            return isShown;
         });
     }
 
     /**
-     * @returns {Promise<void>}
+     * @returns {Promise<boolean>}
      */
     fadeOut() {
         const animationParams = { ...RuntimeButtonProps, mode: Clutter.AnimationMode.EASE_OUT_QUAD };

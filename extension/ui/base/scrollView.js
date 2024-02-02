@@ -96,7 +96,7 @@ export class ScrollView extends Component {
     /**
      * @param {Clutter.Actor|Component<St.Widget>} actor
      * @param {boolean} [deceleration]
-     * @returns {Promise<void>?}
+     * @returns {Promise<boolean>?}
      */
     scrollToActor(actor, deceleration = false) {
         if (!this.isMapped || !this.#scroll) return null;
@@ -122,7 +122,7 @@ export class ScrollView extends Component {
     /**
      * @param {number} value positive value 0...scrollSize - pageSize
      * @param {boolean} [deceleration]
-     * @returns {Promise<void>?}
+     * @returns {Promise<boolean>?}
      */
     scrollToPosition(value = 0, deceleration = false) {
         if (!this.isMapped || !this.#scroll ||

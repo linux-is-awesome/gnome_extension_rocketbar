@@ -89,15 +89,19 @@ export class ProgressBar extends Component {
         this.connect(Event.Repaint, () => this.#draw());
     }
 
-    rerender() {
+    /**
+     * @returns {Promise<void>}
+     */
+    async rerender() {
         if (!this.isValid) return;
         const progress = this.#appButton?.progress ?? PROGRESS_VALUE_MIN;
         if (this.#progress === progress) return;
         const isFinal = this.#progress && !progress;
         this.#progress = progress;
         if (!isFinal) return this.actor.queue_repaint();
-        const animationParams = { ...AnimationType.OpacityMin, ...AnimationType.ScaleXMin, mode: Clutter.AnimationMode.EASE_OUT_QUAD };
-        Animation(this, AnimationDuration.Default, animationParams);
+        const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
+        const animationParams = { ...AnimationType.OpacityMin, ...AnimationType.ScaleXMin, mode };
+        await Animation(this, AnimationDuration.Default, animationParams);
     }
 
     #destroy() {

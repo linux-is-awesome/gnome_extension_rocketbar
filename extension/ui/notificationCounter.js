@@ -251,24 +251,24 @@ export default class NotificationCounter extends Component {
         this.#rerender();
     }
 
-    #rerender() {
+    async #rerender() {
         if (!this.isMapped || !this.#counter || Context.layout.isQueued(this)) return;
         this.#counter.remove_all_transitions();
         this.#counter.remove_style_pseudo_class(COUNTER_STYLE_PSEUDO_CLASS);
-        Animation(this.#counter, AnimationDuration.Faster, AnimationType.ScaleMin).then(() => {
-            if (!this.isValid || !this.#counter) return;
-            this.#counter.text = `${this.#count}`;
-            if (!this.#isVisible) {
-                this.#counter.hide();
-                this.#updateClockMargin();
-                return;
-            }
-            this.#counter.show();
-            this.#updateStyle();
+        const isHidden = await Animation(this.#counter, AnimationDuration.Faster, AnimationType.ScaleMin);
+        if (!isHidden || !this.isValid || !this.#counter) return;
+        this.#counter.text = `${this.#count}`;
+        if (!this.#isVisible) {
+            this.#counter.hide();
             this.#updateClockMargin();
-            this.#counter.add_style_pseudo_class(COUNTER_STYLE_PSEUDO_CLASS);
-            Animation(this.#counter, AnimationDuration.Default, { ...AnimationType.ScaleNormal, ...AnimationType.OpacityMax });
-        });
+            return;
+        }
+        this.#counter.show();
+        this.#updateStyle();
+        this.#updateClockMargin();
+        this.#counter.add_style_pseudo_class(COUNTER_STYLE_PSEUDO_CLASS);
+        const animationParams = { ...AnimationType.ScaleNormal, ...AnimationType.OpacityMax };
+        Animation(this.#counter, AnimationDuration.Default, animationParams);
     }
 
     #updateClockMargin() {

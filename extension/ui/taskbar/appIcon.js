@@ -141,23 +141,25 @@ export class AppIcon extends Component {
 
     /**
      * @param {AppIconAnimation} animation
-     * @returns {Promise<void>}
+     * @returns {Promise<boolean>}
      */
     async animate(animation) {
-        if (!this.isMapped) return;
+        if (!this.isMapped) return false;
+        const { duration } = animation;
         switch (animation) {
             case AppIconAnimation.Press:
                 this.isHighlighted = false;
             case AppIconAnimation.Release:
-                return Animation(this, animation.duration, animation.params);
+                return Animation(this, duration, animation.params);
             case AppIconAnimation.Activate:
             case AppIconAnimation.Deactivate:
-                if (!Context.systemSettings.enableAnimations) return;
+                if (!Context.systemSettings.enableAnimations) return true;
                 const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
                 const location = this.location === ComponentLocation.Top ? 1 : -1;
                 const translation_y = animation.translation_y * location * this.uiScale * this.globalScale;
-                await Animation(this, animation.duration, { translation_y, mode });
-                await Animation(this, animation.duration, { ...AnimationType.TranslationReset, mode });
+                if (!await Animation(this, duration, { translation_y, mode })) return false;
+                return Animation(this, duration, { ...AnimationType.TranslationReset, mode });
+            default: return false;
         }
     }
 

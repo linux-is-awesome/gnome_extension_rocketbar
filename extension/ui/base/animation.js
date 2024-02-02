@@ -15,7 +15,8 @@ export const AnimationDuration = {
     Fast: 150,
     Default: 200,
     Slow: 250,
-    Slower: 300
+    Slower: 300,
+    Crawl: 400
 };
 
 /** @enum {{[animation: string]: *}} */
@@ -36,33 +37,33 @@ export const AnimationType = {
  * @param {St.Adjustment} actor
  * @param {number} duration
  * @param {{[param: string]: *}} params
- * @returns {Promise<void>?}
+ * @returns {Promise<boolean>}
  */
 const AdjustmentAnimation = (actor, duration, params) => {
     const value = params.value ?? 0;
     delete params.value;
     const canAnimate = duration > AnimationDuration.Disabled && Context.systemSettings.enableAnimations;
-    if (!canAnimate) return actor.set_value(value), null;
-    return new Promise(resolve => actor.ease(value, { ...params, duration, onComplete: resolve }));
+    if (!canAnimate) return new Promise(resolve => (actor.set_value(value), resolve(true)));
+    return new Promise(resolve => actor.ease(value, { ...params, duration, onStopped: resolve }));
 };
 
 /**
  * @param {St.Widget|BoxPointer} actor
  * @param {number} duration
  * @param {{[param: string]: *}} params
- * @returns {Promise<void>?}
+ * @returns {Promise<boolean>}
  */
 const WidgetAnimation = (actor, duration, params) => {
     const canAnimate = duration > AnimationDuration.Disabled && Context.systemSettings.enableAnimations;
-    if (!canAnimate) return actor.set(params), null;
-    return new Promise(resolve => actor.ease({ ...params, duration, onComplete: resolve }));
+    if (!canAnimate) return new Promise(resolve => (actor.set(params), resolve(true)));
+    return new Promise(resolve => actor.ease({ ...params, duration, onStopped: resolve }));
 };
 
 /**
  * @param {St.Widget|St.Adjustment|BoxPointer|Component<St.Widget>} actor
  * @param {number} [duration]
  * @param {{[param: string]: *}?} [params]
- * @returns {Promise<void>}
+ * @returns {Promise<boolean>}
  */
 export const Animation = (actor, duration, params) => {
     params = { ...params ?? {} };
@@ -70,8 +71,7 @@ export const Animation = (actor, duration, params) => {
     if (actor instanceof Component && actor.isValid) {
         actor = actor.actor ?? actor;
     }
-    const result = actor instanceof St.Widget ? WidgetAnimation(actor, duration, params) :
-                   actor instanceof St.Adjustment ? AdjustmentAnimation(actor, duration, params) :
-                   null;
-    return result ?? new Promise(resolve => resolve());
+    if (actor instanceof St.Widget) return WidgetAnimation(actor, duration, params);
+    else if (actor instanceof St.Adjustment) return AdjustmentAnimation(actor, duration, params);
+    else throw new Error(`${Animation.name} failed, unsupported actor ${actor}.`);
 };

@@ -99,7 +99,10 @@ export class NotificationBadge extends Component {
         this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
     }
 
-    rerender() {
+    /**
+     * @returns {Promise<void>}
+     */
+    async rerender() {
         if (!this.isValid || !this.#badge || !this.#appButton) return;
         const count = this.#appButton.notificationsCount;
         const oldVisible = this.#badge.visible;
@@ -107,16 +110,16 @@ export class NotificationBadge extends Component {
         if (!visible && !oldVisible) return;
         this.#badge.remove_all_transitions();
         if (!visible) {
-            Animation(this.#badge, AnimationDuration.Default, BadgeAnimation.Hide).then(() =>
-                      this.#badge?.set({ visible }));
+            const isHidden = await Animation(this.#badge, AnimationDuration.Default, BadgeAnimation.Hide);
+            if (isHidden) this.#badge?.set({ visible });
             return;
         }
         const { maxCount } = this.#config;
         const text = `${count > maxCount ? maxCount : count}`;
         this.#badge.set({ text, visible });
         this.#updateStyle();
-        if (oldVisible === visible) this.#blink();
-        else Animation(this.#badge, AnimationDuration.Fast, BadgeAnimation.Show);
+        if (oldVisible === visible) return this.#blink();
+        await Animation(this.#badge, AnimationDuration.Fast, BadgeAnimation.Show);
     }
 
     #destroy() {
@@ -128,12 +131,13 @@ export class NotificationBadge extends Component {
 
     /**
      * @param {number} [duration]
+     * @returns {Promise<void>}
      */
     async #blink(duration = 0) {
         if (!this.#badge || duration >= BLINK_DURATION) return;
-        await Animation(this.#badge, AnimationDuration.Slower, BadgeAnimation.Blink);
-        await Animation(this.#badge, AnimationDuration.Slower, BadgeAnimation.Show);
-        this.#blink(++duration);
+        if (!await Animation(this.#badge, AnimationDuration.Slower, BadgeAnimation.Blink)) return;
+        if (!await Animation(this.#badge, AnimationDuration.Slower, BadgeAnimation.Show)) return;
+        return this.#blink(++duration);
     }
 
     #updateStyle() {

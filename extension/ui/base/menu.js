@@ -336,7 +336,7 @@ export class ChildMenu extends PopupMenuSection {
                               menuItem.label.text.replace(CHANGE_INDICATOR, '');
     }
 
-    #handleState() {
+    async #handleState() {
         const parentMenu = this.parentMenu;
         if (!parentMenu) return;
         const parentActor = parentMenu.actor;
@@ -345,14 +345,15 @@ export class ChildMenu extends PopupMenuSection {
         const location = parentActor._arrowSide;
         const translation = parentMenu._boxPointer?.get_theme_node()?.get_length(THEME_NODE_ARROW_RISE) ?? 0;
         const mode = Clutter.AnimationMode.LINEAR;
-        Animation(parentActor, AnimationDuration.Fast, { ...AnimationType.OpacityMin, mode }).then(() => {
-            parentMenu._openedSubMenu?.close();
-            if (this.isOpen) this.#show();
-            else this.#hide();
-            this.#titleMenuItem?.grab_key_focus();
-            parentActor.translation_y = location === St.Side.BOTTOM ? translation : -translation;
-            Animation(parentActor, AnimationDuration.Fast, { ...AnimationType.OpacityMax, ...AnimationType.TranslationReset, mode });
-        });
+        const isHidden = await Animation(parentActor, AnimationDuration.Fast, { ...AnimationType.OpacityMin, mode });
+        if (!isHidden) return;
+        parentMenu._openedSubMenu?.close();
+        if (this.isOpen) this.#show();
+        else this.#hide();
+        this.#titleMenuItem?.grab_key_focus();
+        parentActor.translation_y = location === St.Side.BOTTOM ? translation : -translation;
+        const animationParams = { ...AnimationType.OpacityMax, ...AnimationType.TranslationReset, mode };
+        Animation(parentActor, AnimationDuration.Fast, animationParams);
     }
 
     #show() {

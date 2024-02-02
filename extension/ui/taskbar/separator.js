@@ -141,7 +141,7 @@ export class Separator extends Component {
         );
     }
 
-    #handleState() {
+    async #handleState() {
         if (!this.isMapped) return;
         const opacity = this.actor?.opacity ?? 0;
         if (this.#isVisible && opacity === AnimationType.OpacityMax.opacity) return;
@@ -155,8 +155,8 @@ export class Separator extends Component {
         }
         const width = this.rect?.width ?? BODY_WIDTH;
         this.notifyParents(ComponentEvent.Mapped);
-        Animation(this, AnimationDuration.Default, { ...AnimationType.OpacityMax, width, mode })
-                 .then(() => this.setSize());
+        const isShown = await Animation(this, AnimationDuration.Default, { ...AnimationType.OpacityMax, width, mode });
+        if (isShown) this.setSize();
     }
 
 }

@@ -293,7 +293,7 @@ class TaskbarAllocation {
         this.#job?.reset(delay).then(() => this.update()).catch();
     }
 
-    update() {
+    async update() {
         if (!this.#allocation || !this.#actor || !this.#taskbar) return;
         this.#actor.remove_all_transitions();
         this.#isUpdating = false;
@@ -313,11 +313,10 @@ class TaskbarAllocation {
         const scrollJob = this.#taskbar.scrollToPosition(scrollOffset, true);
         if (!scrollJob) return allocate();
         this.#isUpdating = true;
-        scrollJob.then(() => {
-            if (!this.#isUpdating) return;
-            this.#isUpdating = false;
-            allocate();
-        });
+        const scrollJobResult = await scrollJob;
+        if (!scrollJobResult || !this.#isUpdating) return;
+        this.#isUpdating = false;
+        allocate();
     }
 
 }
@@ -389,7 +388,7 @@ export default class Taskbar extends ScrollView {
      * @override
      * @param {St.Widget|Component} actor
      * @param {boolean} [deceleration]
-     * @returns {Promise<void>?}
+     * @returns {Promise<boolean>?}
      */
     scrollToActor(actor, deceleration = false) {
         const result = super.scrollToActor(actor, deceleration);
