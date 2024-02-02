@@ -72,7 +72,7 @@ export default class ModulesManager {
             const module = this.#modules[moduleName];
             if (!module) return;
             this.#modules[moduleName] = null;
-            if (typeof module?.destroy === 'function') module.destroy();
+            module.destroy();
         } catch (e) {
             Context.logError(`unable to destroy module: ${moduleName}.`, e);
         }
