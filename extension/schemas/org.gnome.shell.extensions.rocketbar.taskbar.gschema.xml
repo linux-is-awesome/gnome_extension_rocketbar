@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+    <schema id="org.gnome.shell.extensions.rocketbar.taskbar"
+            path="/org/gnome/shell/extensions/rocketbar/taskbar/">
+
+        <key type="b" name="taskbar-show-favorites">
+            <default>true</default>
+            <summary>Show Favorites</summary>
+        </key>
+        <key type="b" name="taskbar-isolate-workspaces">
+            <default>true</default>
+            <summary>Isolate Workspaces</summary>
+        </key>
+        <key type="b" name="taskbar-show-all-windows">
+            <default>true</default>
+            <summary>Show All Windows</summary>
+        </key>
+        <key type="b" name="taskbar-enable-separator">
+            <default>true</default>
+            <summary>Always show separator between favorites and running apps</summary>
+        </key>
+        <key type="b" name="appbutton-enable-tooltips">
+            <default>true</default>
+            <summary>Enable Tooltips</summary>
+        </key>
+        <key type="b" name="appbutton-enable-indicators">
+            <default>true</default>
+            <summary>Enable Indicators</summary>
+        </key>
+        <key type="b" name="appbutton-enable-notification-badges">
+            <default>true</default>
+            <summary>Enable Notification Badges</summary>
+        </key>
+        <key type="b" name="appbutton-enable-progress-bars">
+            <default>false</default>
+            <summary>Enable Progress Bars</summary>
+        </key>
+        <key type="b" name="appbutton-enable-sound-control">
+            <default>false</default>
+            <summary>Enable Sound Volume Control</summary>
+        </key>
+        <key type="b" name="notification-counter-enabled">
+            <default>false</default>
+            <summary>Enable Notification Counter</summary>
+        </key>
+        <key type="s" name="taskbar-position">
+            <default>'left'</default>
+            <summary>Taskbar position in the panel</summary>
+        </key>
+        <key type="i" name="taskbar-position-offset">
+            <default>1</default>
+            <summary>Taskbar position offset</summary>
+        </key>
+        <key type="b" name="taskbar-preserve-position">
+            <default>false</default>
+            <summary>Preserve the selected Taskbar position</summary>
+        </key>
+        <key type="i" name="appbutton-icon-size">
+            <default>20</default>
+            <summary>App Buttons icon size</summary>
+        </key>
+        <key type="i" name="appbutton-icon-padding">
+            <default>8</default>
+            <summary>App Buttons icon horizontal padding</summary>
+        </key>
+        <key type="i" name="appbutton-icon-vertical-padding">
+            <default>3</default>
+            <summary>App Buttons icon vertical padding</summary>
+        </key>
+        <key type="i" name="appbutton-spacing">
+            <default>1</default>
+            <summary>App Buttons spacing</summary>
+        </key>
+        <key type="i" name="appbutton-roundness">
+            <default>50</default>
+            <summary>App Buttons roundness</summary>
+        </key>
+        <key type="s" name="appbutton-backlight-color">
+            <default>'rgb(255, 255, 255)'</default>
+            <summary>App Buttons backlight color</summary>
+        </key>
+        <key type="b" name="appbutton-backlight-dominant-color">
+            <default>false</default>
+            <summary>App Buttons Dominant color backlight</summary>
+        </key>
+        <key type="i" name="appbutton-backlight-intensity">
+            <default>1</default>
+            <summary>App Buttons backlight intensity</summary>
+        </key>
+        <key type="b" name="indicator-dominant-color-active">
+            <default>false</default>
+            <summary>Use dominant color for active indicators</summary>
+        </key>
+        <key type="s" name="indicator-color-active">
+            <default>'rgb(53, 132, 228)'</default>
+            <summary>Active indicators color when dominant color is not enabled</summary>
+        </key>
+        <key type="b" name="indicator-dominant-color-inactive">
+            <default>false</default>
+            <summary>Use dominant color for inactive indicators</summary>
+        </key>
+        <key type="s" name="indicator-color-inactive">
+            <default>'rgb(255, 255, 255)'</default>
+            <summary>Inactive indicators color when dominant color is not enabled</summary>
+        </key>
+        <key type="s" name="indicator-position">
+            <default>'top'</default>
+            <summary>Indicators position</summary>
+        </key>
+        <key type="i" name="indicator-width-inactive">
+            <default>4</default>
+            <summary>Inactive Indicators width</summary>
+        </key>
+        <key type="i" name="indicator-width-active">
+            <default>4</default>
+            <summary>Active Indicators width</summary>
+        </key>
+        <key type="i" name="indicator-height-inactive">
+            <default>4</default>
+            <summary>Inactive Indicators width</summary>
+        </key>
+        <key type="i" name="indicator-height-active">
+            <default>4</default>
+            <summary>Active Indicators height</summary>
+        </key>
+        <key type="i" name="indicator-spacing-inactive">
+            <default>2</default>
+            <summary>Inactive Indicators spacing</summary>
+        </key>
+        <key type="i" name="indicator-spacing-active">
+            <default>2</default>
+            <summary>Active Indicators spacing</summary>
+        </key>
+        <key type="i" name="indicator-margin-inactive">
+            <default>0</default>
+            <summary>Inactive Indicators margin</summary>
+        </key>
+        <key type="i" name="indicator-margin-active">
+            <default>0</default>
+            <summary>Active Indicators margin</summary>
+        </key>
+        <key type="i" name="indicator-display-limit">
+            <default>3</default>
+            <summary>Max number of indicators to display for Inactive running apps</summary>
+        </key>
+        <key type="i" name="indicator-display-limit-active">
+            <default>3</default>
+            <summary>Max number of indicators to display for Active running apps</summary>
+        </key>
+        <key type="s" name="notification-badge-color">
+            <default>'rgb(255, 0, 0)'</default>
+            <summary>Notification Badge color</summary>
+        </key>
+        <key type="s" name="notification-badge-font-color">
+            <default>'rgba(255, 255, 255)'</default>
+            <summary>Notification Badge font color</summary>
+        </key>
+        <key type="s" name="notification-badge-border-color">
+            <default>'rgb(70, 70, 70)'</default>
+            <summary>Notification Badge border color</summary>
+        </key>
+        <key type="s" name="notification-badge-position">
+            <default>'bottom_right'</default>
+            <summary>Notification Badge position</summary>
+        </key>
+        <key type="i" name="notification-badge-size">
+            <default>10</default>
+            <summary>Notification Badge size</summary>
+        </key>
+        <key type="i" name="notification-badge-roundness">
+            <default>10</default>
+            <summary>Notification Badge roundness</summary>
+        </key>
+        <key type="i" name="notification-badge-margin">
+            <default>7</default>
+            <summary>Notification Badge margin</summary>
+        </key>
+        <key type="i" name="notification-badge-max-count">
+            <default>99</default>
+            <summary>Notification Badge max count to display</summary>
+        </key>
+        <key type="i" name="tooltip-show-delay">
+            <default>500</default>
+            <summary>Tooltips show delay</summary>
+        </key>
+        <key type="i" name="tooltip-max-width">
+            <default>500</default>
+            <summary>Tooltips max width</summary>
+        </key>
+        <key type="b" name="appbutton-enable-drag-and-drop">
+            <default>true</default>
+            <summary>Allow Drag and Drop</summary>
+        </key>
+        <key type="s" name="appbutton-running-app-activate-behavior">
+            <default>'new_window'</default>
+            <summary>Running apps activation behavior</summary>
+        </key>
+        <key type="s" name="appbutton-demands-attention-behavior">
+            <default>'focus_active'</default>
+            <summary>Window Demands Attention behavior</summary>
+        </key>
+        <key type="b" name="appbutton-enable-minimize-action">
+            <default>true</default>
+            <summary>Enable Minimize action</summary>
+        </key>
+        <key type="s" name="appbutton-config-override">
+            <default>'{}'</default>
+            <summary>AppButton config override</summary>
+        </key>
+
+    </schema>
+</schemalist>

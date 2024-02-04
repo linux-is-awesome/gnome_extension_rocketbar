@@ -12,6 +12,7 @@ import { Animation, AnimationDuration, AnimationType } from '../base/animation.j
 import { Config } from '../../utils/config.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_Separator';
+const CONFIG_PATH = 'taskbar';
 const BODY_COLOR = 'rgba(250, 250, 250, 0.5)';
 const BODY_WIDTH = 2;
 
@@ -63,7 +64,7 @@ export class Separator extends Component {
     #body = new St.Widget(BodyProps);
 
     /** @type {Config} */
-    #config = Config(this, ConfigFields, () => this.#handleConfig());
+    #config = Config(this, ConfigFields, () => this.#handleConfig(), { path: CONFIG_PATH });
 
     /** @type {number} */
     get #width() {

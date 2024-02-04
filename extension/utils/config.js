@@ -91,7 +91,7 @@ export class SharedConfig {
 
     /**
      * @param {{[configField: string]: string}} fields
-     * @param {{path: string, isAfter: boolean}} [options]
+     * @param {{path?: string?, isAfter?: boolean}} [options]
      */
     constructor(fields, options) {
         if (!fields) return;

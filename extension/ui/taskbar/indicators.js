@@ -15,6 +15,7 @@ import { Event } from '../../core/enums.js';
 import { Config } from '../../utils/config.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_Indicators';
+const CONFIG_PATH = 'taskbar';
 const ANIMATION_INTERVAL = 10;
 const ANIMATION_FRAMES = 15;
 const ANIMATION_STEP_MIN = 0.1;
@@ -404,7 +405,7 @@ export class Indicators extends Component {
     #count = 0;
 
     /** @type {Config} */
-    #config = Config(this, ConfigFields, () => this.rerender());
+    #config = Config(this, ConfigFields, () => this.rerender(), { path: CONFIG_PATH });
 
     /** @type {IndicatorsBackend?} */
     #backend = new IndicatorsBackend(this.actor);

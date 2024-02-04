@@ -20,6 +20,7 @@ import { FileSelector } from '../../utils/zenity.js';
 import { ActivateBehavior, DemandsAttentionBehavior, AppIconSize } from '../../utils/taskbar/appConfig.js';
 import { Labels } from '../../core/labels.js';
 
+const CONFIG_PATH = 'taskbar';
 const UNWANTED_STYLE_CLASS = 'app-menu';
 const STYLE_CLASS = 'rocketbar__popup-menu';
 const ICON_PATH_REGEXP_STRING = /^\/(.)*(\.(svg|png))$/;
@@ -382,7 +383,7 @@ export class Menu extends AppMenu {
     #moreActionsSection = null;
 
     /** @type {Config} */
-    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
+    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey), { path: CONFIG_PATH });
 
     /**
      * @param {AppButton} appButton

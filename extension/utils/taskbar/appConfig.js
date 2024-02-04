@@ -9,6 +9,7 @@
 import Context from '../../core/context.js';
 import { SharedConfig } from '../config.js';
 
+const CONFIG_PATH = 'taskbar';
 const CONFIG_OVERRIDE_SETTINGS_KEY = 'appbutton-config-override';
 
 /** @enum {string} */
@@ -72,7 +73,7 @@ export class AppConfig extends SharedConfig {
     }
 
     constructor() {
-        super(ConfigFields);
+        super(ConfigFields, { path: CONFIG_PATH });
         this.configHandler = this.#setAppConfig;
         this.#loadConfigOverride();
     }

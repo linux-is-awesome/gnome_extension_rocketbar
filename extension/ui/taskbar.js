@@ -24,6 +24,7 @@ import { Config } from '../utils/config.js';
 import { Animation, AnimationDuration } from './base/animation.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar';
+const CONFIG_PATH = 'taskbar';
 const APP_ALLOCATION_THRESHOLD = 2;
 
 /** @enum {string} */
@@ -31,6 +32,12 @@ const ConfigFields = {
     enableSeparator: 'taskbar-enable-separator',
     showAllWindows: 'taskbar-show-all-windows',
     isolateWorkspaces: 'taskbar-isolate-workspaces'
+};
+
+/** @type {{[option: string]: *}} */
+const ConfigOptions = {
+    path: CONFIG_PATH,
+    isAfter: true
 };
 
 /** @type {{[prop: string]: *}} */
@@ -339,7 +346,7 @@ export default class Taskbar extends ScrollView {
     #allocation = new TaskbarAllocation(this);
 
     /** @type {Config} */
-    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey), { isAfter: true });
+    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey), ConfigOptions);
 
     /** @type {Map<Meta.Workspace, Set<Shell.App>>} */
     #runningApps = Context.getStorage(this.constructor.name);

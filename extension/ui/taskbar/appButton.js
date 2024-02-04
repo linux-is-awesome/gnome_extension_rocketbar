@@ -20,7 +20,7 @@ import { AppConfig, ConfigFields, ActivateBehavior, DemandsAttentionBehavior } f
 import { Menu } from './menu.js';
 import { NotificationBadge } from './notificationBadge.js';
 import { ProgressBar } from './progressBar.js';
-import { TooltipTrigger } from './tooltip.js';
+import { Tooltip } from './tooltip.js';
 import { Indicators } from './indicators.js';
 import { NotificationHandler } from '../../services/notificationService.js';
 import { AppSoundVolumeControl } from '../../services/soundVolumeService.js';
@@ -165,8 +165,8 @@ export class AppButton extends RuntimeButton {
     /** @type {AppSoundVolumeControl?} */
     #soundVolumeControl = null;
 
-    /** @type {TooltipTrigger?} */
-    #tooltip = null;
+    /** @type {Tooltip?} */
+    #tooltip = new Tooltip(this);
 
     /** @type {boolean} */
     get #isAppRunning() {
@@ -505,10 +505,10 @@ export class AppButton extends RuntimeButton {
             this.#progressBar = null;
         }
         if (enableTooltips && !this.#tooltip) {
-            this.#tooltip = new TooltipTrigger(this);
+            // this.#tooltip = new TooltipTrigger(this);
         } else if (!enableTooltips && this.#tooltip) {
-            this.#tooltip.destroy();
-            this.#tooltip = null;
+            // this.#tooltip.destroy();
+            // this.#tooltip = null;
         }
     }
 
@@ -639,6 +639,9 @@ export class AppButton extends RuntimeButton {
         this.#appIcon.isHighlighted = this.actor.hover;
         this.#resetCycleWindowsQueue();
         this.notifyParents(AppButtonEvent.Reaction);
+        // TODO
+        if (this.actor.hover) this.#tooltip?.show();
+        else this.#tooltip?.hide();
     }
 
     #press() {

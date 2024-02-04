@@ -12,6 +12,7 @@ import { Animation, AnimationType, AnimationDuration } from '../base/animation.j
 import { Config } from '../../utils/config.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_NotificationBadge';
+const CONFIG_PATH = 'taskbar';
 const STYLE_CLASS = 'rocketbar__notification-badge';
 const DEFAULT_TEXT = '0';
 const BORDER_SIZE = 1;
@@ -83,7 +84,7 @@ export class NotificationBadge extends Component {
     #badge = new St.Label(BadgeProps);
 
     /** @type {Config} */
-    #config = Config(this, ConfigFields, () => this.#updateStyle());
+    #config = Config(this, ConfigFields, () => this.#updateStyle(), { path: CONFIG_PATH });
 
     /** @type {AppButton?} */
     #appButton = null;

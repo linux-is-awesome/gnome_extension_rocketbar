@@ -15,6 +15,8 @@ import Context from '../core/context.js';
 import { Event, Delay } from '../core/enums.js';
 import { Config } from '../utils/config.js';
 
+const CONFIG_PATH = 'taskbar';
+
 const SUPPORTED_WINDOW_TYPES = [
     Meta.WindowType.NORMAL,
     Meta.WindowType.DIALOG,
@@ -158,7 +160,7 @@ class TaskbarService {
     #clients = new Set();
 
     /** @type {Config} */
-    #config = Config(this, ConfigFields, () => this.#handleConfig());
+    #config = Config(this, ConfigFields, () => this.#handleConfig(), { path: CONFIG_PATH });
 
     /** @type {Job} */
     #notifyJob = Context.jobs.new(this);
