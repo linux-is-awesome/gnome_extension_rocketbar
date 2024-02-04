@@ -7,8 +7,8 @@
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import Context from '../../core/context.js';
-import { Component } from './component.js';
-import { Event } from '../../core/enums.js';
+import { Component, ComponentLocation } from './component.js';
+import { Event, Delay } from '../../core/enums.js';
 import { Animation, AnimationType, AnimationDuration } from './animation.js';
 
 const STYLE_CLASS = 'rocketbar__tooltip';
@@ -30,7 +30,7 @@ const LayoutProps = {
 };
 
 /**
- * @augments Component<St.Bin>
+ * @augments Component<St.Widget>
  */
 export class Tooltip extends Component {
 
@@ -67,26 +67,33 @@ export class Tooltip extends Component {
      * @param {string?} [name]
      */
     constructor(sourceActor, name = null) {
-        super(new St.Bin({ name, ...DefaultProps }));
+        super(new St.Widget({ name, ...DefaultProps, layout_manager: new Clutter.BinLayout() }));
         this.#layout = new St.Widget({ ...LayoutProps, layout_manager: new Clutter.BinLayout() });
-        super.actor.set_child(this.#layout);
+        super.actor.add_child(this.#layout);
         this.#sourceActor = sourceActor;
         this.connect(Event.Destroy, () => this.#destroy());
-        this.connect(Event.Mapped, () => this.#fadeIn());
+        this.connect(Event.Mapped, () => this.#job?.reset(Delay.Redraw).queue(() => this.#fadeIn()));
         if (typeof name !== 'string') return;
         this.#layout.set({ name: `${name}-Layout` });
     }
 
     show() {
-        if (this.isMapped) return;
+        if (!this.#job || !this.isValid) return;
         const delay = Tooltip.#shownTooltip ? DEFAULT_HIDE_DELAY : DEFAULT_SHOW_DELAY;
-        this.#job?.reset(delay).queue(() => Context.layout.addOverlay(super.actor));
+        this.#job.reset(delay);
+        if (!this.isMapped) {
+            this.#job.queue(() => Context.layout.addOverlay(super.actor));
+            return;
+        }
+        super.actor.remove_all_transitions();
+        this.#fadeIn();
     }
 
     hide() {
-        this.#job?.reset(DEFAULT_HIDE_DELAY);
+        if (!this.#job) return;
+        this.#job.reset(DEFAULT_HIDE_DELAY);
         if (!this.isMapped) return;
-        this.#job?.queue(() => this.#fadeOut());
+        this.#job.queue(() => this.#fadeOut());
     }
 
     rerender() {
@@ -98,15 +105,15 @@ export class Tooltip extends Component {
         this.#job = null;
         this.#layout = null;
         this.#sourceActor = null;
+        if (Tooltip.#shownTooltip !== this) return;
         Tooltip.#shownTooltip = null;
     }
 
     #fadeIn() {
         if (!this.isMapped) return;
-        super.actor.remove_all_transitions();
         this.rerender();
-        if (Tooltip.#shownTooltip) {
-            if (Tooltip.#shownTooltip !== this) Tooltip.#shownTooltip.#fadeOut(false);
+        if (Tooltip.#shownTooltip && Tooltip.#shownTooltip !== this) {
+            Tooltip.#shownTooltip.#fadeOut(false);
             this.setProps(AnimationType.OpacityMax);
         } else {
             Animation(super.actor, AnimationDuration.Slower, AnimationType.OpacityMax);
@@ -118,12 +125,12 @@ export class Tooltip extends Component {
      * @param {boolean} [animate]
      */
     async #fadeOut(animate = true) {
-        if (!this.isMapped) return;
-        this.#job?.reset();
-        super.actor.remove_all_transitions();
+        if (!this.#job || !this.isMapped) return;
+        this.#job.reset(Delay.Redraw);
         if (!animate) {
+            super.actor.remove_all_transitions();
             this.setProps(AnimationType.OpacityMin).setSize();
-            Context.layout.removeOverlay(super.actor);
+            this.#job.queue(() => Context.layout.removeOverlay(super.actor));
             if (Tooltip.#shownTooltip !== this) return;
             Tooltip.#shownTooltip = null;
             return;
@@ -133,7 +140,6 @@ export class Tooltip extends Component {
     }
 
     // TODO: appButton rect is not the center of the app button!!
-    // TODO: y based on location
     async #moveAndResize() {
         if (!this.#sourceActor || !this.#layout || !this.isValid) return;
         const actor = super.actor;
@@ -146,14 +152,16 @@ export class Tooltip extends Component {
         width = Math.min(maxWidth, width);
         const style = `max-width: ${maxWidth}px;`;
         const sourceCenter = Math.floor((sourceActorRect.width - width) / 2);
-        const y = sourceActorRect.y + sourceActorRect.height;
         let x = Math.max(monitorRect.x, sourceActorRect.x + sourceCenter);
         const xOverflow = monitorRect.width - (x + width);
         if (x > monitorRect.x && xOverflow < 0) {
             x = Math.max(monitorRect.x, x + xOverflow);
         }
+        const y = this.#sourceActor.location === ComponentLocation.Top ?
+                  sourceActorRect.y + sourceActorRect.height :
+                  sourceActorRect.y - height;
         const targetRect = { x, y, width, height };
-        const initialRect = Tooltip.#shownTooltip ? Tooltip.#shownTooltip.#rect : targetRect;
+        const initialRect = Tooltip.#shownTooltip?.isMapped ? Tooltip.#shownTooltip.#rect : targetRect;
         const heightDiff = initialRect.height > height ? height / initialRect.height :
                                                          initialRect.height / height;
         if (heightDiff < 0.5) {
