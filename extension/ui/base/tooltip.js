@@ -13,19 +13,23 @@ import { Animation, AnimationType, AnimationDuration } from './animation.js';
 
 const STYLE_CLASS = 'rocketbar__tooltip';
 const LAYOUT_STYLE_CLASS = 'dash-label';
-const DEFAULT_SHOW_DELAY = 500;
-const DEFAULT_HIDE_DELAY = 100;
+const OFFSET_THEME_NODE = 'padding';
+const DEFAULT_SHOW_DELAY = Delay.Scheduled;
+const DEFAULT_HIDE_DELAY = Delay.Queue;
 
 /** @type {{[prop: string]: *}} */
 const DefaultProps = {
     style_class: STYLE_CLASS,
-    ...AnimationType.OpacityMin
+    ...AnimationType.OpacityMin,
+    ...AnimationType.TranslationReset
 };
 
 /** @type {{[prop: string]: *}} */
 const LayoutProps = {
     x_expand: true,
     y_expand: true,
+    reactive: false,
+    track_hover: false,
     style_class: LAYOUT_STYLE_CLASS
 };
 
@@ -43,6 +47,18 @@ export class Tooltip extends Component {
     /** @type {St.Widget?} */
     #layout = null;
 
+    /** @type {[width: number, height: number]?} */
+    #targetSize = null;
+
+    /** @type {number?} */
+    #offset = null;
+
+    /** @type {ComponentLocation} */
+    #location = ComponentLocation.Top;
+
+    /** @type {Job?} */
+    #fadeInJob = null;
+
     /** @type {Job?} */
     #job = Context.jobs.new(super.actor);
 
@@ -53,6 +69,14 @@ export class Tooltip extends Component {
         return { x, y, width, height };
     }
 
+    /** @type {{[param: string]: number}} */
+    get #fadeParams() {
+        const offset = this.#offset ?? 0;
+        const translation_y = offset * (this.#location === ComponentLocation.Top ? -1 : 1);
+        const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
+        return { translation_y, mode };
+    }
+
     /**
      * @override
      * @type {St.Widget}
@@ -60,6 +84,12 @@ export class Tooltip extends Component {
     get actor() {
         if (!this.#layout) throw new Error(`${this.constructor.name} is not valid.`);
         return this.#layout;
+    }
+
+    /** @param {boolean} value */
+    set trackHover(value) {
+        if (typeof value !== 'boolean' || !this.#layout) return;
+        this.#layout.set({ track_hover: value });
     }
 
     /**
@@ -73,82 +103,106 @@ export class Tooltip extends Component {
         this.#sourceActor = sourceActor;
         this.connect(Event.Destroy, () => this.#destroy());
         this.connect(Event.Mapped, () => this.#job?.reset(Delay.Redraw).queue(() => this.#fadeIn()));
+        this.#layout.connect(Event.Hover, () => this.#hover());
         if (typeof name !== 'string') return;
         this.#layout.set({ name: `${name}-Layout` });
     }
 
     show() {
         if (!this.#job || !this.isValid) return;
+        if (Tooltip.#shownTooltip && Tooltip.#shownTooltip !== this) Tooltip.#shownTooltip.hide();
         const delay = Tooltip.#shownTooltip ? DEFAULT_HIDE_DELAY : DEFAULT_SHOW_DELAY;
-        this.#job.reset(delay);
-        if (!this.isMapped) {
-            this.#job.queue(() => Context.layout.addOverlay(super.actor));
-            return;
-        }
-        super.actor.remove_all_transitions();
-        this.#fadeIn();
+        this.#fadeInJob = this.#job.reset(delay);
+        this.#fadeInJob.queue(() => this.isMapped ? this.#fadeIn() : Context.layout.addOverlay(super.actor));
     }
 
-    hide() {
-        if (!this.#job) return;
-        this.#job.reset(DEFAULT_HIDE_DELAY);
+    /**
+     * @param {boolean} [preventHover]
+     */
+    hide(preventHover = false) {
+        if (!this.isValid) return;
+        this.#fadeInJob = null;
+        this.#job?.reset(DEFAULT_HIDE_DELAY);
         if (!this.isMapped) return;
-        this.#job.queue(() => this.#fadeOut());
+        if (preventHover) this.#layout?.set({ reactive: false });
+        this.#job?.queue(() => this.#fadeOut());
     }
 
     rerender() {
+        if (!this.#sourceActor || !this.isValid) return;
+        this.#offset ??= (super.actor.get_theme_node().get_length(OFFSET_THEME_NODE) ?? 0) * 2;
+        this.#location = this.#sourceActor.location;
         this.#moveAndResize();
     }
 
     #destroy() {
         this.#job?.destroy();
         this.#job = null;
+        this.#fadeInJob = null;
         this.#layout = null;
         this.#sourceActor = null;
         if (Tooltip.#shownTooltip !== this) return;
         Tooltip.#shownTooltip = null;
     }
 
+    #hover() {
+        if (this.#layout?.hover) this.show();
+        else this.#job?.reset(DEFAULT_HIDE_DELAY).queue(() => this.hide(true));
+    }
+
     #fadeIn() {
         if (!this.isMapped) return;
         this.rerender();
+        const animationParams = { ...AnimationType.OpacityMax, ...AnimationType.TranslationReset };
         if (Tooltip.#shownTooltip && Tooltip.#shownTooltip !== this) {
-            Tooltip.#shownTooltip.#fadeOut(false);
-            this.setProps(AnimationType.OpacityMax);
+            Tooltip.#shownTooltip.#remove();
+            this.setProps(animationParams);
         } else {
-            Animation(super.actor, AnimationDuration.Slower, AnimationType.OpacityMax);
+            const actor = super.actor;
+            const { translation_y, mode } = this.#fadeParams;
+            if (actor.opacity === AnimationType.OpacityMin.opacity) this.setProps({ translation_y });
+            Animation(actor, AnimationDuration.Slower, { ...animationParams, mode });
         }
         Tooltip.#shownTooltip = this;
+        this.#fadeInJob = null;
+        const reactive = this.#layout?.track_hover ?? false;
+        if (!reactive) return;
+        this.#job?.reset(Delay.Redraw).queue(() => this.#layout?.set({ reactive }));
     }
 
-    /**
-     * @param {boolean} [animate]
-     */
-    async #fadeOut(animate = true) {
-        if (!this.#job || !this.isMapped) return;
-        this.#job.reset(Delay.Redraw);
-        if (!animate) {
-            super.actor.remove_all_transitions();
-            this.setProps(AnimationType.OpacityMin).setSize();
-            this.#job.queue(() => Context.layout.removeOverlay(super.actor));
-            if (Tooltip.#shownTooltip !== this) return;
-            Tooltip.#shownTooltip = null;
-            return;
-        }
-        const isHidden = await Animation(super.actor, AnimationDuration.Slower, AnimationType.OpacityMin);
-        if (isHidden) this.#fadeOut(false);
+    async #fadeOut() {
+        if (!this.isMapped) return;
+        this.#job?.reset();
+        const { translation_y, mode } = this.#fadeParams;
+        const animationParams = { ...AnimationType.OpacityMin, translation_y, mode };
+        const isHidden = await Animation(super.actor, AnimationDuration.Slower, animationParams);
+        if (!isHidden || this.#fadeInJob) return;
+        this.#remove();
+    }
+
+    #remove() {
+        if (!this.isMapped) return;
+        const actor = super.actor;
+        actor.remove_all_transitions();
+        this.#layout?.set({ reactive: false });
+        this.setProps({ ...AnimationType.OpacityMin, ...AnimationType.TranslationReset }).setSize();
+        this.#job?.reset(Delay.Redraw)
+                  .queue(() => this.#fadeInJob ? this.show() : Context.layout.removeOverlay(actor));
+        this.#targetSize = null;
+        if (Tooltip.#shownTooltip !== this) return;
+        Tooltip.#shownTooltip = null;
     }
 
     // TODO: appButton rect is not the center of the app button!!
     async #moveAndResize() {
-        if (!this.#sourceActor || !this.#layout || !this.isValid) return;
+        if (!this.#sourceActor || !this.isMapped) return;
         const actor = super.actor;
         const sourceActorRect = this.#sourceActor.rect;
         const monitorRect = this.#sourceActor.monitorRect;
         if (!sourceActorRect || !monitorRect) return;
-        const [layoutWidth] = this.#layout.get_size();
-        let [width, height] = actor.get_size();
-        const maxWidth = monitorRect.width - (width - layoutWidth);
+        let [width, height] = this.#targetSize ?? actor.get_size();
+        const offset = this.#offset ?? 0;
+        const maxWidth = monitorRect.width - offset;
         width = Math.min(maxWidth, width);
         const style = `max-width: ${maxWidth}px;`;
         const sourceCenter = Math.floor((sourceActorRect.width - width) / 2);
@@ -157,7 +211,7 @@ export class Tooltip extends Component {
         if (x > monitorRect.x && xOverflow < 0) {
             x = Math.max(monitorRect.x, x + xOverflow);
         }
-        const y = this.#sourceActor.location === ComponentLocation.Top ?
+        const y = this.#location === ComponentLocation.Top ?
                   sourceActorRect.y + sourceActorRect.height :
                   sourceActorRect.y - height;
         const targetRect = { x, y, width, height };
@@ -171,9 +225,11 @@ export class Tooltip extends Component {
         if (x !== initialRect.x ||
             y !== initialRect.y) Animation(actor, AnimationDuration.Crawl, { x, y });
         if (width !== initialRect.width || height !== initialRect.height) {
+            this.#targetSize = [width, height];
             if (!await Animation(actor, AnimationDuration.Slower, { width, height })) return;
-            this.setSize();
         }
+        this.setSize();
+        this.#targetSize = null;
     }
 
 }
