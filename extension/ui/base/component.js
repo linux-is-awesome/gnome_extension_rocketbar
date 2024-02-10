@@ -14,9 +14,7 @@ import { Event } from '../../core/enums.js';
 const DRAG_TIMEOUT_THRESHOLD = 200;
 const UI_SCALE_SETTINGS_KEY = 'text-scaling-factor';
 
-/**
- * @enum {string}
- */
+/** @enum {string} */
 export const ComponentEvent = {
     Notify: 'component::notify',
     Mapped: 'component::mapped',
@@ -32,9 +30,7 @@ export const ComponentEvent = {
     DragActorSourceRequest: 'component::drag-actor-source-request'
 };
 
-/**
- * @enum {number}
- */
+/** @enum {number} */
 export const ComponentLocation = {
     Top: 0,
     Bottom: 1
@@ -139,6 +135,11 @@ export class Component {
         const [x, y] = this.#actor.get_transformed_position();
         const [width, height] = this.#actor.get_transformed_size();
         return new Mtk.Rectangle({x, y, width, height});
+    }
+
+    /** @type {Mtk.Rectangle?} */
+    get centerRect() {
+        return this.rect;
     }
 
     /** @type {number} */
