@@ -47,6 +47,9 @@ export class Tooltip extends Component {
     /** @type {Tooltip?} */
     static #shownTooltip = null;
 
+    /** @type {boolean} */
+    #isShown = false;
+
     /** @type {Component<St.Widget>?} */
     #sourceActor = null;
 
@@ -99,7 +102,7 @@ export class Tooltip extends Component {
 
     /** @type {boolean} */
     get isShown() {
-        return Tooltip.#shownTooltip === this;
+        return this.#isShown;
     }
 
     /** @param {boolean} value */
@@ -154,6 +157,7 @@ export class Tooltip extends Component {
 
     #destroy() {
         this.#job?.destroy();
+        this.#changeState();
         this.#job = null;
         this.#fadeInJob = null;
         this.#layout = null;
@@ -201,15 +205,13 @@ export class Tooltip extends Component {
         }
         Tooltip.#shownTooltip = this;
         this.#fadeInJob = null;
-        const reactive = !!this.#layout?.track_hover;
-        if (!reactive) return;
-        this.#sourceActor?.notifySelf(TooltipEvent.StateChanged);
-        this.#job?.reset(Delay.Redraw).queue(() => this.#layout?.set({ reactive }));
+        this.#changeState(true);
     }
 
     async #fadeOut() {
         if (!this.isMapped) return;
         this.#job?.reset();
+        this.#changeState();
         const { translation_y, mode } = this.#fadeParams;
         const animationParams = { ...AnimationType.OpacityMin, translation_y, mode };
         const isHidden = await Animation(super.actor, AnimationDuration.Slower, animationParams);
@@ -229,7 +231,18 @@ export class Tooltip extends Component {
         if (Tooltip.#shownTooltip === this) {
             Tooltip.#shownTooltip = null;
         }
-        if (!this.#layout?.track_hover) return;
+        this.#changeState();
+    }
+
+    /**
+     * @param {boolean} [state]
+     */
+    #changeState(state = false) {
+        if (this.#isShown === state) return;
+        this.#isShown = state;
+        const reactive = !!this.#layout?.track_hover;
+        if (!reactive) return;
+        if (state) this.#job?.reset(Delay.Redraw).queue(() => this.#layout?.set({ reactive }));
         this.#sourceActor?.notifySelf(TooltipEvent.StateChanged);
     }
 
