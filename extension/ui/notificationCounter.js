@@ -17,9 +17,9 @@ import { Animation, AnimationDuration, AnimationType } from './base/animation.js
 
 const MODULE_NAME = 'Rocketbar__NotificationCounter';
 const CONFIG_PATH = 'notification-counter';
-const DATE_MENU_STYLE_CLASS = 'rocketbar__date-menu';
 const DND_SETTINGS_FIELD = 'show-banners';
 const CLOCK_DISPLAY_POSITION = 1;
+const DATE_MENU_STYLE_CLASS = 'rocketbar__date-menu';
 const COUNTER_STYLE_CLASS = 'rocketbar__notification-counter';
 const COUNTER_STYLE_PSEUDO_CLASS = 'transition';
 const COUNTER_EMPTY_COLOR = 'transparent';

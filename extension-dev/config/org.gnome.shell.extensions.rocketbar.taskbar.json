@@ -15,7 +15,7 @@
     "appbutton-icon-size": 20,
     "appbutton-icon-padding": 8,
     "appbutton-icon-vertical-padding": 3,
-    "appbutton-spacing": 1,
+    "appbutton-spacing": 2,
     "appbutton-roundness": 50,
     "appbutton-backlight-color": "rgb(255, 255, 255)",
     "appbutton-backlight-dominant-color": true,
