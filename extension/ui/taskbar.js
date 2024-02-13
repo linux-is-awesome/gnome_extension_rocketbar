@@ -630,7 +630,7 @@ export default class Taskbar extends ScrollView {
         const isAppButton = child instanceof AppButton;
         const isActive = isAppButton ? child.isActive : false;
         const hasFocus = isAppButton ? child.hasFocus : false;
-        const hasHover = child.actor.hover ?? false;
+        const hasHover = isAppButton ? child.hasHover : child.actor.hover;
         if (isActive && isAppButton) {
             this.#activeAppButton = child;
         } else if (this.#activeAppButton === child) {

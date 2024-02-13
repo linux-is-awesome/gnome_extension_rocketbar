@@ -49,8 +49,7 @@ export const Event = {
  * @enum {string} Standard GObject properties
  */
 export const Property = {
-    Visible: 'visible',
-    Hover: 'hover'
+    Visible: 'visible'
 };
 
 /**
@@ -77,6 +76,7 @@ export const SessionMode = {
  * @enum {string}
  */
 export const PseudoClass = {
+    Hover: 'hover',
     Focus: 'focus',
     Active: 'active',
     Insensitive: 'insensitive'
