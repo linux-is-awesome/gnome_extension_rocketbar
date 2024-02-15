@@ -50,6 +50,9 @@ export class Tooltip extends Component {
     /** @type {boolean} */
     #isShown = false;
 
+    /** @type {boolean} */
+    #isHidden = true;
+
     /** @type {Component<St.Widget>?} */
     #sourceActor = null;
 
@@ -58,6 +61,9 @@ export class Tooltip extends Component {
 
     /** @type {[width: number, height: number]?} */
     #targetSize = null;
+
+    /** @type {{x?: number, y?: number, width?: number, height?: number}} */
+    #transformRect = {};
 
     /** @type {number?} */
     #offset = null;
@@ -105,6 +111,11 @@ export class Tooltip extends Component {
         return this.#isShown;
     }
 
+    /** @type {boolean} */
+    get isHidden() {
+        return this.#isHidden;
+    }
+
     /** @param {boolean} value */
     set trackHover(value) {
         if (typeof value !== 'boolean' || !this.#layout) return;
@@ -129,6 +140,7 @@ export class Tooltip extends Component {
 
     show() {
         if (!this.#job || !this.isValid) return;
+        this.#isHidden = false;
         const shownTooltip = Tooltip.#shownTooltip;
         if (shownTooltip && shownTooltip !== this) shownTooltip.hide();
         const delay = shownTooltip && shownTooltip.#isVisible ? DEFAULT_HIDE_DELAY : DEFAULT_SHOW_DELAY;
@@ -137,28 +149,38 @@ export class Tooltip extends Component {
     }
 
     /**
-     * @param {boolean} [preventHover]
+     * @param {boolean} [preventRestore]
      */
-    hide(preventHover = false) {
+    hide(preventRestore = false) {
         if (!this.isValid) return;
+        if (preventRestore) this.#layout?.set({ reactive: false });
+        if (this.#isHidden && preventRestore) return;
+        this.#isHidden = true;
         this.#fadeInJob = null;
         this.#job?.reset(DEFAULT_HIDE_DELAY);
         if (!this.isMapped) return;
-        if (preventHover) this.#layout?.set({ reactive: false });
         this.#job?.queue(() => this.#fadeOut());
     }
 
     rerender() {
-        if (!this.#sourceActor || !this.isValid) return;
-        this.#offset ??= (super.actor.get_theme_node().get_length(OFFSET_THEME_NODE) ?? 0) * 2;
-        this.#location = this.#sourceActor.location;
-        this.#moveAndResize();
+        if (this.#isHidden || !this.isValid) return;
+        if (!this.#isShown) return this.#rerender();
+        this.#job?.reset(Delay.Redraw).queue(() => this.#updateTargetSize().#rerender());
+    }
+
+    lockSize() {
+        if (!this.#isShown) return;
+        const [width, height] = super.actor.get_size();
+        this.setSize(width, height);
+        this.#targetSize = [width, height];
     }
 
     #destroy() {
         this.#job?.destroy();
-        this.#changeState();
         this.#job = null;
+        this.#targetSize = null;
+        this.#isHidden = true;
+        this.#isShown = false;
         this.#fadeInJob = null;
         this.#layout = null;
         this.#sourceActor = null;
@@ -167,11 +189,17 @@ export class Tooltip extends Component {
     }
 
     #hover() {
-        if (!this.#isVisible) return;
-        const isHover = !!this.#layout?.hover;
-        if (isHover && !this.#checkHoverBounds()) return;
-        if (isHover) return this.show();
-        this.#job?.reset(DEFAULT_HIDE_DELAY).queue(() => this.hide(true));
+        const hasHover = !!this.#layout?.hover;
+        if (hasHover && this.#isShown) return this.show();
+        if (hasHover && !this.#checkHoverBounds()) {
+            if (!this.#isHidden) this.hide();
+            return;
+        }
+        if (hasHover && this.#isVisible) return this.show();
+        if (!hasHover) this.#job?.reset(DEFAULT_HIDE_DELAY).queue(() => {
+            this.#isHidden = false;
+            this.hide(true);
+        });
     }
 
     /**
@@ -197,7 +225,7 @@ export class Tooltip extends Component {
         if (shownTooltip && shownTooltip !== this) {
             shownTooltip.#remove();
             this.setProps(animationParams);
-        } else {
+        } else if (!this.#isShown) {
             const actor = super.actor;
             const { translation_y, mode } = this.#fadeParams;
             if (actor.opacity === AnimationType.OpacityMin.opacity) this.setProps({ translation_y });
@@ -221,12 +249,13 @@ export class Tooltip extends Component {
 
     #remove() {
         if (!this.isMapped) return;
+        this.#layout?.set({ reactive: false });
         const actor = super.actor;
         actor.remove_all_transitions();
-        this.#layout?.set({ reactive: false });
-        this.setProps({ ...AnimationType.OpacityMin, ...AnimationType.TranslationReset }).setSize();
+        this.#transformRect = {};
         this.#job?.reset(Delay.Redraw)
                   .queue(() => this.#fadeInJob ? this.show() : Context.layout.removeOverlay(actor));
+        this.setProps({ ...AnimationType.OpacityMin, ...AnimationType.TranslationReset }).setSize();
         this.#targetSize = null;
         if (Tooltip.#shownTooltip === this) {
             Tooltip.#shownTooltip = null;
@@ -238,15 +267,22 @@ export class Tooltip extends Component {
      * @param {boolean} [state]
      */
     #changeState(state = false) {
+        const reactive = !!this.#layout?.track_hover;
+        if (state && reactive) this.#job?.reset(Delay.Redraw).queue(() => this.#layout?.set({ reactive }));
         if (this.#isShown === state) return;
         this.#isShown = state;
-        const reactive = !!this.#layout?.track_hover;
         if (!reactive) return;
-        if (state) this.#job?.reset(Delay.Redraw).queue(() => this.#layout?.set({ reactive }));
         this.#sourceActor?.notifySelf(TooltipEvent.StateChanged);
     }
 
-    async #moveAndResize() {
+    #rerender() {
+        if (!this.#sourceActor || this.#isHidden) return;
+        this.#offset ??= (super.actor.get_theme_node().get_length(OFFSET_THEME_NODE) ?? 0) * 2;
+        this.#location = this.#sourceActor.location;
+        this.#moveAndResize();
+    }
+
+    #moveAndResize() {
         if (!this.#sourceActor || !this.isMapped) return;
         const actor = super.actor;
         const sourceActorRect = this.#sourceActor.centerRect;
@@ -274,15 +310,75 @@ export class Tooltip extends Component {
         if (heightDiff < 0.5) {
             initialRect.height = height;
         }
-        this.setProps({ ...initialRect, style });
-        if (x !== initialRect.x ||
-            y !== initialRect.y) Animation(actor, AnimationDuration.Crawl, { x, y });
-        if (width !== initialRect.width || height !== initialRect.height) {
-            this.#targetSize = [width, height];
-            if (!await Animation(actor, AnimationDuration.Slower, { width, height })) return;
+        this.setProps({ style });
+        this.#transform(initialRect, targetRect);
+    }
+
+    /**
+     * @param {{x: number, y: number, width: number, height: number}} initialRect
+     * @param {{x: number, y: number, width: number, height: number}} targetRect
+     */
+    #transform(initialRect, targetRect) {
+        /** @type {{ x?: number, y?: number }} */
+        const position = {};
+        /** @type {{ width?: number, height?: number }} */
+        const size = {};
+        const initialProps = {};
+        const currentRect = this.#rect;
+        for (const prop in currentRect) {
+            const initialProp = initialRect[prop];
+            if (currentRect[prop] === initialProp) continue;
+            initialProps[prop] = initialProp;
         }
+        if (initialRect.x !== targetRect.x &&
+            this.#transformRect.x !== targetRect.x) {
+            position.x = targetRect.x;
+        }
+        if (initialRect.y !== targetRect.y &&
+            this.#transformRect.y !== targetRect.y) {
+            position.y = targetRect.y;
+        }
+        if (initialRect.width !== targetRect.width &&
+            this.#transformRect.width !== targetRect.width) {
+            size.width = targetRect.width;
+        }
+        if (initialRect.height !== targetRect.height &&
+            this.#transformRect.height !== targetRect.height) {
+            size.height = targetRect.height;
+        }
+        this.setProps(initialProps);
+        const transformPosition = !!Object.keys(position).length;
+        const transformSize = !!Object.keys(size).length;
+        if (!transformPosition && !transformSize) return;
+        const actor = super.actor;
+        const transformRect = { ...position, ...size };
+        this.#transformRect = transformRect;
+        if (transformPosition) Animation(actor, AnimationDuration.Crawl, position).then(() => {
+            delete transformRect.x;
+            delete transformRect.y;
+        });
+        if (!transformSize) return;
+        this.#targetSize = [targetRect.width, targetRect.height];
+        Animation(actor, AnimationDuration.Slower, size).then(isFinished => {
+            delete transformRect.width;
+            delete transformRect.height;
+            if (!isFinished) return;
+            this.setSize();
+            this.#targetSize = null;
+        });
+    }
+
+    /**
+     * @returns {this}
+     */
+    #updateTargetSize() {
+        if (!this.#targetSize) return this;
+        const actor = super.actor;
+        const [width, height] = actor.get_size();
         this.setSize();
-        this.#targetSize = null;
+        this.#targetSize = actor.get_size();
+        this.setSize(width, height);
+        return this;
     }
 
 }
