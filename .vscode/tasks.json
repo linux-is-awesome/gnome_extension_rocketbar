@@ -103,7 +103,7 @@
         {
             "label": "debug-terminal",
             "type": "shell",
-            "command": "./scripts/debug new-window",
+            "command": "nohup ./scripts/debug new-window >/dev/null 2>&1",
             "group": "build",
             "presentation": {
                 "reveal": "always",
