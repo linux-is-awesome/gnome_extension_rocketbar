@@ -7,6 +7,7 @@
     "taskbar-position-offset": 1,
     "taskbar-preserve-position": false,
 
+    "appbutton-enable-menus": true,
     "appbutton-enable-tooltips": true,
     "appbutton-enable-indicators": true,
     "appbutton-enable-notification-badges": true,

@@ -19,6 +19,10 @@
             <default>true</default>
             <summary>Always show separator between favorites and running apps</summary>
         </key>
+        <key type="b" name="appbutton-enable-menus">
+            <default>true</default>
+            <summary>Enable Menus</summary>
+        </key>
         <key type="b" name="appbutton-enable-tooltips">
             <default>true</default>
             <summary>Enable Tooltips</summary>
