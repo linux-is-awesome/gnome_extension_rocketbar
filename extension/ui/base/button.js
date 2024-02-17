@@ -2,14 +2,13 @@
  * JSDoc types
  *
  * @typedef {import('gi://Mtk').Rectangle} Mtk.Rectangle
- * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupMenu & { connect: (...args) => void}} PopupMenu
  * @typedef {import('resource:///org/gnome/shell/ui/boxpointer.js').PopupAnimation} BoxPointer.PopupAnimation
  */
 
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
+import { PopupMenu, PopupDummyMenu } from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import Context from '../../core/context.js';
-import { DummyEventEmitter } from '../../core/shell.js';
 import { Component, ComponentLocation } from './component.js';
 import { LongPressAction } from './longPressAction.js';
 import { Tooltip, TooltipEvent } from './tooltip.js';
@@ -71,56 +70,40 @@ export const ButtonEvent = {
     Hover: 'button::hover',
     LongPress: 'button::long-press',
     Focus: 'button::focus',
-    RequestMenu: 'button::request-menu'
+    RequestMenu: 'button::request-menu',
+    RequestTooltip: 'button::request-tooltip'
 };
 
-class ButtonMenuTrigger extends DummyEventEmitter {
+class ButtonMenuTrigger extends PopupDummyMenu {
+
+    /** @type {St.Widget?} */
+    #actor = null;
 
     /** @type {Button?} */
     #button = null;
-
-    /** @type {DummyEventEmitter?} */
-    #actor = new DummyEventEmitter();
-
-    /**
-     * @override
-     * @type {St.Button?}
-     */
-    get sourceActor() {
-        return this.#button?.actor ?? null;
-    }
-
-    /**
-     * @override
-     * @type {DummyEventEmitter?}
-     */
-    get actor() {
-        return this.#actor;
-    }
 
     /**
      * @param {Button} button
      */
     constructor(button) {
-        super();
+        const actor = new St.Widget({ reactive: true });
+        super(actor);
+        this.#actor = actor;
         this.#button = button;
-        Context.signals.add(this, [this.#button.actor, Event.KeyPress, (_, event) => this.#keyPress(event)]);
+        this.sourceActor = button?.actor ?? actor;
+        Context.signals.add(this, [button?.actor, Event.KeyPress, (_, event) => this.#keyPress(event)]);
         Context.layout.addMenu(this);
     }
 
     /**
      * @override
      * @param {BoxPointer.PopupAnimation} [animation]
-     * @returns {PopupMenu?}
      */
     open(animation) {
-        if (!this.#button) return null;
-        const menu = this.#button?.notifySelf(ButtonEvent.RequestMenu);
-        if (!this.isValidMenu(menu)) return null;
-        this.#button.menu = menu;
+        const menu = this.#button?.menu;
+        if (!menu) return super.open();
         if (animation) menu.open(animation);
         else menu.toggle();
-        return menu;
     }
 
     /**
@@ -130,18 +113,10 @@ class ButtonMenuTrigger extends DummyEventEmitter {
         if (!this.#actor) return;
         Context.signals.removeAll(this);
         Context.layout.removeMenu(this);
-        this.#button = null;
+        this.#actor?.destroy();
         this.#actor = null;
-    }
-
-    /**
-     * @param {*} menu
-     * @returns {boolean}
-     */
-    isValidMenu(menu) {
-        return menu && typeof menu.open === 'function' &&
-                       typeof menu.toggle === 'function' &&
-                       typeof menu.connect === 'function';
+        this.#button = null;
+        super.destroy();
     }
 
     /**
@@ -149,18 +124,20 @@ class ButtonMenuTrigger extends DummyEventEmitter {
      * @returns {boolean}
      */
     #keyPress(event) {
+        if (!this.#button || !event) return Clutter.EVENT_PROPAGATE;
         let state = event.get_state();
         state &= ~Clutter.ModifierType.LOCK_MASK;
         state &= ~Clutter.ModifierType.MOD2_MASK;
         state &= Clutter.ModifierType.MODIFIER_MASK;
         if (state) return Clutter.EVENT_PROPAGATE;
-        const key = this.#button?.location === ComponentLocation.Top ? Clutter.KEY_Down : Clutter.KEY_Up;
-        if (event.get_key_symbol() !== key) return Clutter.EVENT_PROPAGATE;
-        const menu = this.open();
+        const keySymbol = event.get_key_symbol();
+        const key = this.#button.location === ComponentLocation.Top ? Clutter.KEY_Down :
+                                                                      Clutter.KEY_Up;
+        if (keySymbol !== key) return Clutter.EVENT_PROPAGATE;
+        const menu = this.#button?.menu;
         if (!menu) return Clutter.EVENT_PROPAGATE;
-        if (typeof menu.actor?.navigate_focus === 'function') {
-            menu.actor.navigate_focus(null, St.DirectionType.TAB_FORWARD, false);
-        }
+        menu.toggle();
+        menu.actor?.navigate_focus(null, St.DirectionType.TAB_FORWARD, false);
         return Clutter.EVENT_STOP;
     }
 
@@ -172,8 +149,14 @@ class ButtonMenuTrigger extends DummyEventEmitter {
  */
 export class Button extends Component {
 
+    /** @type {{[prop: string]: *}?} */
+    #style = DefaultStyle;
+
     /** @type {ButtonDisplay|St.Button?} */
     #display = this.actor;
+
+    /** @type {Map<string, string>?} */
+    #css = null;
 
     /** @type {boolean} */
     #isActive = false;
@@ -184,23 +167,23 @@ export class Button extends Component {
     /** @type {boolean} */
     #hasHover = false;
 
-    /** @type {{[prop: string]: *}?} */
-    #style = DefaultStyle;
+    /** @type {boolean} */
+    #requestMenu = false;
 
-    /** @type {Map<string, string>?} */
-    #css = null;
-
-    /** @type {LongPressAction?} */
-    #longPressAction = new LongPressAction(this, event => this.#longPress(event));
+    /** @type {boolean} */
+    #requestTooltip = false;
 
     /** @type {ButtonMenuTrigger?} */
-    #menuTrigger = new ButtonMenuTrigger(this);
+    #menuTrigger = null;
 
     /** @type {PopupMenu?} */
     #menu = null;
 
     /** @type {Tooltip?} */
     #tooltip = null;
+
+    /** @type {LongPressAction?} */
+    #longPressAction = new LongPressAction(this, event => this.#longPress(event));
 
     /**
      * Note: Using Math.round to match css width.
@@ -252,8 +235,13 @@ export class Button extends Component {
     }
 
     /** @type {boolean} */
-    get isActive() {
-        return this.#isActive;
+    get hasTooltip() {
+        return !!this.#tooltip;
+    }
+
+    /** @type {boolean} */
+    get hasMenu() {
+        return !!this.#menu;
     }
 
     /** @type {ButtonDisplay|St.Button} */
@@ -261,14 +249,9 @@ export class Button extends Component {
         return this.#display ?? this.actor;
     }
 
-    /** @type {PopupMenu?} */
-    get menu() {
-        return this.#menu;
-    }
-
-    /** @type {Tooltip?} */
-    get tooltip() {
-        return this.#tooltip;
+    /** @type {boolean} */
+    get isActive() {
+        return this.#isActive;
     }
 
     /** @param {boolean} value */
@@ -279,25 +262,71 @@ export class Button extends Component {
         else this.#display.remove_style_pseudo_class(PseudoClass.Active);
     }
 
-    /** @param {PopupMenu} menu */
+    /** @type {PopupMenu?} */
+    get menu() {
+        if (this.#menu) return this.#menu;
+        if (!this.#requestMenu || !this.isValid) return null;
+        this.menu = super.notifySelf(ButtonEvent.RequestMenu);
+        return this.#menu;
+    }
+
+    /** @param {PopupMenu?} menu */
     set menu(menu) {
-        if (this.#menu || !this.#menuTrigger?.isValidMenu(menu)) return;
-        this.#menuTrigger?.destroy();
-        this.#menuTrigger = null;
+        if (!this.isValid) return;
+        const isValidMenu = menu instanceof PopupMenu;
+        if (isValidMenu && this.#menu === menu) return;
+        if (!menu || isValidMenu) {
+            this.#menu?.destroy();
+            this.#menu = null;
+        }
+        if (isValidMenu) {
+            this.#menuTrigger?.destroy();
+            this.#menuTrigger = null;
+        }
+        if (!isValidMenu) {
+            if (this.#menuTrigger) return;
+            this.#menuTrigger = new ButtonMenuTrigger(this);
+            this.#menuTrigger.connect(Event.OpenStateChanged, () => this.#focus());
+            return;
+        }
         this.#menu = menu;
         this.#menu.connect(Event.OpenStateChanged, () => this.#focus());
         Context.layout.addMenu(this.#menu);
     }
 
+    /** @type {Tooltip?} */
+    get tooltip() {
+        if (this.#tooltip) return this.#tooltip;
+        if (!this.#requestTooltip || !this.isValid) return null;
+        this.tooltip = super.notifySelf(ButtonEvent.RequestTooltip);
+        return this.#tooltip;
+    }
+
     /** @param {Tooltip?} tooltip */
     set tooltip(tooltip) {
+        if (!this.isValid) return;
         const isValidTooltip = tooltip instanceof Tooltip;
+        if (isValidTooltip && this.#tooltip === tooltip) return;
         if (!tooltip || isValidTooltip) {
             this.#tooltip?.destroy();
             this.#tooltip = null;
         }
         if (!isValidTooltip) return;
         this.#tooltip = tooltip;
+    }
+
+    /** @param {boolean} enabled */
+    set requestMenu(enabled) {
+        if (typeof enabled !== 'boolean' ||
+            this.#requestMenu === enabled) return;
+        this.#requestMenu = enabled;
+        this.menu = this.#menu;
+    }
+
+    /** @param {boolean} enabled */
+    set requestTooltip(enabled) {
+        if (typeof enabled !== 'boolean') return;
+        this.#requestTooltip = enabled;
     }
 
     /**
@@ -397,7 +426,8 @@ export class Button extends Component {
         this.#menuTrigger = null;
         this.#menu?.destroy();
         this.#menu = null;
-        this.tooltip = null;
+        this.#tooltip?.destroy();
+        this.#tooltip = null;
         this.#css = null;
         this.#style = null;
         this.#display = null;
@@ -418,7 +448,7 @@ export class Button extends Component {
 
     #hover() {
         if (!this.isValid) return;
-        if (this.actor.hover) this.#tooltip?.show();
+        if (this.actor.hover) this.tooltip?.show();
         else this.#tooltip?.hide();
         this.#syncHover();
     }
@@ -446,7 +476,7 @@ export class Button extends Component {
      */
     #longPress(event) {
         if (super.cancelDragEvents().notifySelf(ButtonEvent.LongPress, { event })) return;
-        this.#openMenu();
+        this.menu?.toggle();
     }
 
     #click() {
@@ -454,27 +484,22 @@ export class Button extends Component {
         if (!event) return;
         const button = event.type() === Clutter.EventType.BUTTON_RELEASE ? event.get_button() : null;
         if (super.notifySelf(ButtonEvent.Click, { event, button })) return;
-        this.#openMenu();
+        this.menu?.toggle();
     }
 
     #focus() {
         if (!this.isValid) return;
         const hasKeyFocus = this.actor.has_key_focus();
-        const isMenuOpen = !!this.#menu?.isOpen;
+        const isMenuOpen = !!this.#menu?.isOpen || !!this.#menuTrigger?.isOpen;
         const hasFocus = hasKeyFocus || isMenuOpen;
         const isTooltipShown = !!this.#tooltip?.isShown;
-        if (hasKeyFocus && !isMenuOpen && !isTooltipShown) this.#tooltip?.show();
+        if (hasKeyFocus && !isMenuOpen && !isTooltipShown) this.tooltip?.show();
         else if (!hasKeyFocus || isMenuOpen) this.#tooltip?.hide();
         if (this.#hasFocus === hasFocus) return;
         this.#hasFocus = hasFocus;
         if (hasFocus) this.#display?.add_style_pseudo_class(PseudoClass.Focus);
         else this.#display?.remove_style_pseudo_class(PseudoClass.Focus);
         super.notifySelf(ButtonEvent.Focus);
-    }
-
-    #openMenu() {
-        if (this.#menu) this.#menu.toggle();
-        else this.#menuTrigger?.open();
     }
 
 }
