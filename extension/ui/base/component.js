@@ -14,6 +14,12 @@ import { Event } from '../../core/enums.js';
 const DRAG_TIMEOUT_THRESHOLD = 200;
 const UI_SCALE_SETTINGS_KEY = 'text-scaling-factor';
 
+/** @type {{[param: string]: *}} */
+const DraggableParams = {
+    manualMode: true,
+    timeoutThreshold: DRAG_TIMEOUT_THRESHOLD
+};
+
 /** @enum {string} */
 export const ComponentEvent = {
     Notify: 'component::notify',
@@ -76,12 +82,13 @@ export class Component {
 
     /** @type {boolean} */
     get isValid() {
-        return this.#isValid && this.#actor instanceof St.Widget;
+        return this.#isValid && !!this.#actor;
     }
 
     /** @type {boolean} */
     get isMapped() {
-        return this.#isValid && this.#actor?.mapped === true && this.#actor.get_stage() !== null;
+        const actor = this.#actor;
+        return this.#isValid && !!actor?.get_stage() && (actor.mapped || !!actor.get_parent());
     }
 
     /** @type {ComponentActor} */
@@ -147,7 +154,8 @@ export class Component {
         if (!this.#actor) return 0;
         if (this.#themeContext) return this.#themeContext.scale_factor;
         this.#themeContext = St.ThemeContext.get_for_stage(global.stage);
-        this.#themeContext.connectObject(Event.ScaleFactor, () => this.notifySelf(ComponentEvent.Scale), this.#actor);
+        this.#themeContext.connectObject(Event.ScaleFactor, () =>
+            this.notifySelf(ComponentEvent.Scale), this.#actor);
         return this.#themeContext.scale_factor;
     }
 
@@ -156,7 +164,8 @@ export class Component {
         if (!this.#actor) return 0;
         if (this.#uiSettings) return this.#uiSettings.get_double(UI_SCALE_SETTINGS_KEY);
         this.#uiSettings = MainLayout._interfaceSettings ?? null;
-        this.#uiSettings?.connectObject(`changed::${UI_SCALE_SETTINGS_KEY}`, () => this.notifySelf(ComponentEvent.Scale), this.#actor);
+        this.#uiSettings?.connectObject(`changed::${UI_SCALE_SETTINGS_KEY}`, () =>
+            this.notifySelf(ComponentEvent.Scale), this.#actor);
         return this.#uiSettings?.get_double(UI_SCALE_SETTINGS_KEY) ?? 0;
     }
 
@@ -429,7 +438,7 @@ export class Component {
         this.#dragMonitor = null;
         if (!enabled || !this.#actor) return;
         this.#dragMonitor = {};
-        this.#draggable = Dnd.makeDraggable(this.#actor, { manualMode: true, timeoutThreshold: DRAG_TIMEOUT_THRESHOLD });
+        this.#draggable = Dnd.makeDraggable(this.#actor, DraggableParams);
         this.#draggable.connect(Event.DragBegin, () => this.#dragBegin());
         this.#draggable.connect(Event.DragEnd, () => this.#dragEnd());
         this.#dragMonitor.dragMotion = event => this.#dragMotion(event);
@@ -440,7 +449,7 @@ export class Component {
     }
 
     /**
-     * @param {{ x: number, y: number, source: *, dragActor: *,  targetActor: * }} event
+     * @param {{ x: number, y: number, source: *, dragActor: *, targetActor: * }} event
      * @returns {Dnd.DragMotionResult}
      */
     #dragMotion(event) {
@@ -498,7 +507,8 @@ export class Component {
     #notifySelf(event, target = this, params, sender = this) {
         if (typeof this.#notifyCallback !== 'function') return null;
         try {
-            return this.#notifyCallback({ event, target, params, sender });
+            const notifyParams = { event, target, params, sender };
+            return this.#notifyCallback(notifyParams);
         } catch (e) {
             console.error(`Component notify failed for event ${event}`, e);
         }
