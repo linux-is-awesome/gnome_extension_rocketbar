@@ -44,15 +44,12 @@ const BodyProps = {
  */
 export class Separator extends Component {
 
-    /**
-     * @param {{event: string}} data
-     * @returns {void}
-     */
-    #notifyHandler = data => ({
-        [ComponentEvent.Destroy]: this.#destroy,
-        [ComponentEvent.Scale]: this.#handleConfig,
+    /** @type {{[event: string]: () => *}?} */
+    #events = {
+        [ComponentEvent.Destroy]: () => this.#destroy(),
+        [ComponentEvent.Scale]: () => this.#handleConfig(),
         [ComponentEvent.Mapped]: () => (this.#updateStyle(), this.#handleState())
-    })[data?.event]?.call(this);
+    };
 
     /** @type {boolean} */
     #isToggled = false;
@@ -103,7 +100,7 @@ export class Separator extends Component {
     constructor() {
         super(new St.Bin(DefaultProps));
         this.actor.set_child(this.#body);
-        this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
+        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
     }
 
     /**
@@ -119,6 +116,7 @@ export class Separator extends Component {
     #destroy() {
         Context.signals.removeAll(this);
         this.#body = null;
+        this.#events = null;
     }
 
     #handleConfig() {

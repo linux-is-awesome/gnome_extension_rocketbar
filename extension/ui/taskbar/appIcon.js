@@ -52,14 +52,11 @@ export const AppIconEvent = {
  */
 export class AppIcon extends Component {
 
-    /**
-     * @param {{event: string}} data
-     * @returns {void}
-     */
-    #notifyHandler = data => ({
-        [ComponentEvent.Destroy]: this.#destroy,
+    /** @type {{[event: string]: () => *}?} */
+    #events = {
+        [ComponentEvent.Destroy]: () => this.#destroy(),
         [ComponentEvent.Scale]: () => this.setSize(this.#size)
-    })[data?.event]?.call(this);
+    };
 
     /** @type {Shell.App?} */
     #app = null;
@@ -123,7 +120,7 @@ export class AppIcon extends Component {
         this.actor.add_effect(this.#highlight);
         this.#app = app;
         this.#iconPath = iconPath ?? null;
-        this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
+        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         this.#setIcon();
     }
 
@@ -169,6 +166,7 @@ export class AppIcon extends Component {
         if (!this.#highlight) return;
         this.actor.remove_effect(this.#highlight);
         this.#highlight = null;
+        this.#events = null;
     }
 
     #handleIconTheme() {

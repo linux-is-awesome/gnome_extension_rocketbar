@@ -221,15 +221,16 @@ export class Tooltip extends Component {
         if (!this.isMapped) return;
         this.rerender();
         const shownTooltip = Tooltip.#shownTooltip;
-        const animationParams = { ...AnimationType.OpacityMax, ...AnimationType.TranslationReset };
+        const targetProps = { ...AnimationType.OpacityMax, ...AnimationType.TranslationReset };
         if (shownTooltip && shownTooltip !== this) {
             shownTooltip.#remove();
-            this.setProps(animationParams);
+            this.setProps(targetProps);
         } else if (!this.#isShown) {
             const actor = super.actor;
             const { translation_y, mode } = this.#fadeParams;
             if (actor.opacity === AnimationType.OpacityMin.opacity) this.setProps({ translation_y });
-            Animation(actor, AnimationDuration.Slower, { ...animationParams, mode });
+            const animationParams = { ...targetProps, mode };
+            Animation(actor, AnimationDuration.Slower, animationParams);
         }
         Tooltip.#shownTooltip = this;
         this.#fadeInJob = null;
@@ -251,11 +252,12 @@ export class Tooltip extends Component {
         if (!this.isMapped) return;
         this.#layout?.set({ reactive: false });
         const actor = super.actor;
+        const defaultProps = { ...AnimationType.OpacityMin, ...AnimationType.TranslationReset };
         actor.remove_all_transitions();
         this.#transformRect = {};
         this.#job?.reset(Delay.Redraw)
                   .queue(() => this.#fadeInJob ? this.show() : Context.layout.removeOverlay(actor));
-        this.setProps({ ...AnimationType.OpacityMin, ...AnimationType.TranslationReset }).setSize();
+        this.setProps(defaultProps).setSize();
         this.#targetSize = null;
         if (Tooltip.#shownTooltip === this) {
             Tooltip.#shownTooltip = null;

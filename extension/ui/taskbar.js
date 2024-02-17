@@ -234,11 +234,12 @@ class TaskbarAllocation {
         let result = 0;
         if (!this.#allocation?.size) return result;
         const apps = new Map();
+        const threshold = APP_ALLOCATION_THRESHOLD;
         for (const [source, size] of this.#allocation) {
             if (source instanceof AppButton) {
                 const app = source.app;
                 const count = apps.get(app) ?? 0;
-                if (count >= APP_ALLOCATION_THRESHOLD) continue;
+                if (count >= threshold) continue;
                 apps.set(app, count + 1);
             }
             result += size ?? 0;
@@ -314,7 +315,8 @@ class TaskbarAllocation {
         this.#taskbar.scrollLimit = scrollOffset;
         const allocate = () => {
             if (!this.#actor) return;
-            Animation(this.#actor, duration, { width, mode, delay });
+            const animationParams = { width, mode, delay };
+            Animation(this.#actor, duration, animationParams);
         };
         if (scrollOffset > scrollPosition) return allocate();
         const scrollJob = this.#taskbar.scrollToPosition(scrollOffset, true);
@@ -330,17 +332,14 @@ class TaskbarAllocation {
 
 export default class Taskbar extends ScrollView {
 
-    /**
-     * @param {{event: string, params: *, target: *, sender: Component}} data
-     * @returns {*}
-     */
-    #notifyHandler = data => ({
-        [ComponentEvent.Destroy]: () => this.#handleDestroy(data?.sender),
-        [ComponentEvent.Mapped]: () => this.#handleMapped(data?.sender),
-        [ComponentEvent.DragOver]: () => this.#handleDragOver(data?.target, data?.params),
-        [ComponentEvent.AcceptDrop]: this.#handleDrop,
-        [AppButtonEvent.Reaction]: () => (this.#handleChildReaction(data?.sender), true)
-    })[data?.event]?.call(this);
+    /** @type {{[event: string]: (...args) => *}?} */
+    #events = {
+        [ComponentEvent.Destroy]: data => this.#handleDestroy(data?.sender),
+        [ComponentEvent.Mapped]: data => this.#handleMapped(data?.sender),
+        [ComponentEvent.DragOver]: data => this.#handleDragOver(data?.target, data?.params),
+        [ComponentEvent.AcceptDrop]: () => this.#handleDrop(),
+        [AppButtonEvent.Reaction]: data => (this.#handleChildReaction(data?.sender), true)
+    };
 
     /** @type {TaskbarAllocation?} */
     #allocation = new TaskbarAllocation(this);
@@ -387,7 +386,7 @@ export default class Taskbar extends ScrollView {
         super.actor.add_actor(this.actor);
         this.dropEvents = true;
         this.#separator?.connect(Event.Hover, () => this.#handleChildReaction(this.#separator));
-        this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
+        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.(data));
         Context.layout.requestInit(this, () => this.#setParent());
     }
 
@@ -459,6 +458,7 @@ export default class Taskbar extends ScrollView {
         this.#allocation = null;
         this.#activeAppButton = null;
         this.#scrollLock = null;
+        this.#events = null;
     }
 
     /**
@@ -488,7 +488,8 @@ export default class Taskbar extends ScrollView {
             }
             this.#dndHandler = new DragAndDropHandler(this, competitors, () => this.#handleDragEnd());
         }
-        const competitor = this.#dndHandler.handleDrag({ target, ...params });
+        const dragParams = { target, ...params };
+        const competitor = this.#dndHandler.handleDrag(dragParams);
         if (competitor) super.scrollToActor(competitor);
         return result;
     }
@@ -589,7 +590,9 @@ export default class Taskbar extends ScrollView {
             }
         }
         this.#appButtons = appButtons;
-        for (let i = 0, l = sortedAppButtons.length; i < l; ++i) sortedAppButtons[i].setParent(this, i);
+        for (let i = 0, l = sortedAppButtons.length; i < l; ++i) {
+            sortedAppButtons[i].setParent(this, i);
+        }
         if (!this.#separator) return;
         this.#separator.setParent(this, separatorPosition);
         const { enableSeparator } = this.#config;
@@ -640,9 +643,10 @@ export default class Taskbar extends ScrollView {
             this.#scrollLock = child;
         } else if (this.#scrollLock === child) {
             this.#scrollLock = null;
-            if (!hasFocus && this.#activeAppButton) Context.jobs.new(this, Delay.Scheduled).destroy(() =>
-                                                    this.#activeAppButton &&
-                                                    this.scrollToActor(this.#activeAppButton, true));
+            if (!hasFocus && this.#activeAppButton) {
+                Context.jobs.new(this, Delay.Scheduled).destroy(() =>
+                    this.#activeAppButton && this.scrollToActor(this.#activeAppButton, true));
+            }
         }
         if (this.#scrollLock && this.#scrollLock !== child) return;
         if (!isActive && !hasHover && !hasFocus) return;

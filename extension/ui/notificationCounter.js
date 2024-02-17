@@ -72,13 +72,10 @@ const SpacerProps = {
  */
 class DateMenu extends Component {
 
-    /**
-     * @param {{event: string}} data
-     * @returns {void}
-     */
-    #notifyHandler = data => ({
-        [ComponentEvent.Destroy]: this.#destroy
-    })[data?.event]?.call(this);
+    /** @type {{[event: string]: () => *}?} */
+    #events = {
+        [ComponentEvent.Destroy]: () => this.#destroy()
+    };
 
     /** @type {DateMenuButton?} */
     #dateMenu = MainPanel.statusArea?.dateMenu;
@@ -99,7 +96,7 @@ class DateMenu extends Component {
 
     constructor() {
         super(new St.BoxLayout({ name: `${MODULE_NAME}-${DateMenu.name}` }));
-        this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
+        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         this.#initialize();
     }
 
@@ -143,6 +140,7 @@ class DateMenu extends Component {
             this.#container?.insert_child_at_index(this.#dateMenu._clockDisplay, CLOCK_DISPLAY_POSITION);
         }
         this.#dateMenu = null;
+        this.#events = null;
     }
 
 }
@@ -152,16 +150,13 @@ class DateMenu extends Component {
  */
 export default class NotificationCounter extends Component {
 
-    /**
-     * @param {{event: string}} data
-     * @returns {void}
-     */
-    #notifyHandler = data => ({
-        [ComponentEvent.Destroy]: this.#destroy,
+    /** @type {{[event: string]: () => *}?} */
+    #events = {
+        [ComponentEvent.Destroy]: () => this.#destroy(),
         [ComponentEvent.Mapped]: () => Context.layout.queueAfterInit(this, () => this.#rerender()),
-        [ComponentEvent.Scale]: this.#rerender,
-        [DateMenuEvent.DndChanged]: this.#updateStyle
-    })[data?.event]?.call(this);
+        [ComponentEvent.Scale]: () => this.#rerender(),
+        [DateMenuEvent.DndChanged]: () => this.#updateStyle()
+    };
 
     /** @type {St.Label?} */
     #counter = null;
@@ -189,7 +184,7 @@ export default class NotificationCounter extends Component {
     constructor() {
         super(new St.BoxLayout({ name: MODULE_NAME }));
         this.#createCounter();
-        this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
+        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         Context.signals.add(this, [St.Settings.get(), Event.FontName, () => this.#rerender()]);
         Context.layout.requestInit(this, () => this.setParent(this.#dateMenu));
     }
@@ -200,6 +195,8 @@ export default class NotificationCounter extends Component {
         this.#counter?.remove_all_transitions();
         this.#dateMenu?.destroy();
         this.#notificationHandler?.destroy();
+        this.#counter = null;
+        this.#events = null;
     }
 
     #createCounter() {

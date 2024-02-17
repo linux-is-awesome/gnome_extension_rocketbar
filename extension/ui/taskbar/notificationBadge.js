@@ -71,14 +71,11 @@ const BadgeProps = {
  */
 export class NotificationBadge extends Component {
 
-    /**
-     * @param {{event: string}} data
-     * @returns {void}
-     */
-    #notifyHandler = data => ({
-        [ComponentEvent.Destroy]: this.#destroy,
-        [ComponentEvent.Scale]: this.#updateStyle
-    })[data?.event]?.call(this);
+    /** @type {{[event: string]: () => *}?} */
+    #events = {
+        [ComponentEvent.Destroy]: () => this.#destroy(),
+        [ComponentEvent.Scale]: () => this.#updateStyle()
+    };
 
     /** @type {St.Label?} */
     #badge = new St.Label(BadgeProps);
@@ -97,7 +94,7 @@ export class NotificationBadge extends Component {
         this.actor.set_child(this.#badge);
         this.#badge?.set_pivot_point(0.5, 0.5);
         this.#appButton = appButton;
-        this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
+        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
     }
 
     /**
@@ -128,6 +125,7 @@ export class NotificationBadge extends Component {
         this.#badge?.remove_all_transitions();
         this.#badge = null;
         this.#appButton = null;
+        this.#events = null;
     }
 
     /**

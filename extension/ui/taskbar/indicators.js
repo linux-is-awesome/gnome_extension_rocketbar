@@ -389,14 +389,11 @@ class IndicatorsBackend {
  */
 export class Indicators extends Component {
 
-    /**
-     * @param {{event: string}} data
-     * @returns {void}
-     */
-    #notifyHandler = data => ({
-        [ComponentEvent.Destroy]: this.#destroy,
-        [ComponentEvent.Scale]: this.rerender
-    })[data?.event]?.call(this);
+    /** @type {{[event: string]: () => *}?} */
+    #events = {
+        [ComponentEvent.Destroy]: () => this.#destroy(),
+        [ComponentEvent.Scale]: () => this.rerender()
+    };
 
     /** @type {AppButton?} */
     #appButton = null;
@@ -448,7 +445,7 @@ export class Indicators extends Component {
     constructor(appButton) {
         super(new St.DrawingArea(DefaultProps));
         this.#appButton = appButton;
-        this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
+        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         this.connect(Event.Repaint, () => this.#backend?.rerender());
     }
 
@@ -465,6 +462,7 @@ export class Indicators extends Component {
         this.#backend?.destroy();
         this.#backend = null;
         this.#appButton = null;
+        this.#events = null;
     }
 
 }

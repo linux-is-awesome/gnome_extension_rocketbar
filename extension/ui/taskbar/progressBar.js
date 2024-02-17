@@ -37,14 +37,11 @@ const DefaultProps = {
  */
 export class ProgressBar extends Component {
 
-    /**
-     * @param {{event: string}} data
-     * @returns {void}
-     */
-    #notifyHandler = data => ({
-        [ComponentEvent.Destroy]: this.#destroy,
+    /** @type {{[event: string]: () => *}?} */
+    #events = {
+        [ComponentEvent.Destroy]: () => this.#destroy(),
         [ComponentEvent.Scale]: () => this.actor?.queue_repaint()
-    })[data?.event]?.call(this);
+    };
 
     /** @type {AppButton?} */
     #appButton = null;
@@ -85,7 +82,7 @@ export class ProgressBar extends Component {
         super(new St.DrawingArea(DefaultProps));
         this.actor.set_pivot_point(0.5, 0.5);
         this.#appButton = appButton;
-        this.connect(ComponentEvent.Notify, data => this.#notifyHandler(data));
+        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         this.connect(Event.Repaint, () => this.#draw());
     }
 
@@ -107,6 +104,7 @@ export class ProgressBar extends Component {
     #destroy() {
         this.#progress = null;
         this.#appButton = null;
+        this.#events = null;
     }
 
     #draw() {
