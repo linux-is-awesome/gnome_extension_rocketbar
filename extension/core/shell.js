@@ -1,7 +1,6 @@
 /**
  * JSDoc types
  *
- * @typedef {import('gi://St').Widget} St.Widget
  * @typedef {import('gi://Shell').App} Shell.App
  *
  * @typedef {import('resource:///org/gnome/shell/ui/sessionMode').SessionMode} SessionMode
@@ -50,34 +49,3 @@ export const MessageTray = messageTray;
 
 /** @type {OsdWindowManager} */
 export const OsdWindowManager = osdWindowManager;
-
-/**
- * Note: This class has no real functionality,
- *       only the fields and functions needed to use it instead of EventEmitter instances,
- *       such as PopupMenus and maybe something else.
- */
-export class DummyEventEmitter {
-
-    /** @type {*} */
-    get actor() {
-        return null;
-    }
-
-    /** @type {*} */
-    get sourceActor() {
-        return null;
-    }
-
-    connectObject() {}
-
-    disconnectObject() {}
-
-    open() {}
-
-    close() {}
-
-    toggle() {}
-
-    destroy() {}
-
-}

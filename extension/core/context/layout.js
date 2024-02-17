@@ -2,8 +2,7 @@
  * JSDoc types
  *
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupMenu} PopupMenu
- * @typedef {import('resource:///org/gnome/shell/ui/boxpointer.js').BoxPointer} BoxPointer
- * @typedef {import('../shell.js').DummyEventEmitter} DummyEventEmitter
+ * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupDummyMenu} PopupDummyMenu
  */
 
 import St from 'gi://St';
@@ -30,10 +29,10 @@ export default class LayoutManager {
     }
 
     /**
-     * @param {PopupMenu|DummyEventEmitter} menu
+     * @param {PopupMenu|PopupDummyMenu} menu
      */
     addMenu(menu) {
-        if (!menu?.actor) return;
+        if (menu?.actor instanceof St.Widget === false) return;
         try {
             MainPanel.menuManager?.addMenu(menu);
             this.addOverlay(menu.actor);
@@ -43,10 +42,10 @@ export default class LayoutManager {
     }
 
     /**
-     * @param {PopupMenu|DummyEventEmitter} menu
+     * @param {PopupMenu|PopupDummyMenu} menu
      */
     removeMenu(menu) {
-        if (!menu?.actor) return;
+        if (menu?.actor instanceof St.Widget === false) return;
         try {
             MainPanel.menuManager?.removeMenu(menu);
             this.removeOverlay(menu.actor);
