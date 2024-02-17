@@ -54,7 +54,9 @@ const AdjustmentAnimation = (actor, duration, params) => {
  * @returns {Promise<boolean>}
  */
 const WidgetAnimation = (actor, duration, params) => {
-    const canAnimate = duration > AnimationDuration.Disabled && Context.systemSettings.enableAnimations;
+    const canAnimate = actor.mapped &&
+                       duration > AnimationDuration.Disabled &&
+                       Context.systemSettings.enableAnimations;
     if (!canAnimate) return new Promise(resolve => (actor.set(params), resolve(true)));
     return new Promise(resolve => actor.ease({ ...params, duration, onStopped: resolve }));
 };
