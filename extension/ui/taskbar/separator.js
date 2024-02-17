@@ -141,7 +141,7 @@ export class Separator extends Component {
     }
 
     async #handleState() {
-        if (!this.isMapped) return;
+        if (!this.hasAllocation) return;
         const opacity = this.actor?.opacity ?? 0;
         if (this.#isVisible && opacity === AnimationType.OpacityMax.opacity) return;
         if (!this.#isVisible && opacity === AnimationType.OpacityMin.opacity) return;

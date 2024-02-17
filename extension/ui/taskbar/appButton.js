@@ -520,7 +520,7 @@ export class AppButton extends RuntimeButton {
     }
 
     #handleAppState() {
-        if (!this.isMapped || !this.#service || !this.#config) return;
+        if (!this.hasAllocation || !this.#service || !this.#config) return;
         const { isolateWorkspaces, showAllWindows } = this.#config;
         const isFavorite = !!this.#app && !!this.#service.favorites?.apps?.has(this.#app);
         this.#windows = this.#service.queryWindows(isolateWorkspaces, showAllWindows);
@@ -578,7 +578,7 @@ export class AppButton extends RuntimeButton {
     }
 
     #handleFocusedWindow() {
-        if (!this.isMapped || !this.#service) return;
+        if (!this.hasAllocation || !this.#service) return;
         this.isActive = this.#windowsCount ? this.#service.hasFocusedWindow : false;
         if (this.#isActive) this.#rerenderTooltip();
     }

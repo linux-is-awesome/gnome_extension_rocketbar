@@ -87,6 +87,11 @@ export class Component {
 
     /** @type {boolean} */
     get isMapped() {
+        return this.#isValid && !!this.#actor?.mapped;
+    }
+
+    /** @type {boolean} */
+    get hasAllocation() {
         const actor = this.#actor;
         return this.#isValid && !!actor?.get_stage() && (actor.mapped || !!actor.get_parent());
     }
@@ -99,7 +104,7 @@ export class Component {
 
     /** @type {St.Widget|Component<St.Widget>|null} */
     get parent() {
-        if (!this.isMapped) return null;
+        if (!this.hasAllocation) return null;
         const result = this.#actor?.get_parent() ?? null;
         if (result?._delegate instanceof Component) return result._delegate;
         if (result instanceof St.Widget) return result;

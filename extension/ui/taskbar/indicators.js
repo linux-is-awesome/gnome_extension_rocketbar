@@ -450,7 +450,7 @@ export class Indicators extends Component {
     }
 
     rerender() {
-        if (!this.isMapped) return;
+        if (!this.hasAllocation) return;
         const count = this.#appButton?.windowsCount ?? 0;
         if (!count && !this.#count) return;
         this.#count = count;

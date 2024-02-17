@@ -94,7 +94,7 @@ export class Tooltip extends Component {
 
     /** @type {boolean} */
     get #isVisible() {
-        return this.isMapped && super.actor.opacity > VISIBLE_OPACITY_THRESHOLD;
+        return this.hasAllocation && super.actor.opacity > VISIBLE_OPACITY_THRESHOLD;
     }
 
     /**
@@ -145,7 +145,7 @@ export class Tooltip extends Component {
         if (shownTooltip && shownTooltip !== this) shownTooltip.hide();
         const delay = shownTooltip && shownTooltip.#isVisible ? DEFAULT_HIDE_DELAY : DEFAULT_SHOW_DELAY;
         this.#fadeInJob = this.#job.reset(delay);
-        this.#fadeInJob.queue(() => this.isMapped ? this.#fadeIn() : Context.layout.addOverlay(super.actor));
+        this.#fadeInJob.queue(() => this.hasAllocation ? this.#fadeIn() : Context.layout.addOverlay(super.actor));
     }
 
     /**
@@ -158,7 +158,7 @@ export class Tooltip extends Component {
         this.#isHidden = true;
         this.#fadeInJob = null;
         this.#job?.reset(DEFAULT_HIDE_DELAY);
-        if (!this.isMapped) return;
+        if (!this.hasAllocation) return;
         this.#job?.queue(() => this.#fadeOut());
     }
 
@@ -218,7 +218,7 @@ export class Tooltip extends Component {
     }
 
     #fadeIn() {
-        if (!this.isMapped) return;
+        if (!this.hasAllocation) return;
         this.rerender();
         const shownTooltip = Tooltip.#shownTooltip;
         const targetProps = { ...AnimationType.OpacityMax, ...AnimationType.TranslationReset };
@@ -238,7 +238,7 @@ export class Tooltip extends Component {
     }
 
     async #fadeOut() {
-        if (!this.isMapped) return;
+        if (!this.hasAllocation) return;
         this.#job?.reset();
         this.#changeState();
         const { translation_y, mode } = this.#fadeParams;
@@ -249,7 +249,7 @@ export class Tooltip extends Component {
     }
 
     #remove() {
-        if (!this.isMapped) return;
+        if (!this.hasAllocation) return;
         this.#layout?.set({ reactive: false });
         const actor = super.actor;
         const defaultProps = { ...AnimationType.OpacityMin, ...AnimationType.TranslationReset };
@@ -285,7 +285,7 @@ export class Tooltip extends Component {
     }
 
     #moveAndResize() {
-        if (!this.#sourceActor || !this.isMapped) return;
+        if (!this.#sourceActor || !this.hasAllocation) return;
         const actor = super.actor;
         const sourceActorRect = this.#sourceActor.centerRect;
         const monitorRect = this.#sourceActor.monitorRect;
@@ -306,7 +306,7 @@ export class Tooltip extends Component {
                   sourceActorRect.y - height;
         const targetRect = { x, y, width, height };
         const shownTooltip = Tooltip.#shownTooltip;
-        const initialRect = shownTooltip?.isMapped ? shownTooltip.#rect : targetRect;
+        const initialRect = shownTooltip?.hasAllocation ? shownTooltip.#rect : targetRect;
         const heightDiff = initialRect.height > height ? height / initialRect.height :
                                                          initialRect.height / height;
         if (heightDiff < 0.5) {

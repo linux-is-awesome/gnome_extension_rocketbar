@@ -141,7 +141,7 @@ export class AppIcon extends Component {
      * @returns {Promise<boolean>}
      */
     async animate(animation) {
-        if (!this.isMapped) return false;
+        if (!this.hasAllocation) return false;
         const { duration } = animation;
         switch (animation) {
             case AppIconAnimation.Press:

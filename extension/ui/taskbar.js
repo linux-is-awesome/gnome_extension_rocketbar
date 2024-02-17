@@ -556,7 +556,7 @@ export default class Taskbar extends ScrollView {
     }
 
     #rerender() {
-        if (!this.isMapped || Context.layout.isQueued(this) || !this.#appButtons) return;
+        if (!this.#appButtons || !this.hasAllocation || Context.layout.isQueued(this)) return;
         const favoriteApps = this.#service?.favorites?.apps;
         const runningApps = this.#getRunningApps();
         const apps = [...new Set([...favoriteApps ?? [], ...runningApps ?? []])];

@@ -99,7 +99,7 @@ export class ScrollView extends Component {
      * @returns {Promise<boolean>?}
      */
     scrollToActor(actor, deceleration = false) {
-        if (!this.isMapped || !this.#scroll) return null;
+        if (!this.hasAllocation || !this.#scroll) return null;
         if (actor instanceof Component && actor.isValid) {
             actor = actor.actor;
         }
@@ -125,7 +125,7 @@ export class ScrollView extends Component {
      * @returns {Promise<boolean>?}
      */
     scrollToPosition(value = 0, deceleration = false) {
-        if (!this.isMapped || !this.#scroll ||
+        if (!this.#scroll || !this.hasAllocation ||
             this.#scrollPosition === value ||
             (this.#scroll.value === value && this.#scrollPosition <= value) ||
             (this.#scrollLimit !== -1 && value > this.#scrollLimit)) return null;
