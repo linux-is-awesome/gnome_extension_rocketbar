@@ -249,23 +249,28 @@ export default class NotificationCounter extends Component {
     }
 
     async #rerender() {
-        if (!this.isMapped || !this.#counter || Context.layout.isQueued(this)) return;
-        this.#counter.remove_all_transitions();
-        this.#counter.remove_style_pseudo_class(COUNTER_STYLE_PSEUDO_CLASS);
-        const isHidden = await Animation(this.#counter, AnimationDuration.Faster, AnimationType.ScaleMin);
+        if (!this.#counter || !this.hasAllocation || Context.layout.isQueued(this)) return;
+        const actor = this.actor;
+        const counter = this.#counter;
+        actor.disconnectObject(counter);
+        if (!this.isMapped) return actor.connectObject(Event.Mapped, () => this.#rerender(), counter);
+        const transitionClass = COUNTER_STYLE_PSEUDO_CLASS;
+        counter.remove_all_transitions();
+        counter.remove_style_pseudo_class(transitionClass);
+        const isHidden = await Animation(counter, AnimationDuration.Faster, AnimationType.ScaleMin);
         if (!isHidden || !this.isValid || !this.#counter) return;
-        this.#counter.text = `${this.#count}`;
+        counter.text = `${this.#count}`;
         if (!this.#isVisible) {
-            this.#counter.hide();
+            counter.hide();
             this.#updateClockMargin();
             return;
         }
-        this.#counter.show();
+        counter.show();
         this.#updateStyle();
         this.#updateClockMargin();
-        this.#counter.add_style_pseudo_class(COUNTER_STYLE_PSEUDO_CLASS);
+        counter.add_style_pseudo_class(transitionClass);
         const animationParams = { ...AnimationType.ScaleNormal, ...AnimationType.OpacityMax };
-        Animation(this.#counter, AnimationDuration.Default, animationParams);
+        Animation(counter, AnimationDuration.Default, animationParams);
     }
 
     #updateClockMargin() {
