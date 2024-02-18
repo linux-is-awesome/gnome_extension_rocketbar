@@ -2,23 +2,29 @@ import Clutter from 'gi://Clutter';
 import { initializeDeferredWork as DeferredWork } from 'resource:///org/gnome/shell/ui/main.js';
 import { Overview } from '../core/shell.js';
 
+const MODULE_NAME = 'Rocketbar__Tweak_KillDash';
 const HIDDEN_DASH_HEIGHT = 40;
 
+/** @type {{[prop: string]: *}} */
+const ActorProps = {
+    name: MODULE_NAME
+};
+
 export default class {
+
+    /** @type {Clutter.Actor?} */
+    #actor = null;
 
     /** @type {string?} */
     #dashWorkId = null;
 
-    /** @type {Clutter.Actor?} */
-    #dummyActor = null;
-
     constructor() {
         const dash = Overview.dash;
         if (!dash) return;
+        this.#actor = new Clutter.Actor(ActorProps);
         this.#dashWorkId = dash._workId ?? null;
-        this.#dummyActor = new Clutter.Actor();
-        dash.add_child(this.#dummyActor);
-        const workId = DeferredWork(this.#dummyActor, () => {
+        dash.add_child(this.#actor);
+        const workId = DeferredWork(this.#actor, () => {
             const appIcons = dash._box?.get_children();
             if (!appIcons?.length) return;
             for (const appIcon of appIcons) appIcon.destroy();
@@ -32,13 +38,13 @@ export default class {
     }
 
     destroy() {
+        this.#actor?.destroy();
+        this.#actor = null;
         const dash = Overview.dash;
         if (!dash) return;
         if (this.#dashWorkId) {
             dash._workId = this.#dashWorkId;
         }
-        this.#dummyActor?.destroy();
-        this.#dummyActor = null;
         this.#dashWorkId = null;
         dash.showAppsButton?.show();
         dash._background?.show();

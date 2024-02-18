@@ -17,6 +17,7 @@ import { Animation, AnimationType, AnimationDuration } from './animation.js';
 import { Gradient } from '../../utils/gradient.js';
 
 const STYLE_CLASS = 'panel-button rocketbar__button';
+const MENU_TRIGGER_NAME = 'Rocketbar__Button_MenuTrigger';
 
 /** @type {{[prop: string]: *}} */
 const DefaultProps = {
@@ -31,6 +32,12 @@ const DisplayProps = {
     y_expand: true,
     x_expand: true,
     style_class: STYLE_CLASS
+};
+
+/** @type {{[prop: string]: *}} */
+const MenuTriggerProps = {
+    name: MENU_TRIGGER_NAME,
+    reactive: true
 };
 
 /** @type {{[prop: string]: *}} */
@@ -86,7 +93,7 @@ class ButtonMenuTrigger extends PopupDummyMenu {
      * @param {Button} button
      */
     constructor(button) {
-        const actor = new St.Widget({ reactive: true });
+        const actor = new St.Widget(MenuTriggerProps);
         super(actor);
         this.#actor = actor;
         this.#button = button;
