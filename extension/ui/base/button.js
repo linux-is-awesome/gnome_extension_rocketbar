@@ -374,30 +374,27 @@ export class Button extends Component {
         const { spacingBefore, spacingAfter, roundness, height, width,
                 backlightColor, backlightIntensity, backlightRatio = DefaultStyle.backlightRatio } = style;
         if (this.#display === actor) {
-            if (typeof spacingBefore === 'number' && spacingBefore > 0) {
-                css.set(CssField.MarginLeft, `${CssField.MarginLeft}:${spacingBefore * scale}px;`);
-            } else if (spacingBefore === 0) {
-                this.#css?.delete(CssField.MarginLeft);
+            if (typeof spacingBefore === 'number') {
+                if (spacingBefore < 0) this.#css?.delete(CssField.MarginLeft);
+                else css.set(CssField.MarginLeft, `${CssField.MarginLeft}:${spacingBefore * scale}px;`);
             }
-            if (typeof spacingAfter === 'number' && spacingAfter > 0) {
-                css.set(CssField.MarginRight, `${CssField.MarginRight}:${spacingAfter * scale}px;`);
-            } else if (spacingAfter === 0) {
-                this.#css?.delete(CssField.MarginRight);
+            if (typeof spacingAfter === 'number') {
+                if (spacingAfter < 0) this.#css?.delete(CssField.MarginRight);
+                else css.set(CssField.MarginRight, `${CssField.MarginRight}:${spacingAfter * scale}px;`);
             }
         } else {
             const actorCss = [];
-            if (typeof spacingBefore === 'number' && spacingBefore > 0) {
+            if (typeof spacingBefore === 'number' && spacingBefore >= 0) {
                 actorCss.push(`${CssField.PaddingLeft}:${spacingBefore * scale}px;`);
             }
-            if (typeof spacingAfter === 'number' && spacingAfter > 0) {
+            if (typeof spacingAfter === 'number' && spacingAfter >= 0) {
                 actorCss.push(`${CssField.PaddingRight}:${spacingAfter * scale}px;`);
             }
             if (actorCss.length) actor.set_style(actorCss.join(''));
         }
-        if (typeof roundness === 'number' && roundness > 0) {
-            css.set(CssField.BorderRadius, `${CssField.BorderRadius}:${roundness * scale}px;`);
-        } else if (roundness === 0) {
-            this.#css?.delete(CssField.BorderRadius);
+        if (typeof roundness === 'number') {
+            if (roundness < 0) this.#css?.delete(CssField.BorderRadius);
+            else css.set(CssField.BorderRadius, `${CssField.BorderRadius}:${roundness * scale}px;`);
         }
         if (typeof height === 'number' && height > 0) {
             this.#display.set({ y_expand: false });
