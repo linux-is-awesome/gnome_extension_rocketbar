@@ -8,6 +8,7 @@ if [ "$1" = "dev" ]; then
                         --extra-source devUtils.js/\
                         --extra-source config/\
                         --extra-source ../LICENSE\
+                        --extra-source ../extension/schemas/\
                         --extra-source ../extension/assets/\
                         --extra-source ../extension/ui/\
                         --extra-source ../extension/services/\
