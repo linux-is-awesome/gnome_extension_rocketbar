@@ -23,16 +23,16 @@ export default class {
         if (!dash) return;
         this.#actor = new Clutter.Actor(ActorProps);
         this.#dashWorkId = dash._workId ?? null;
-        dash.add_child(this.#actor);
-        const workId = DeferredWork(this.#actor, () => {
+        dash._workId = DeferredWork(this.#actor, () => {
+            dash._separator?.destroy();
+            dash._separator = null;
             const appIcons = dash._box?.get_children();
             if (!appIcons?.length) return;
             for (const appIcon of appIcons) appIcon.destroy();
         });
-        dash._workId = workId;
+        dash.add_child(this.#actor);
         dash.showAppsButton?.hide();
         dash._background?.hide();
-        dash._separator = null;
         dash.set_size(-1, HIDDEN_DASH_HEIGHT);
         dash.setMaxSize(-1, HIDDEN_DASH_HEIGHT);
     }

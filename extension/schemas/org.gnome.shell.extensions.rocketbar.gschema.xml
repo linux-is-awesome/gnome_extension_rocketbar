@@ -15,6 +15,9 @@
             <default>false</default>
             <summary>Hide the Dash from Overview and prevent it from rerendering behind the scene</summary>
         </key>
+        <key type="b" name="overview-empty-space-clicks">
+            <default>false</default>
+        </key>
         <key type="b" name="notification-service-enable-unity-dbus">
             <default>false</default>
             <summary>Use Unity Launcher API DBus interface to count notifications for apps</summary>

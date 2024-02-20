@@ -5,5 +5,6 @@
     "notification-service-enable-unity-dbus": true,
     "notification-service-count-attention-sources": false,
 
-    "overview-kill-dash": true
+    "overview-kill-dash": true,
+    "overview-empty-space-clicks": true,
 }
