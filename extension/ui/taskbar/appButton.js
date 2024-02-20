@@ -188,7 +188,7 @@ export class AppButton extends RuntimeButton {
     }
 
     /** @type {boolean} */
-    get #isStartupRequired() {
+    get #isFadeInRequired() {
         return !this.isFadeInDone;
     }
 
@@ -253,14 +253,14 @@ export class AppButton extends RuntimeButton {
         super.isActive = !Overview._shown && value;
         if (super.isActive !== oldSuperValue) {
             this.#updateBacklight();
-            if (!this.#isStartupRequired) this.#indicators?.rerender();
+            if (!this.#isFadeInRequired) this.#indicators?.rerender();
         }
         if (this.#isActive === oldValue) return;
         if (!this.#isActive) {
             Context.signals.remove(this, Overview);
             return;
         }
-        if (!this.#isStartupRequired) this.notifyParents(AppButtonEvent.Reaction);
+        if (!this.#isFadeInRequired) this.notifyParents(AppButtonEvent.Reaction);
         Context.signals.add(this, [
             Overview,
             Event.OverviewShowing, () => (this.isActive = this.#isActive),
@@ -387,7 +387,7 @@ export class AppButton extends RuntimeButton {
     #handleMapped() {
         if (!this.isValid) return;
         this.#handleConfig();
-        if (this.#isDropCandidate) return this.#handleStartup();
+        if (this.#isDropCandidate) return this.#handleFadeIn();
         this.#service = new TaskbarClient(() => this.#handleAppState(), this.#app);
         this.#notificationHandler = new NotificationHandler(count => this.#handleNotifications(count), this.#app);
         this.#connectSignals();
@@ -453,7 +453,7 @@ export class AppButton extends RuntimeButton {
                 enableProgressBars,
                 enableTooltips,
                 enableMenus } = this.#config;
-        const isStartupRequired = this.#isStartupRequired;
+        const isFadeInRequired = this.#isFadeInRequired;
         if (enableSoundControl && !this.#soundVolumeControl) {
             this.#soundVolumeControl = new AppSoundVolumeControl(this.#app);
         } else if (!enableSoundControl && this.#soundVolumeControl) {
@@ -463,7 +463,7 @@ export class AppButton extends RuntimeButton {
         if (enableIndicators && !this.#indicators) {
             this.#indicators = new Indicators(this).setParent(this.#layout);
             this.#layout.set_child_below_sibling(this.#indicators.actor, null);
-            if (!isStartupRequired) this.#indicators.rerender();
+            if (!isFadeInRequired) this.#indicators.rerender();
         } else if (!enableIndicators && this.#indicators) {
             this.#indicators.destroy();
             this.#indicators = null;
@@ -471,7 +471,7 @@ export class AppButton extends RuntimeButton {
         if (enableNotificationBadges && !this.#notificationBadge) {
             this.#notificationBadge = new NotificationBadge(this).setParent(this.#layout);
             this.#layout.set_child_above_sibling(this.#notificationBadge.actor, null);
-            if (!isStartupRequired) this.#notificationBadge.rerender();
+            if (!isFadeInRequired) this.#notificationBadge.rerender();
         } else if (!enableNotificationBadges && this.#notificationBadge) {
             this.#notificationBadge.destroy();
             this.#notificationBadge = null;
@@ -480,7 +480,7 @@ export class AppButton extends RuntimeButton {
             this.#progressBar = new ProgressBar(this).setParent(this.#layout);
             const notificationBadge = this.#notificationBadge?.actor;
             if (notificationBadge) this.#layout.set_child_below_sibling(this.#progressBar.actor, notificationBadge);
-            if (!isStartupRequired) this.#progressBar.rerender();
+            if (!isFadeInRequired) this.#progressBar.rerender();
         } else if (!enableProgressBars && this.#progressBar) {
             this.#progressBar.destroy();
             this.#progressBar = null;
@@ -498,7 +498,8 @@ export class AppButton extends RuntimeButton {
     #updateStyle() {
         if (!this.#config) return;
         const { spacingAfter, roundness, width, height } = this.#config;
-        this.overrideStyle({ spacingAfter, roundness, width, height });
+        const style = { spacingAfter, roundness, width, height };
+        this.overrideStyle(style);
         this.notifyParents(ComponentEvent.Mapped);
     }
 
@@ -514,9 +515,13 @@ export class AppButton extends RuntimeButton {
     #updateBacklight() {
         if (!this.#config) return;
         let { backlightColor, backlightIntensity, backlightDominantColor } = this.#config;
-        if (!super.isActive) backlightIntensity = 0;
-        else if (backlightDominantColor) backlightColor = this.dominantColor ?? backlightColor;
-        this.overrideStyle({ backlightColor, backlightIntensity });
+        if (!super.isActive) {
+            backlightIntensity = 0;
+        } else if (backlightDominantColor) {
+            backlightColor = this.dominantColor ?? backlightColor;
+        }
+        const style = { backlightColor, backlightIntensity };
+        this.overrideStyle(style);
     }
 
     #handleAppState() {
@@ -532,12 +537,12 @@ export class AppButton extends RuntimeButton {
         if (!this.#isActive || !this.#windowsCount) this.#handleFocusedWindow();
         if (this.#windowsCount) this.#handleWindows();
         else if (this.#progress) this.#handleProgress();
-        this.#handleStartup();
+        this.#handleFadeIn();
     }
 
-    #handleStartup() {
+    #handleFadeIn() {
         this.#abortDestroy();
-        if (this.#isStartupRequired) return this.#queueStartup();
+        if (this.#isFadeInRequired) return this.#queueFadeIn();
         this.#indicators?.rerender();
     }
 
@@ -549,7 +554,7 @@ export class AppButton extends RuntimeButton {
         this.notifyParents(ComponentEvent.Mapped);
     }
 
-    #queueStartup() {
+    #queueFadeIn() {
         const isWorkspaceChanged = this.#service?.isWorkspaceChanged ?? false;
         Context.jobs.new(this).destroy(() => {
             const targetWidth = this.rect?.width ?? 0;
@@ -613,7 +618,7 @@ export class AppButton extends RuntimeButton {
      */
     #handleNotifications(count) {
         this.#notificationsCount = count;
-        if (this.#isStartupRequired) return;
+        if (this.#isFadeInRequired) return;
         this.#notificationBadge?.rerender();
         this.#rerenderTooltip();
     }
@@ -626,7 +631,7 @@ export class AppButton extends RuntimeButton {
                          Context.launcherApi?.progress?.get(appId) ?? 0 : 0;
         if (progress === this.#progress) return;
         this.#progress = progress;
-        if (this.#isStartupRequired) return;
+        if (this.#isFadeInRequired) return;
         this.#progressBar?.rerender();
         this.#rerenderTooltip();
     }
@@ -749,8 +754,9 @@ export class AppButton extends RuntimeButton {
         this.#resetCycleWindowsQueue();
         const sortedWindows = this.#sortedWindows;
         if (!sortedWindows?.length) return;
-        if (!closeAll) sortedWindows[0].delete(global.get_current_time());
-        else for (const window of sortedWindows) window.delete(global.get_current_time());
+        const timestamp = global.get_current_time();
+        if (!closeAll) sortedWindows[0].delete(timestamp);
+        else for (const window of sortedWindows) window.delete(timestamp);
     }
 
     #moveWindows() {
