@@ -7,7 +7,7 @@ const MODULE_INSTANCE_PLACEHOLDER = true;
 const Modules = {
     TweakOverviewKillDash: '../../tweaks/overviewKillDash.js',
     TweakOverviewClicks: '../../tweaks/overviewClicks.js',
-    TweakFocusFilter: '../../tweaks/focusFilter.js',
+    TweakPopupsPreventFocus: '../../tweaks/popupsPreventFocus.js',
     Taskbar: '../../ui/taskbar.js',
     NotificationCounter: '../../ui/notificationCounter.js'
 };
@@ -16,7 +16,7 @@ const Modules = {
 const ConfigFields = {
     TweakOverviewKillDash: 'overview-kill-dash',
     TweakOverviewClicks: 'overview-empty-space-clicks',
-    TweakFocusFilter: 'focus-behavior-override',
+    TweakPopupsPreventFocus: 'popups-prevent-focus',
     Taskbar: 'taskbar-enabled',
     NotificationCounter: 'notification-counter-enabled'
 };

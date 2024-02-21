@@ -7,4 +7,5 @@
 
     "overview-kill-dash": true,
     "overview-empty-space-clicks": true,
+    "popups-prevent-focus": true
 }
