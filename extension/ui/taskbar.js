@@ -350,7 +350,7 @@ export default class Taskbar extends ScrollView {
     /** @type {Map<Meta.Workspace, Set<Shell.App>>} */
     #runningApps = Context.getStorage(this.constructor.name);
 
-    /** @type {Map<Shell.App, AppButton|Separator>?} */
+    /** @type {Map<Shell.App, AppButton>?} */
     #appButtons = new Map();
 
     /** @type {AppButton?} */
@@ -481,6 +481,7 @@ export default class Taskbar extends ScrollView {
         if (!this.#dndHandler) {
             Context.jobs.removeAll(this);
             this.#allocation.isDragMode = true;
+            /** @type {(AppButton|Separator)[]} */
             const competitors = [...this.#appButtons.values()];
             if (this.#service?.favorites && this.#separatorPosition >= 0) {
                 this.#separator.toggle();
