@@ -560,12 +560,14 @@ export default class Taskbar extends ScrollView {
         if (!this.#appButtons || !this.hasAllocation || Context.layout.isQueued(this)) return;
         const favoriteApps = this.#service?.favorites?.apps;
         const runningApps = this.#getRunningApps();
-        const apps = [...new Set([...favoriteApps ?? [], ...runningApps ?? []])];
-        if (!apps.length) return;
+        const apps = favoriteApps && runningApps ? new Set([...favoriteApps, ...runningApps]) :
+                                                   !favoriteApps ? runningApps :
+                                                   !runningApps ? favoriteApps : null;
+        if (!apps?.size) return;
+        const favoriteAppsSize = favoriteApps?.size ?? 0;
         const appButtons = new Map();
         const sortedAppButtons = [];
-        for (let i = 0, l = apps.length; i < l; ++i) {
-            const app = apps[i];
+        for (const app of apps) {
             const oldAppButton = this.#appButtons.get(app);
             if (oldAppButton?.isValid) {
                 appButtons.set(app, oldAppButton);
@@ -576,7 +578,7 @@ export default class Taskbar extends ScrollView {
             appButtons.set(app, newAppButton);
             sortedAppButtons.push(newAppButton);
         }
-        let separatorPosition = favoriteApps?.size ?? -1;
+        let separatorPosition = favoriteAppsSize || -1;
         this.#separatorPosition = separatorPosition;
         const mergedAppButtons = new Map([...this.#appButtons, ...appButtons]);
         if (mergedAppButtons.size !== appButtons.size) {
@@ -597,7 +599,7 @@ export default class Taskbar extends ScrollView {
         if (!this.#separator) return;
         this.#separator.setParent(this, separatorPosition);
         const { enableSeparator } = this.#config;
-        const isSeparatorRequired = separatorPosition > 0 && apps.length > (favoriteApps?.size ?? 0);
+        const isSeparatorRequired = separatorPosition > 0 && apps.size > favoriteAppsSize;
         this.#separator.isVisible = enableSeparator && isSeparatorRequired;
     }
 
