@@ -131,7 +131,8 @@ class IndicatorBase {
     }
 
     #updateAnimationStep() {
-        this.#animationStep = Math.max(Math.abs(this.diff) / ANIMATION_FRAMES, ANIMATION_STEP_MIN);
+        const animationFrames = Context.systemSettings.enable_animations ? ANIMATION_FRAMES : 1;
+        this.#animationStep = Math.max(Math.abs(this.diff) / animationFrames, ANIMATION_STEP_MIN);
     }
 
 }
