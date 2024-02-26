@@ -3,6 +3,7 @@
  *
  * @typedef {import('gi://cairo').Context} cairo.Context
  * @typedef {import('./appButton.js').AppButton} AppButton
+ * @typedef {import('../../utils/config.js').Config} Config
  */
 
 import St from 'gi://St';
@@ -10,8 +11,10 @@ import Clutter from 'gi://Clutter';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Event } from '../../core/enums.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
+import { SharedConfig } from '../../utils/config.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_ProgressBar';
+const CONFIG_PATH = 'taskbar';
 const PROGRESS_VALUE_MIN = 0;
 const PROGRESS_VALUE_MAX = 1;
 
@@ -19,6 +22,16 @@ const PROGRESS_VALUE_MAX = 1;
 const ProgressBarPosition = {
     Top: 'top',
     Bottom: 'bottom'
+};
+
+/** @enum {string} */
+const ConfigFields = {
+    position: 'progress-bar-position',
+    width: 'progress-bar-width',
+    height: 'progress-bar-height',
+    margin: 'progress-bar-margin',
+    backgroundColor: 'progress-bar-background-color',
+    progressColor: 'progress-bar-progress-color'
 };
 
 /** @type {{[prop: string]: *}} */
@@ -31,11 +44,12 @@ const DefaultProps = {
 };
 
 /**
- * TODO: add Config
- *
  * @augments Component<St.DrawingArea>
  */
 export class ProgressBar extends Component {
+
+    /** @type {SharedConfig?} */
+    static #sharedConfig = null;
 
     /** @type {{[event: string]: () => *}?} */
     #events = {
@@ -46,21 +60,21 @@ export class ProgressBar extends Component {
     /** @type {AppButton?} */
     #appButton = null;
 
-    /** @type {*} */
-    #config = {
-        width: 20,
-        height: 4,
-        margin: 1,
-        backgroundColor: 'rgb(150, 150, 150)',
-        progressColor: 'rgb(0, 150, 50)',
-        position: ProgressBarPosition.Bottom
-    };
-
     /** @type {number?} 0..0.1...0.9..1 */
     #progress = PROGRESS_VALUE_MIN;
 
-    /** @type {{[param: string]: *}} */
+    /** @type {Config?} */
+    #config = this.#configProvider.getConfig(this, () => this.rerender());
+
+    /** @type {SharedConfig} */
+    get #configProvider() {
+        ProgressBar.#sharedConfig ??= new SharedConfig(ConfigFields, { path: CONFIG_PATH });
+        return ProgressBar.#sharedConfig;
+    }
+
+    /** @type {{[param: string]: *}?} */
     get #drawParams() {
+        if (!this.#config) return null;
         const { width, height, margin, backgroundColor, progressColor, position } = this.#config;
         const [canvasWidth, canvasHeight] = this.actor.get_surface_size();
         const scale = this.uiScale * this.globalScale;
@@ -105,6 +119,9 @@ export class ProgressBar extends Component {
         this.#progress = null;
         this.#appButton = null;
         this.#events = null;
+        this.#config = null;
+        if (!ProgressBar.#sharedConfig?.destroy(this)) return;
+        ProgressBar.#sharedConfig = null;
     }
 
     #draw() {
@@ -112,7 +129,11 @@ export class ProgressBar extends Component {
         const actor = this.actor;
         const canvas = actor.get_context();
         if (!canvas) return;
-        const { x, drawWidth, drawHeight, progressWidth, radius, angle, backgroundColor, progressColor } = this.#drawParams;
+        const drawParams = this.#drawParams;
+        if (!drawParams) return;
+        const { x, drawWidth, drawHeight,
+                progressWidth, radius, angle,
+                backgroundColor, progressColor } = drawParams;
         this.#setColor(canvas, backgroundColor);
         canvas.newSubPath();
         canvas.arc(x, drawHeight, radius, angle, -angle);

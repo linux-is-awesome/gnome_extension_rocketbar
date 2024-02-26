@@ -19,6 +19,18 @@
             <default>true</default>
             <summary>Always show separator between favorites and running apps</summary>
         </key>
+        <key type="s" name="taskbar-position">
+            <default>'left'</default>
+            <summary>Taskbar position in the panel</summary>
+        </key>
+        <key type="i" name="taskbar-position-offset">
+            <default>1</default>
+            <summary>Taskbar position offset</summary>
+        </key>
+        <key type="b" name="taskbar-preserve-position">
+            <default>false</default>
+            <summary>Preserve the selected Taskbar position</summary>
+        </key>
         <key type="b" name="appbutton-enable-menus">
             <default>true</default>
             <summary>Enable Menus</summary>
@@ -42,22 +54,6 @@
         <key type="b" name="appbutton-enable-sound-control">
             <default>false</default>
             <summary>Enable Sound Volume Control</summary>
-        </key>
-        <key type="b" name="notification-counter-enabled">
-            <default>false</default>
-            <summary>Enable Notification Counter</summary>
-        </key>
-        <key type="s" name="taskbar-position">
-            <default>'left'</default>
-            <summary>Taskbar position in the panel</summary>
-        </key>
-        <key type="i" name="taskbar-position-offset">
-            <default>1</default>
-            <summary>Taskbar position offset</summary>
-        </key>
-        <key type="b" name="taskbar-preserve-position">
-            <default>false</default>
-            <summary>Preserve the selected Taskbar position</summary>
         </key>
         <key type="i" name="appbutton-icon-size">
             <default>20</default>
@@ -90,6 +86,26 @@
         <key type="i" name="appbutton-backlight-intensity">
             <default>1</default>
             <summary>App Buttons backlight intensity</summary>
+        </key>
+        <key type="b" name="appbutton-enable-drag-and-drop">
+            <default>true</default>
+            <summary>Allow Drag and Drop</summary>
+        </key>
+        <key type="s" name="appbutton-running-app-activate-behavior">
+            <default>'new_window'</default>
+            <summary>Running apps activation behavior</summary>
+        </key>
+        <key type="s" name="appbutton-demands-attention-behavior">
+            <default>'focus_active'</default>
+            <summary>Window Demands Attention behavior</summary>
+        </key>
+        <key type="b" name="appbutton-enable-minimize-action">
+            <default>true</default>
+            <summary>Enable Minimize action</summary>
+        </key>
+        <key type="s" name="appbutton-config-override">
+            <default>'{}'</default>
+            <summary>AppButton config override</summary>
         </key>
         <key type="b" name="indicator-dominant-color-active">
             <default>false</default>
@@ -191,25 +207,23 @@
             <default>500</default>
             <summary>Tooltips max width</summary>
         </key>
-        <key type="b" name="appbutton-enable-drag-and-drop">
-            <default>true</default>
-            <summary>Allow Drag and Drop</summary>
+        <key type="s" name="progress-bar-position">
+            <default>'bottom'</default>
         </key>
-        <key type="s" name="appbutton-running-app-activate-behavior">
-            <default>'new_window'</default>
-            <summary>Running apps activation behavior</summary>
+        <key type="i" name="progress-bar-width">
+            <default>20</default>
         </key>
-        <key type="s" name="appbutton-demands-attention-behavior">
-            <default>'focus_active'</default>
-            <summary>Window Demands Attention behavior</summary>
+        <key type="i" name="progress-bar-height">
+            <default>4</default>
         </key>
-        <key type="b" name="appbutton-enable-minimize-action">
-            <default>true</default>
-            <summary>Enable Minimize action</summary>
+        <key type="i" name="progress-bar-margin">
+            <default>1</default>
         </key>
-        <key type="s" name="appbutton-config-override">
-            <default>'{}'</default>
-            <summary>AppButton config override</summary>
+        <key type="s" name="progress-bar-background-color">
+            <default>'rgb(150, 150, 150)'</default>
+        </key>
+        <key type="s" name="progress-bar-progress-color">
+            <default>'rgb(0, 150, 50)'</default>
         </key>
 
     </schema>
