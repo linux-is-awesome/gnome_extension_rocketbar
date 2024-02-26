@@ -88,7 +88,7 @@ class CycleWindowsQueue {
 export class AppButton extends RuntimeButton {
 
     /** @type {AppConfig?} */
-    static #configProvider = null;
+    static #sharedConfig = null;
 
     /** @type {{[event: string]: (...args) => *}?} */
     #events = {
@@ -207,8 +207,8 @@ export class AppButton extends RuntimeButton {
 
     /** @type {AppConfig} */
     get configProvider() {
-        AppButton.#configProvider ??= new AppConfig();
-        return AppButton.#configProvider;
+        AppButton.#sharedConfig ??= new AppConfig();
+        return AppButton.#sharedConfig;
     }
 
     /** @type {number} */
@@ -365,8 +365,8 @@ export class AppButton extends RuntimeButton {
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
         Context.launcherApi?.disconnect(this);
-        if (AppButton.#configProvider?.destroy(this.#app, this)) {
-            AppButton.#configProvider = null;
+        if (AppButton.#sharedConfig?.destroy(this.#app, this)) {
+            AppButton.#sharedConfig = null;
         }
         this.#service?.destroy();
         this.#service = null;
@@ -387,7 +387,7 @@ export class AppButton extends RuntimeButton {
     #handleMapped() {
         if (!this.isValid) return;
         this.#handleConfig();
-        if (this.#isDropCandidate) return this.#handleFadeIn();
+        if (this.#isDropCandidate) return this.#handleRunningApp();
         this.#service = new TaskbarClient(() => this.#handleAppState(), this.#app);
         this.#notificationHandler = new NotificationHandler(count => this.#handleNotifications(count), this.#app);
         this.#connectSignals();
@@ -537,10 +537,10 @@ export class AppButton extends RuntimeButton {
         if (!this.#isActive || !this.#windowsCount) this.#handleFocusedWindow();
         if (this.#windowsCount) this.#handleWindows();
         else if (this.#progress) this.#handleProgress();
-        this.#handleFadeIn();
+        this.#handleRunningApp();
     }
 
-    #handleFadeIn() {
+    #handleRunningApp() {
         this.#abortDestroy();
         if (this.#isFadeInRequired) return this.#queueFadeIn();
         this.#indicators?.rerender();
