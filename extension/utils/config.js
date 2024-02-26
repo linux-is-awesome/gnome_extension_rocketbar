@@ -141,6 +141,7 @@ export class SharedConfig {
         this.#settings = null;
         this.#clients = null;
         this.#configHandler = null;
+        this.#config = null;
         return true;
     }
 

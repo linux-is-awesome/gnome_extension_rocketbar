@@ -4,6 +4,7 @@
  * @typedef {import('gi://cairo').Context} cairo.Context
  * @typedef {import('../../core/context/jobs.js').Jobs.Job} Job
  * @typedef {import('./appButton.js').AppButton} AppButton
+ * @typedef {import('../../utils/config.js').Config} Config
  */
 
 import St from 'gi://St';
@@ -12,7 +13,7 @@ import Context from '../../core/context.js';
 import { Overview } from '../../core/shell.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Event } from '../../core/enums.js';
-import { Config } from '../../utils/config.js';
+import { SharedConfig } from '../../utils/config.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_Indicators';
 const CONFIG_PATH = 'taskbar';
@@ -390,6 +391,9 @@ class IndicatorsBackend {
  */
 export class Indicators extends Component {
 
+    /** @type {SharedConfig?} */
+    static #sharedConfig = null;
+
     /** @type {{[event: string]: () => *}?} */
     #events = {
         [ComponentEvent.Destroy]: () => this.#destroy(),
@@ -402,11 +406,17 @@ export class Indicators extends Component {
     /** @type {number} */
     #count = 0;
 
-    /** @type {Config} */
-    #config = Config(this, ConfigFields, () => this.rerender(), { path: CONFIG_PATH });
+    /** @type {Config?} */
+    #config = this.#configProvider.getConfig(this, () => this.rerender());
 
     /** @type {IndicatorsBackend?} */
     #backend = new IndicatorsBackend(this.actor);
+
+    /** @type {SharedConfig} */
+    get #configProvider() {
+        Indicators.#sharedConfig ??= new SharedConfig(ConfigFields, { path: CONFIG_PATH });
+        return Indicators.#sharedConfig;
+    }
 
     /** @type {boolean} */
     get #isActive() {
@@ -415,6 +425,7 @@ export class Indicators extends Component {
 
     /** @type {string} */
     get #color() {
+        if (!this.#config) return BackendParams.color;
         const isActive = this.#isActive;
         const { colorActive, colorInactive,
                 dominantColorActive, dominantColorInactive } = this.#config;
@@ -426,6 +437,7 @@ export class Indicators extends Component {
 
     /** @type {BackendParams} */
     get #backendParams() {
+        if (!this.#config) return BackendParams;
         const { limitActive, limitInactive, sizeActive, sizeInactive,
                 spacingActive, spacingInactive, weightActive, weightInactive,
                 offsetActive, offsetInactive, position } = this.#config;
@@ -459,11 +471,13 @@ export class Indicators extends Component {
     }
 
     #destroy() {
-        Context.signals.removeAll(this);
         this.#backend?.destroy();
         this.#backend = null;
         this.#appButton = null;
         this.#events = null;
+        this.#config = null;
+        if (!Indicators.#sharedConfig?.destroy(this)) return;
+        Indicators.#sharedConfig = null;
     }
 
 }

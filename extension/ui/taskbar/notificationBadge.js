@@ -2,14 +2,14 @@
  * JSDoc types
  *
  * @typedef {import('./appButton.js').AppButton} AppButton
+ * @typedef {import('../../utils/config.js').Config} Config
  */
 
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
-import Context from '../../core/context.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
-import { Config } from '../../utils/config.js';
+import { SharedConfig } from '../../utils/config.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_NotificationBadge';
 const CONFIG_PATH = 'taskbar';
@@ -71,6 +71,9 @@ const BadgeProps = {
  */
 export class NotificationBadge extends Component {
 
+    /** @type {SharedConfig?} */
+    static #sharedConfig = null;
+
     /** @type {{[event: string]: () => *}?} */
     #events = {
         [ComponentEvent.Destroy]: () => this.#destroy(),
@@ -80,11 +83,17 @@ export class NotificationBadge extends Component {
     /** @type {St.Label?} */
     #badge = new St.Label(BadgeProps);
 
-    /** @type {Config} */
-    #config = Config(this, ConfigFields, () => this.#updateStyle(), { path: CONFIG_PATH });
+    /** @type {Config?} */
+    #config = this.#configProvider.getConfig(this, () => this.#updateStyle());
 
     /** @type {AppButton?} */
     #appButton = null;
+
+    /** @type {SharedConfig} */
+    get #configProvider() {
+        NotificationBadge.#sharedConfig ??= new SharedConfig(ConfigFields, { path: CONFIG_PATH });
+        return NotificationBadge.#sharedConfig;
+    }
 
     /**
      * @param {AppButton} appButton
@@ -101,7 +110,7 @@ export class NotificationBadge extends Component {
      * @returns {Promise<void>}
      */
     async rerender() {
-        if (!this.isValid || !this.#badge || !this.#appButton) return;
+        if (!this.#badge || !this.#config || !this.#appButton || !this.isValid) return;
         const count = this.#appButton.notificationsCount;
         const oldVisible = this.#badge.visible;
         const visible = count > 0;
@@ -121,11 +130,13 @@ export class NotificationBadge extends Component {
     }
 
     #destroy() {
-        Context.signals.removeAll(this);
         this.#badge?.remove_all_transitions();
         this.#badge = null;
         this.#appButton = null;
         this.#events = null;
+        this.#config = null;
+        if (!NotificationBadge.#sharedConfig?.destroy(this)) return;
+        NotificationBadge.#sharedConfig = null;
     }
 
     /**
@@ -140,7 +151,7 @@ export class NotificationBadge extends Component {
     }
 
     #updateStyle() {
-        if (!this.isValid || !this.#badge?.visible) return;
+        if (!this.#config || !this.#badge?.visible || !this.isValid) return;
         const { color, fontColor, borderColor, margin, size, roundness, position } = this.#config;
         const scale = this.uiScale;
         const fontSize = Math.max(size - BORDER_SIZE * 2, FONT_SIZE_MIN) * scale;
@@ -169,6 +180,7 @@ export class NotificationBadge extends Component {
     }
 
     #updateAlignment() {
+        if (!this.#config) return;
         const { position } = this.#config;
         const x_align = position === BadgePosition.TopLeft ||
                         position === BadgePosition.BottomLeft ?
