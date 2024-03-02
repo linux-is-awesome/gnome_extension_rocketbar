@@ -181,8 +181,8 @@ export class AppButton extends RuntimeButton {
         const windows = this.#app.get_windows();
         if (windows.length === this.#windowsCount) return windows;
         const result = [];
-        for (let i = 0, l = windows.length; i < l; ++i) {
-            if (this.#windows.has(windows[i])) result.push(windows[i]);
+        for (const window of windows) {
+            if (this.#windows.has(window)) result.push(window);
         }
         return result;
     }
@@ -195,6 +195,11 @@ export class AppButton extends RuntimeButton {
     /** @type {Shell.App?} */
     get app() {
         return this.#app;
+    }
+
+    /** @type {Set<Meta.Window>?} */
+    get windows() {
+        return this.#windows;
     }
 
     /**
@@ -593,7 +598,8 @@ export class AppButton extends RuntimeButton {
      */
     #handleWindowState(window) {
         if (!this.isValid || !window || !this.#windows?.has(window)) return;
-        this.#appIcon?.animate(window.minimized ? AppIconAnimation.Deactivate : AppIconAnimation.Activate);
+        const animation = window.minimized ? AppIconAnimation.Deactivate : AppIconAnimation.Activate;
+        this.#appIcon?.animate(animation);
     }
 
     #handleWindows() {
@@ -609,7 +615,8 @@ export class AppButton extends RuntimeButton {
      */
     #handleUrgentWindow(window) {
         if (!window || !this.#windows?.has(window) || window.has_focus()) return;
-        if (this.#config?.demandsAttentionBehavior === DemandsAttentionBehavior.FocusActive && !this.#isActive) return;
+        const demandsAttentionBehavior = this.#config?.demandsAttentionBehavior;
+        if (demandsAttentionBehavior === DemandsAttentionBehavior.FocusActive && !this.#isActive) return;
         FocusedWindow(window);
     }
 
@@ -797,8 +804,7 @@ export class AppButton extends RuntimeButton {
     #getPrimaryWindow(windows) {
         if (windows.length === 1) return windows[0];
         const primaryMonitor = global.display.get_primary_monitor();
-        for (let i = 0, l = windows.length; i < l; ++i) {
-            const window = windows[i];
+        for (const window of windows) {
             if (window.get_monitor() === primaryMonitor) return window;
         }
         return windows[0];
