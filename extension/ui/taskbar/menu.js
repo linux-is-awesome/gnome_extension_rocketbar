@@ -503,15 +503,15 @@ export class Menu extends AppMenu {
      */
     _updateWindowsSection() {
         this.#isWindowsSectionUpdateQueued = false;
-        if (!this._app) return;
-        if (!this.#config.isolateWorkspaces) {
-            this.#moreActionsSection?.actor?.hide();
-            super._updateWindowsSection();
-            return;
+        if (!this._app || !this.#appButton) return;
+        const knownWindows = this.#appButton.windows;
+        const appWindows = this._app.get_windows();
+        const workspaceWindows = [];
+        if (knownWindows?.size && appWindows?.length) {
+            for (const window of appWindows) {
+                if (knownWindows.has(window)) workspaceWindows.push(window);
+            }
         }
-        const workspace = global.workspace_manager.get_active_workspace();
-        const appWindows = this._app.get_windows() ?? [];
-        const workspaceWindows = appWindows.filter(window => window.get_workspace() === workspace);
         const origin = this._app;
         this._app = {
             get_windows: () => workspaceWindows,
@@ -520,7 +520,9 @@ export class Menu extends AppMenu {
         super._updateWindowsSection();
         this._app = origin;
         if (!this.#moreActionsSection?.actor) return;
-        const canShowMoreActions = !!appWindows.length && !workspaceWindows.length;
+        const canShowMoreActions = !this.#config.isolateWorkspaces &&
+                                   !!appWindows.length &&
+                                   !workspaceWindows.length;
         this.#moreActionsSection.actor.visible = canShowMoreActions;
     }
 
