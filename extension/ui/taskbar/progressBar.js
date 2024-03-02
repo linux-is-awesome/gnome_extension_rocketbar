@@ -54,7 +54,7 @@ export class ProgressBar extends Component {
     /** @type {{[event: string]: () => *}?} */
     #events = {
         [ComponentEvent.Destroy]: () => this.#destroy(),
-        [ComponentEvent.Scale]: () => this.actor?.queue_repaint()
+        [ComponentEvent.Scale]: () => this.actor.queue_repaint()
     };
 
     /** @type {AppButton?} */
@@ -64,7 +64,7 @@ export class ProgressBar extends Component {
     #progress = PROGRESS_VALUE_MIN;
 
     /** @type {Config?} */
-    #config = this.#configProvider.getConfig(this, () => this.rerender());
+    #config = this.#configProvider.getConfig(this, () => this.actor.queue_repaint());
 
     /** @type {SharedConfig} */
     get #configProvider() {
