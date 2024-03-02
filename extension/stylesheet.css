@@ -22,9 +22,18 @@
 }
 .rocketbar__tooltip
 .dash-label {
-    border: 1px rgba(150, 150, 150, 0.1);
-    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
     text-align: left;
+    border-radius: 1em;
+    padding: 0;
+}
+.rocketbar__tooltip
+.rocketbar__tooltip_info-layout {
+    padding: 0.4em 0.75em;
+}
+.rocketbar__tooltip
+.rocketbar__tooltip_window-title {
+    font-weight: bold;
+    margin-bottom: 0.25em;
 }
 .rocketbar__tooltip
 .rocketbar__tooltip_counter {
