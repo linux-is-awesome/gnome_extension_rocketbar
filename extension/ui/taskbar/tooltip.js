@@ -17,6 +17,10 @@ const WINDOW_TITLE_STYLE_CLASS = 'rocketbar__tooltip_window-title';
 
 /** @enum {string} */
 const ConfigFields = {
+    showDelay: 'tooltip-show-delay',
+    hideDelay: 'tooltip-hide-delay',
+    shrinkWindowTitles: 'tooltip-shrink-window-titles',
+    enableWindowsPreview: 'tooltip-enable-windows-preview'
 };
 
 /** @type {{[prop: string]: *}} */
@@ -59,7 +63,7 @@ export class Tooltip extends BaseTooltip {
     };
 
     /** @type {Config?} */
-    #config = this.#configProvider.getConfig(this);
+    #config = this.#configProvider.getConfig(this, () => this.#handleConfig());
 
     /** @type {AppButton?} */
     #appButton = null;
@@ -94,6 +98,7 @@ export class Tooltip extends BaseTooltip {
         this.#layout.add_child(this.#appName);
         this.actor.add_child(this.#layout);
         this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
+        this.#handleConfig();
     }
 
     /**
@@ -117,16 +122,24 @@ export class Tooltip extends BaseTooltip {
         Tooltip.#sharedConfig = null;
     }
 
+    #handleConfig() {
+        if (!this.#config) return;
+        const { showDelay, hideDelay } = this.#config;
+        this.showDelay = showDelay;
+        this.hideDelay = hideDelay;
+    }
+
     #rerender() {
-        if (!this.#windowTitle || !this.#appButton) return;
+        if (!this.#windowTitle || !this.#appButton || !this.#config) return;
         let text = null;
+        const { shrinkWindowTitles } = this.#config;
         const windows = this.#appButton.windows;
         const appWindows = this.#appButton.app?.get_windows();
-        const appName = this.#appButton.app?.get_name();
+        const appName = shrinkWindowTitles ? this.#appButton.app?.get_name() : null;
         if (windows?.size && appWindows?.length) {
             for (const window of appWindows) {
                 if (!windows.has(window)) continue;
-                text = WindowTitleText(window.title, appName);
+                text = WindowTitleText(window.get_title(), appName);
                 break;
             }
         }

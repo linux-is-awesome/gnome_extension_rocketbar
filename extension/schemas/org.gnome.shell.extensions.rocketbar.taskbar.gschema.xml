@@ -200,12 +200,16 @@
             <summary>Notification Badge max count to display</summary>
         </key>
         <key type="i" name="tooltip-show-delay">
-            <default>500</default>
-            <summary>Tooltips show delay</summary>
+            <default>1000</default>
         </key>
-        <key type="i" name="tooltip-max-width">
-            <default>500</default>
-            <summary>Tooltips max width</summary>
+        <key type="i" name="tooltip-hide-delay">
+            <default>100</default>
+        </key>
+        <key type="b" name="tooltip-shrink-window-titles">
+            <default>true</default>
+        </key>
+        <key type="b" name="tooltip-enable-windows-preview">
+            <default>true</default>
         </key>
         <key type="s" name="progress-bar-position">
             <default>'bottom'</default>
