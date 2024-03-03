@@ -47,6 +47,12 @@ export class Tooltip extends Component {
     /** @type {Tooltip?} */
     static #shownTooltip = null;
 
+    /** @type {number} */
+    #showDelay = DEFAULT_SHOW_DELAY;
+
+    /** @type {number} */
+    #hideDelay = DEFAULT_HIDE_DELAY;
+
     /** @type {boolean} */
     #isShown = false;
 
@@ -122,6 +128,18 @@ export class Tooltip extends Component {
         this.#layout.set({ track_hover: value });
     }
 
+    /** @param {number} value */
+    set showDelay(value) {
+        if (typeof value !== 'number') return;
+        this.#showDelay = Math.max(value, DEFAULT_HIDE_DELAY);
+    }
+
+    /** @param {number} value */
+    set hideDelay(value) {
+        if (typeof value !== 'number') return;
+        this.#hideDelay = Math.max(value, DEFAULT_HIDE_DELAY);
+    }
+
     /**
      * @param {Component<St.Widget>} sourceActor
      * @param {string?} [name]
@@ -143,7 +161,8 @@ export class Tooltip extends Component {
         this.#isHidden = false;
         const shownTooltip = Tooltip.#shownTooltip;
         if (shownTooltip && shownTooltip !== this) shownTooltip.hide();
-        const delay = shownTooltip && shownTooltip.#isVisible ? DEFAULT_HIDE_DELAY : DEFAULT_SHOW_DELAY;
+        const delay = shownTooltip && shownTooltip.#isVisible ?
+                      Math.min(this.#showDelay, this.#hideDelay) : this.#showDelay;
         this.#fadeInJob = this.#job.reset(delay);
         this.#fadeInJob.queue(() => this.hasAllocation ? this.#fadeIn() : Context.layout.addOverlay(super.actor));
     }
@@ -157,7 +176,7 @@ export class Tooltip extends Component {
         if (this.#isHidden && preventRestore) return;
         this.#isHidden = true;
         this.#fadeInJob = null;
-        this.#job?.reset(DEFAULT_HIDE_DELAY);
+        this.#job?.reset(this.#hideDelay);
         if (!this.hasAllocation) return;
         this.#job?.queue(() => this.#fadeOut());
     }
@@ -196,7 +215,7 @@ export class Tooltip extends Component {
             return;
         }
         if (hasHover && this.#isVisible) return this.show();
-        if (!hasHover) this.#job?.reset(DEFAULT_HIDE_DELAY).queue(() => {
+        if (!hasHover) this.#job?.reset(this.#hideDelay).queue(() => {
             this.#isHidden = false;
             this.hide(true);
         });
