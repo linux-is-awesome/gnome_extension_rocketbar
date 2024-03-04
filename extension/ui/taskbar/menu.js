@@ -520,7 +520,7 @@ export class Menu extends AppMenu {
         super._updateWindowsSection();
         this._app = origin;
         if (!this.#moreActionsSection?.actor) return;
-        const canShowMoreActions = !this.#config.isolateWorkspaces &&
+        const canShowMoreActions = this.#config.isolateWorkspaces &&
                                    !!appWindows.length &&
                                    !workspaceWindows.length;
         this.#moreActionsSection.actor.visible = canShowMoreActions;
