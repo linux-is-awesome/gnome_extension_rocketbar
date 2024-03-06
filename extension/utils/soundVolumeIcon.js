@@ -8,10 +8,10 @@ const SoundOutputIcon = {
 
 /** @enum {string} */
 const SoundInputIcon = {
-    Muted: 'audio-volume-muted-symbolic',
-    Low: 'audio-volume-low-symbolic',
-    Medium: 'audio-volume-medium-symbolic',
-    High: 'audio-volume-high-symbolic'
+    Muted: 'microphone-sensitivity-muted-symbolic',
+    Low: 'microphone-sensitivity-low-symbolic',
+    Medium: 'microphone-sensitivity-medium-symbolic',
+    High: 'microphone-sensitivity-high-symbolic'
 };
 
 /** @enum {number} */
