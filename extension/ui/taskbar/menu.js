@@ -18,6 +18,7 @@ import { ComponentLocation } from '../base/component.js';
 import { Config } from '../../utils/config.js';
 import { FileSelector } from '../../utils/zenity.js';
 import { ActivateBehavior, DemandsAttentionBehavior, AppIconSize } from '../../utils/taskbar/appConfig.js';
+import { SoundVolumeIcon } from '../../utils/soundVolumeIcon.js';
 import { Labels } from '../../core/labels.js';
 
 const CONFIG_PATH = 'taskbar';
@@ -67,22 +68,16 @@ const ConfigFields = {
     showFavorites: 'taskbar-show-favorites'
 };
 
-/** @enum {string} */
-const SoundVolumeIcon = {
-    Output: 'audio-speakers-symbolic',
-    Input: 'audio-input-microphone-symbolic'
-};
-
 class SoundVolumeControlGroup extends CollapsibleGroup {
 
     /** @type {AppButton?} */
     #appButton = null;
 
     /** @type {SliderMenuItem?} */
-    #inputVolumeSlider = new SliderMenuItem(menuItem => this.#setVolume(menuItem), SoundVolumeIcon.Input);
+    #inputVolumeSlider = null;
 
     /** @type {SliderMenuItem?} */
-    #outputVolumeSlider = new SliderMenuItem(menuItem => this.#setVolume(menuItem), SoundVolumeIcon.Output);
+    #outputVolumeSlider = null;
 
     /** @type {boolean} */
     #isSyncing = false;
@@ -93,10 +88,12 @@ class SoundVolumeControlGroup extends CollapsibleGroup {
     constructor(appButton) {
         super(Labels.SoundVolumeControl);
         this.#appButton = appButton;
-        this.actor.connect(Event.Destroy, () => this.#destroy());
-        this.menu.addMenuItem(this.#inputVolumeSlider?.actor);
-        this.menu.addMenuItem(this.#outputVolumeSlider?.actor);
+        this.#inputVolumeSlider = new SliderMenuItem(menuItem => this.#setVolume(menuItem));
+        this.#outputVolumeSlider = new SliderMenuItem(menuItem => this.#setVolume(menuItem));
+        this.menu.addMenuItem(this.#inputVolumeSlider.actor);
+        this.menu.addMenuItem(this.#outputVolumeSlider.actor);
         this.menu.connect(Event.OpenStateChanged, () => this.#syncVolume());
+        this.actor.connect(Event.Destroy, () => this.#destroy());
     }
 
     update() {
@@ -118,20 +115,27 @@ class SoundVolumeControlGroup extends CollapsibleGroup {
         if (!soundVolumeControl) return;
         const slider = menuItem?.slider;
         if (!slider) return;
-        if (menuItem === this.#inputVolumeSlider) {
-            soundVolumeControl.inputVolume = slider.value;
-        } else if (menuItem === this.#outputVolumeSlider) {
-            soundVolumeControl.outputVolume = slider.value;
+        const sliderValue = slider.value;
+        const isInput = menuItem === this.#inputVolumeSlider;
+        if (isInput) {
+            soundVolumeControl.inputVolume = sliderValue;
+        } else {
+            soundVolumeControl.outputVolume = sliderValue;
         }
+        menuItem.icon = SoundVolumeIcon(sliderValue, isInput);
     }
 
     #syncVolume() {
         if (!this.isOpen || !this.#inputVolumeSlider || !this.#outputVolumeSlider) return;
         const soundVolumeControl = this.#appButton?.soundVolumeControl;
         if (!soundVolumeControl) return;
+        const inputVolume = soundVolumeControl.inputVolume;
+        const outputVolume = soundVolumeControl.outputVolume;
         this.#isSyncing = true;
-        this.#inputVolumeSlider.slider.value = soundVolumeControl.inputVolume;
-        this.#outputVolumeSlider.slider.value = soundVolumeControl.outputVolume;
+        this.#inputVolumeSlider.slider.value = inputVolume;
+        this.#outputVolumeSlider.slider.value = outputVolume;
+        this.#inputVolumeSlider.icon = SoundVolumeIcon(inputVolume, true);
+        this.#outputVolumeSlider.icon = SoundVolumeIcon(outputVolume);
         this.#isSyncing = false;
     }
 
