@@ -467,7 +467,7 @@ export class AppButton extends RuntimeButton {
         }
         if (enableIndicators && !this.#indicators) {
             this.#indicators = new Indicators(this).setParent(this.#layout);
-            this.#layout.set_child_below_sibling(this.#indicators.actor, null);
+            this.#layout.set_child_above_sibling(this.#indicators.actor, this.display);
             if (!isFadeInRequired) this.#indicators.rerender();
         } else if (!enableIndicators && this.#indicators) {
             this.#indicators.destroy();
