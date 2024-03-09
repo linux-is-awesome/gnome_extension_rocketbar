@@ -50,30 +50,33 @@ const MenuItemExpanderProps = {
 
 export class SliderMenuItem {
 
-    /** @type {PopupBaseMenuItem} */
-    #actor = new PopupBaseMenuItem(SliderMenuItemProps);
+    /** @type {PopupBaseMenuItem?} */
+    #actor = null;
 
-    /** @type {Slider} */
-    #slider = new Slider(0);
+    /** @type {Slider?} */
+    #slider = null;
 
-    /** @type {St.Icon} */
-    #icon = new St.Icon(SliderIconProps);
+    /** @type {St.Icon?} */
+    #icon = null;
 
-    /** @type {St.Label} */
-    #value = new St.Label(SliderValueProps);
+    /** @type {St.Label?} */
+    #value = null;
 
     /** @type {PopupBaseMenuItem} */
     get actor() {
+        if (!this.#actor) throw new Error(`${this.constructor.name} is invalid.`);
         return this.#actor;
     }
 
     /** @type {Slider} */
     get slider() {
+        if (!this.#slider) throw new Error(`${this.constructor.name} is invalid.`);
         return this.#slider;
     }
 
     /** @param {string?} value */
     set icon(value) {
+        if (!this.#icon) return;
         const iconName = typeof value === 'string' ? value : null;
         this.#icon.set_icon_name(iconName);
         this.#icon.visible = !!iconName;
@@ -81,6 +84,7 @@ export class SliderMenuItem {
 
     /** @param {number?} value */
     set value(value) {
+        if (!this.#value) return;
         const text = typeof value === 'number' ? Math.round(value).toString() : null;
         this.#value.set_text(text);
         this.#value.visible = !!text;
@@ -92,15 +96,27 @@ export class SliderMenuItem {
      * @param {number?} [value]
      */
     constructor(callback, icon, value) {
+        this.#actor = new PopupBaseMenuItem(SliderMenuItemProps);
+        this.#slider = new Slider(0);
+        this.#icon = new St.Icon(SliderIconProps);
+        this.#value = new St.Label(SliderValueProps);
         this.#actor.setOrnament(Ornament.HIDDEN);
         this.#actor.add_child(this.#icon);
         this.#actor.add_child(this.#slider);
         this.#actor.add_child(this.#value);
         this.icon = icon ?? null;
         this.value = value ?? null;
-        this.#actor.connect(Event.KeyPress, (_, event) => this.#slider.emit(Event.KeyPress, event));
+        this.#actor.connect(Event.Destroy, () => this.#destroy());
+        this.#actor.connect(Event.KeyPress, (_, event) => this.#slider?.emit(Event.KeyPress, event));
         if (typeof callback !== 'function') return;
         this.#slider.connect(Event.ValueChanged, () => callback(this));
+    }
+
+    #destroy() {
+        this.#actor = null;
+        this.#slider = null;
+        this.#icon = null;
+        this.#value = null;
     }
 
 }
