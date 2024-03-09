@@ -27,7 +27,7 @@
     padding: 0;
 }
 .rocketbar__tooltip
-.rocketbar__tooltip_info-layout {
+.rocketbar__tooltip_layout {
     padding: 0.4em 0.75em;
 }
 .rocketbar__tooltip
@@ -36,29 +36,18 @@
     margin-bottom: 0.25em;
 }
 .rocketbar__tooltip
-.rocketbar__tooltip_counter {
-    margin-left: 8px;
+.rocketbar__tooltip_app-status {
+    margin-top: 0.25em;
+    spacing: 0.5em;
 }
 .rocketbar__tooltip
-.rocketbar__tooltip_counter StIcon {
-    height: 15px;
-    width: 15px;
-    color: rgba(255, 255, 255, 0.85);
+.rocketbar__tooltip_app-status_item StIcon {
+    icon-size: 1em;
 }
 .rocketbar__tooltip
-.rocketbar__tooltip_counter StLabel {
-    margin-left: 5px;
-}
-.rocketbar__tooltip.has-window-preview
-.dash-label {
-    border-radius: 8px;
-    padding: 0;
-    overflow: hidden;
-}
-.rocketbar__tooltip.has-window-preview
-.rocketbar__tooltip_counter {
-    margin-top: 5px;
-    margin-bottom: 6px;
+.rocketbar__tooltip_app-status_item StLabel {
+    margin-left: 0.25em;
+    font-size: 0.85em;
 }
 
 /* window preview */
