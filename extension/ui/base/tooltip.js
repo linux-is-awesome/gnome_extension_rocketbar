@@ -289,7 +289,8 @@ export class Tooltip extends Component {
      */
     #changeState(state = false) {
         const reactive = !!this.#layout?.track_hover;
-        if (state && reactive) this.#job?.reset(Delay.Redraw).queue(() => this.#layout?.set({ reactive }));
+        const changeReactive = state && reactive && !this.#layout?.reactive;
+        if (changeReactive) this.#job?.reset(Delay.Redraw).queue(() => this.#layout?.set({ reactive }));
         if (this.#isShown === state) return;
         this.#isShown = state;
         if (!reactive) return;
