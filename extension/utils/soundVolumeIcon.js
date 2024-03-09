@@ -1,5 +1,13 @@
+/** @enum {number} */
+const SoundVolumeIconIndex = {
+    Muted: 0,
+    Low: 1,
+    Medium: 2,
+    High: 3
+};
+
 /** @enum {string} */
-const SoundOutputIcon = {
+export const SoundOutputIcon = {
     Muted: 'audio-volume-muted-symbolic',
     Low: 'audio-volume-low-symbolic',
     Medium: 'audio-volume-medium-symbolic',
@@ -7,19 +15,11 @@ const SoundOutputIcon = {
 };
 
 /** @enum {string} */
-const SoundInputIcon = {
+export const SoundInputIcon = {
     Muted: 'microphone-sensitivity-muted-symbolic',
     Low: 'microphone-sensitivity-low-symbolic',
     Medium: 'microphone-sensitivity-medium-symbolic',
     High: 'microphone-sensitivity-high-symbolic'
-};
-
-/** @enum {number} */
-const SoundVolumeIconIndex = {
-    Muted: 0,
-    Low: 1,
-    Medium: 2,
-    High: 3
 };
 
 /**
