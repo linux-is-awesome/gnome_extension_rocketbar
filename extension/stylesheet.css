@@ -41,12 +41,23 @@
     spacing: 0.5em;
 }
 .rocketbar__tooltip
+.rocketbar__tooltip_app-status_item {
+    border-radius: 1em;
+    padding: 0.25em 0.5em;
+    transition-duration: 0.2s;
+    background-color: rgba(128, 128, 128, 0.2);
+}
+.rocketbar__tooltip
+.rocketbar__tooltip_app-status_item:hover {
+    background-color: rgba(128, 128, 128, 0.3);
+}
+.rocketbar__tooltip
 .rocketbar__tooltip_app-status_item StIcon {
     icon-size: 1em;
 }
 .rocketbar__tooltip
 .rocketbar__tooltip_app-status_item StLabel {
-    margin-left: 0.25em;
+    margin-left: 0.3em;
     font-size: 0.85em;
 }
 
