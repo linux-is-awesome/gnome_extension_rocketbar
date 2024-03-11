@@ -12,7 +12,7 @@ import { Event, Delay } from '../../core/enums.js';
 import { Animation, AnimationType, AnimationDuration } from './animation.js';
 
 const STYLE_CLASS = 'rocketbar__tooltip';
-const LAYOUT_STYLE_CLASS = 'dash-label';
+const BODY_STYLE_CLASS = 'dash-label';
 const OFFSET_THEME_NODE = 'padding';
 const DEFAULT_SHOW_DELAY = Delay.Scheduled;
 const DEFAULT_HIDE_DELAY = Delay.Queue;
@@ -26,12 +26,12 @@ const DefaultProps = {
 };
 
 /** @type {{[prop: string]: *}} */
-const LayoutProps = {
+const BodyProps = {
     x_expand: true,
     y_expand: true,
     reactive: false,
     track_hover: false,
-    style_class: LAYOUT_STYLE_CLASS
+    style_class: BODY_STYLE_CLASS
 };
 
 /** @enum {string} */
@@ -63,7 +63,7 @@ export class Tooltip extends Component {
     #sourceActor = null;
 
     /** @type {St.Widget?} */
-    #layout = null;
+    #body = null;
 
     /** @type {[width: number, height: number]?} */
     #targetSize = null;
@@ -108,8 +108,8 @@ export class Tooltip extends Component {
      * @type {St.Widget}
      */
     get actor() {
-        if (!this.#layout) throw new Error(`${this.constructor.name} is not valid.`);
-        return this.#layout;
+        if (!this.#body) throw new Error(`${this.constructor.name} is not valid.`);
+        return this.#body;
     }
 
     /** @type {boolean} */
@@ -124,8 +124,8 @@ export class Tooltip extends Component {
 
     /** @param {boolean} value */
     set trackHover(value) {
-        if (typeof value !== 'boolean' || !this.#layout) return;
-        this.#layout.set({ track_hover: value });
+        if (typeof value !== 'boolean' || !this.#body) return;
+        this.#body.set({ track_hover: value });
     }
 
     /** @param {number} value */
@@ -146,14 +146,14 @@ export class Tooltip extends Component {
      */
     constructor(sourceActor, name = null) {
         super(new St.Widget({ name, ...DefaultProps, layout_manager: new Clutter.BinLayout() }));
-        this.#layout = new St.Widget({ ...LayoutProps, layout_manager: new Clutter.BinLayout() });
-        super.actor.add_child(this.#layout);
+        this.#body = new St.Widget({ ...BodyProps, layout_manager: new Clutter.BinLayout() });
+        super.actor.add_child(this.#body);
         this.#sourceActor = sourceActor;
         this.connect(Event.Destroy, () => this.#destroy());
         this.connect(Event.Mapped, () => this.#job?.reset(Delay.Redraw).queue(() => this.#fadeIn()));
-        this.#layout.connect(Event.Hover, () => this.#hover());
+        this.#body.connect(Event.Hover, () => this.#hover());
         if (typeof name !== 'string') return;
-        this.#layout.set({ name: `${name}-Layout` });
+        this.#body.set({ name: `${name}-Body` });
     }
 
     show() {
@@ -172,7 +172,7 @@ export class Tooltip extends Component {
      */
     hide(preventRestore = false) {
         if (!this.isValid) return;
-        if (preventRestore) this.#layout?.set({ reactive: false });
+        if (preventRestore) this.#body?.set_reactive(false);
         if (this.#isHidden && preventRestore) return;
         this.#isHidden = true;
         this.#fadeInJob = null;
@@ -201,14 +201,14 @@ export class Tooltip extends Component {
         this.#isHidden = true;
         this.#isShown = false;
         this.#fadeInJob = null;
-        this.#layout = null;
+        this.#body = null;
         this.#sourceActor = null;
         if (Tooltip.#shownTooltip !== this) return;
         Tooltip.#shownTooltip = null;
     }
 
     #hover() {
-        const hasHover = !!this.#layout?.hover;
+        const hasHover = !!this.#body?.hover;
         if (hasHover && this.#isShown) return this.show();
         if (hasHover && !this.#checkHoverBounds()) {
             if (!this.#isHidden) this.hide();
@@ -269,7 +269,7 @@ export class Tooltip extends Component {
 
     #remove() {
         if (!this.hasAllocation) return;
-        this.#layout?.set({ reactive: false });
+        this.#body?.set_reactive(false);
         const actor = super.actor;
         const defaultProps = { ...AnimationType.OpacityMin, ...AnimationType.TranslationReset };
         actor.remove_all_transitions();
@@ -288,12 +288,12 @@ export class Tooltip extends Component {
      * @param {boolean} [state]
      */
     #changeState(state = false) {
-        const reactive = !!this.#layout?.track_hover;
-        const changeReactive = state && reactive && !this.#layout?.reactive;
-        if (changeReactive) this.#job?.reset(Delay.Redraw).queue(() => this.#layout?.set({ reactive }));
+        const isReactive = !!this.#body?.track_hover;
+        const changeReactive = state && isReactive && !this.#body?.reactive;
+        if (changeReactive) this.#job?.reset(Delay.Redraw).queue(() => this.#body?.set_reactive(isReactive));
         if (this.#isShown === state) return;
         this.#isShown = state;
-        if (!reactive) return;
+        if (!isReactive) return;
         this.#sourceActor?.notifySelf(TooltipEvent.StateChanged);
     }
 
