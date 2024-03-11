@@ -88,11 +88,12 @@ class SoundVolumeControlGroup extends CollapsibleGroup {
     constructor(appButton) {
         super(Labels.SoundVolumeControl);
         this.#appButton = appButton;
-        this.#inputVolumeSlider = new SliderMenuItem(menuItem => this.#setVolume(menuItem));
-        this.#outputVolumeSlider = new SliderMenuItem(menuItem => this.#setVolume(menuItem));
-        this.menu.addMenuItem(this.#inputVolumeSlider.actor);
-        this.menu.addMenuItem(this.#outputVolumeSlider.actor);
-        this.menu.connect(Event.OpenStateChanged, () => this.#syncVolume());
+        this.#inputVolumeSlider = new SliderMenuItem((menuItem, event) => this.#setVolume(menuItem, event));
+        this.#outputVolumeSlider = new SliderMenuItem((menuItem, event) => this.#setVolume(menuItem, event));
+        const menu = this.menu;
+        menu.addMenuItem(this.#inputVolumeSlider.actor);
+        menu.addMenuItem(this.#outputVolumeSlider.actor);
+        menu.connect(Event.OpenStateChanged, () => this.#syncVolume());
         this.actor.connect(Event.Destroy, () => this.#destroy());
     }
 
@@ -108,9 +109,11 @@ class SoundVolumeControlGroup extends CollapsibleGroup {
 
     /**
      * @param {SliderMenuItem} menuItem
+     * @param {Clutter.Event} [event] click event
      */
-    #setVolume(menuItem) {
+    #setVolume(menuItem, event) {
         if (this.#isSyncing) return;
+        if (event) return this.#toggleMute(menuItem);
         const soundVolumeControl = this.#appButton?.soundVolumeControl;
         if (!soundVolumeControl) return;
         const slider = menuItem?.slider;
@@ -123,6 +126,19 @@ class SoundVolumeControlGroup extends CollapsibleGroup {
             soundVolumeControl.outputVolume = sliderValue;
         }
         menuItem.icon = SoundVolumeIcon(sliderValue, isInput);
+    }
+
+    /**
+     * @param {SliderMenuItem} menuItem
+     */
+    #toggleMute(menuItem) {
+        if (Context.jobs.hasClient(this)) return;
+        const soundVolumeControl = this.#appButton?.soundVolumeControl;
+        if (!soundVolumeControl) return;
+        const isInput = menuItem === this.#inputVolumeSlider;
+        if (isInput) soundVolumeControl.toggleInputMute();
+        else soundVolumeControl.toggleOutputMute();
+        Context.jobs.removeAll(this).new(this, Delay.Queue).destroy(() => this.#syncVolume());
     }
 
     #syncVolume() {
@@ -140,6 +156,7 @@ class SoundVolumeControlGroup extends CollapsibleGroup {
     }
 
     #destroy() {
+        Context.jobs.removeAll(this);
         this.#appButton = null;
         this.#inputVolumeSlider = null;
         this.#outputVolumeSlider = null;
