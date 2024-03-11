@@ -347,6 +347,11 @@ export class AppSoundVolumeControl {
         this.#setVolume(this.#outputStreams, volume);
     }
 
+    toggleInputMute() {
+        if (!this.hasInput) return;
+        this.#toggleMute(this.#inputStreams);
+    }
+
     toggleOutputMute() {
         if (!this.hasOutput) return;
         this.#toggleMute(this.#outputStreams);
@@ -415,7 +420,7 @@ export class AppSoundVolumeControl {
      * @returns {number}
      */
     #getVolume(streams) {
-        if (!streams?.size) return SOUND_STREAM_MIN_VOLUME;
+        if (!streams || this.#isMuted(streams)) return SOUND_STREAM_MIN_VOLUME;
         let result = SOUND_STREAM_MAX_VOLUME;
         for (const stream of streams) {
             result = Math.min(stream.volume, result);
@@ -437,16 +442,14 @@ export class AppSoundVolumeControl {
 
     /**
      * @param {Set<AppSoundStream>?} streams
-     * @returns {boolean}
      */
     #toggleMute(streams) {
-        if (!streams?.size) return false;
+        if (!streams?.size) return;
         const isMuted = this.#isMuted(streams);
         for (const stream of streams) {
             if (stream.isMuted !== isMuted) continue;
             stream.toggleMute();
         }
-        return !isMuted;
     }
 
     /**
