@@ -644,8 +644,9 @@ export class AppButton extends RuntimeButton {
     }
 
     #rerenderTooltip() {
-        if (!this.hasTooltip || !this.tooltip?.isShown) return;
-        this.tooltip.rerender();
+        const tooltip = this.hasTooltip ? this.tooltip : null;
+        if (tooltip instanceof Tooltip === false || !tooltip.isShown) return;
+        tooltip.rerender(true);
     }
 
     #hover() {

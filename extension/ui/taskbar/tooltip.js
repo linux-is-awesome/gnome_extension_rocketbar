@@ -7,11 +7,11 @@
 
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
+import { Component, ComponentEvent } from '../base/component.js';
 import { Tooltip as BaseTooltip } from '../base/tooltip.js';
-import { ComponentEvent } from '../base/component.js';
 import { SharedConfig } from '../../utils/config.js';
-import { Event } from '../../core/enums.js';
 import { SoundVolumeIcon, SoundInputIcon, SoundOutputIcon } from '../../utils/soundVolumeIcon.js';
+import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_Tooltip';
 const CONFIG_PATH = 'taskbar';
@@ -19,6 +19,14 @@ const LAYOUT_STYLE_CLASS = 'rocketbar__tooltip_layout';
 const WINDOW_TITLE_STYLE_CLASS = 'rocketbar__tooltip_window-title';
 const APP_STATUS_STYLE_CLASS = 'rocketbar__tooltip_app-status';
 const APP_STATUS_ITEM_STYLE_CLASS = 'rocketbar__tooltip_app-status_item';
+
+/** @enum {string} */
+const ConfigFields = {
+    showDelay: 'tooltip-show-delay',
+    hideDelay: 'tooltip-hide-delay',
+    shrinkWindowTitles: 'tooltip-shrink-window-titles',
+    enableWindowsPreview: 'tooltip-enable-windows-preview'
+};
 
 /** @enum {string} */
 const AppStatusItemIcon = {
@@ -29,31 +37,33 @@ const AppStatusItemIcon = {
     SoundInputVolume: SoundInputIcon.Muted
 };
 
-/** @enum {string} */
-const ConfigFields = {
-    showDelay: 'tooltip-show-delay',
-    hideDelay: 'tooltip-hide-delay',
-    shrinkWindowTitles: 'tooltip-shrink-window-titles',
-    enableWindowsPreview: 'tooltip-enable-windows-preview'
-};
-
 /** @type {{[prop: string]: *}} */
 const AppStatusProps = {
+    name: `${MODULE_NAME}-AppStatus`,
     style_class: APP_STATUS_STYLE_CLASS
 };
 
 /** @type {{[prop: string]: *}} */
 const AppStatusItemProps = {
-    style_class: APP_STATUS_ITEM_STYLE_CLASS
+    name: `${AppStatusProps.name}_Item`,
+    style_class: APP_STATUS_ITEM_STYLE_CLASS,
+    track_hover: true
+};
+
+/** @type {{[prop: string]: *}} */
+const AppStatusItemIconProps = {
+    name: `${AppStatusItemProps.name}-Icon`
 };
 
 /** @type {{[prop: string]: *}} */
 const AppStatusItemValueProps = {
+    name: `${AppStatusItemProps.name}-Value`,
     y_align: Clutter.ActorAlign.CENTER
 };
 
 /** @type {{[prop: string]: *}} */
 const LayoutProps = {
+    name: `${MODULE_NAME}-Layout`,
     style_class: LAYOUT_STYLE_CLASS,
     clip_to_allocation: true,
     vertical: true,
@@ -63,7 +73,13 @@ const LayoutProps = {
 
 /** @type {{[prop: string]: *}} */
 const WindowTitleProps = {
+    name: `${MODULE_NAME}-WindowTitle`,
     style_class: WINDOW_TITLE_STYLE_CLASS
+};
+
+/** @type {{[prop: string]: *}} */
+const AppNameProps = {
+    name: `${MODULE_NAME}-AppName`
 };
 
 /**
@@ -82,10 +98,15 @@ const WindowTitleText = (title, appName) => {
     return title;
 };
 
-class AppStatusItem {
+/**
+ * @augments Component<St.BoxLayout>
+ */
+class AppStatusItem extends Component {
 
-    /** @type {St.BoxLayout?} */
-    #actor = null;
+    /** @type {{[event: string]: () => *}?} */
+    #events = {
+        [ComponentEvent.Destroy]: () => this.#destroy()
+    };
 
     /** @type {St.Icon?} */
     #icon = null;
@@ -93,50 +114,69 @@ class AppStatusItem {
     /** @type {St.Label?} */
     #value = null;
 
-    /** @type {St.BoxLayout} */
-    get actor() {
-        if (!this.#actor) throw new Error(`${this.constructor.name} is invalid.`);
-        return this.#actor;
-    }
-
     /** @param {string?} value */
     set icon(value) {
         const iconName = typeof value === 'string' ? value : null;
         this.#icon?.set_icon_name(iconName);
     }
 
-    /** @param {number} value */
-    set value(value) {
-        if (typeof value !== 'number') return;
-        this.#value?.set_text(`${value}`);
-    }
-
     /**
-     * @param {string} [iconName]
+     * @param {string} iconName
+     * @param {boolean} [reactive]
      */
-    constructor(iconName) {
-        this.#actor = new St.BoxLayout(AppStatusItemProps);
-        this.#icon = new St.Icon();
+    constructor(iconName, reactive = false) {
+        const props = { ...AppStatusItemProps, reactive };
+        super(new St.BoxLayout(props));
+        this.#icon = new St.Icon(AppStatusItemIconProps);
         this.#value = new St.Label(AppStatusItemValueProps);
-        this.#actor.add_child(this.#icon);
-        this.#actor.add_child(this.#value);
-        this.#actor.connect(Event.Destroy, () => this.#destroy())
+        const actor = this.actor;
+        actor.add_child(this.#icon);
+        actor.add_child(this.#value);
+        actor.set_pivot_point(0.5, 0.5);
+        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         if (!iconName) return;
         this.icon = iconName;
     }
 
+    /**
+     * @param {number} value
+     * @param {boolean} allowAnimation
+     * @returns {boolean}
+     */
+    update(value, allowAnimation) {
+        const actor = this.actor;
+        const isVisible = actor.visible; 
+        const visible = typeof value === 'number' && value >= 0;
+        if (visible) this.#value?.set_text(`${value}`);
+        if (visible === isVisible) return visible;
+        if (!visible) {
+            actor.remove_all_transitions();
+            actor.hide();
+            return visible;
+        }
+        const animationParams = { ...AnimationType.OpacityMax, ...AnimationType.ScaleNormal };
+        const props = allowAnimation ? { ...AnimationType.OpacityMin, ...AnimationType.ScaleMin } : animationParams;
+        this.setProps({ ...props, visible });
+        if (allowAnimation) Animation(this, AnimationDuration.Slow, animationParams);
+        return visible;
+    }
+
     #destroy() {
-        this.#actor = null;
         this.#icon = null;
         this.#value = null;
     }
 
 }
 
-class AppStatus {
+/**
+ * @augments Component<St.BoxLayout>
+ */
+class AppStatus extends Component {
 
-    /** @type {St.BoxLayout?} */
-    #actor = new St.BoxLayout();
+    /** @type {{[event: string]: () => *}?} */
+    #events = {
+        [ComponentEvent.Destroy]: () => this.#destroy()
+    };
 
     /** @type {Map<string, AppStatusItem>?} */
     #items = null;
@@ -144,45 +184,45 @@ class AppStatus {
     /** @type {AppButton?} */
     #appButton = null;
 
-    /** @type {St.BoxLayout} */
-    get actor() {
-        if (!this.#actor) throw new Error(`${this.constructor.name} is invalid.`);
-        return this.#actor;
-    }
-
     /**
      * @param {AppButton} appButton
      */
     constructor(appButton) {
-        this.#actor = new St.BoxLayout(AppStatusProps);
-        this.#actor.connect(Event.Destroy, () => this.#destroy())
+        super(new St.BoxLayout(AppStatusProps));
+        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         this.#appButton = appButton;
         this.#items = new Map();
         const items = AppStatusItemIcon;
         for (const icon in items) {
             const iconName = items[icon];
-            const statusItem = new AppStatusItem(iconName);
+            const isReactive = iconName === AppStatusItemIcon.SoundInputVolume ||
+                               iconName === AppStatusItemIcon.SoundOutputVolume;
+            const statusItem = new AppStatusItem(iconName, isReactive);
             this.#items.set(iconName, statusItem);
-            this.#actor.add_child(statusItem.actor);
+            statusItem.setParent(this);
         }
     }
 
-    rerender() {
-        if (!this.#actor || !this.#items || !this.#appButton) return;
-        let isVisible = false;
+    /**
+     * @param {boolean} allowAnimation
+     */
+    rerender(allowAnimation) {
+        if (!this.#items || !this.#appButton || !this.isValid) return;
+        let visible = false;
         for (const [icon, item] of this.#items) {
-            if (!this.#updateStatus(icon, item)) continue;
-            isVisible = true;
+            if (!this.#updateStatus(icon, item, allowAnimation)) continue;
+            visible = true;
         }
-        this.#actor.visible = isVisible;
+        this.setProps({ visible });
     }
 
     /**
      * @param {AppStatusItemIcon} icon
      * @param {AppStatusItem} item
+     * @param {boolean} allowAnimation
      * @returns {boolean}
      */
-    #updateStatus(icon, item) {
+    #updateStatus(icon, item, allowAnimation) {
         let value = -1;
         switch (icon) {
             case AppStatusItemIcon.Windows:
@@ -216,18 +256,12 @@ class AppStatus {
                 break;
             }
         }
-        const isVisible = value >= 0;
-        item.actor.visible = isVisible;
-        if (isVisible) {
-            item.value = value;
-        }
-        return isVisible;
+        return item.update(value, allowAnimation);
     }
 
     #destroy() {
         this.#items?.clear();
         this.#items = null;
-        this.#actor = null;
         this.#appButton = null;
     }
 
@@ -277,7 +311,8 @@ export class Tooltip extends BaseTooltip {
         this.#appButton = appButton;
         this.#layout = new St.BoxLayout(LayoutProps);
         this.#windowTitle = new St.Label(WindowTitleProps);
-        this.#appName = new St.Label({ text: appButton.app?.get_name() });
+        this.#appName = new St.Label(AppNameProps);
+        this.#appName.set_text(appButton.app?.get_name() ?? null);
         this.#status = new AppStatus(appButton);
         this.#layout.add_child(this.#windowTitle);
         this.#layout.add_child(this.#appName);
@@ -289,12 +324,15 @@ export class Tooltip extends BaseTooltip {
 
     /**
      * @override
+     * @param {boolean} [hasChanges]
      */
-    rerender() {
+    rerender(hasChanges = false) {
         if (this.isHidden) return;
+        const isShown = this.isShown;
+        if (isShown && !hasChanges) return;
         this.lockSize();
         this.#updateWindowTitle();
-        this.#status?.rerender();
+        this.#status?.rerender(isShown);
         super.rerender();
     }
 
