@@ -91,7 +91,7 @@ export class SliderMenuItem {
     }
 
     /**
-     * @param {(menuItem: SliderMenuItem) => void} callback
+     * @param {(menuItem: SliderMenuItem, event?: Clutter.Event) => void} callback
      * @param {string?} [icon]
      * @param {number?} [value]
      */
@@ -109,7 +109,11 @@ export class SliderMenuItem {
         this.#actor.connect(Event.Destroy, () => this.#destroy());
         this.#actor.connect(Event.KeyPress, (_, event) => this.#slider?.emit(Event.KeyPress, event));
         if (typeof callback !== 'function') return;
+        const clickAction = new Clutter.ClickAction();
+        clickAction.connect(Event.Clicked, event => callback(this, event));
         this.#slider.connect(Event.ValueChanged, () => callback(this));
+        this.#icon.add_action(clickAction);
+        this.#icon.set_reactive(true);
     }
 
     #destroy() {
