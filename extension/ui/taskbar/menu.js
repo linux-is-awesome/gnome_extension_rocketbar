@@ -304,7 +304,7 @@ class CustomizeChildMenu extends ChildMenu {
         const defaultConfig = configProvider.defaultConfig;
         this.#activateBehavior(config[ConfigField.ActivateBehavior],
                               !configProvider.hasConfigOverride(app, ConfigField.ActivateBehavior))
-                              .forEach(item => (item.visible = config.isolateWorkspaces));
+                              .forEach(item => { item.visible = config.isolateWorkspaces; });
         this.#demandsAttentionBehavior(config[ConfigField.DemandsAttentionBehavior],
                                        !configProvider.hasConfigOverride(app, ConfigField.DemandsAttentionBehavior));
         this.#iconSize(config[ConfigField.IconSize], defaultConfig[ConfigField.IconSize],

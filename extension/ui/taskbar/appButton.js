@@ -268,8 +268,8 @@ export class AppButton extends RuntimeButton {
         if (!this.#isFadeInRequired) this.notifyParents(AppButtonEvent.Reaction);
         Context.signals.add(this, [
             Overview,
-            Event.OverviewShowing, () => (this.isActive = this.#isActive),
-            Event.OverviewHiding, () => (this.isActive = this.#isActive)
+            Event.OverviewShowing, () => { this.isActive = this.#isActive; },
+            Event.OverviewHiding, () => { this.isActive = this.#isActive; }
         ]);
     }
 

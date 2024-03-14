@@ -447,7 +447,7 @@ export class Button extends Component {
         this.#display.set(DisplayProps);
         this.actor.set_style_class_name(null);
         if (typeof name !== 'string') return;
-        this.#display.set({ name: `${name}-Display` });
+        this.#display.set_name(`${name}-Display`);
     }
 
     #hover() {

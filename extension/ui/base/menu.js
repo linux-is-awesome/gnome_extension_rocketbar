@@ -165,7 +165,11 @@ export class CollapsibleGroup {
      */
     constructor(title) {
         this.#actor = new PopupSubMenuMenuItem(title);
-        this.#actor.connect(Event.Destroy, () => (this.#actor = null));
+        this.#actor.connect(Event.Destroy, () => this.#destroy());
+    }
+
+    #destroy() {
+        this.#actor = null
     }
 
 }

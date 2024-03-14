@@ -153,7 +153,7 @@ export class Tooltip extends Component {
         this.connect(Event.Mapped, () => this.#job?.reset(Delay.Redraw).queue(() => this.#fadeIn()));
         this.#body.connect(Event.Hover, () => this.#hover());
         if (typeof name !== 'string') return;
-        this.#body.set({ name: `${name}-Body` });
+        this.#body.set_name(`${name}-Body`);
     }
 
     show() {
