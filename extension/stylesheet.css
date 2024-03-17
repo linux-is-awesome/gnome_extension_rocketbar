@@ -120,3 +120,9 @@
 .rocketbar__notification-counter:transition {
     transition-duration: 0.3s;
 }
+
+/* tweak: overview kill dash */
+
+.rocketbar__tweak_overview-kill-dash {
+    margin: 0;
+}

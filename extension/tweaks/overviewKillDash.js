@@ -1,27 +1,40 @@
 import Clutter from 'gi://Clutter';
+import St from 'gi://St';
 import { initializeDeferredWork as DeferredWork } from 'resource:///org/gnome/shell/ui/main.js';
 import { Overview } from '../core/shell.js';
+import { Event } from '../core/enums.js';
+import { Animation, AnimationDuration } from '../ui/base/animation.js';
 
-const MODULE_NAME = 'Rocketbar__Tweak_KillDash';
-const HIDDEN_DASH_HEIGHT = 40;
+const MODULE_NAME = 'Rocketbar__Tweak_OverviewKillDash';
+const STYLE_CLASS = 'rocketbar__tweak_overview-kill-dash';
+const SHOW_APPS_BUTTON_STYLE_CLASS = 'page-navigation-arrow';
+const ACTOR_ICON_NAME = 'carousel-arrow-next-symbolic';
+const ACTOR_ROTATION_DEFAULT = -90;
+const ACTOR_ROTATION_CHECKED = 90;
 
 /** @type {{[prop: string]: *}} */
 const ActorProps = {
-    name: MODULE_NAME
+    name: MODULE_NAME,
+    icon_name: ACTOR_ICON_NAME,
+    rotation_angle_z: ACTOR_ROTATION_DEFAULT
 };
 
 export default class {
 
-    /** @type {Clutter.Actor?} */
+    /** @type {St.Icon?} */
     #actor = null;
 
     /** @type {string?} */
     #dashWorkId = null;
 
+    /** @type {{[key: string]: *}?} */
+    #showAppsButtonDefaultProps = null;
+
     constructor() {
         const dash = Overview.dash;
         if (!dash) return;
-        this.#actor = new Clutter.Actor(ActorProps);
+        this.#actor = new St.Icon(ActorProps);
+        this.#actor.set_pivot_point(0.5, 0.5);
         this.#dashWorkId = dash._workId ?? null;
         dash._workId = DeferredWork(this.#actor, () => {
             dash._separator?.destroy();
@@ -30,11 +43,19 @@ export default class {
             if (!appIcons?.length) return;
             for (const appIcon of appIcons) appIcon.destroy();
         });
-        dash.add_child(this.#actor);
-        dash.showAppsButton?.hide();
         dash._background?.hide();
-        dash.set_size(-1, HIDDEN_DASH_HEIGHT);
-        dash.setMaxSize(-1, HIDDEN_DASH_HEIGHT);
+        dash._box?.hide();
+        dash.add_style_class_name(STYLE_CLASS);
+        const showAppsButton = dash.showAppsButton;
+        if (!showAppsButton) return;
+        let style_class = showAppsButton.get_style_class_name();
+        let child = showAppsButton.get_child();
+        this.#showAppsButtonDefaultProps = { style_class, child };
+        style_class = SHOW_APPS_BUTTON_STYLE_CLASS;
+        child = this.#actor;
+        showAppsButton.set({ style_class, child });
+        showAppsButton.connectObject(Event.Checked, () => this.#updateActorRotation(), this);
+        this.#updateActorRotation();
     }
 
     destroy() {
@@ -45,11 +66,27 @@ export default class {
         if (this.#dashWorkId) {
             dash._workId = this.#dashWorkId;
         }
+        if (this.#showAppsButtonDefaultProps) {
+            dash.showAppsButton?.set(this.#showAppsButtonDefaultProps);
+        }
         this.#dashWorkId = null;
-        dash.showAppsButton?.show();
+        this.#showAppsButtonDefaultProps = null;
+        dash.remove_style_class_name(STYLE_CLASS);
+        dash.showAppsButton?.disconnectObject(this);
+        dash._box?.show();
         dash._background?.show();
-        dash.set_size(-1, -1);
-        dash.setMaxSize(-1, -1);
+        dash._queueRedisplay();
+    }
+
+    #updateActorRotation() {
+        if (!this.#actor) return;
+        const showAppsButton = Overview.dash?.showAppsButton;
+        if (!showAppsButton) return;
+        const rotation_angle_z = showAppsButton.checked ? ACTOR_ROTATION_CHECKED : ACTOR_ROTATION_DEFAULT;
+        if (this.#actor.rotation_angle_z === rotation_angle_z) return;
+        const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
+        const animationParams = { rotation_angle_z, mode };
+        Animation(this.#actor, AnimationDuration.Slower, animationParams);
     }
 
 }

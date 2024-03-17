@@ -21,6 +21,7 @@ export const Event = {
     Scroll: 'scroll-event',
     Clicked: 'clicked',
     Pressed: 'notify::pressed',
+    Checked: 'notify::checked',
     Captured: 'captured_event',
     StartupComplete: 'startup-complete',
     AppStateChanged: 'app-state-changed',
