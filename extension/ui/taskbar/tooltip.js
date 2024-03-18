@@ -7,6 +7,7 @@
 
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
+import { Event } from '../../core/enums.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Tooltip as BaseTooltip } from '../base/tooltip.js';
 import { SharedConfig } from '../../utils/config.js';
@@ -19,6 +20,7 @@ const LAYOUT_STYLE_CLASS = 'rocketbar__tooltip_layout';
 const WINDOW_TITLE_STYLE_CLASS = 'rocketbar__tooltip_window-title';
 const APP_STATUS_STYLE_CLASS = 'rocketbar__tooltip_app-status';
 const APP_STATUS_ITEM_STYLE_CLASS = 'rocketbar__tooltip_app-status_item';
+const SOUND_VOLUME_CHANGE_STEP = 5;
 
 /** @enum {string} */
 const ConfigFields = {
@@ -121,10 +123,10 @@ class AppStatusItem extends Component {
     }
 
     /**
-     * @param {string} iconName
+     * @param {string} name
      * @param {boolean} [reactive]
      */
-    constructor(iconName, reactive = false) {
+    constructor(name, reactive = false) {
         const props = { ...AppStatusItemProps, reactive };
         super(new St.BoxLayout(props));
         this.#icon = new St.Icon(AppStatusItemIconProps);
@@ -134,16 +136,21 @@ class AppStatusItem extends Component {
         actor.add_child(this.#value);
         actor.set_pivot_point(0.5, 0.5);
         this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
-        if (!iconName) return;
-        this.icon = iconName;
+        if (!name) return;
+        this.icon = name;
+        if (!reactive) return;
+        const clickAction = new Clutter.ClickAction();
+        clickAction.connect(Event.Clicked, event => this.notifyParents(Event.Clicked, { name, event }));
+        this.actor.add_action(clickAction);
+        this.connect(Event.Scroll, (_, event) => this.notifyParents(Event.Scroll, { name, event }));
     }
 
     /**
      * @param {number} value
-     * @param {boolean} allowAnimation
+     * @param {boolean} [allowAnimation]
      * @returns {boolean}
      */
-    update(value, allowAnimation) {
+    update(value, allowAnimation = false) {
         const actor = this.actor;
         const isVisible = actor.visible; 
         const visible = typeof value === 'number' && value >= 0;
@@ -173,9 +180,11 @@ class AppStatusItem extends Component {
  */
 class AppStatus extends Component {
 
-    /** @type {{[event: string]: () => *}?} */
+    /** @type {{[event: string]: (...args) => *}?} */
     #events = {
-        [ComponentEvent.Destroy]: () => this.#destroy()
+        [ComponentEvent.Destroy]: () => this.#destroy(),
+        [Event.Clicked]: params => this.#handleItemClick(params),
+        [Event.Scroll]: params => this.#handleItemScroll(params)
     };
 
     /** @type {Map<string, AppStatusItem>?} */
@@ -189,7 +198,7 @@ class AppStatus extends Component {
      */
     constructor(appButton) {
         super(new St.BoxLayout(AppStatusProps));
-        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
+        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.(data?.params));
         this.#appButton = appButton;
         this.#items = new Map();
         const items = AppStatusItemIcon;
@@ -216,13 +225,68 @@ class AppStatus extends Component {
         this.setProps({ visible });
     }
 
+    #destroy() {
+        this.#items?.clear();
+        this.#items = null;
+        this.#appButton = null;
+    }
+
+    /**
+     * @param {{ name: string, event: Clutter.Event }} params
+     * @returns {boolean}
+     */
+    #handleItemClick(params) {
+        const { name } = params ?? {};
+        const item = this.#items?.get(name);
+        const soundVolumeControl = this.#appButton?.soundVolumeControl;
+        if (!item) return true;
+        switch (name) {
+            case AppStatusItemIcon.SoundInputVolume:
+            case AppStatusItemIcon.SoundOutputVolume:
+                const isInput = name === AppStatusItemIcon.SoundInputVolume;
+                const callback = () => this.#updateStatus(name, item);
+                if (isInput) soundVolumeControl?.toggleInputMute(callback);
+                else soundVolumeControl?.toggleOutputMute(callback);
+                break;
+        }
+        return true;
+    }
+
+    /**
+     * @param {{ name: string, event: Clutter.Event }} params
+     * @returns {boolean}
+     */
+    #handleItemScroll(params) {
+        const { name, event } = params ?? {};
+        if (!name || !event) return true;
+        const item = this.#items?.get(name);
+        const scrollDirection = event.get_scroll_direction();
+        if (!item || scrollDirection === Clutter.ScrollDirection.SMOOTH) return true;
+        switch (name) {
+            case AppStatusItemIcon.SoundInputVolume:
+            case AppStatusItemIcon.SoundOutputVolume:
+                const soundVolumeControl = this.#appButton?.soundVolumeControl;
+                const step = scrollDirection === Clutter.ScrollDirection.DOWN ||
+                             scrollDirection === Clutter.ScrollDirection.LEFT ?
+                             -SOUND_VOLUME_CHANGE_STEP : SOUND_VOLUME_CHANGE_STEP;
+                const isInput = name === AppStatusItemIcon.SoundInputVolume;
+                if (isInput) soundVolumeControl?.addInputVolume(step);
+                else soundVolumeControl?.addOutputVolume(step);
+                break;
+            default: return true;
+        }
+        this.#updateStatus(name, item);
+        return true;
+    }
+
     /**
      * @param {AppStatusItemIcon} icon
      * @param {AppStatusItem} item
-     * @param {boolean} allowAnimation
+     * @param {boolean} [allowAnimation]
      * @returns {boolean}
      */
-    #updateStatus(icon, item, allowAnimation) {
+    #updateStatus(icon, item, allowAnimation = false) {
+        if (!this.isValid) return false;
         let value = -1;
         switch (icon) {
             case AppStatusItemIcon.Windows:
@@ -257,12 +321,6 @@ class AppStatus extends Component {
             }
         }
         return item.update(value, allowAnimation);
-    }
-
-    #destroy() {
-        this.#items?.clear();
-        this.#items = null;
-        this.#appButton = null;
     }
 
 }
