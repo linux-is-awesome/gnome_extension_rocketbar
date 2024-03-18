@@ -132,13 +132,11 @@ class SoundVolumeControlGroup extends CollapsibleGroup {
      * @param {SliderMenuItem} menuItem
      */
     #toggleMute(menuItem) {
-        if (Context.jobs.hasClient(this)) return;
         const soundVolumeControl = this.#appButton?.soundVolumeControl;
         if (!soundVolumeControl) return;
         const isInput = menuItem === this.#inputVolumeSlider;
-        if (isInput) soundVolumeControl.toggleInputMute();
-        else soundVolumeControl.toggleOutputMute();
-        Context.jobs.removeAll(this).new(this, Delay.Queue).destroy(() => this.#syncVolume());
+        if (isInput) soundVolumeControl.toggleInputMute(() => this.#syncVolume());
+        else soundVolumeControl.toggleOutputMute(() => this.#syncVolume());
     }
 
     #syncVolume() {
@@ -156,7 +154,6 @@ class SoundVolumeControlGroup extends CollapsibleGroup {
     }
 
     #destroy() {
-        Context.jobs.removeAll(this);
         this.#appButton = null;
         this.#inputVolumeSlider = null;
         this.#outputVolumeSlider = null;

@@ -40,7 +40,7 @@ class SoundStream {
 
     /** @type {boolean} */
     get isMuted() {
-        return this.#stream?.is_muted ?? true;
+        return this.#stream?.get_is_muted() ?? true;
     }
 
     /** @type {boolean} */
@@ -303,6 +303,7 @@ export class AppSoundVolumeControl {
     }
 
     destroy() {
+        Context.jobs.removeAll(this);
         this.#app = null;
         this.#inputStreams = null;
         this.#outputStreams = null;
@@ -341,20 +342,35 @@ export class AppSoundVolumeControl {
     /**
      * @param {number} volume negative or positive integer -100..-1, 1..100
      */
+    addInputVolume(volume) {
+        if (!volume || !this.hasInput) return;
+        volume = this.#getVolume(this.#inputStreams) + (volume / 100);
+        this.#setVolume(this.#inputStreams, volume);
+    }
+
+    /**
+     * @param {number} volume negative or positive integer -100..-1, 1..100
+     */
     addOutputVolume(volume) {
         if (!volume || !this.hasOutput) return;
         volume = this.#getVolume(this.#outputStreams) + (volume / 100);
         this.#setVolume(this.#outputStreams, volume);
     }
 
-    toggleInputMute() {
+    /**
+     * @param {() => void} [callback] 
+     */
+    toggleInputMute(callback) {
         if (!this.hasInput) return;
-        this.#toggleMute(this.#inputStreams);
+        this.#toggleMute(this.#inputStreams, callback);
     }
 
-    toggleOutputMute() {
+    /**
+     * @param {() => void} [callback] 
+     */
+    toggleOutputMute(callback) {
         if (!this.hasOutput) return;
-        this.#toggleMute(this.#outputStreams);
+        this.#toggleMute(this.#outputStreams, callback);
     }
 
     /**
@@ -442,14 +458,17 @@ export class AppSoundVolumeControl {
 
     /**
      * @param {Set<AppSoundStream>?} streams
+     * @param {() => void} [callback]
      */
-    #toggleMute(streams) {
-        if (!streams?.size) return;
+    #toggleMute(streams, callback) {
+        if (!streams?.size || Context.jobs.hasClient(this)) return;
         const isMuted = this.#isMuted(streams);
         for (const stream of streams) {
             if (stream.isMuted !== isMuted) continue;
             stream.toggleMute();
         }
+        if (typeof callback !== 'function') return;
+        Context.jobs.removeAll(this).new(this, Delay.Queue).destroy(callback);
     }
 
     /**
