@@ -98,13 +98,17 @@ class SoundVolumeControlGroup extends CollapsibleGroup {
     }
 
     update() {
-        if (!this.actor || !this.#inputVolumeSlider || !this.#outputVolumeSlider) return;
+        const actor = this.actor;
+        if (!actor || !this.#inputVolumeSlider || !this.#outputVolumeSlider) return;
         const soundVolumeControl = this.#appButton?.soundVolumeControl;
-        if (!soundVolumeControl?.hasInput &&
-            !soundVolumeControl?.hasOutput) return this.actor.hide();
-        else this.actor.show();
+        if (!soundVolumeControl?.hasInput && !soundVolumeControl?.hasOutput) {
+            actor.menu?.close();
+            actor.hide();
+            return;
+        }
         this.#inputVolumeSlider.actor.visible = soundVolumeControl.hasInput;
         this.#outputVolumeSlider.actor.visible = soundVolumeControl.hasOutput;
+        actor.show();
     }
 
     /**
@@ -195,9 +199,10 @@ class CustomizeChildMenu extends ChildMenu {
 
     /**
      * @param {AppButton?} appButton
+     * @param {() => void} [callback]
      */
-    constructor(appButton) {
-        super(Labels.Customize);
+    constructor(appButton, callback) {
+        super(Labels.Customize, callback);
         this.#appButton = appButton;
         this.actor.connect(Event.Destroy, () => this.#destroy());
         this.menu.connect(Event.OpenStateChanged, () => this.#sync());
@@ -397,6 +402,9 @@ export class Menu extends AppMenu {
     /** @type {SoundVolumeControlGroup?} */
     #soundVolumeControlGroup = null;
 
+    /** @type {CustomizeChildMenu?} */
+    #customizeChildMenu = null;
+
     /** @type {PopupMenuSection?} */
     #moreActionsSection = null;
 
@@ -429,8 +437,9 @@ export class Menu extends AppMenu {
         this.close(false);
         this._app?.disconnectObject(this);
         this._app = null;
-        this.#appButton  = null;
+        this.#appButton = null;
         this.#soundVolumeControlGroup = null;
+        this.#customizeChildMenu = null;
         this.#moreActionsSection = null;
         super.destroy();
     }
@@ -440,17 +449,26 @@ export class Menu extends AppMenu {
      * @param {BoxPointer.PopupAnimation} animation
      */
     open(animation) {
-        this.actor._arrowSide = MenuPosition[this.#appButton?.location ?? ComponentLocation.Top];
+        if (!this.#appButton) return;
+        this.actor._arrowSide = MenuPosition[this.#appButton.location];
         if (this.#isWindowsSectionUpdateQueued ||
             this.#config.isolateWorkspaces) this._updateWindowsSection();
-        this.#soundVolumeControlGroup?.update();
+        this.rerender();
         super.open(animation);
+    }
+
+    rerender() {
+        if (this.#customizeChildMenu?.isOpen) return;
+        this.#soundVolumeControlGroup?.update();
     }
 
     #createMenuItems() {
         this.#soundVolumeControlGroup = new SoundVolumeControlGroup(this.#appButton);
         this.addMenuItem(this.#soundVolumeControlGroup.actor);
-        if (this.#hasValidAppId) this.addMenuItem(new CustomizeChildMenu(this.#appButton));
+        if (this.#hasValidAppId) {
+            this.#customizeChildMenu = new CustomizeChildMenu(this.#appButton, () => this.rerender());
+            this.addMenuItem(this.#customizeChildMenu);
+        }
         this.addMenuItem(new PopupSeparatorMenuItem());
         this.moveMenuItem(this._quitItem, this.numMenuItems);
         if (this.#hasValidAppId) this.#createMoreActionsSection();
