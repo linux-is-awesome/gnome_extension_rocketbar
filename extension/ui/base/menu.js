@@ -191,6 +191,9 @@ export class ChildMenu extends PopupMenuSection {
     /** @type {PopupMenuSection?} */
     #menu = null;
 
+    /** @type {(() => void)?} */
+    #toggleCallback = null;
+
     /** @type {PopupMenuSection} */
     get menu() {
         if (!this.#menu) throw new Error(`${this.constructor.name} is invalid.`);
@@ -205,8 +208,9 @@ export class ChildMenu extends PopupMenuSection {
 
     /**
      * @param {string} title
+     * @param {() => void} [toggleCallback]
      */
-    constructor(title) {
+    constructor(title, toggleCallback) {
         super();
         this.isOpen = false;
         this.#menu = new PopupMenuSection();
@@ -220,6 +224,8 @@ export class ChildMenu extends PopupMenuSection {
         this.#titleMenuItem.add_child(this.#arrowRight);
         this.addMenuItem(this.#menu);
         this.connect(Event.MenuClosed, () => this.#hide());
+        if (typeof toggleCallback !== 'function') return;
+        this.#toggleCallback = toggleCallback;
     }
 
     /**
@@ -233,6 +239,7 @@ export class ChildMenu extends PopupMenuSection {
         this.#hiddenMenuItems = null;
         this.#arrowLeft = null;
         this.#arrowRight = null;
+        this.#toggleCallback = null;
     }
 
     /**
@@ -377,7 +384,8 @@ export class ChildMenu extends PopupMenuSection {
         this.#titleMenuItem?.grab_key_focus();
         parentActor.translation_y = location === St.Side.BOTTOM ? translation : -translation;
         const animationParams = { ...AnimationType.OpacityMax, ...AnimationType.TranslationReset, mode };
-        Animation(parentActor, AnimationDuration.Fast, animationParams);
+        const isShown = await Animation(parentActor, AnimationDuration.Fast, animationParams);
+        if (isShown && this.#toggleCallback) this.#toggleCallback();
     }
 
     #show() {
