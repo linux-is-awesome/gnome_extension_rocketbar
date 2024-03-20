@@ -460,7 +460,7 @@ export class AppButton extends RuntimeButton {
                 enableMenus } = this.#config;
         const isFadeInRequired = this.#isFadeInRequired;
         if (enableSoundControl && !this.#soundVolumeControl) {
-            this.#soundVolumeControl = new AppSoundVolumeControl(this.#app);
+            this.#soundVolumeControl = new AppSoundVolumeControl(this.#app, () => this.#handleSoundStreams());
         } else if (!enableSoundControl && this.#soundVolumeControl) {
             this.#soundVolumeControl.destroy();
             this.#soundVolumeControl = null;
@@ -643,10 +643,21 @@ export class AppButton extends RuntimeButton {
         this.#rerenderTooltip();
     }
 
+    #handleSoundStreams() {
+        this.#rerenderTooltip();
+        this.#rerenderMenu();
+    }
+
     #rerenderTooltip() {
         const tooltip = this.hasTooltip ? this.tooltip : null;
         if (tooltip instanceof Tooltip === false || !tooltip.isShown) return;
         tooltip.rerender(true);
+    }
+
+    #rerenderMenu() {
+        const menu = this.hasMenu ? this.menu : null;
+        if (menu instanceof Menu === false || !menu.isOpen) return;
+        menu.rerender();
     }
 
     #hover() {
