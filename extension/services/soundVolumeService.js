@@ -125,14 +125,19 @@ class AppSoundStream extends SoundStream {
 
 class AppSoundVolumeService {
 
-    /** @type {Set<AppSoundVolumeControl>?} */
-    #controls = new Set();
+    /** @type {Map<AppSoundVolumeControl, () => void>?} */
+    #controls = new Map();
 
     /** @type {Map<number, AppSoundStream>?} */
     #streams = new Map();
 
     /** @type {Job?} */
     #updateJob = Context.jobs.new(this, Delay.Background);
+
+    /** @type {IterableIterator<AppSoundStream>?} */
+    get streams() {
+        return this.#streams?.size ? this.#streams.values() : null;
+    }
 
     constructor() {
         const mixer = MixerControl();
@@ -149,20 +154,26 @@ class AppSoundVolumeService {
      */
     destroy() {
         if (this.#controls?.size) return false;
-        this.#updateJob?.destroy();
         Context.signals.removeAll(this);
-        this.#controls = null;
-        this.#streams = null;
+        this.#updateJob?.destroy();
+        if (this.#streams?.size) {
+            const streams = this.#streams.values();
+            for (const stream of streams) stream.destroy();
+            this.#streams?.clear();
+        }
         this.#updateJob = null;
+        this.#streams = null;
+        this.#controls = null;
         return true;
     }
 
     /**
      * @param {AppSoundVolumeControl} control
+     * @param {() => void} callback
      */
-    addControl(control) {
+    addControl(control, callback) {
         if (!this.#controls || this.#controls.has(control)) return;
-        this.#controls.add(control);
+        this.#controls.set(control, callback);
         this.#queueUpdate();
     }
 
@@ -184,10 +195,11 @@ class AppSoundVolumeService {
     #addStreams(mixer) {
         const mixerStreams = mixer.get_streams();
         if (!mixerStreams?.length) return;
-        for (let i = 0, l = mixerStreams.length; i < l; ++i) {
-            const appStream = new AppSoundStream(mixerStreams[i]);
-            if (!appStream.isValid || !appStream.id) continue;
-            this.#streams?.set(appStream.id, appStream);
+        for (const mixerStream of mixerStreams) {
+            const appStream = new AppSoundStream(mixerStream);
+            const id = appStream.id;
+            if (!id || !appStream.isValid) continue;
+            this.#streams?.set(id, appStream);
         }
     }
 
@@ -200,8 +212,9 @@ class AppSoundVolumeService {
         const mixerStream = mixer?.lookup_stream_id(streamId);
         if (!mixerStream) return;
         const appStream = new AppSoundStream(mixerStream);
-        if (!appStream.isValid || !appStream.id) return;
-        this.#streams.set(appStream.id, appStream);
+        const id = appStream.id;
+        if (!id || !appStream.isValid) return;
+        this.#streams.set(id, appStream);
         this.#queueUpdate();
     }
 
@@ -210,7 +223,9 @@ class AppSoundVolumeService {
      */
     #removeStream(streamId) {
         if (!this.#streams?.has(streamId)) return;
-        this.#streams.get(streamId)?.destroy();
+        const stream = this.#streams.get(streamId);
+        stream?.destroy();
+        this.#streams.delete(streamId);
         this.#queueUpdate();
     }
 
@@ -220,19 +235,9 @@ class AppSoundVolumeService {
     }
 
     #update() {
-        if (!this.#streams?.size || !this.#controls?.size) return;
-        const validStreams = new Map();
-        for (const control of this.#controls) {
-            for (const [id, stream] of this.#streams) {
-                if (!stream.isValid) {
-                    control.removeStream(stream);
-                    continue;
-                }
-                control.addStream(stream);
-                validStreams.set(id, stream);
-            }
-        }
-        this.#streams = validStreams;
+        if (!this.#streams || !this.#controls?.size) return;
+        const callbacks = this.#controls.values();
+        for (const callback of callbacks) callback();
     }
 
 }
@@ -259,6 +264,9 @@ export class AppSoundVolumeControl {
 
     /** @type {Set<AppSoundStream>?} */
     #outputStreams = new Set();
+
+    /** @type {(() => void)?} */
+    #callback = null;
 
     /** @type {boolean} */
     get hasInput() {
@@ -292,21 +300,26 @@ export class AppSoundVolumeControl {
 
     /**
      * @param {Shell.App} app
+     * @param {() => void} [callback]
      */
-    constructor(app) {
+    constructor(app, callback) {
         if (app instanceof Shell.App === false) return;
         this.#app = app;
         this.#appId = app.get_id();
         this.#appName = app.get_name().toLowerCase();
+        this.#callback = typeof callback === 'function' ? callback : null;
         AppSoundVolumeControl.#service ??= new AppSoundVolumeService();
-        AppSoundVolumeControl.#service.addControl(this);
+        AppSoundVolumeControl.#service.addControl(this, () => this.#update());
     }
 
     destroy() {
         Context.jobs.removeAll(this);
+        this.#inputStreams?.clear();
+        this.#outputStreams?.clear();
         this.#app = null;
         this.#inputStreams = null;
         this.#outputStreams = null;
+        this.#callback = null;
         if (!AppSoundVolumeControl.#service) return;
         AppSoundVolumeControl.#service.removeControl(this);
         if (!AppSoundVolumeControl.#service.destroy()) return;
@@ -318,25 +331,6 @@ export class AppSoundVolumeControl {
         this.#setParentAppName();
         if (!this.#parentAppName || this.#parentAppName === this.#appName) return;
         AppSoundVolumeControl.#service?.update();
-    }
-
-    /**
-     * @param {AppSoundStream} stream
-     */
-    addStream(stream) {
-        if (!this.#canAcceptStream(stream)) return;
-        const isInputStream = stream.isInput;
-        if (isInputStream && !this.#inputStreams?.has(stream)) this.#inputStreams?.add(stream);
-        else if (!isInputStream && !this.#outputStreams?.has(stream)) this.#outputStreams?.add(stream);
-    }
-
-    /**
-     * @param {AppSoundStream} stream
-     */
-    removeStream(stream) {
-        if (!stream) return;
-        if (this.#inputStreams?.has(stream)) this.#inputStreams.delete(stream);
-        else if (this.#outputStreams?.has(stream)) this.#outputStreams.delete(stream);
     }
 
     /**
@@ -373,10 +367,40 @@ export class AppSoundVolumeControl {
         this.#toggleMute(this.#outputStreams, callback);
     }
 
+    #update() {
+        if (!this.#inputStreams || !this.#outputStreams) return;
+        const streams = AppSoundVolumeControl.#service?.streams;
+        if (!streams) {
+            const hasStreams = !!this.#inputStreams.size || !!this.#outputStreams.size;
+            if (!hasStreams) return;
+            this.#inputStreams.clear();
+            this.#outputStreams.clear();
+            if (this.#callback) this.#callback();
+            return;
+        }
+        let hasChanges = false;
+        const inputStreams = new Set();
+        const outputStreams = new Set();
+        for (const stream of streams) {
+            const oldStreams = stream.isInput ? this.#inputStreams : this.#outputStreams;
+            const newStreams = stream.isInput ? inputStreams : outputStreams;
+            if (oldStreams.has(stream)) {
+                newStreams.add(stream);
+                continue;
+            }
+            if (!this.#canAcceptStream(stream)) continue;
+            newStreams.add(stream);
+            hasChanges = true;
+        }
+        this.#inputStreams = inputStreams;
+        this.#outputStreams = outputStreams;
+        if (hasChanges && this.#callback) this.#callback();
+    }
+
     /**
-     * Note: Sometimes name of the app stream is not equal to the name of the app but it contains name of the app.
-     *       For example: Google Chrome create input streams called 'Google Chrome input'.
-     *       So using String.includes() function to identify app streams.
+     * Note: Very often name of the stream is not equal to the name of the app, but it contains the name of the app.
+     *       For example: Google Chrome creates input streams called `Google Chrome input`.
+     *       So using includes() function we can identify app streams.
      *
      * @param {AppSoundStream} stream
      * @returns {boolean}
@@ -411,14 +435,13 @@ export class AppSoundVolumeControl {
      */
     #getParentAppName(windows) {
         const appSystem = Shell.AppSystem.get_default();
-        for (let i = 0, l = windows.length; i < l; ++i) {
-            const wmClass = windows[i].wm_class;
+        for (const window of windows) {
+            const wmClass = window.wm_class;
             if (!wmClass) continue;
             /** @type {string[][]} */
             const searchResults = Shell.AppSystem.search(wmClass);
             if (!searchResults?.length) continue;
-            for (let ii = 0, ll = searchResults.length; ii < ll; ++ii) {
-                const searchResult = searchResults[ii];
+            for (const searchResult of searchResults) {
                 if (!searchResult?.length) continue;
                 for (const appId of searchResult) {
                     if (this.#appId && appId === this.#appId) continue;
