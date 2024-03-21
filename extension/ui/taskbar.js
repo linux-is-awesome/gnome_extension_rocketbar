@@ -14,7 +14,7 @@ import Mtk from 'gi://Mtk';
 import { DragMotionResult } from 'resource:///org/gnome/shell/ui/dnd.js';
 import Context from '../core/context.js';
 import { MainPanel } from '../core/shell.js';
-import { TaskbarClient } from '../services/taskbarService.js';
+import { TaskbarClient } from '../services/taskbar.js';
 import { ScrollView } from './base/scrollView.js';
 import { Separator } from './taskbar/separator.js';
 import { AppButton, AppButtonEvent } from './taskbar/appButton.js';

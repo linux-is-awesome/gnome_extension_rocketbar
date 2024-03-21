@@ -127,7 +127,7 @@ class LauncherApiService {
 
 }
 
-export class LauncherApiProxy {
+export default class LauncherApiProxy {
 
     /** @type {LauncherApiService?} */
     #service = null;

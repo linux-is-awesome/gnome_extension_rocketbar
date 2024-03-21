@@ -10,7 +10,7 @@ import Clutter from 'gi://Clutter';
 import Context from '../core/context.js';
 import { MainPanel } from '../core/shell.js';
 import { Component, ComponentEvent } from './base/component.js';
-import { NotificationHandler } from '../services/notificationService.js';
+import { NotificationHandler } from '../services/notifications.js';
 import { Config } from '../utils/config.js';
 import { Event, Property } from '../core/enums.js';
 import { Animation, AnimationDuration, AnimationType } from './base/animation.js';

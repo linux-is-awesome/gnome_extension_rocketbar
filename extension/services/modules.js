@@ -1,15 +1,15 @@
-import Context from '../context.js';
-import { Config } from '../../utils/config.js';
+import Context from '../core/context.js';
+import { Config } from '../utils/config.js';
 
 const MODULE_INSTANCE_PLACEHOLDER = true;
 
 /** @type {{[field: string]: string}} */
 const Modules = {
-    TweakOverviewKillDash: '../../tweaks/overviewKillDash.js',
-    TweakOverviewClicks: '../../tweaks/overviewClicks.js',
-    TweakPopupsPreventFocus: '../../tweaks/popupsPreventFocus.js',
-    Taskbar: '../../ui/taskbar.js',
-    NotificationCounter: '../../ui/notificationCounter.js'
+    TweakOverviewKillDash: '../tweaks/overviewKillDash.js',
+    TweakOverviewClicks: '../tweaks/overviewClicks.js',
+    TweakPopupsPreventFocus: '../tweaks/popupsPreventFocus.js',
+    Taskbar: '../ui/taskbar.js',
+    NotificationCounter: '../ui/notificationCounter.js'
 };
 
 /** @type {{[field: string]: string}} */
@@ -21,7 +21,7 @@ const ConfigFields = {
     NotificationCounter: 'notification-counter-enabled'
 };
 
-export default class ModulesManager {
+export default class ModulesService {
 
     /** @type {Map<string, *>?} */
     #modules = new Map();
