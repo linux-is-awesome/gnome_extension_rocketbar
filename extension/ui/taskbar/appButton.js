@@ -774,8 +774,10 @@ export class AppButton extends RuntimeButton {
         const sortedWindows = this.#sortedWindows;
         if (!sortedWindows?.length) return;
         const timestamp = global.get_current_time();
-        if (!closeAll) sortedWindows[0].delete(timestamp);
-        else for (const window of sortedWindows) window.delete(timestamp);
+        if (!closeAll) return sortedWindows[0].delete(timestamp);
+        for (let i = 0, l = sortedWindows.length; i < l; ++i) {
+            sortedWindows[i].delete(timestamp + i);
+        }
     }
 
     #moveWindows() {
