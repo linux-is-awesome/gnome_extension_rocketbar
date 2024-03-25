@@ -218,7 +218,8 @@ export default class LauncherApiProxy {
                 break;
         }
         if (!clients?.size) return;
-        for (const [_, callback] of clients) callback();
+        const callbacks = clients.values();
+        for (const callback of callbacks) callback();
     }
 
 }

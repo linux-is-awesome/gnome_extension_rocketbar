@@ -139,9 +139,9 @@ export default class Jobs {
 
     destroy() {
         if (!this.#jobs) return;
-        const jobs = this.#jobs;
+        const jobs = this.#jobs.values();
         this.#jobs = null;
-        for (const [_, clientJobs] of jobs) {
+        for (const clientJobs of jobs) {
             for (const job of clientJobs) job.destroy();
         }
     }
