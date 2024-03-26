@@ -239,12 +239,8 @@ export class Component {
         const oldParent = this.parentActor;
         const isParentChanged = oldParent !== parent;
         if (isParentChanged) {
-            oldParent?.remove_actor(this.#actor);
+            oldParent?.remove_child(this.#actor);
             this.#setMappedHandler();
-        }
-        if (parent instanceof St.ScrollView) {
-            if (isParentChanged) parent.add_actor(this.#actor);
-            return this;
         }
         if (parent instanceof St.Bin) {
             if (isParentChanged) parent.set_child(this.#actor);

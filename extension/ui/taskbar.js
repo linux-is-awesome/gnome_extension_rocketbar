@@ -383,7 +383,7 @@ export default class Taskbar extends ScrollView {
 
     constructor() {
         super(MODULE_NAME);
-        super.actor.add_actor(this.actor);
+        super.actor.add_child(this.actor);
         this.dropEvents = true;
         this.#separator?.connect(Event.Hover, () => this.#handleChildReaction(this.#separator));
         this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.(data));
