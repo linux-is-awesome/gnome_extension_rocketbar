@@ -151,7 +151,7 @@ export class AppIcon extends Component {
             case AppIconAnimation.Activate:
             case AppIconAnimation.Deactivate:
                 if (!Context.systemSettings.enableAnimations) return true;
-                const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
+                const mode = Clutter.AnimationMode.EASE_OUT_SINE;
                 const location = this.location === ComponentLocation.Top ? 1 : -1;
                 const translation_y = animation.translation_y * location * this.uiScale * this.globalScale;
                 if (!await Animation(this, duration, { translation_y, mode })) return false;
