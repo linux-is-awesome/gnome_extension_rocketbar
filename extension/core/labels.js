@@ -20,5 +20,14 @@ export const Labels = {
     FocusAll: _('Always Set Focus'),
     SelectIcon: _('Select Icon'),
     Icon: _('Icon'),
-    NotSelected: _('Not Selected')
+    AppDefault: _('Application Default'),
+    CurrentWorkspace: _('Current Workspace'),
+    OtherWorkspaces: _('Other Workspaces'),
+    CloseAll: _('Close All'),
+    CurrentMonitor: _('This Monitor'),
+    MonitorLeft: _('Monitor Left'),
+    MonitorRight: _('Monitor Right'),
+    MonitorAbove: _('Monitor Above'),
+    MonitorBelow: _('Monitor Below'),
+    MoveTo: _('Move to')
 };

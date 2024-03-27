@@ -549,6 +549,7 @@ export class AppButton extends RuntimeButton {
         this.#abortDestroy();
         if (this.#isFadeInRequired) return this.#queueFadeIn();
         this.#indicators?.rerender();
+        this.#rerenderMenu();
     }
 
     #abortDestroy() {

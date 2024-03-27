@@ -43,7 +43,8 @@ export const Event = {
     MenuClosed: 'menu-closed',
     MoveX: 'notify::x',
     MoveY: 'notify::y',
-    AdjustmentChanged: 'changed'
+    AdjustmentChanged: 'changed',
+    MonitorsChanged: 'monitors-changed'
 };
 
 /**

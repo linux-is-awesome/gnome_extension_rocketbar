@@ -1,13 +1,16 @@
 /**
  * JSDoc types
  *
- * @typedef {import('./appButton.js').AppButton} AppButton
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupBaseMenuItem} PopupBaseMenuItem
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupMenuItem} PopupMenuItem
+ * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupSeparatorMenuItem} PopupSeparatorMenuItem
  * @typedef {import('resource:///org/gnome/shell/ui/boxpointer.js').PopupAnimation} BoxPointer.PopupAnimation
+ * @typedef {import('./appButton.js').AppButton} AppButton
+ * @typedef {import('../../utils/config.js').Config} Config
  */
 
 import Clutter from 'gi://Clutter';
+import Meta from 'gi://Meta';
 import St from 'gi://St';
 import { AppMenu } from 'resource:///org/gnome/shell/ui/appMenu.js';
 import { PopupMenuSection, PopupSeparatorMenuItem } from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -15,7 +18,7 @@ import Context from '../../core/context.js';
 import { SliderMenuItem, CollapsibleGroup, ChildMenu } from '../base/menu.js';
 import { Delay, Event } from '../../core/enums.js';
 import { ComponentLocation } from '../base/component.js';
-import { Config } from '../../utils/config.js';
+import { SharedConfig } from '../../utils/config.js';
 import { FileSelector } from '../../utils/zenity.js';
 import { ActivateBehavior, DemandsAttentionBehavior, AppIconSize } from '../../utils/taskbar/appConfig.js';
 import { SoundVolumeIcon } from '../../utils/soundVolumeIcon.js';
@@ -49,8 +52,18 @@ const ActivateBehaviorRadioGroup = {
 
 /** @type {{[value: string]: string}} */
 const DemandsAttentionBehaviorRadioGroup = {
+    [DemandsAttentionBehavior.Default]: Labels.AppDefault,
     [DemandsAttentionBehavior.FocusActive]: Labels.FocusActive,
     [DemandsAttentionBehavior.FocusAll]: Labels.FocusAll
+};
+
+/** @enum {number} */
+const MonitorDirection = {
+    CurrentMonitor: -1,
+    MonitorLeft: Meta.DisplayDirection.LEFT,
+    MonitorRight: Meta.DisplayDirection.RIGHT,
+    MonitorAbove: Meta.DisplayDirection.UP,
+    MonitorBelow: Meta.DisplayDirection.DOWN
 };
 
 /** @enum {string} */
@@ -165,6 +178,121 @@ class SoundVolumeControlGroup extends CollapsibleGroup {
 
 }
 
+class CurrentWorkspaceSection extends PopupMenuSection {
+
+    /** @type {AppButton?} */
+    #appButton = null;
+
+    /** @type {Meta.Window[]?} */
+    #windows = null;
+
+    /** @type {PopupSeparatorMenuItem?} */
+    #title = null;
+
+    /** @type {Map<number, PopupMenuItem?>?} */
+    #actions = new Map();
+
+    /** @param {Meta.Window[]} windows */
+    set windows(windows) {
+        if (!this.actor) return;
+        this.#windows = windows?.length ? windows : null;
+        this.actor.visible = !!this.#windows;
+        if (this.#windows) this.#update();
+    }
+
+    /** @param {boolean} value */
+    set isTitleVisible(value) {
+        if (!this.#title?.label || typeof value !== 'boolean') return;
+        this.#title.label.visible = value;
+    }
+
+    /**
+     * @param {AppButton} appButton
+     */
+    constructor(appButton) {
+        super();
+        this.#appButton = appButton;
+        this.actor.hide();
+        this.actor.connect(Event.Destroy, () => this.#destroy());
+        this.#title = new PopupSeparatorMenuItem(Labels.CurrentWorkspace);
+        this.addMenuItem(this.#title);
+        this.addAction(Labels.CloseAll, () => this.#closeAll());
+    }
+
+    #destroy() {
+        this.#actions?.clear();
+        this.#actions = null;
+        this.#windows = null;
+        this.#title = null;
+        this.#appButton = null;
+    }
+
+    #update() {
+        if (!this.#appButton || !this.#actions || !this.#windows) return;
+        if (this.#actions.size) {
+            const menuItems = this.#actions.values();
+            for (const menuItem of menuItems) menuItem?.destroy();
+            this.#actions.clear();
+        }
+        const display = global.display;
+        if (display.get_n_monitors() <= 1) return;
+        const currentMonitor = this.#appButton.monitorIndex;
+        const ignoredMonitors = new Set();
+        for (const window of this.#windows) {
+            const windowMonitor = window.get_monitor();
+            if (windowMonitor < 0) continue;
+            ignoredMonitors.add(windowMonitor);
+        }
+        if (ignoredMonitors.size > 1) ignoredMonitors.clear();
+        for (const monitor in MonitorDirection) {
+            const direction = MonitorDirection[monitor];
+            const index = direction === MonitorDirection.CurrentMonitor ? currentMonitor :
+                          display.get_monitor_neighbor_index(currentMonitor, direction);
+            if (index < 0 || ignoredMonitors.has(index)) continue;;
+            const actionLabel = `${Labels.MoveTo} ${Labels[monitor]}`;
+            this.#actions.set(index, this.addAction(actionLabel, () => this.#moveToMonitor(index)));
+        }
+    }
+
+    #closeAll() {
+        if (!this.#windows) return;
+        const timestamp = global.get_current_time();
+        for (let i = 0, l = this.#windows.length; i < l; ++i) {
+            this.#windows[i].delete(timestamp + i);
+        }
+    }
+
+    /**
+     * @param {number} monitorIndex
+     */
+    #moveToMonitor(monitorIndex) {
+        if (!this.#windows?.length) return;
+        for (const window of this.#windows) window.move_to_monitor(monitorIndex) 
+    }
+
+}
+
+class OtherWorkspacesSection extends PopupMenuSection {
+
+    /** @param {boolean} value */
+    set isVisible(value) {
+        if (!this.actor) return;
+        this.actor.visible = value;
+    }
+
+    /**
+     * @param {AppButton} appButton
+     */
+    constructor(appButton) {
+        super();
+        this.actor.hide();
+        this.addMenuItem(new PopupSeparatorMenuItem(Labels.OtherWorkspaces));
+        this.addAction(Labels.FindWindow, () => appButton?.activate(ActivateBehavior.FindWindow));
+        this.addAction(Labels.MoveWindows, () => appButton?.activate(ActivateBehavior.MoveWindows));
+    }
+
+}
+
 class CustomizeChildMenu extends ChildMenu {
 
     /** @type {AppButton?} */
@@ -246,7 +374,7 @@ class CustomizeChildMenu extends ChildMenu {
      */
     #addCustomIconGroup() {
         const separator = this.addSeparator(Labels.CustomIcon);
-        const collapsible = this.addCollapsibleGroup(Labels.NotSelected);
+        const collapsible = this.addCollapsibleGroup(Labels.AppDefault);
         const collapsibleMenu = collapsible.menu;
         collapsibleMenu.itemActivated = () => {};
         collapsibleMenu.addAction(Labels.SelectIcon, () => this.#selectIcon());
@@ -258,7 +386,7 @@ class CustomizeChildMenu extends ChildMenu {
         const resetIconItem = collapsibleMenu.addAction(Labels.ResetToDefault, () => this.#setCustomIcon());
         return iconPath => {
             const isEmptyIconPath = typeof iconPath !== 'string' || !iconPath.trim();
-            collapsible.title = isEmptyIconPath ? Labels.NotSelected : iconPath.split(ICON_PATH_SEPARATOR).pop();
+            collapsible.title = isEmptyIconPath ? Labels.AppDefault : iconPath.split(ICON_PATH_SEPARATOR).pop();
             this.setChangedIndicator(separator, !isEmptyIconPath);
             this.setItemActiveState(resetIconItem, !isEmptyIconPath);
         };
@@ -390,14 +518,23 @@ class CustomizeChildMenu extends ChildMenu {
 
 export class Menu extends AppMenu {
 
+    /** @type {SharedConfig?} */
+    static #sharedConfig = null;
+
+    /** @type {boolean} */
+    #isRerenderQueued = false;
+
     /** @type {AppButton?} */
     #appButton = null;
 
     /** @type {boolean} */
     #hasValidAppId = true;
 
-    /** @type {boolean} */
-    #isWindowsSectionUpdateQueued = false;
+    /** @type {CurrentWorkspaceSection?} */
+    #currentWorkspaceSection = null;
+
+    /** @type {OtherWorkspacesSection?} */
+    #otherWorkspacesSection = null;
 
     /** @type {SoundVolumeControlGroup?} */
     #soundVolumeControlGroup = null;
@@ -405,11 +542,14 @@ export class Menu extends AppMenu {
     /** @type {CustomizeChildMenu?} */
     #customizeChildMenu = null;
 
-    /** @type {PopupMenuSection?} */
-    #moreActionsSection = null;
+    /** @type {Config?} */
+    #config = this.#configProvider.getConfig(this, settingsKey => this.#handleConfig(settingsKey));
 
-    /** @type {Config} */
-    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey), { path: CONFIG_PATH });
+    /** @type {SharedConfig} */
+    get #configProvider() {
+        Menu.#sharedConfig ??= new SharedConfig(ConfigFields, { path: CONFIG_PATH });
+        return Menu.#sharedConfig;
+    }
 
     /**
      * @param {AppButton} appButton
@@ -423,7 +563,10 @@ export class Menu extends AppMenu {
         this.#hasValidAppId = app?.id ? !!this._appSystem?.lookup_app(app.id) : false;
         this.#createMenuItems();
         if (app) this.setApp(app);
+        this._app?.disconnectObject(this);
         this._updateDetailsVisibility();
+        const monitorManager = global.backend.get_monitor_manager();
+        Context.signals.add(this, [monitorManager, Event.MonitorsChanged, () => this.close()]);
     }
 
     /**
@@ -434,14 +577,17 @@ export class Menu extends AppMenu {
      */
     destroy() {
         Context.signals.removeAll(this);
-        this.close(false);
-        this._app?.disconnectObject(this);
+        this.close();
         this._app = null;
         this.#appButton = null;
+        this.#currentWorkspaceSection = null;
+        this.#otherWorkspacesSection = null;
         this.#soundVolumeControlGroup = null;
         this.#customizeChildMenu = null;
-        this.#moreActionsSection = null;
+        this.#config = null;
         super.destroy();
+        if (!Menu.#sharedConfig?.destroy(this)) return;
+        Menu.#sharedConfig = null;
     }
 
     /**
@@ -449,16 +595,20 @@ export class Menu extends AppMenu {
      * @param {BoxPointer.PopupAnimation} animation
      */
     open(animation) {
-        if (!this.#appButton) return;
+        if (!this.#appButton || !this.#config) return;
         this.actor._arrowSide = MenuPosition[this.#appButton.location];
-        if (this.#isWindowsSectionUpdateQueued ||
-            this.#config.isolateWorkspaces) this._updateWindowsSection();
         this.rerender();
         super.open(animation);
     }
 
     rerender() {
-        if (this.#customizeChildMenu?.isOpen) return;
+        if (!this._app) return;
+        if (this.#customizeChildMenu?.isOpen) {
+            this.#isRerenderQueued = true;
+            return; 
+        }
+        this.#isRerenderQueued = false;
+        this._queueUpdateWindowsSection();
         this.#soundVolumeControlGroup?.update();
     }
 
@@ -466,25 +616,36 @@ export class Menu extends AppMenu {
         this.#soundVolumeControlGroup = new SoundVolumeControlGroup(this.#appButton);
         this.addMenuItem(this.#soundVolumeControlGroup.actor);
         if (this.#hasValidAppId) {
-            this.#customizeChildMenu = new CustomizeChildMenu(this.#appButton, () => this.rerender());
+            this.#customizeChildMenu = new CustomizeChildMenu(this.#appButton, () => {
+                if (this.#isRerenderQueued) this.rerender();
+                else this.#updateSeparators();
+            });
             this.addMenuItem(this.#customizeChildMenu);
         }
         this.addMenuItem(new PopupSeparatorMenuItem());
         this.moveMenuItem(this._quitItem, this.numMenuItems);
-        if (this.#hasValidAppId) this.#createMoreActionsSection();
+        if (!this.#appButton) return;
+        this.#currentWorkspaceSection = new CurrentWorkspaceSection(this.#appButton);
+        this.#addSection(this.#currentWorkspaceSection, this._windowSection);
+        if (!this.#hasValidAppId) return;
+        this.#otherWorkspacesSection = new OtherWorkspacesSection(this.#appButton);
+        this.#addSection(this.#otherWorkspacesSection, this._actionSection);
     }
 
-    #createMoreActionsSection() {
-        const menuItemAbove = this._actionSection?.actor ?? null;
-        this.#moreActionsSection = new PopupMenuSection();
-        this.#moreActionsSection._updateSeparatorVisibility = () => {};
-        this.#moreActionsSection.addMenuItem(new PopupSeparatorMenuItem());
-        this.#moreActionsSection.addAction(Labels.FindWindow, () =>
-            this.#appButton?.activate(ActivateBehavior.FindWindow));
-        this.#moreActionsSection.addAction(Labels.MoveWindows, () =>
-            this.#appButton?.activate(ActivateBehavior.MoveWindows));
-        this.addMenuItem(this.#moreActionsSection);
-        this.box.set_child_above_sibling(this.#moreActionsSection.actor, menuItemAbove);
+    /**
+     * @param {PopupMenuSection} section
+     * @param {PopupMenuSection} [sibling] 
+     */
+    #addSection(section, sibling) {
+        if (!section) return;
+        this.addMenuItem(section);
+        if (!sibling) return;
+        this.box.set_child_above_sibling(section.actor, sibling.actor);
+    }
+
+    #updateSeparators() {
+        if (!this.isOpen) return;
+        this.emit(Event.OpenStateChanged, true);
     }
 
     /**
@@ -520,46 +681,56 @@ export class Menu extends AppMenu {
     _updateFavoriteItem() {
         super._updateFavoriteItem();
         if (!this._toggleFavoriteItem?.visible) return;
-        if (!this.#config.showFavorites) return this._toggleFavoriteItem.hide();
+        if (!this.#config?.showFavorites) return this._toggleFavoriteItem.hide();
         const isFavorite = this._appFavorites?.isFavorite(this._app?.id);
         if (isFavorite) return;
-        this._toggleFavoriteItem.label?.set_text(Labels.Pin);
-    }
-
-    /**
-     * @override
-     */
-    _queueUpdateWindowsSection() {
-        if (this.isOpen) super._queueUpdateWindowsSection();
-        this.#isWindowsSectionUpdateQueued = !this.isOpen;
+        this._toggleFavoriteItem?.label?.set_text(Labels.Pin);
     }
 
     /**
      * @override
      */
     _updateWindowsSection() {
-        this.#isWindowsSectionUpdateQueued = false;
-        if (!this._app || !this.#appButton) return;
-        const knownWindows = this.#appButton.windows;
+        if (!this._app || !this.#appButton ||
+            !this.isOpen || this.#customizeChildMenu?.isOpen) return;
         const appWindows = this._app.get_windows();
+        const taskbarWindows = this.#appButton.windows;
+        const currentWorkspace = global.workspace_manager.get_active_workspace();
+        const validWindows = [];
         const workspaceWindows = [];
-        if (knownWindows?.size && appWindows?.length) {
+        if (taskbarWindows?.size && appWindows?.length) {
             for (const window of appWindows) {
-                if (knownWindows.has(window)) workspaceWindows.push(window);
+                if (taskbarWindows.has(window)) validWindows.push(window);
+                if (window.get_workspace() === currentWorkspace) workspaceWindows.push(window);
             }
         }
-        const origin = this._app;
+        validWindows.filter = () => validWindows;
+        const app = this._app;
         this._app = {
-            get_windows: () => workspaceWindows,
-            get_name: () => origin.get_name()
+            get_windows: () => validWindows,
+            get_name: () => app.get_name()
         };
         super._updateWindowsSection();
-        this._app = origin;
-        if (!this.#moreActionsSection?.actor) return;
-        const canShowMoreActions = this.#config.isolateWorkspaces &&
-                                   !!appWindows.length &&
-                                   !workspaceWindows.length;
-        this.#moreActionsSection.actor.visible = canShowMoreActions;
+        this._app = app;
+        if (!this.#config) return;
+        const { isolateWorkspaces } = this.#config;
+        if (this.#currentWorkspaceSection) {
+            this.#currentWorkspaceSection.isTitleVisible = !isolateWorkspaces;
+            this.#currentWorkspaceSection.windows = workspaceWindows;
+        }
+        if (this.#otherWorkspacesSection && this.#config) {
+            const isSectionVisible = isolateWorkspaces && !!appWindows.length && !workspaceWindows.length;
+            this.#otherWorkspacesSection.isVisible = isSectionVisible;
+        }
+        this.#updateSeparators();
+    }
+
+    /**
+     * @override
+     */
+    _updateNewWindowItem() {
+        super._updateNewWindowItem();
+        this.#updateSeparators();
     }
 
     /**
@@ -575,6 +746,15 @@ export class Menu extends AppMenu {
      */
     _animateLaunch() {
         this.#appButton?.animateLaunch();
+    }
+
+    /**
+     * @override
+     * @param {PopupBaseMenuItem} menuItem
+     */
+    _updateSeparatorVisibility(menuItem) {
+        if (!this._app || !this.isOpen || this.#customizeChildMenu?.isOpen) return;
+        super._updateSeparatorVisibility(menuItem);
     }
 
 }
