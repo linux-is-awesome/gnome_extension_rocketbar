@@ -1,4 +1,4 @@
-# Rocketbar
+# Rocketbar v2
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/linux-is-awesome/gnome_extension_rocketbar/blob/master/LICENSE)
 
 ![](/media/taskbar.jpg)
