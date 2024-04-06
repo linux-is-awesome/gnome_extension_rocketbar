@@ -25,7 +25,6 @@ export const ComponentEvent = {
     Notify: 'component::notify',
     Mapped: 'component::mapped',
     Destroy: 'component::destroy',
-    PositionLock: 'component::position-lock',
     Scale: 'component::scale',
     AcceptDrop: 'component::accept-drop',
     DragOver: 'component::drag-over',
@@ -62,12 +61,6 @@ export class Component {
     /** @type {((args: { event: string, params: *, target: *, sender: * }) => *)?} */
     #notifyCallback = null;
 
-    /** @type {number} */
-    #defaultPosition = 0;
-
-    /** @type {number?} */
-    #positionHandlerId = null;
-
     /** @type {boolean} */
     #dropEvents = false;
 
@@ -87,13 +80,13 @@ export class Component {
 
     /** @type {boolean} */
     get isMapped() {
-        return this.#isValid && !!this.#actor?.mapped;
+        return this.#isValid && !!this.#actor?.is_mapped();
     }
 
     /** @type {boolean} */
     get hasAllocation() {
         const actor = this.#actor;
-        return this.#isValid && !!actor?.get_stage() && (actor.mapped || !!actor.get_parent());
+        return this.#isValid && !!actor?.get_stage() && (actor.is_mapped() || !!actor.get_parent());
     }
 
     /** @type {ComponentActor} */
@@ -160,7 +153,7 @@ export class Component {
         if (this.#themeContext) return this.#themeContext.scale_factor;
         this.#themeContext = St.ThemeContext.get_for_stage(global.stage);
         this.#themeContext.connectObject(Event.ScaleFactor, () =>
-            this.notifySelf(ComponentEvent.Scale), this.#actor);
+            this.#notifySelf(ComponentEvent.Scale), this.#actor);
         return this.#themeContext.scale_factor;
     }
 
@@ -170,19 +163,13 @@ export class Component {
         if (this.#uiSettings) return this.#uiSettings.get_double(UI_SCALE_SETTINGS_KEY);
         this.#uiSettings = MainLayout._interfaceSettings ?? null;
         this.#uiSettings?.connectObject(`changed::${UI_SCALE_SETTINGS_KEY}`, () =>
-            this.notifySelf(ComponentEvent.Scale), this.#actor);
+            this.#notifySelf(ComponentEvent.Scale), this.#actor);
         return this.#uiSettings?.get_double(UI_SCALE_SETTINGS_KEY) ?? 0;
     }
 
     /** @param {number} value 0..999 */
     set position(value) {
-        if (!this.#setPosition(value)) return;
-        this.#defaultPosition = value;
-    }
-
-    /** @param {boolean} enabled */
-    set positionLock(enabled) {
-        this.#setPositionLock(enabled);
+        this.#setPosition(value);
     }
 
     /** @param {boolean} enabled */
@@ -216,7 +203,7 @@ export class Component {
      * @returns {this}
      */
     setProps(props) {
-        this.#actor?.set(props ?? {});
+        if (props) this.#actor?.set(props);
         return this;
     }
 
@@ -235,7 +222,6 @@ export class Component {
         }
         if (parent instanceof St.Widget === false) return this;
         this.#parent = parentComponent;
-        this.#defaultPosition = position;
         const oldParent = this.parentActor;
         const isParentChanged = oldParent !== parent;
         if (isParentChanged) {
@@ -283,8 +269,9 @@ export class Component {
      * @returns {this}
      */
     disconnect(id) {
-        if (typeof id === 'number') this.#actor?.disconnect(id);
-        else if (id === ComponentEvent.Notify) {
+        if (typeof id === 'number') {
+            this.#actor?.disconnect(id);
+        } else if (id === ComponentEvent.Notify) {
             this.#notifyCallback = null;
         }
         return this;
@@ -395,19 +382,6 @@ export class Component {
     }
 
     /**
-     * @param {boolean} enabled
-     */
-    #setPositionLock(enabled) {
-        if (this.#positionHandlerId) this.#actor?.disconnect(this.#positionHandlerId);
-        this.#positionHandlerId = null;
-        if (!enabled) return;
-        this.#positionHandlerId = this.#actor?.connect(Event.Position, () => {
-            if (!this.#setPosition(this.#defaultPosition)) return;
-            this.#notifySelf(ComponentEvent.PositionLock);
-        }) ?? null;
-    }
-
-    /**
      * @param {number} position -1..0...999
      * @returns {boolean}
      */
@@ -421,9 +395,6 @@ export class Component {
         }
         const actorAtIndex = parentActor.get_child_at_index(position);
         if (actorAtIndex === this.#actor) return false;
-        const delegateAtIndex = actorAtIndex?._delegate;
-        const componentAtIndex = delegateAtIndex instanceof Component ? delegateAtIndex : null;
-        if (componentAtIndex && componentAtIndex.#positionHandlerId) return false;
         parentActor.set_child_at_index(this.#actor, position);
         return true;
     }
@@ -511,7 +482,7 @@ export class Component {
             const notifyParams = { event, target, params, sender };
             return this.#notifyCallback(notifyParams);
         } catch (e) {
-            console.error(`Component notify failed for event ${event}`, e);
+            console.error(`${this.constructor.name} notify failed for event ${event}`, e);
         }
         return null;
     }
