@@ -3,6 +3,8 @@ declare module 'gi://St' {
     import type GObject from 'gi://GObject';
     import type Clutter from 'gi://Clutter';
     import type GLib from 'gi://GLib';
+    import type Gio from 'gi://Gio';
+    import type GdkPixbuf from 'gi://GdkPixbuf';
 
     enum BackgroundSize {
         AUTO,
