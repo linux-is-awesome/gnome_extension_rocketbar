@@ -45,6 +45,7 @@ export const ActivateBehavior = {
 
 /** @enum {string} */
 export const DemandsAttentionBehavior = {
+    Default: 'default',
     FocusActive: 'focus_active',
     FocusAll: 'focus_all'
 };
@@ -200,7 +201,8 @@ export class AppConfig extends SharedConfig {
             config[field] = newConfig[field];
         }
         if (!clients?.size) return;
-        for (const [_, callback] of clients) {
+        const callbacks = clients.values();
+        for (const callback of callbacks) {
             if (typeof callback !== 'function') continue;
             callback(settingsKey);
         }

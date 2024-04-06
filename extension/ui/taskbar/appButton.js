@@ -617,6 +617,7 @@ export class AppButton extends RuntimeButton {
     #handleUrgentWindow(window) {
         if (!window || !this.#windows?.has(window) || window.has_focus()) return;
         const demandsAttentionBehavior = this.#config?.demandsAttentionBehavior;
+        if (!demandsAttentionBehavior || demandsAttentionBehavior === DemandsAttentionBehavior.Default) return;
         if (demandsAttentionBehavior === DemandsAttentionBehavior.FocusActive && !this.#isActive) return;
         FocusedWindow(window);
     }
