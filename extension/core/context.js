@@ -30,9 +30,14 @@ export default class Context {
         return this.#instance;
     }
 
-    /** @type {{[key: string]: *}} */
+    /** @type {{[key: string]: *}?} */
     static get metadata() {
         return this.instance.#extension?.metadata;
+    }
+
+    /** @type {string?} */
+    static get path() {
+        return this.instance.#extension?.path ?? null;
     }
 
     /** @type {Jobs} */
