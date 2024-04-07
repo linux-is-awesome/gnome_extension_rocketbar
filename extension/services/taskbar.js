@@ -44,7 +44,7 @@ class Favorites {
 
     /** @type {ParentalControlsManager} */
     get #parentalControlsManager() {
-        return this.#favorites?._parentalControlsManager;
+        return this.#favorites._parentalControlsManager;
     }
 
     /** @type {Map<string, Shell.App>} */
@@ -121,9 +121,22 @@ class Favorites {
 
     #handleInstalled() {
         if (typeof this.#callback !== 'function') return;
-        const oldAppIds = `${this.#appsById ? [...this.#appsById.keys()] : []}`;
-        const newAppIds = `${this.#favorites._getIds()}`;
-        if (oldAppIds === newAppIds) return;
+        const oldAppsById = this.#appsById;
+        const newAppsById = this.#favorites.getFavoriteMap();
+        let hasFavorites = false;
+        let isChanged = false;
+        for (const appId in newAppsById) {
+            hasFavorites = true;
+            const newApp = newAppsById[appId];
+            const oldApp = oldAppsById?.get(appId);
+            if (oldApp && oldApp === newApp) continue;
+            isChanged = true;
+            break;
+        }
+        if (!isChanged && !hasFavorites && oldAppsById?.size) {
+            isChanged = true;
+        }
+        if (!isChanged) return;
         this.#appsById = null;
         this.#callback();
     }
