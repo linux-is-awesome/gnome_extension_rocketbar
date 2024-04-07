@@ -11,16 +11,12 @@ const RGB_STRING_SPLITTER = ',';
  */
 const Pixbuf = icon => {
     try {
-        if (icon instanceof Gio.Icon === false) return null;
-        if (icon instanceof Gio.FileIcon)
+        if (icon instanceof Gio.FileIcon) {
             return GdkPixbuf.Pixbuf.new_from_file(icon.get_file().get_path() ?? '');
-        if (icon instanceof Gio.ThemedIcon === false) return null;
-        const iconNames = icon.get_names();
-        if (!iconNames.length) return null;
-        const iconName = iconNames[0];
-        const iconTheme = Context.iconTheme;
-        if (!iconTheme.has_icon(iconName)) return null;
-        return iconTheme.load_icon(iconName, SAMPLE_SIZE, 0);
+        }
+        if (icon instanceof Gio.ThemedIcon) {
+            return Context.iconTheme.lookup_by_gicon(icon, SAMPLE_SIZE, 0)?.load_icon() ?? null;
+        }
     } catch (e) {
         Context.logError(`${Pixbuf.name} loading failed.`, e);
     }
@@ -127,7 +123,7 @@ const RGB = (h, s, v) => {
  * Note: The backlight color choosing algorithm was mostly ported to javascript from the Unity7 C++ source of Canonicals:
  *       https://bazaar.launchpad.net/~unity-team/unity/trunk/view/head:/launcher/LauncherIcon.cpp
  *
- * @param {Gio.Icon} icon
+ * @param {Gio.Icon?} icon
  * @returns {string?} `rgb(0-255, 0-255, 0-255)`
  */
 export const DominantColor = icon => {
