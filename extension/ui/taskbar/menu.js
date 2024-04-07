@@ -691,8 +691,8 @@ export class Menu extends AppMenu {
      * @override
      */
     _updateWindowsSection() {
-        if (!this._app || !this.#appButton ||
-            !this.isOpen || this.#customizeChildMenu?.isOpen) return;
+        if (!this._app || !this.isOpen ||
+            !this.#appButton || this.#customizeChildMenu?.isOpen) return;
         const appWindows = this._app.get_windows();
         const taskbarWindows = this.#appButton.windows;
         const currentWorkspace = global.workspace_manager.get_active_workspace();
@@ -737,7 +737,10 @@ export class Menu extends AppMenu {
      * @override
      */
     _updateDetailsVisibility() {
-        if (this._app && this.#hasValidAppId) super._updateDetailsVisibility();
+        if (!this._app) return;
+        const appInfo = this._app.get_app_info();
+        const isValidApp = this.#hasValidAppId && appInfo && !appInfo.get_nodisplay();
+        if (isValidApp) super._updateDetailsVisibility();
         else this._detailsItem.hide();
     }
 
