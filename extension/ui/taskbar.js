@@ -535,7 +535,9 @@ export default class Taskbar extends ScrollView {
         }
         this.#runningApps.set(workspace, apps);
         this.#appButtons = appButtons;
-        this.#dndHandler = null;
+        if (oldAppButton && separatorPosition > 0) {
+            this.#dndHandler = null;
+        }
         oldAppButton?.destroy();
         if (isFavorite) {
             const favoritePosition = [...apps].indexOf(candidateApp);
@@ -566,6 +568,7 @@ export default class Taskbar extends ScrollView {
                                                    !runningApps ? favoriteApps : null;
         const appsSize = apps?.size;
         if (!appsSize) return;
+        const hasFavoritesApps = !!favoriteApps;
         const favoriteAppsSize = favoriteApps?.size ?? 0;
         const appButtons = new Map();
         const oldFavorites = new Set();
@@ -573,7 +576,8 @@ export default class Taskbar extends ScrollView {
         for (const app of apps) {
             const oldAppButton = this.#appButtons.get(app);
             if (oldAppButton?.isValid) {
-                const isFavoriteChanged = !!favoriteApps && oldAppButton.isFavorite !== favoriteApps.has(app);
+                const isFavoriteChanged = hasFavoritesApps && this.#separatorPosition !== -1 &&
+                                          oldAppButton.isFavorite !== favoriteApps.has(app);
                 if (!isFavoriteChanged) {
                     appButtons.set(app, oldAppButton);
                     sortedAppButtons.push(oldAppButton);
@@ -598,7 +602,7 @@ export default class Taskbar extends ScrollView {
             }
             this.#appButtons = oldAppButtons;
         }
-        let separatorPosition = favoriteAppsSize || -1;
+        let separatorPosition = hasFavoritesApps ? favoriteAppsSize : -1;
         this.#separatorPosition = separatorPosition;
         const mergedAppButtons = new Map([...this.#appButtons, ...appButtons]);
         if (mergedAppButtons.size !== appButtons.size) {
@@ -609,7 +613,7 @@ export default class Taskbar extends ScrollView {
                 if (appButtons.has(app)) continue;
                 appButtons.set(app, appButton);
                 sortedAppButtons.splice(i, 0, appButton);
-                if (separatorPosition !== -1 && appButton.isFavorite) separatorPosition++;
+                if (hasFavoritesApps && appButton.isFavorite) separatorPosition++;
             }
         }
         this.#appButtons = appButtons;
@@ -619,7 +623,7 @@ export default class Taskbar extends ScrollView {
         if (!this.#separator) return;
         this.#separator.setParent(this, separatorPosition);
         const { enableSeparator } = this.#config;
-        const isSeparatorRequired = separatorPosition > 0 && appsSize > favoriteAppsSize;
+        const isSeparatorRequired = favoriteAppsSize > 0 && appsSize > favoriteAppsSize;
         this.#separator.isVisible = enableSeparator && isSeparatorRequired;
     }
 
