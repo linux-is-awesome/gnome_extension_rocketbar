@@ -191,7 +191,7 @@ export class Component {
         }
         this.#actor = actor;
         this.#actor._delegate = this;
-        this.#actor.connect(Event.Destroy, () => this.#destroy());
+        this.#actor.connect_after(Event.Destroy, () => this.#destroy());
     }
 
     destroy() {
