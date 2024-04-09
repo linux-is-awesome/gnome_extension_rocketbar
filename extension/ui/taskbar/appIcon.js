@@ -4,13 +4,12 @@
  * @typedef {import('gi://Shell').App} Shell.App
  */
 
-import St from 'gi://St';
 import Clutter from 'gi://Clutter';
-import Gio from 'gi://Gio';
+import St from 'gi://St';
 import Context from '../../core/context.js';
-import { Component, ComponentEvent, ComponentLocation } from '../base/component.js';
+import { ComponentEvent, ComponentLocation } from '../base/component.js';
+import { Icon, IconEvent } from '../base/icon.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
-import { Delay, Event } from '../../core/enums.js';
 import { DominantColor } from '../../utils/dominantColor.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppIcon';
@@ -22,11 +21,8 @@ const DRAG_ACTOR_SIZE_SCALE = 1.5;
 
 /** @type {{[prop: string]: *}} */
 const DefaultProps = {
-    name: MODULE_NAME,
     fallback_icon_name: FALLBACK_ICON_NAME,
-    icon_size: DEFAULT_SIZE,
-    x_align: Clutter.ActorAlign.CENTER,
-    y_align: Clutter.ActorAlign.CENTER
+    icon_size: DEFAULT_SIZE
 };
 
 /** @type {{[prop: string]: *}} */
@@ -47,15 +43,16 @@ export const AppIconEvent = {
     DominantColorChanged: 'appicon::dominant-color-changed'
 };
 
-/**
- * @augments Component<St.Icon>
- */
-export class AppIcon extends Component {
+export class AppIcon extends Icon {
+
+    /** @type {string?} */
+    static iconThemeName = null;
 
     /** @type {{[event: string]: () => *}?} */
     #events = {
         [ComponentEvent.Destroy]: () => this.#destroy(),
-        [ComponentEvent.Scale]: () => this.setSize(this.#size)
+        [ComponentEvent.Scale]: () => this.setSize(this.#size),
+        [IconEvent.TextureChanged]: () => this.#handleIconTexture()
     };
 
     /** @type {Shell.App?} */
@@ -63,9 +60,6 @@ export class AppIcon extends Component {
 
     /** @type {number} */
     #size = DEFAULT_SIZE;
-
-    /** @type {string?} */
-    #iconPath = null;
 
     /** @type {Clutter.BrightnessContrastEffect?} */
     #highlight = null;
@@ -75,14 +69,6 @@ export class AppIcon extends Component {
 
     /** @type {Map<Shell.App, string?>} */
     #dominantColors = Context.getStorage(this.constructor.name);
-
-    /** @param {string?} value */
-    set iconPath(value) {
-        if (this.#iconPath === value) return;
-        if (typeof value !== 'string' && value !== null) return;
-        this.#iconPath = value;
-        this.#setIcon();
-    }
 
     /** @param {boolean} value */
     set isHighlighted(value) {
@@ -94,7 +80,8 @@ export class AppIcon extends Component {
     get dragActor() {
         const gicon = this.actor.get_gicon();
         const size = this.#size * DRAG_ACTOR_SIZE_SCALE * this.uiScale;
-        return new St.Icon({ name: `${MODULE_NAME}-DragActor`, icon_size: size, gicon });
+        const actorProps = { name: `${MODULE_NAME}-DragActor`, icon_size: size, gicon };
+        return new St.Icon(actorProps);
     }
 
     /** @type {string?} */
@@ -102,7 +89,9 @@ export class AppIcon extends Component {
         if (!this.#app || this.#dominantColor) return this.#dominantColor;
         this.#dominantColor = this.#dominantColors.get(this.#app) ?? null;
         if (this.#dominantColors.has(this.#app)) return this.#dominantColor;
-        this.#dominantColor = DominantColor(this.actor.get_gicon());
+        const icon = this.actor.get_gicon();
+        if (!icon) return null;
+        this.#dominantColor = DominantColor(icon);
         this.#dominantColors.set(this.#app, this.#dominantColor);
         return this.#dominantColor;
     }
@@ -112,16 +101,18 @@ export class AppIcon extends Component {
      * @param {string?} [iconPath]
      */
     constructor(app, iconPath) {
-        super(new St.Icon(DefaultProps));
+        const iconTexture = app?.get_icon() ?? null;
+        const icon = { iconTexture, iconPath };
+        super(icon, MODULE_NAME);
+        this.setProps(DefaultProps);
+        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
+        this.#app = app;
         this.#highlight = new Clutter.BrightnessContrastEffect(HighlightProps);
         this.#highlight.set_brightness(HIGHLIGHT_BRIGHTNESS);
         this.#highlight.set_contrast(HIGHLIGHT_CONTRAST);
-        this.actor.set_pivot_point(0.5, 0.5);
-        this.actor.add_effect(this.#highlight);
-        this.#app = app;
-        this.#iconPath = iconPath ?? null;
-        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
-        this.#setIcon();
+        const actor = this.actor;
+        actor.set_pivot_point(0.5, 0.5);
+        actor.add_effect(this.#highlight);
     }
 
     /**
@@ -161,38 +152,18 @@ export class AppIcon extends Component {
     }
 
     #destroy() {
-        Context.jobs.removeAll(this);
-        Context.signals.removeAll(this);
-        if (!this.#highlight) return;
-        this.actor.remove_effect(this.#highlight);
-        this.#highlight = null;
+        this.#app = null;
         this.#events = null;
+        this.#highlight = null;
     }
 
-    #handleIconTheme() {
-        this.#dominantColors.clear();
-        Context.jobs.removeAll(this).new(this, Delay.Background).destroy(() => this.#setIcon());
-    }
-
-    /**
-     * Note: Icon Path is not validated in terms of performance.
-     *       Gio.Icon.new_for_string doesn't throw an exception if the path is invalid.
-     *       So it's the expected behavior to get a blank icon in such cases for now.
-     */
-    #setIcon() {
-        const oldIcon = this.actor.get_gicon();
-        const iconPath = this.#iconPath && typeof this.#iconPath === 'string' ? this.#iconPath : null;
-        const customIcon = iconPath ? Gio.Icon.new_for_string(iconPath) : null;
-        if (oldIcon) this.actor.set_gicon(null);
-        this.actor.set_gicon(customIcon ?? this.#app?.get_icon());
-        this.#handleIcon();
-        if (iconPath) Context.signals.removeAll(this);
-        if (iconPath || Context.signals.hasClient(this)) return;
-        Context.signals.add(this, [St.Settings.get(), Event.IconTheme, () => this.#handleIconTheme()]);
-    }
-
-    #handleIcon() {
-        if (!this.#dominantColor || !this.#app) return;
+    #handleIconTexture() {
+        const iconThemeName = Context.systemSettings.gtk_icon_theme;
+        if (AppIcon.iconThemeName !== iconThemeName) {
+            AppIcon.iconThemeName = iconThemeName;
+            this.#dominantColors.clear();
+        }
+        if (!this.#app || !this.#dominantColor) return;
         this.#dominantColors.delete(this.#app);
         this.#dominantColor = null;
         this.notifyParents(AppIconEvent.DominantColorChanged);
