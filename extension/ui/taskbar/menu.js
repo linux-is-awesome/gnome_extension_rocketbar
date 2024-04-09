@@ -15,9 +15,10 @@ import St from 'gi://St';
 import { AppMenu } from 'resource:///org/gnome/shell/ui/appMenu.js';
 import { PopupMenuSection, PopupSeparatorMenuItem } from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import Context from '../../core/context.js';
-import { SliderMenuItem, CollapsibleGroup, ChildMenu } from '../base/menu.js';
 import { Delay, Event } from '../../core/enums.js';
 import { ComponentLocation } from '../base/component.js';
+import { SliderMenuItem, CollapsibleGroup, ChildMenu } from '../base/menu.js';
+import { Icon } from '../base/icon.js';
 import { SharedConfig } from '../../utils/config.js';
 import { FileSelector } from '../../utils/zenity.js';
 import { ActivateBehavior, DemandsAttentionBehavior, AppIconSize } from '../../utils/taskbar/appConfig.js';
@@ -27,7 +28,6 @@ import { Labels } from '../../core/labels.js';
 const CONFIG_PATH = 'taskbar';
 const UNWANTED_STYLE_CLASS = 'app-menu';
 const STYLE_CLASS = 'rocketbar__popup-menu';
-const ICON_PATH_REGEXP_STRING = /^\/(.)*(\.(svg|png))$/;
 const ICON_PATH_SEPARATOR = '/';
 const ICON_FILE_TYPE_FILTER = `${Labels.Icon} | *.svg *.png`;
 
@@ -448,7 +448,8 @@ class CustomizeChildMenu extends ChildMenu {
     #scanClipboard() {
         if (!this.#config) return;
         St.Clipboard.get_default().get_text(St.ClipboardType.CLIPBOARD, (_, iconPath) => {
-            const isValidIcon = ICON_PATH_REGEXP_STRING.test(iconPath ?? null);
+            const isValidIcon = !!iconPath && (Icon.isIconFilePath(iconPath) ||
+                                               Context.iconTheme.has_icon(iconPath));
             this.#clipboardIconPath = isValidIcon ? iconPath : null;
             this.setItemActiveState(this.#importIconItem, isValidIcon);
         });
