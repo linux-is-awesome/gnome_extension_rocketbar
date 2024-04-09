@@ -44,6 +44,7 @@ export class LongPressAction {
         Context.signals.removeAll(this);
         Context.jobs.removeAll(this);
         this.#actor = null;
+        this.#event = null;
         this.#callback = null;
     }
 
