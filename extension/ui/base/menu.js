@@ -77,7 +77,7 @@ export class SliderMenuItem {
     /** @param {string?} value */
     set icon(value) {
         if (!this.#icon) return;
-        this.#icon.iconPath = value || null
+        this.#icon.iconPath = value || null;
     }
 
     /** @param {number?} value */
@@ -168,7 +168,7 @@ export class CollapsibleGroup {
     }
 
     #destroy() {
-        this.#actor = null
+        this.#actor = null;
     }
 
 }

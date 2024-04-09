@@ -352,7 +352,7 @@ export class AppSoundVolumeControl {
     }
 
     /**
-     * @param {() => void} [callback] 
+     * @param {() => void} [callback]
      */
     toggleInputMute(callback) {
         if (!this.hasInput) return;
@@ -360,7 +360,7 @@ export class AppSoundVolumeControl {
     }
 
     /**
-     * @param {() => void} [callback] 
+     * @param {() => void} [callback]
      */
     toggleOutputMute(callback) {
         if (!this.hasOutput) return;

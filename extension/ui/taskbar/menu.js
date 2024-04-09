@@ -248,7 +248,7 @@ class CurrentWorkspaceSection extends PopupMenuSection {
             const direction = MonitorDirection[monitor];
             const index = direction === MonitorDirection.CurrentMonitor ? currentMonitor :
                           display.get_monitor_neighbor_index(currentMonitor, direction);
-            if (index < 0 || ignoredMonitors.has(index)) continue;;
+            if (index < 0 || ignoredMonitors.has(index)) continue;
             const actionLabel = `${Labels.MoveTo} ${Labels[monitor]}`;
             this.#actions.set(index, this.addAction(actionLabel, () => this.#moveToMonitor(index)));
         }
@@ -267,7 +267,7 @@ class CurrentWorkspaceSection extends PopupMenuSection {
      */
     #moveToMonitor(monitorIndex) {
         if (!this.#windows?.length) return;
-        for (const window of this.#windows) window.move_to_monitor(monitorIndex) 
+        for (const window of this.#windows) window.move_to_monitor(monitorIndex);
     }
 
 }
@@ -432,9 +432,12 @@ class CustomizeChildMenu extends ChildMenu {
         this.#isSyncing = true;
         const config = this.#config;
         const defaultConfig = configProvider.defaultConfig;
+        const activateBehaviorVisibilityHandler = item => {
+            item.visible = config.isolateWorkspaces;
+        };
         this.#activateBehavior(config[ConfigField.ActivateBehavior],
                               !configProvider.hasConfigOverride(app, ConfigField.ActivateBehavior))
-                              .forEach(item => { item.visible = config.isolateWorkspaces; });
+                              .forEach(activateBehaviorVisibilityHandler);
         this.#demandsAttentionBehavior(config[ConfigField.DemandsAttentionBehavior],
                                        !configProvider.hasConfigOverride(app, ConfigField.DemandsAttentionBehavior));
         this.#iconSize(config[ConfigField.IconSize], defaultConfig[ConfigField.IconSize],
@@ -606,7 +609,7 @@ export class Menu extends AppMenu {
         if (!this._app) return;
         if (this.#customizeChildMenu?.isOpen) {
             this.#isRerenderQueued = true;
-            return; 
+            return;
         }
         this.#isRerenderQueued = false;
         this._queueUpdateWindowsSection();
@@ -635,7 +638,7 @@ export class Menu extends AppMenu {
 
     /**
      * @param {PopupMenuSection} section
-     * @param {PopupMenuSection} [sibling] 
+     * @param {PopupMenuSection} [sibling]
      */
     #addSection(section, sibling) {
         if (!section) return;

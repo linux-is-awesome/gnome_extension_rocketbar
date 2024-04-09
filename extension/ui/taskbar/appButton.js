@@ -266,10 +266,13 @@ export class AppButton extends RuntimeButton {
             return;
         }
         if (!this.#isFadeInRequired) this.notifyParents(AppButtonEvent.Reaction);
+        const overviewHandler = () => {
+            this.isActive = this.#isActive;
+        };
         Context.signals.add(this, [
             Overview,
-            Event.OverviewShowing, () => { this.isActive = this.#isActive; },
-            Event.OverviewHiding, () => { this.isActive = this.#isActive; }
+            Event.OverviewShowing, overviewHandler,
+            Event.OverviewHiding, overviewHandler
         ]);
     }
 
