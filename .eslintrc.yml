@@ -1,6 +1,6 @@
 extends:
-    - ./.gnome-shell/lint/eslintrc-gjs.yml
-    - ./.gnome-shell/lint/eslintrc-shell.yml
+    - ../gnome-shell/lint/eslintrc-gjs.yml
+    - ../gnome-shell/lint/eslintrc-shell.yml
 parserOptions:
     sourceType: module
 rules:
