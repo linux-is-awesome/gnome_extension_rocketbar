@@ -163,12 +163,7 @@ export default class Context {
         this.#modules = new ModulesService();
     }
 
-    /**
-     * TODO: Uncomment the first line of the function to allow the extension to work on lockscreen.
-     *       I think there is no way to pass the review with the uncommented line, so need to think about the solution later.
-     */
     destroy() {
-        // if (Context.isSessionLocked) throw new Error(`${Context.name} destroy prevented.`);
         try {
             this.#destroy();
         } catch (e) {
@@ -195,10 +190,6 @@ export default class Context {
         this.#cleanSessionStorage();
     }
 
-    /**
-     * Note: Removes all data from the storage if the extension gets disabled by the user.
-     *       But keeps it if the Shell disables the extension in order restore the data later.
-     */
     #cleanSessionStorage() {
         const sessionStorage = Context.#sessionStorage;
         if (!sessionStorage) return;
