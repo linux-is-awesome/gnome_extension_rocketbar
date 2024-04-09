@@ -19,6 +19,7 @@ import { arrowIcon as ArrowIcon,
          PopupBaseMenuItem,
          PopupMenuSection } from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { Event, PseudoClass } from '../../core/enums.js';
+import { Icon } from './icon.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 
 const SLIDER_ICON_STYLE_CLASS = 'popup-menu-icon';
@@ -32,8 +33,7 @@ const SliderMenuItemProps = {
 
 /** @type {{[prop: string]: *}} */
 const SliderIconProps = {
-    style_class: SLIDER_ICON_STYLE_CLASS,
-    visible: false
+    style_class: SLIDER_ICON_STYLE_CLASS
 };
 
 /** @type {{[prop: string]: *}} */
@@ -56,7 +56,7 @@ export class SliderMenuItem {
     /** @type {Slider?} */
     #slider = null;
 
-    /** @type {St.Icon?} */
+    /** @type {Icon?} */
     #icon = null;
 
     /** @type {St.Label?} */
@@ -77,9 +77,7 @@ export class SliderMenuItem {
     /** @param {string?} value */
     set icon(value) {
         if (!this.#icon) return;
-        const iconName = typeof value === 'string' ? value : null;
-        this.#icon.set_icon_name(iconName);
-        this.#icon.visible = !!iconName;
+        this.#icon.iconPath = value || null
     }
 
     /** @param {number?} value */
@@ -98,22 +96,23 @@ export class SliderMenuItem {
     constructor(callback, icon, value) {
         this.#actor = new PopupBaseMenuItem(SliderMenuItemProps);
         this.#slider = new Slider(0);
-        this.#icon = new St.Icon(SliderIconProps);
         this.#value = new St.Label(SliderValueProps);
-        this.#actor.setOrnament(Ornament.HIDDEN);
-        this.#actor.add_child(this.#icon);
+        this.#icon = new Icon(icon);
+        this.#icon.setProps(SliderIconProps);
+        const iconActor = this.#icon.actor;
+        this.#actor.add_child(iconActor);
         this.#actor.add_child(this.#slider);
         this.#actor.add_child(this.#value);
-        this.icon = icon ?? null;
-        this.value = value ?? null;
+        this.#actor.setOrnament(Ornament.HIDDEN);
         this.#actor.connect(Event.Destroy, () => this.#destroy());
         this.#actor.connect(Event.KeyPress, (_, event) => this.#slider?.emit(Event.KeyPress, event));
+        this.value = value ?? null;
         if (typeof callback !== 'function') return;
+        this.#slider.connect(Event.ValueChanged, () => callback(this));
         const clickAction = new Clutter.ClickAction();
         clickAction.connect(Event.Clicked, event => callback(this, event));
-        this.#slider.connect(Event.ValueChanged, () => callback(this));
-        this.#icon.add_action(clickAction);
-        this.#icon.set_reactive(true);
+        iconActor.add_action(clickAction);
+        iconActor.set_reactive(true);
     }
 
     #destroy() {
