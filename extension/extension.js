@@ -37,23 +37,20 @@ export default class Extension extends ShellExtension {
         this.#isEnabled = false;
         try {
             this.#runtime?.destroy();
-            this.#runtime = null;
         } catch (e) {
-            console.error(`${this.metadata.name} runtime destroy call failed.`, e);
+            console.error(`${this.metadata.name} runtime destroy failed.`, e);
+        } finally {
+            this.#runtime = null;
         }
     }
 
-    /**
-     * Note: Lazy loading of the `runtime` module to reduce resource consumption while the extension is not enabled.
-     *       Also allows to handle unexpected behaviors and log error messages for troubleshooting.
-     */
     async #initialize() {
         try {
             const runtimeModule = await import(`.${this.runtimePath}`);
             if (!this.#isEnabled || this.#runtime) return;
             this.#runtime = new runtimeModule.default(this);
         } catch (e) {
-            console.error(`${this.metadata.name} initialization failed.`, e);
+            console.error(`${this.metadata.name} runtime initialization failed.`, e);
         }
     }
 

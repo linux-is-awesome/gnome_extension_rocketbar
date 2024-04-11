@@ -7,12 +7,12 @@
 
 import St from 'gi://St';
 import { Session, MainLayout } from './shell.js';
+import { SessionMode } from './enums.js';
 import Jobs from './context/jobs.js';
 import Signals from './context/signals.js';
 import LayoutManager from './context/layout.js';
 import ModulesService from '../services/modules.js';
 import LauncherApiProxy from '../services/launcherApi.js';
-import { SessionMode } from './enums.js';
 
 const SETTINGS_SCHEMA_KEY = 'settings-schema';
 
@@ -157,10 +157,10 @@ export default class Context {
     constructor(extension) {
         if (Context.#instance) throw new Error(`${Context.name} already has an instance.`);
         if (!extension) throw new Error(`${Context.name} requires an instance of the extension class.`);
-        Context.#instance = this;
         this.#extension = extension;
-        this.#launcherApi = new LauncherApiProxy();
-        this.#modules = new ModulesService();
+        Context.#instance = this;
+        if (!Context.isSessionLocked) this.#initialize();
+        else Context.jobs.new(this).destroy(() => this.#initialize());
     }
 
     destroy() {
@@ -169,24 +169,30 @@ export default class Context {
         } catch (e) {
             Context.logError(`unable to destroy ${Context.name}.`, e);
         } finally {
+            this.#modules = null;
+            this.#layout = null;
+            this.#jobs = null;
+            this.#signals = null;
+            this.#launcherApi = null;
+            this.#iconTheme = null;
+            this.#systemSettings = null;
             this.#extension = null;
             Context.#instance = null;
         }
     }
 
+    #initialize() {
+        this.#launcherApi = new LauncherApiProxy();
+        this.#modules = new ModulesService();
+    }
+
     #destroy() {
+        this.#jobs?.removeAll(this);
         this.#modules?.destroy();
-        this.#modules = null;
         this.#layout?.destroy();
-        this.#layout = null;
         this.#jobs?.destroy();
-        this.#jobs = null;
         this.#signals?.destroy();
-        this.#signals = null;
         this.#launcherApi?.destroy();
-        this.#launcherApi = null;
-        this.#iconTheme = null;
-        this.#systemSettings = null;
         this.#cleanSessionStorage();
     }
 

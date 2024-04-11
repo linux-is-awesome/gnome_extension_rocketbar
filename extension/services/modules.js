@@ -1,88 +1,108 @@
 import Context from '../core/context.js';
+import { Session } from '../core/shell.js';
+import { SessionMode, Event } from '../core/enums.js';
 import { Config } from '../utils/config.js';
 
-const MODULE_INSTANCE_PLACEHOLDER = true;
+const MODULE_INSTANCE_PLACEHOLDER = '*';
+const MODULE_ROOT_PATH = '../';
+const MODULE_FILE_TYPE = '.js';
 
-/** @type {{[field: string]: string}} */
-const Modules = {
-    TweakOverviewKillDash: '../tweaks/overviewKillDash.js',
-    TweakOverviewClicks: '../tweaks/overviewClicks.js',
-    TweakPopupsPreventFocus: '../tweaks/popupsPreventFocus.js',
-    Taskbar: '../ui/taskbar.js',
-    NotificationCounter: '../ui/notificationCounter.js'
+/** @enum {string} */
+export const Module = {
+    TweakOverviewKillDash: 'tweaks/overviewKillDash',
+    TweakOverviewClicks: 'tweaks/overviewClicks',
+    TweakPopupsPreventFocus: 'tweaks/popupsPreventFocus',
+    NotificationCounter: 'ui/notificationCounter',
+    Taskbar: 'ui/taskbar'
 };
 
-/** @type {{[field: string]: string}} */
+/** @type {{[sessionMode: SessionMode]: Module[]}} */
+const Modules = {
+    [SessionMode.Desktop]: [
+        Module.TweakOverviewKillDash,
+        Module.TweakOverviewClicks,
+        Module.TweakPopupsPreventFocus,
+        Module.NotificationCounter,
+        Module.Taskbar
+    ],
+    [SessionMode.Locksreen]: []
+};
+
+/** @type {{[field: Module]: string}} */
 const ConfigFields = {
-    TweakOverviewKillDash: 'overview-kill-dash',
-    TweakOverviewClicks: 'overview-empty-space-clicks',
-    TweakPopupsPreventFocus: 'popups-prevent-focus',
-    Taskbar: 'taskbar-enabled',
-    NotificationCounter: 'notification-counter-enabled'
+    [Module.TweakOverviewKillDash]: 'overview-kill-dash',
+    [Module.TweakOverviewClicks]: 'overview-empty-space-clicks',
+    [Module.TweakPopupsPreventFocus]: 'popups-prevent-focus',
+    [Module.NotificationCounter]: 'notification-counter-enabled',
+    [Module.Taskbar]: 'taskbar-enabled'
 };
 
 export default class ModulesService {
 
-    /** @type {Map<string, *>?} */
+    /** @type {Map<Module, *>?} */
     #modules = new Map();
 
     /** @type {Config} */
     #config = Config(this, ConfigFields, () => this.#update());
 
     constructor() {
+        Context.signals.add(this, [Session, Event.SessionUpdated, () => this.#update()]);
         this.#update();
     }
 
     destroy() {
         if (!this.#modules) return;
         Context.signals.removeAll(this);
-        const moduleNames = this.#modules.keys();
-        for (const moduleName of moduleNames) this.#destroyModule(moduleName);
+        const modules = this.#modules.keys();
+        for (const module of modules) this.#destroyModule(module);
         this.#modules = null;
     }
 
     #update() {
         if (!this.#modules) return;
-        for (const moduleName in Modules) {
-            const configValue = this.#config[moduleName];
+        const sessionMode = Session.currentMode;
+        const modules = sessionMode ? Modules[sessionMode] ?? [] : [];
+        const oldModules = this.#modules.keys();
+        for (const module of oldModules) {
+            if (!modules.includes(module)) this.#destroyModule(module);
+        }
+        for (const module of modules) {
+            const configValue = this.#config[module];
             if (typeof configValue !== 'boolean') continue;
-            const module = this.#modules.get(moduleName);
-            if (module && configValue) continue;
-            if (!module && configValue) {
-                this.#constructModule(moduleName);
-                continue;
-            }
-            this.#destroyModule(moduleName);
+            const instance = this.#modules.get(module);
+            if (instance && configValue) continue;
+            if (!instance && configValue) this.#constructModule(module);
         }
     }
 
     /**
-     * @param {string} moduleName
+     * @param {Module} module
      */
-    async #constructModule(moduleName) {
-        if (!this.#modules) return;
+    async #constructModule(module) {
+        if (!this.#modules || !module) return;
         try {
-            this.#modules.set(moduleName, MODULE_INSTANCE_PLACEHOLDER);
-            const module = await import(Modules[moduleName]);
-            if (!this.#modules?.has(moduleName)) return;
-            this.#modules.set(moduleName, new module.default());
+            this.#modules.set(module, MODULE_INSTANCE_PLACEHOLDER);
+            const path = `${MODULE_ROOT_PATH}${module}${MODULE_FILE_TYPE}`;
+            const source = await import(path);
+            if (!this.#modules?.has(module)) return;
+            this.#modules.set(module, new source.default());
         } catch (e) {
-            Context.logError(`unable to construct module: ${moduleName}.`, e);
+            Context.logError(`unable to construct module: ${module}.`, e);
         }
     }
 
     /**
-     * @param {string} moduleName
+     * @param {Module} module
      */
-    #destroyModule(moduleName) {
-        if (!this.#modules?.has(moduleName)) return;
+    #destroyModule(module) {
+        if (!this.#modules?.has(module)) return;
         try {
-            const module = this.#modules.get(moduleName);
-            this.#modules.delete(moduleName);
-            if (module === MODULE_INSTANCE_PLACEHOLDER) return;
-            module?.destroy();
+            const instance = this.#modules.get(module);
+            this.#modules.delete(module);
+            if (instance === MODULE_INSTANCE_PLACEHOLDER) return;
+            instance?.destroy();
         } catch (e) {
-            Context.logError(`unable to destroy module: ${moduleName}.`, e);
+            Context.logError(`unable to destroy module: ${module}.`, e);
         }
     }
 

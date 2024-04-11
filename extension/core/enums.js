@@ -44,7 +44,8 @@ export const Event = {
     MoveX: 'notify::x',
     MoveY: 'notify::y',
     AdjustmentChanged: 'changed',
-    MonitorsChanged: 'monitors-changed'
+    MonitorsChanged: 'monitors-changed',
+    SessionUpdated: 'updated'
 };
 
 /**
