@@ -9,6 +9,7 @@ import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import { Event } from '../../core/enums.js';
 import { Component, ComponentEvent } from '../base/component.js';
+import { Icon } from '../base/icon.js';
 import { Tooltip as BaseTooltip } from '../base/tooltip.js';
 import { SharedConfig } from '../../utils/config.js';
 import { SoundVolumeIcon, SoundInputIcon, SoundOutputIcon } from '../../utils/soundVolumeIcon.js';
@@ -53,11 +54,6 @@ const AppStatusItemProps = {
 };
 
 /** @type {{[prop: string]: *}} */
-const AppStatusItemIconProps = {
-    name: `${AppStatusItemProps.name}-Icon`
-};
-
-/** @type {{[prop: string]: *}} */
 const AppStatusItemValueProps = {
     name: `${AppStatusItemProps.name}-Value`,
     y_align: Clutter.ActorAlign.CENTER
@@ -90,59 +86,44 @@ const AppNameProps = {
  * @returns {string?}
  */
 const WindowTitleText = (title, appName) => {
-    if (!title || !appName) return title ?? null;
+    if (!title || !appName) return title || null;
     const endRegExp = new RegExp(` -(?=[^-]*$).*${appName}$`);
-    if (title.match(endRegExp)) {
-        title = title.replace(endRegExp, '');
-    } else {
-        title = title.replace(new RegExp(`^${appName} - `), '');
+    if (endRegExp.test(title)) {
+        return title.replace(endRegExp, '') || title;
     }
-    return title;
+    return title.replace(new RegExp(`^${appName} - `), '') || title;
 };
 
-/**
- * @augments Component<St.BoxLayout>
- */
-class AppStatusItem extends Component {
+class AppStatusItem extends Icon {
 
     /** @type {{[event: string]: () => *}?} */
     #events = {
         [ComponentEvent.Destroy]: () => this.#destroy()
     };
 
-    /** @type {St.Icon?} */
-    #icon = null;
+    /** @type {St.BoxLayout?} */
+    #actor = null;
 
     /** @type {St.Label?} */
     #value = null;
-
-    /** @param {string?} value */
-    set icon(value) {
-        const iconName = typeof value === 'string' ? value : null;
-        this.#icon?.set_icon_name(iconName);
-    }
 
     /**
      * @param {string} name
      * @param {boolean} [reactive]
      */
     constructor(name, reactive = false) {
-        const props = { ...AppStatusItemProps, reactive };
-        super(new St.BoxLayout(props));
-        this.#icon = new St.Icon(AppStatusItemIconProps);
+        super(name, `${AppStatusItemProps.name}-Icon`);
         this.#value = new St.Label(AppStatusItemValueProps);
-        const actor = this.actor;
-        actor.add_child(this.#icon);
-        actor.add_child(this.#value);
-        actor.set_pivot_point(0.5, 0.5);
+        this.#actor = new St.BoxLayout({ ...AppStatusItemProps, reactive });
+        this.#actor.add_child(super.actor);
+        this.#actor.add_child(this.#value);
+        this.#actor.set_pivot_point(0.5, 0.5);
         this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
-        if (!name) return;
-        this.icon = name;
         if (!reactive) return;
         const clickAction = new Clutter.ClickAction();
         clickAction.connect(Event.Clicked, event => this.notifyParents(Event.Clicked, { name, event }));
-        this.actor.add_action(clickAction);
-        this.connect(Event.Scroll, (_, event) => this.notifyParents(Event.Scroll, { name, event }));
+        this.#actor.add_action(clickAction);
+        this.#actor.connect(Event.Scroll, (_, event) => this.notifyParents(Event.Scroll, { name, event }));
     }
 
     /**
@@ -151,26 +132,37 @@ class AppStatusItem extends Component {
      * @returns {boolean}
      */
     update(value, allowAnimation = false) {
-        const actor = this.actor;
-        const isVisible = actor.visible; 
+        if (!this.#actor) return false;
+        const isVisible = this.#actor.visible;
         const visible = typeof value === 'number' && value >= 0;
         if (visible) this.#value?.set_text(`${value}`);
         if (visible === isVisible) return visible;
         if (!visible) {
-            actor.remove_all_transitions();
-            actor.hide();
+            this.#actor.remove_all_transitions();
+            this.#actor.hide();
             return visible;
         }
         const animationParams = { ...AnimationType.OpacityMax, ...AnimationType.ScaleNormal };
         const props = allowAnimation ? { ...AnimationType.OpacityMin, ...AnimationType.ScaleMin } : animationParams;
-        this.setProps({ ...props, visible });
-        if (allowAnimation) Animation(this, AnimationDuration.Slow, animationParams);
+        this.#actor.set({ ...props, visible });
+        if (allowAnimation) Animation(this.#actor, AnimationDuration.Slow, animationParams);
         return visible;
     }
 
+    /**
+     * @override
+     * @param {AppStatus} parent
+     * @returns {this}
+     */
+    setParent(parent) {
+        if (parent && this.#actor) parent.actor.add_child(this.#actor);
+        return this;
+    }
+
     #destroy() {
-        this.#icon = null;
+        this.#actor = null;
         this.#value = null;
+        this.#events = null;
     }
 
 }
@@ -306,7 +298,7 @@ class AppStatus extends Component {
                 const hasInput = !!soundVolumeControl?.hasInput;
                 if (!hasInput) break;
                 const inputValue = soundVolumeControl.inputVolume;
-                item.icon = SoundVolumeIcon(inputValue, true);
+                item.iconPath = SoundVolumeIcon(inputValue, true);
                 value = Math.round(inputValue * 100);
                 break;
             }
@@ -315,7 +307,7 @@ class AppStatus extends Component {
                 const hasOutput = !!soundVolumeControl?.hasOutput;
                 if (!hasOutput) break;
                 const outputValue = soundVolumeControl.outputVolume;
-                item.icon = SoundVolumeIcon(outputValue);
+                item.iconPath = SoundVolumeIcon(outputValue);
                 value = Math.round(outputValue * 100);
                 break;
             }
@@ -363,7 +355,6 @@ export class Tooltip extends BaseTooltip {
      * @param {AppButton} appButton
      */
     constructor(appButton) {
-        if (!appButton) return;
         super(appButton, MODULE_NAME);
         this.trackHover = true;
         this.#appButton = appButton;
