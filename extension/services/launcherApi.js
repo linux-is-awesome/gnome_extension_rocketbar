@@ -57,7 +57,9 @@ class LauncherApiService {
         this.#dbusId = Gio.DBus.session.own_name(
             DBUS_NAME,
             Gio.BusNameOwnerFlags.ALLOW_REPLACEMENT | Gio.BusNameOwnerFlags.REPLACE,
-            null, () => { this.#dbusId = null; }
+            null, () => {
+                this.#dbusId = null;
+            }
         );
         this.#signalId = Gio.DBus.session.signal_subscribe(
             null, DBUS_SIGNAL_SOURCE, null, null, null, Gio.DBusSignalFlags.NONE,
@@ -66,9 +68,9 @@ class LauncherApiService {
     }
 
     destroy() {
-        this.disconnect();
         if (this.#dbusId) Gio.DBus.session.unown_name(this.#dbusId);
         if (this.#signalId) Gio.DBus.session.signal_unsubscribe(this.#signalId);
+        this.#callback = null;
         this.#dbusId = null;
         this.#signalId = null;
     }
@@ -130,7 +132,7 @@ class LauncherApiService {
 export default class LauncherApiProxy {
 
     /** @type {LauncherApiService?} */
-    #service = null;
+    static #service = null;
 
     /** @type {Map<*, () => void>?} */
     #notificationClients = new Map();
@@ -143,12 +145,12 @@ export default class LauncherApiProxy {
 
     /** @type {Map<string, number>?} */
     get notifications() {
-        return this.#service?.notifications ?? null;
+        return LauncherApiProxy.#service?.notifications ?? null;
     }
 
     /** @type {Map<string, number>?} */
     get progress() {
-        return this.#service?.progress ?? null;
+        return LauncherApiProxy.#service?.progress ?? null;
     }
 
     constructor() {
@@ -156,13 +158,15 @@ export default class LauncherApiProxy {
     }
 
     destroy() {
+        LauncherApiProxy.#service?.disconnect();
         Context.signals.removeAll(this);
-        this.#service?.destroy();
-        this.#service = null;
         this.#notificationClients?.clear();
         this.#progressClients?.clear();
         this.#notificationClients = null;
         this.#progressClients = null;
+        if (Context.isSessionLocked) return;
+        LauncherApiProxy.#service?.destroy();
+        LauncherApiProxy.#service = null;
     }
 
     /**
@@ -194,14 +198,13 @@ export default class LauncherApiProxy {
     }
 
     #handleConfig() {
-        if (this.#config.enableLauncherApi && this.#service) return;
         if (!this.#config.enableLauncherApi) {
-            this.#service?.destroy();
-            this.#service = null;
+            LauncherApiProxy.#service?.destroy();
+            LauncherApiProxy.#service = null;
             return;
         }
-        this.#service = new LauncherApiService();
-        this.#service.connect(notifyType => this.#notifyClients(notifyType));
+        LauncherApiProxy.#service ??= new LauncherApiService();
+        LauncherApiProxy.#service.connect(notifyType => this.#notifyClients(notifyType));
     }
 
     /**
