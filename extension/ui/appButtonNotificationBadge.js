@@ -128,7 +128,7 @@ export class AppButtonNotificationBadge {
 
         this._updateStyle();
 
-        this._layout.add_actor(this._notificationBadge);
+        this._layout.add_child(this._notificationBadge);
 
         this._notificationBadge.set_pivot_point(0.5, 0.5);
 

@@ -196,7 +196,7 @@ export class AppButtonIndicator {
 
         this._indicators.push(indicator);
 
-        this._layout.add_actor(indicator);
+        this._layout.add_child(indicator);
 
         indicator.ease({
             opacity: 255,

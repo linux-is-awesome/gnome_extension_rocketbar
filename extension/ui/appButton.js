@@ -4,7 +4,7 @@
 
 import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
-import Meta from 'gi://Meta';
+import Mtk from 'gi://Mtk';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -299,7 +299,7 @@ export const AppButton = GObject.registerClass(
                 y_align: Clutter.ActorAlign.FILL
             });
 
-            this._layout.add_actor(this._appIcon);
+            this._layout.add_child(this._appIcon);
 
             this.set_child(this._layout);
         }
@@ -1178,7 +1178,7 @@ export const AppButton = GObject.registerClass(
                 return;
             }
 
-            const rect = new Meta.Rectangle();
+            const rect = new Mtk.Rectangle();
 
             [rect.x, rect.y] = this.get_transformed_position();
 

@@ -82,7 +82,7 @@ export class PositionProvider {
         }
 
         if (parent) {
-            parent.remove_actor(this._actor);
+            parent.remove_child(this._actor);
         }
 
         targetParent.insert_child_at_index(this._actor, this._offset);

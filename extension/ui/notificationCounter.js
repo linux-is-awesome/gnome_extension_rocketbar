@@ -174,8 +174,8 @@ export const NotificationCounter = GObject.registerClass(
             // the spacer visibility should be controlled by the counter visibility
             this._counter.bind_property('visible', spacer, 'visible', GObject.BindingFlags.SYNC_CREATE);
 
-            this.add_actor(spacer);
-            this.add_actor(this._counter);
+            this.add_child(spacer);
+            this.add_child(this._counter);
         }
 
         _createConnections() {

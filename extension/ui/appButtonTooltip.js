@@ -24,7 +24,7 @@ class TooltipCounter {
             style_class: 'rocketbar__tooltip_counter'
         });
 
-        this.actor.add_actor(new St.Icon({
+        this.actor.add_child(new St.Icon({
             name: 'appButton-tooltip-counter-icon',
             gicon: icon
         }));
@@ -33,7 +33,7 @@ class TooltipCounter {
             name: 'appButton-tooltip-counter-text'
         });
 
-        this.actor.add_actor(this._label);
+        this.actor.add_child(this._label);
     }
 
     setCount(count) {
@@ -129,27 +129,27 @@ export class AppButtonTooltip {
             style: `max-width: ${this._maxWidth}px;`
         });
 
-        this._tooltip.add_actor(this._tooltipText);
+        this._tooltip.add_child(this._tooltipText);
 
         // create windows counter
 
         this._windowsCounter = new TooltipCounter(this._iconProvider.getIcon('window-symbolic'), 2);
 
-        this._tooltip.add_actor(this._windowsCounter.actor);
+        this._tooltip.add_child(this._windowsCounter.actor);
 
         // create notifications counter
 
         this._notificationsCounter = new TooltipCounter(this._iconProvider.getIcon('notification-symbolic'), 1);
 
-        this._tooltip.add_actor(this._notificationsCounter.actor);
+        this._tooltip.add_child(this._notificationsCounter.actor);
 
         // create sound icons
 
         this._soundOutputVolume = new TooltipCounter(this._iconProvider.getIcon('audio-speakers-symbolic'));
         this._soundInputVolume = new TooltipCounter(this._iconProvider.getIcon('audio-input-microphone-symbolic'));
 
-        this._tooltip.add_actor(this._soundOutputVolume.actor);
-        this._tooltip.add_actor(this._soundInputVolume.actor);
+        this._tooltip.add_child(this._soundOutputVolume.actor);
+        this._tooltip.add_child(this._soundInputVolume.actor);
 
         // all ui elements created!
 
