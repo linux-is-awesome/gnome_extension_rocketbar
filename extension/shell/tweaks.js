@@ -55,8 +55,6 @@ export class ShellTweaks {
 
         this._removeOverviewClickHandler();
 
-        this._restoreOverviewDash();
-
         this._restorePanelMenuManagerBehavior();
 
         this._destroySoundVolumeControl();
@@ -91,12 +89,6 @@ export class ShellTweaks {
     _handleSettings() {
 
         this._setConfig();
-
-        if (this._config.overviewKillDash) {
-            this._killOverviewDash();
-        } else {
-            this._restoreOverviewDash();
-        }
 
         if (this._config.panelScrollAction === 'change_sound_volume' ||
                 this._config.enablePanelMiddleButtonHandler) {
@@ -466,55 +458,6 @@ export class ShellTweaks {
         // remove custom click action from the overview
         Main.overview._overview._controls.remove_action(this._overviewClickHandler);
         this._overviewClickHandler = null;
-    }
-
-    _killOverviewDash() {
-
-        if (!Main.overview.dash._workId || this._dashDeferredWorkBackup ) {
-            return;
-        }
-
-        if (!Main._deferredWorkData[Main.overview.dash._workId]) {
-            return;
-        }
-
-        this._dashDeferredWorkBackup = Main._deferredWorkData[Main.overview.dash._workId];
-
-         // prevent deferred work from running dash redisplay
-        Main._deferredWorkData[Main.overview.dash._workId] = {
-            actor: this._dashDeferredWorkBackup.actor,
-            callback: () => {}
-        }
-
-        // leave a gap below the Workspace Thumbnail
-        Main.overview.dash.height = 40;
-
-        Main.overview.dash.showAppsButton.hide();
-        Main.overview.dash._background.hide();
-
-        // remove all app icons from the dash
-        Main.overview.dash._box.get_children().forEach(appIcon => appIcon.destroy());
-
-        Main.overview.dash._separator = null;
-    }
-
-    _restoreOverviewDash() {
-
-        if (!this._dashDeferredWorkBackup || !Main.overview.dash._workId) {
-            return;
-        }
-
-        Main.overview.dash.showAppsButton.show();
-        Main.overview.dash._background.show();
-
-        // restore size of the dash
-        Main.overview.dash.height = -1;
-        Main.overview.dash.setMaxSize(-1, -1);
-
-        // restore deferred work
-        Main._deferredWorkData[Main.overview.dash._workId] = this._dashDeferredWorkBackup;
-
-        this._dashDeferredWorkBackup = null;
     }
 
     //#endregion overview tweaks
