@@ -1,0 +1,11 @@
+#!/bin/sh
+
+UUID=`cat ./extension/metadata.json | grep -oP '(?<="uuid": ")[^"]*'`
+
+gnome-extensions disable $UUID
+
+read -p "Press ENTER if you want to enable the extension now or type anything to skip: " V
+
+if [ -z $V ]; then
+    gnome-extensions enable $UUID
+fi
