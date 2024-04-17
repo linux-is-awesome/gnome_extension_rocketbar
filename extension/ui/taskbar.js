@@ -122,7 +122,7 @@ export const Taskbar = GObject.registerClass(
                 y_align: Clutter.ActorAlign.FILL
             });
 
-            this.add_actor(this._layout);
+            this.add_child(this._layout);
         }
 
         _createConnections() {
@@ -784,7 +784,7 @@ export const Taskbar = GObject.registerClass(
 
             this._stopScrollToActiveButton();
 
-            const adjustment = this.hscroll.adjustment;
+            const adjustment = this.hadjustment;
 
             let [value, lower_, upper, stepIncrement_, pageIncrement_, pageSize] = adjustment.get_values();
 
