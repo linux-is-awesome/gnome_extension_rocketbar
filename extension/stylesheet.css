@@ -39,15 +39,7 @@
 }
 .rocketbar__popup-menu
 .popup-separator-menu-item {
-    font-size: 0.8em;
-}
-.rocketbar__popup-menu
-.rocketbar__popup-menu_section-title {
-    margin-top: 10px;
-}
-.rocketbar__popup-menu
-.popup-menu-icon {
-    margin-left: 10px;
+    font-size: 0.9em;
 }
 
 /* date menu */

@@ -84,7 +84,7 @@ class AppButtonMenuBase extends AppMenu {
 
         // override styles
         this.actor.remove_style_class_name('app-menu');
-        this.actor.add_style_class_name('panel-menu aggregate-menu rocketbar__popup-menu');
+        this.actor.add_style_class_name('rocketbar__popup-menu');
 
         this._updateDetailsVisibility();
 
@@ -108,7 +108,7 @@ class AppButtonMenuBase extends AppMenu {
 
             this.setApp(this._appButton.app);
 
-            Main.uiGroup.add_actor(this.actor);
+            Main.uiGroup.add_child(this.actor);
 
         } else {
             this._handleSettings();
@@ -571,8 +571,6 @@ export class AppButtonMenu extends AppButtonMenuBase {
         if (!title) {
             return separator;
         }
-
-        separator.add_style_class_name('rocketbar__popup-menu_section-title');
 
         return separator;
     }
