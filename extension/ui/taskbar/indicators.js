@@ -14,12 +14,14 @@ import { Overview } from '../../core/shell.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Event } from '../../core/enums.js';
 import { SharedConfig } from '../../utils/config.js';
+import { Animation, AnimationType } from '../base/animation.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_Indicators';
 const CONFIG_PATH = 'taskbar';
-const ANIMATION_INTERVAL = 10;
 const ANIMATION_FRAMES = 15;
+const ANIMATION_INTERVAL = 10;
 const ANIMATION_STEP_MIN = 0.1;
+const ANIMATION_DURATION = ANIMATION_FRAMES * ANIMATION_INTERVAL;
 
 /** @enum {string} */
 const IndicatorsPosition = {
@@ -52,7 +54,8 @@ const DefaultProps = {
     x_expand: true,
     y_expand: true,
     x_align: Clutter.ActorAlign.FILL,
-    y_align: Clutter.ActorAlign.FILL
+    y_align: Clutter.ActorAlign.FILL,
+    opacity: AnimationType.OpacityMin.opacity
 };
 
 /** @type {{[prop: string]: *}} */
@@ -210,7 +213,7 @@ class Indicator extends IndicatorBase {
             this.#spacer = null;
         }
         this.#spacer?.update({ size: spacing });
-        super.update({size: Math.max(size ?? 0, this.#weight)});
+        super.update({ size: Math.max(size ?? 0, this.#weight) });
     }
 
     /**
@@ -298,8 +301,8 @@ class IndicatorsBackend {
      * @param {BackendParams} params
      */
     update(params = BackendParams) {
-        if (!this.#indicators || !this.#canUpdate(params)) return;
-        this.#job?.reset();
+        if (!this.#indicators || !this.#job || !this.#canUpdate(params)) return;
+        this.#job.reset();
         const { scale, count, size, weight, spacing } = params;
         if (count > this.#indicators.length) {
             this.#indicators.length = count;
@@ -357,7 +360,7 @@ class IndicatorsBackend {
     }
 
     #animate() {
-        this.#job?.reset().queue(() => {
+        this.#job?.queue(() => {
             if (!this.#indicators) return;
             this.#triggerRerender();
             const validIndicators = [];
@@ -369,7 +372,7 @@ class IndicatorsBackend {
             }
             if (animationsCount) return this.#animate();
             this.#indicators = validIndicators;
-            this.#job?.reset().queue(() => this.#triggerRerender());
+            this.#job?.queue(() => this.#triggerRerender());
         });
     }
 
@@ -463,11 +466,20 @@ export class Indicators extends Component {
     }
 
     rerender() {
-        if (!this.hasAllocation) return;
+        if (!this.hasAllocation || !this.#backend) return;
         const count = this.#appButton?.windowsCount ?? 0;
         if (!count && !this.#count) return;
         this.#count = count;
-        this.#backend?.update(this.#backendParams);
+        const backendParams = this.#backendParams;
+        this.#backend.update(backendParams);
+        const hasIndicators = !!backendParams.count;
+        const opacity = this.actor.opacity;
+        if ((hasIndicators && opacity === AnimationType.OpacityMax.opacity) ||
+            (!hasIndicators && opacity === AnimationType.OpacityMin.opacity)) return;
+        const animationDuration = hasIndicators ? ANIMATION_DURATION : ANIMATION_DURATION * 2;
+        const animationParams = hasIndicators ? AnimationType.OpacityMax : {
+            ...AnimationType.OpacityMin, mode: Clutter.AnimationMode.EASE_OUT_QUAD };
+        Animation(this, animationDuration, animationParams);
     }
 
     #destroy() {
