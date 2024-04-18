@@ -87,7 +87,7 @@ const AppNameProps = {
  */
 const WindowTitleText = (title, appName) => {
     if (!title || !appName) return title || null;
-    const endRegExp = new RegExp(` -(?=[^-]*$).*${appName}$`);
+    const endRegExp = new RegExp(` [-—](?=[^-]*$).*${appName}$`);
     if (endRegExp.test(title)) {
         return title.replace(endRegExp, '') || title;
     }
