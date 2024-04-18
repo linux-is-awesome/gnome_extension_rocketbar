@@ -118,7 +118,7 @@ class LauncherApiService {
      * @param {number} value
      */
     #handleProgress(appId, value) {
-        value = +parseFloat(`${value}`).toFixed(PROGRESS_VALUE_DECIMAL_PLACES) || 0;
+        value = Math.max(0, +parseFloat(`${value}`).toFixed(PROGRESS_VALUE_DECIMAL_PLACES) || 0);
         const oldValue = this.#progress.get(appId) ?? 0;
         if (value === oldValue || (value === 1 && !this.#progress.has(appId))) return;
         if (value) this.#progress.set(appId, value);
