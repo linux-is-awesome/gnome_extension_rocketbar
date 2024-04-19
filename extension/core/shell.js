@@ -7,7 +7,6 @@
  * @typedef {import('resource:///org/gnome/shell/ui/layout.js').LayoutManager} LayoutManager
  * @typedef {import('resource:///org/gnome/shell/ui/panel.js').Panel} Panel
  * @typedef {import('resource:///org/gnome/shell/ui/overview.js').Overview} Overview
- * @typedef {import('resource:///org/gnome/shell/ui/popupMenu').PopupMenuManager} PopupMenuManager
  * @typedef {import('resource:///org/gnome/shell/ui/messageTray').MessageTray} MessageTray
  * @typedef {import('resource:///org/gnome/shell/ui/osdWindow').OsdWindowManager} OsdWindowManager
  *
