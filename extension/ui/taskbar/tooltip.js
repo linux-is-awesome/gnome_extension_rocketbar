@@ -224,7 +224,7 @@ class AppStatus extends Component {
     }
 
     /**
-     * @param {{ name: string, event: Clutter.Event }} params
+     * @param {{name: string, event: Clutter.Event}} params
      * @returns {boolean}
      */
     #handleItemClick(params) {
@@ -245,7 +245,7 @@ class AppStatus extends Component {
     }
 
     /**
-     * @param {{ name: string, event: Clutter.Event }} params
+     * @param {{name: string, event: Clutter.Event}} params
      * @returns {boolean}
      */
     #handleItemScroll(params) {

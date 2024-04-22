@@ -421,7 +421,7 @@ export class Component {
     }
 
     /**
-     * @param {{ x: number, y: number, source: *, dragActor: *, targetActor: * }} event
+     * @param {{x: number, y: number, source: *, dragActor: *, targetActor: *}} event
      * @returns {Dnd.DragMotionResult}
      */
     #dragMotion(event) {

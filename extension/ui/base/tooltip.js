@@ -341,9 +341,9 @@ export class Tooltip extends Component {
      * @param {{x: number, y: number, width: number, height: number}} targetRect
      */
     #transform(initialRect, targetRect) {
-        /** @type {{ x?: number, y?: number }} */
+        /** @type {{x?: number, y?: number}} */
         const position = {};
-        /** @type {{ width?: number, height?: number }} */
+        /** @type {{width?: number, height?: number}} */
         const size = {};
         const initialProps = {};
         const currentRect = this.#rect;
