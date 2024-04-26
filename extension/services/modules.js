@@ -47,7 +47,7 @@ export default class ModulesService {
     /** @type {Map<Module, *>?} */
     #modules = new Map();
 
-    /** @type {Config} */
+    /** @type {Config?} */
     #config = Config(this, ConfigFields, () => this.#update());
 
     constructor() {
@@ -61,15 +61,17 @@ export default class ModulesService {
         const modules = this.#modules.keys();
         for (const module of modules) this.#destroyModule(module);
         this.#modules = null;
+        this.#config = null;
     }
 
     #update() {
-        if (!this.#modules) return;
+        if (!this.#modules || !this.#config) return;
         const sessionMode = Session.currentMode;
         const modules = sessionMode ? Modules[sessionMode] ?? [] : [];
         const oldModules = this.#modules.keys();
         for (const module of oldModules) {
-            if (!modules.includes(module)) this.#destroyModule(module);
+            const configValue = this.#config[module];
+            if (!configValue || !modules.includes(module)) this.#destroyModule(module);
         }
         for (const module of modules) {
             const configValue = this.#config[module];
