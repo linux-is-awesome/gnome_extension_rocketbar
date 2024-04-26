@@ -2,18 +2,18 @@
  * JSDoc types
  *
  * @typedef {import('../core/context/jobs.js').Jobs.Job} Job
- * @typedef {*} AppFavorites
- * @typedef {*} ParentalControlsManager
+ * @typedef {import('./taskbar/windowRouter.js').WindowInfo} WindowInfo
  */
 
 import GObject from 'gi://GObject';
 import Clutter from 'gi://Clutter';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
-import { getAppFavorites as AppFavorites } from 'resource:///org/gnome/shell/ui/appFavorites.js';
 import Context from '../core/context.js';
 import { Event, Delay } from '../core/enums.js';
 import { Config } from '../utils/config.js';
+import Favorites from './taskbar/favorites.js';
+import WindowRouter from './taskbar/windowRouter.js';
 
 const CONFIG_PATH = 'taskbar';
 
@@ -25,123 +25,9 @@ const SUPPORTED_WINDOW_TYPES = [
 
 /** @enum {string} */
 const ConfigFields = {
-    enableFavorites: 'taskbar-show-favorites'
+    enableFavorites: 'taskbar-show-favorites',
+    multiMonitorRouting: 'multi-monitor-routing'
 };
-
-class Favorites {
-
-    /** @type {AppFavorites} */
-    #favorites = AppFavorites();
-
-    /** @type {Set<Shell.App>?} */
-    #apps = null;
-
-    /** @type {Map<string, Shell.App>?} */
-    #appsById = null;
-
-    /** @type {(() => void)?} */
-    #callback = null;
-
-    /** @type {ParentalControlsManager} */
-    get #parentalControlsManager() {
-        return this.#favorites._parentalControlsManager;
-    }
-
-    /** @type {Map<string, Shell.App>} */
-    get appsById() {
-        if (this.#appsById) return this.#appsById;
-        this.#appsById = new Map();
-        const appsById = this.#favorites.getFavoriteMap();
-        for (const appId in appsById) this.#appsById.set(appId, appsById[appId]);
-        return this.#appsById;
-    }
-
-    /** @type {Set<Shell.App>} */
-    get apps() {
-        if (this.#appsById && this.#apps) return this.#apps;
-        this.#apps = new Set(this.appsById.values());
-        return this.#apps;
-    }
-
-    /**
-     * @param {() => void} callback
-     */
-    constructor(callback) {
-        if (typeof callback !== 'function') return;
-        this.#callback = callback;
-        Context.signals.add(this,
-            [Shell.AppSystem.get_default(), Event.InstalledAppsChanged, () => this.#handleInstalled()],
-            [this.#favorites, Event.FavoritesChanged, () => this.#handleChanged()]);
-        this.#callback();
-    }
-
-    destroy() {
-        Context.signals.removeAll(this);
-        if (typeof this.#callback !== 'function') return;
-        this.#callback();
-        this.#callback = null;
-    }
-
-    /**
-     * @param {Shell.App} app
-     * @param {number} [position]
-     */
-    add(app, position = -1) {
-        if (app instanceof Shell.App === false || !app.id) return;
-        const oldPosition = [...this.appsById.keys()].indexOf(app.id);
-        if (position === oldPosition) return;
-        if (oldPosition < 0) this.#favorites.addFavoriteAtPos(app.id, position);
-        else this.#favorites.moveFavoriteToPos(app.id, position);
-    }
-
-    /**
-     * @param {Shell.App} app
-     * @returns {boolean}
-     */
-    canAdd(app) {
-        if (app instanceof Shell.App === false || !app.id || !app.app_info) return false;
-        const validationFunction = this.#parentalControlsManager?.shouldShowApp;
-        if (typeof validationFunction !== 'function') return false;
-        return validationFunction(app.app_info);
-    }
-
-    /**
-     * @param {Shell.App} app
-     */
-    remove(app) {
-        if (app instanceof Shell.App === false || !app.id) return;
-        this.#favorites.removeFavorite(app.id);
-    }
-
-    #handleChanged() {
-        if (!this.#appsById || typeof this.#callback !== 'function') return;
-        this.#appsById = null;
-        this.#callback();
-    }
-
-    #handleInstalled() {
-        if (typeof this.#callback !== 'function') return;
-        const oldAppsById = this.#appsById;
-        const newAppsById = this.#favorites.getFavoriteMap();
-        let hasFavorites = false;
-        let isChanged = false;
-        for (const appId in newAppsById) {
-            hasFavorites = true;
-            const newApp = newAppsById[appId];
-            const oldApp = oldAppsById?.get(appId);
-            if (oldApp && oldApp === newApp) continue;
-            isChanged = true;
-            break;
-        }
-        if (!isChanged && !hasFavorites && oldAppsById?.size) {
-            isChanged = true;
-        }
-        if (!isChanged) return;
-        this.#appsById = null;
-        this.#callback();
-    }
-
-}
 
 class TaskbarService {
 
@@ -150,6 +36,9 @@ class TaskbarService {
 
     /** @type {Shell.WindowTracker} */
     #windowTracker = Shell.WindowTracker.get_default();
+
+    /** @type {WindowRouter?} */
+    #windowRouter = null;
 
     /** @type {Meta.Workspace?} */
     #oldWorkspace = null;
@@ -160,10 +49,10 @@ class TaskbarService {
     /** @type {Favorites?} */
     #favorites = null;
 
-    /** @type {Map<Shell.App, Set<Meta.Window>>} */
+    /** @type {Map<Shell.App, Set<Meta.Window>>?} */
     #apps = new Map();
 
-    /** @type {Map<Meta.Window, Shell.App>} */
+    /** @type {Map<Meta.Window, WindowInfo>?} */
     #windows = Context.getStorage(this.constructor.name);
 
     /** @type {Set<Shell.App>?} */
@@ -172,23 +61,23 @@ class TaskbarService {
     /** @type {Set<TaskbarClient>?} */
     #clients = new Set();
 
-    /** @type {Config} */
+    /** @type {Config?} */
     #config = Config(this, ConfigFields, () => this.#handleConfig(), { path: CONFIG_PATH });
 
-    /** @type {Job} */
-    #notifyJob = Context.jobs.new(this);
+    /** @type {Job?} */
+    #job = null;
 
     /** @type {Favorites?} */
     get favorites() {
         return this.#favorites;
     }
 
-    /** @type {Map<Shell.App, Set<Meta.Window>>} */
+    /** @type {Map<Shell.App, Set<Meta.Window>>?} */
     get apps() {
         return this.#apps;
     }
 
-    /** @type {Map<Meta.Window, Shell.App>} */
+    /** @type {Map<Meta.Window, WindowInfo>?} */
     get windows() {
         return this.#windows;
     }
@@ -209,7 +98,7 @@ class TaskbarService {
     }
 
     constructor() {
-        Context.jobs.new(this).destroy(() => this.#initialize());
+        this.#job = Context.jobs.new(this).queue(() => this.#initialize());
     }
 
     /**
@@ -217,17 +106,22 @@ class TaskbarService {
      */
     destroy() {
         if (this.#clients?.size) return false;
-        Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
-        this.#workspace = null;
+        this.#job?.destroy();
         this.#favorites?.destroy();
-        this.#favorites = null;
-        this.#apps.clear();
-        this.#windows.clear();
+        this.#windowRouter?.destroy();
+        this.#apps?.clear();
         this.#trackedApps?.clear();
         this.#clients?.clear();
+        this.#job = null;
+        this.#workspace = null;
+        this.#favorites = null;
+        this.#windowRouter = null;
         this.#trackedApps = null;
+        this.#apps = null;
+        this.#windows = null;
         this.#clients = null;
+        this.#config = null;
         return true;
     }
 
@@ -252,51 +146,63 @@ class TaskbarService {
      * @returns {boolean}
      */
     isValidWindow(window) {
-        return this.#isValidWindow(window);
+        return window instanceof Meta.Window && this.#windowTypes.has(window.get_window_type());
     }
 
     #initialize() {
         this.#handleConfig();
-        this.#addWindows();
+        this.#handleWindows();
         this.#handleWorkspace();
         Context.signals.add(this,
             [Shell.AppSystem.get_default(), Event.AppStateChanged, (_, app) => this.#handleAppState(app)],
-            [global.window_manager, Event.SwitchWorkspace, () => this.#handleWorkspace()]
-        );
+            [global.window_manager, Event.SwitchWorkspace, () => this.#handleWorkspace()]);
     }
 
     #handleConfig() {
-        if (!this.#config.enableFavorites) {
+        if (!this.#config || !this.#windows) return;
+        const { enableFavorites, multiMonitorRouting } = this.#config;
+        if (!enableFavorites && this.#favorites) {
             this.#favorites?.destroy();
             this.#favorites = null;
-            return;
+        } else if (enableFavorites && !this.#favorites) {
+            this.#favorites = new Favorites(() => this.#trackAll(Delay.Queue));
         }
-        this.#favorites ??= new Favorites(() => this.#trackAll(Delay.Queue));
+        if (!multiMonitorRouting && this.#windowRouter) {
+            this.#windowRouter?.destroy();
+            this.#windowRouter = null;
+        } else if (multiMonitorRouting && !this.#windowRouter) {
+            this.#windowRouter = new WindowRouter(this.#windows);
+        }
     }
 
-    #addWindows() {
-        const windows = global.get_window_actors();
-        if (!windows.length) return this.#windows.clear();
-        const oldWindows = this.#windows.size ? [...this.#windows.keys()] : null;
+    #handleWindows() {
+        if (!this.#windows) return;
+        const windowActors = global.get_window_actors();
+        if (!windowActors.length) return this.#windows.clear();
+        const hasOldWindows = !!this.#windows.size;
         const newWindows = new Set();
-        for (let i = 0, l = windows.length; i < l; ++i) {
-            const window = windows[i].metaWindow;
-            if (!this.#isValidWindow(window)) continue;
-            if (oldWindows) newWindows.add(window);
-            this.#addWindow(window, false);
-        }
-        if (!oldWindows) return;
-        if (!newWindows.size) return this.#windows.clear();
-        for (let i = 0, l = oldWindows.length; i < l; ++i) {
-            const window = oldWindows[i];
-            if (!newWindows.has(window)) {
-                this.#windows.delete(window);
+        let hasValidOldWindow = false;
+        for (let i = 0, l = windowActors.length; i < l; ++i) {
+            const window = windowActors[i].metaWindow;
+            const windowInfo = hasOldWindows ? this.#windows.get(window) : null;
+            if (windowInfo) {
+                hasValidOldWindow = true;
+                newWindows.add(window);
+                this.#handleWindowInfo(windowInfo);
                 continue;
             }
-            const app = this.#windows.get(window);
-            if (!app) continue;
-            this.#addAppWindow(app, window);
+            if (!this.isValidWindow(window)) continue;
+            newWindows.add(window);
+            this.#addWindow(window, false);
         }
+        if (!newWindows.size) return this.#windows.clear();
+        if (!hasOldWindows) return;
+        const oldWindows = this.#windows.keys();
+        for (const window of oldWindows) {
+            if (!newWindows.has(window)) this.#windows.delete(window);
+        }
+        if (!this.#windowRouter || !hasValidOldWindow) return;
+        this.#windowRouter.recover();
     }
 
     #handleWorkspace() {
@@ -315,7 +221,7 @@ class TaskbarService {
         if (!workspaceWindows?.length) return this.#trackAll();
         for (let i = 0, l = workspaceWindows.length; i < l; ++i) {
             const window = workspaceWindows[i];
-            if (!this.#isValidWindow(window)) continue;
+            if (!this.isValidWindow(window)) continue;
             this.#addWindow(window, false);
         }
         this.#trackAll();
@@ -325,16 +231,22 @@ class TaskbarService {
      * @param {Shell.App} app
      */
     #handleAppState(app) {
-        if (!this.#apps || app instanceof Shell.App === false) return;
+        if (!this.#apps || !this.#windows ||
+            app instanceof Shell.App === false) return;
         switch (app.state) {
             case Shell.AppState.STARTING: return;
             case Shell.AppState.RUNNING:
                 if (this.#apps.has(app)) return;
                 const windows = app.get_windows();
                 if (!windows.length) return;
-                this.#apps.set(app, new Set(windows));
-                if (windows.length === 1) this.#windows.set(windows[0], app);
-                else for (let i = 0, l = windows.length; i < l; ++i) this.#windows.set(windows[i], app);
+                let hasValidWindows = false;
+                for (let i = 0, l = windows.length; i < l; ++i) {
+                    const window = windows[i];
+                    if (!this.isValidWindow(window)) continue;
+                    this.#createWindowInfo(window, app);
+                    hasValidWindows = true;
+                }
+                if (!hasValidWindows) return;
                 return this.#trackApp(app);
             default: if (!this.#apps.has(app)) return;
         }
@@ -352,8 +264,9 @@ class TaskbarService {
      * @param {Meta.Window} window
      */
     #addWindowAsync(window) {
-        if (!this.#windows || !this.#isValidWindow(window)) return;
-        if (this.#windows.has(window)) return this.#trackApp(this.#windows.get(window) ?? null);
+        if (!this.#windows || !this.isValidWindow(window)) return;
+        const windowInfo = this.#updateWindowInfo(window);
+        if (windowInfo) return this.#trackApp(windowInfo.app);
         Context.jobs.new(window).destroy(() => this.#addWindow(window));
     }
 
@@ -362,21 +275,11 @@ class TaskbarService {
      * @param {boolean} [track]
      */
     #addWindow(window, track = true) {
-        if (!this.#windows || this.#windows.has(window)) return;
-        const app = this.#windowTracker?.get_window_app(window);
+        if (!this.#windows || this.#updateWindowInfo(window)) return;
+        const app = this.#windowTracker.get_window_app(window);
         if (typeof app?.id !== 'string') return;
-        this.#windows.set(window, app);
-        this.#addAppWindow(app, window);
+        this.#createWindowInfo(window, app);
         if (track) this.#trackApp(app);
-    }
-
-    /**
-     * @param {Shell.App} app
-     * @param {Meta.Window} window
-     */
-    #addAppWindow(app, window) {
-        if (!this.#apps.has(app)) this.#apps.set(app, new Set([window]));
-        else this.#apps.get(app)?.add(window);
     }
 
     /**
@@ -385,7 +288,7 @@ class TaskbarService {
      * @param {Meta.Window} window
      */
     #removeWindowAsync(window) {
-        if (!this.#windows || !this.#isValidWindow(window)) return;
+        if (!this.#windows || !this.isValidWindow(window)) return;
         Context.jobs.removeAll(window);
         if (!this.#windows.has(window)) return;
         Context.jobs.new(window).destroy(() => this.#removeWindow(window));
@@ -395,10 +298,10 @@ class TaskbarService {
      * @param {Meta.Window} window
      */
     #removeWindow(window) {
-        if (!this.#windows?.has(window)) return;
-        const app = this.#windows.get(window);
+        if (!this.#windows) return;
+        const app = this.#updateWindowInfo(window)?.app;
         if (!app) return;
-        const appWindows = new WeakSet(app.get_windows() ?? []);
+        const appWindows = new WeakSet(app.get_windows());
         if (appWindows.has(window)) return this.#trackApp(app);
         this.#windows.delete(window);
         if (!this.#apps?.has(app)) return;
@@ -408,11 +311,46 @@ class TaskbarService {
         this.#trackApp(app);
     }
 
+
     /**
      * @param {Meta.Window} window
+     * @param {Shell.App} app
      */
-    #isValidWindow(window) {
-        return window instanceof Meta.Window && this.#windowTypes.has(window.get_window_type());
+    #createWindowInfo(window, app) {
+        if (!window || !app || !this.#windows) return;
+        const workspace = window.get_workspace().index();
+        const windowInfo = { window, app, workspace };
+        this.#windows.set(window, windowInfo);
+        this.#handleWindowInfo(windowInfo);
+    }
+
+    /**
+     * @param {Meta.Window} window
+     * @returns {WindowInfo?}
+     */
+    #updateWindowInfo(window) {
+        const windowInfo = this.#windows?.get(window);
+        if (!windowInfo) return null;
+        if (this.#windowRouter?.isRouting) return windowInfo;
+        Context.jobs.new(window).destroy(() => {
+            if (this.#windowRouter?.isRouting || !this.#windows?.has(window)) return;
+            windowInfo.workspace = window.get_workspace().index();
+        });
+        return windowInfo;
+    }
+
+    /**
+     * @param {WindowInfo} windowInfo
+     */
+    #handleWindowInfo(windowInfo) {
+        if (!this.#apps || !windowInfo) return;
+        const { window, app } = windowInfo;
+        if (!window || !app) return;
+        const appWindows = this.#apps.get(app);
+        if (!appWindows) this.#apps.set(app, new Set([window]));
+        else if (!appWindows.has(window)) appWindows.add(window);
+        if (!this.#workspace || !this.#windowRouter) return;
+        this.#windowRouter.route(windowInfo);
     }
 
     /**
@@ -421,7 +359,7 @@ class TaskbarService {
     #trackAll(delay = Delay.Idle) {
         if (!this.#workspace) return;
         this.#trackedApps = null;
-        this.#resetJob(delay);
+        this.#job?.reset(delay).queue(() => this.#notifyClients());
     }
 
     /**
@@ -431,14 +369,7 @@ class TaskbarService {
         if (!this.#workspace || !this.#trackedApps ||
             !app || this.#trackedApps.has(app)) return;
         this.#trackedApps.add(app);
-        this.#resetJob(Delay.Queue);
-    }
-
-    /**
-     * @param {number} [delay]
-     */
-    #resetJob(delay = Delay.Idle) {
-        this.#notifyJob.reset(delay).queue(() => this.#notifyClients());
+        this.#job?.reset(Delay.Queue).queue(() => this.#notifyClients());
     }
 
     #notifyClients() {
@@ -545,7 +476,7 @@ export class TaskbarClient {
     queryWindows(currentWorkspace = false, skipTaskbar = false) {
         const service = TaskbarClient.#service;
         if (!service) return null;
-        const windows = this.#app ? service.apps.get(this.#app) : new Set(service.windows.keys());
+        const windows = this.#app ? service.apps?.get(this.#app) : new Set(service.windows?.keys());
         if (!windows?.size) return null;
         if (this.#testQuery(currentWorkspace, skipTaskbar)) return windows;
         const result = new Set();
@@ -564,9 +495,11 @@ export class TaskbarClient {
     queryApps(currentWorkspace = false, skipTaskbar = false) {
         const service = TaskbarClient.#service;
         if (!service) return null;
-        if (this.#testQuery(currentWorkspace, skipTaskbar)) return new Set(this.#app ? [this.#app] : service.apps.keys());
+        if (this.#testQuery(currentWorkspace, skipTaskbar)) {
+            return new Set(this.#app ? [this.#app] : service.apps?.keys());
+        }
         if (this.#app) {
-            const windows = service.apps.get(this.#app);
+            const windows = service.apps?.get(this.#app);
             if (!windows?.size) return null;
             for (const window of windows) {
                 if (!this.#testWindow(window, currentWorkspace, skipTaskbar)) continue;
@@ -577,8 +510,9 @@ export class TaskbarClient {
         const windows = service.windows;
         if (!windows?.size) return null;
         const result = new Set();
-        for (const [window, app] of windows) {
-            if (result.has(app)) continue;
+        for (const [window, windowInfo] of windows) {
+            const app = windowInfo.app;
+            if (!app || result.has(app)) continue;
             if (!this.#testWindow(window, currentWorkspace, skipTaskbar)) continue;
             result.add(app);
         }
