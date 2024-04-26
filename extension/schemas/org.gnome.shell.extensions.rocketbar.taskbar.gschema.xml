@@ -31,6 +31,12 @@
             <default>false</default>
             <summary>Preserve the selected Taskbar position</summary>
         </key>
+        <key type="b" name="multi-monitor-routing">
+            <default>false</default>
+        </key>
+        <key type="s" name="windows-preferred-monitor">
+            <default>'default'</default>
+        </key>
         <key type="b" name="appbutton-enable-menus">
             <default>true</default>
             <summary>Enable Menus</summary>
@@ -96,7 +102,7 @@
             <summary>Running apps activation behavior</summary>
         </key>
         <key type="s" name="appbutton-demands-attention-behavior">
-            <default>'focus_active'</default>
+            <default>'default'</default>
             <summary>Window Demands Attention behavior</summary>
         </key>
         <key type="b" name="appbutton-enable-minimize-action">

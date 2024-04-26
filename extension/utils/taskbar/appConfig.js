@@ -16,6 +16,8 @@ const CONFIG_OVERRIDE_SETTINGS_KEY = 'appbutton-config-override';
 export const ConfigFields = {
     isolateWorkspaces: 'taskbar-isolate-workspaces',
     showAllWindows: 'taskbar-show-all-windows',
+    multiMonitorRouting: 'multi-monitor-routing',
+    windowsPreferredMonitor: 'windows-preferred-monitor',
     enableIndicators: 'appbutton-enable-indicators',
     enableMenus: 'appbutton-enable-menus',
     enableTooltips: 'appbutton-enable-tooltips',
@@ -50,6 +52,16 @@ export const DemandsAttentionBehavior = {
     FocusAll: 'focus_all'
 };
 
+/** @enum {string} */
+export const PreferredMonitor = {
+    Default: 'default',
+    Primary: 'primary',
+    Left: 'left',
+    Right: 'right',
+    Above: 'above',
+    Below: 'below'
+};
+
 /** @enum {number} */
 export const AppIconSize = {
     Min: 16,
@@ -61,7 +73,8 @@ const DefaultConfigOverride = {
     iconSizeOffset: 0,
     iconPath: null,
     activateBehavior: ActivateBehavior.NewWindow,
-    demandsAttentionBehavior: DemandsAttentionBehavior.FocusActive
+    demandsAttentionBehavior: DemandsAttentionBehavior.Default,
+    windowsPreferredMonitor: PreferredMonitor.Default
 };
 
 export class AppConfig extends SharedConfig {
@@ -151,9 +164,11 @@ export class AppConfig extends SharedConfig {
                 break;
             case ConfigFields.activateBehavior:
             case ConfigFields.demandsAttentionBehavior:
+            case ConfigFields.windowsPreferredMonitor:
                 if (!Object.values({
                     [ConfigFields.activateBehavior]: ActivateBehavior,
-                    [ConfigFields.demandsAttentionBehavior]: DemandsAttentionBehavior
+                    [ConfigFields.demandsAttentionBehavior]: DemandsAttentionBehavior,
+                    [ConfigFields.windowsPreferredMonitor]: PreferredMonitor
                 }[settingsKey]).includes(value)) return;
             default:
                 if (configOverride[field] === value) return;
@@ -216,14 +231,17 @@ export class AppConfig extends SharedConfig {
         const defaultConfig = super.getConfig();
         if (!app?.id || !defaultConfig) return null;
         const configOverride = this.#getConfigOverride(app.id);
-        const { iconSizeOffset, iconPath, activateBehavior, demandsAttentionBehavior } = configOverride;
+        const { iconSizeOffset, iconPath, activateBehavior,
+                demandsAttentionBehavior, windowsPreferredMonitor } = configOverride;
         let { iconSize, iconHPadding, iconVPadding } = defaultConfig;
         const width = iconSize + iconHPadding * 2;
         const height = iconSize + iconVPadding * 2;
         iconSize += iconSizeOffset;
         iconSize = Math.max(iconSize, AppIconSize.Min);
         iconSize = Math.min(iconSize, AppIconSize.Max);
-        return { ...defaultConfig, ...{ iconSize, iconPath, width, height, activateBehavior, demandsAttentionBehavior } };
+        const overrideResult = { iconSize, iconPath, width, height,
+                                 activateBehavior, demandsAttentionBehavior, windowsPreferredMonitor };
+        return { ...defaultConfig, ...overrideResult };
     }
 
     /**
@@ -231,12 +249,12 @@ export class AppConfig extends SharedConfig {
      * @returns {Config}
      */
     #getConfigOverride(appId) {
-        const defaultConfig = super.getConfig();
+        const { activateBehavior,
+                demandsAttentionBehavior,
+                windowsPreferredMonitor } = super.getConfig() ?? {};
         const configOverride = this.#configOverride[appId] ?? {};
-        return { ...DefaultConfigOverride, ...{
-            activateBehavior: defaultConfig?.activateBehavior,
-            demandsAttentionBehavior: defaultConfig?.demandsAttentionBehavior
-        }, ...configOverride };
+        const defaultConfig = { activateBehavior, demandsAttentionBehavior, windowsPreferredMonitor };
+        return { ...DefaultConfigOverride, ...defaultConfig, ...configOverride };
     }
 
     #saveConfigOverride() {
