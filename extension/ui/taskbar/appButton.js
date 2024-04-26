@@ -422,6 +422,8 @@ export class AppButton extends RuntimeButton {
             case ConfigFields.enableMinimizeAction:
             case ConfigFields.activateBehavior:
             case ConfigFields.demandsAttentionBehavior:
+            case ConfigFields.windowsPreferredMonitor:
+            case ConfigFields.multiMonitorRouting:
                 return;
             case ConfigFields.isolateWorkspaces:
             case ConfigFields.showAllWindows:
