@@ -13,7 +13,8 @@ import Clutter from 'gi://Clutter';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 import { AppMenu } from 'resource:///org/gnome/shell/ui/appMenu.js';
-import { PopupMenuSection, PopupSeparatorMenuItem } from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import { PopupMenuSection,
+         PopupSeparatorMenuItem } from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import Context from '../../core/context.js';
 import { Delay, Event } from '../../core/enums.js';
 import { ComponentLocation } from '../base/component.js';
@@ -21,7 +22,8 @@ import { SliderMenuItem, CollapsibleGroup, ChildMenu } from '../base/menu.js';
 import { Icon } from '../base/icon.js';
 import { SharedConfig } from '../../utils/config.js';
 import { FileSelector } from '../../utils/zenity.js';
-import { ActivateBehavior, DemandsAttentionBehavior, AppIconSize } from '../../utils/taskbar/appConfig.js';
+import { ActivateBehavior, DemandsAttentionBehavior,
+         PreferredMonitor, AppIconSize } from '../../utils/taskbar/appConfig.js';
 import { SoundVolumeIcon } from '../../utils/soundVolumeIcon.js';
 import { Labels } from '../../core/labels.js';
 
@@ -57,6 +59,16 @@ const DemandsAttentionBehaviorRadioGroup = {
     [DemandsAttentionBehavior.FocusAll]: Labels.FocusAll
 };
 
+/** @type {{[value: string]: string}} */
+const PreferredMonitorRadioGroup = {
+    [PreferredMonitor.Default]: Labels.AppDefault,
+    [PreferredMonitor.Primary]: Labels.PrimaryMonitor,
+    [PreferredMonitor.Left]: Labels.LeftOfPrimaryMonitor,
+    [PreferredMonitor.Right]: Labels.RightOfPrimaryMonitor,
+    [PreferredMonitor.Above]: Labels.AbovePrimaryMonitor,
+    [PreferredMonitor.Below]: Labels.BelowPrimaryMonitor
+};
+
 /** @enum {number} */
 const MonitorDirection = {
     CurrentMonitor: -1,
@@ -72,7 +84,8 @@ const ConfigField = {
     IconPath: 'iconPath',
     IconSizeOffset: 'iconSizeOffset',
     ActivateBehavior: 'activateBehavior',
-    DemandsAttentionBehavior: 'demandsAttentionBehavior'
+    DemandsAttentionBehavior: 'demandsAttentionBehavior',
+    WindowsPreferredMonitor: 'windowsPreferredMonitor'
 };
 
 /** @enum {string} */
@@ -304,6 +317,9 @@ class CustomizeChildMenu extends ChildMenu {
     /** @type {((value: string, isDefault: boolean) => (PopupBaseMenuItem|CollapsibleGroup)[])?} */
     #demandsAttentionBehavior = null;
 
+    /** @type {((value: string, isDefault: boolean) => (PopupBaseMenuItem|CollapsibleGroup)[])?} */
+    #preferredMonitor = null;
+
     /** @type {((iconSize: number, defaultIconSize: number, isDefault: boolean) => void)?} */
     #iconSize = null;
 
@@ -350,6 +366,7 @@ class CustomizeChildMenu extends ChildMenu {
         this.#appButton = null;
         this.#activateBehavior = null;
         this.#demandsAttentionBehavior = null;
+        this.#preferredMonitor = null;
         this.#iconSize = null;
         this.#customIcon = null;
         this.#importIconItem = null;
@@ -362,6 +379,9 @@ class CustomizeChildMenu extends ChildMenu {
             (...args) => this.#setRadioGroupValue(...args), true);
         this.#demandsAttentionBehavior = this.addRadioGroup(
             Labels.DemandsAttentionBehavior, DemandsAttentionBehaviorRadioGroup,
+            (...args) => this.#setRadioGroupValue(...args), true);
+        this.#preferredMonitor = this.addRadioGroup(
+            Labels.PreferredMonitor, PreferredMonitorRadioGroup,
             (...args) => this.#setRadioGroupValue(...args), true);
         this.#customIcon = this.#addCustomIconGroup();
         this.#iconSize = this.#addIconSizeSlider();
@@ -422,6 +442,7 @@ class CustomizeChildMenu extends ChildMenu {
         if (!this.isOpen ||
             typeof this.#activateBehavior !== 'function' ||
             typeof this.#demandsAttentionBehavior !== 'function' ||
+            typeof this.#preferredMonitor !== 'function' ||
             typeof this.#iconSize !== 'function' ||
             typeof this.#customIcon !== 'function') return;
         const app = this.#appButton?.app;
@@ -433,13 +454,19 @@ class CustomizeChildMenu extends ChildMenu {
         const config = this.#config;
         const defaultConfig = configProvider.defaultConfig;
         const activateBehaviorVisibilityHandler = item => {
-            item.visible = config.isolateWorkspaces;
+            item.visible = config.isolateWorkspaces ?? false;
+        };
+        const preferredMonitorVisibilityHandler = item => {
+            item.visible = config.multiMonitorRouting ?? false;
         };
         this.#activateBehavior(config[ConfigField.ActivateBehavior],
                               !configProvider.hasConfigOverride(app, ConfigField.ActivateBehavior))
                               .forEach(activateBehaviorVisibilityHandler);
         this.#demandsAttentionBehavior(config[ConfigField.DemandsAttentionBehavior],
                                        !configProvider.hasConfigOverride(app, ConfigField.DemandsAttentionBehavior));
+        this.#preferredMonitor(config[ConfigField.WindowsPreferredMonitor],
+                               !configProvider.hasConfigOverride(app, ConfigField.WindowsPreferredMonitor))
+                               .forEach(preferredMonitorVisibilityHandler);
         this.#iconSize(config[ConfigField.IconSize], defaultConfig[ConfigField.IconSize],
                        !configProvider.hasConfigOverride(app, ConfigField.IconSizeOffset));
         this.#customIcon(config[ConfigField.IconPath]);
@@ -471,6 +498,9 @@ class CustomizeChildMenu extends ChildMenu {
                 break;
             case DemandsAttentionBehaviorRadioGroup:
                 field = ConfigField.DemandsAttentionBehavior;
+                break;
+            case PreferredMonitorRadioGroup:
+                field = ConfigField.WindowsPreferredMonitor;
                 break;
         }
         if (!field || !value) return;
@@ -657,9 +687,6 @@ export class Menu extends AppMenu {
      */
     #handleConfig(settingsKey) {
         switch (settingsKey) {
-            case ConfigFields.isolateWorkspaces:
-                this._updateWindowsSection();
-                break;
             case ConfigFields.showFavorites:
                 this._updateFavoriteItem();
                 break;

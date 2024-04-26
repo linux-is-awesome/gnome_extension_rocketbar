@@ -9,10 +9,10 @@ export const Labels = {
     DemandsAttentionBehavior: _('Demands Attention Behavior'),
     CustomIcon: _('Custom Icon'),
     IconSize: _('Icon Size'),
-    IconFromClipboard: _('Icon From Clipboard'),
+    IconFromClipboard: _('Icon from Clipboard'),
     NoIconInClipboard: _('No Icon Found in Clipboard'),
-    ResetToDefault: _('Reset To Default'),
-    ResetAllToDefault: _('Reset All To Default'),
+    ResetToDefault: _('Reset to Default'),
+    ResetAllToDefault: _('Reset All to Default'),
     NewWindow: _('New Window'),
     FindWindow: _('Find Window'),
     MoveWindows: _('Move Windows'),
@@ -29,5 +29,12 @@ export const Labels = {
     MonitorRight: _('Monitor Right'),
     MonitorAbove: _('Monitor Above'),
     MonitorBelow: _('Monitor Below'),
-    MoveTo: _('Move to')
+    MoveTo: _('Move to'),
+    PreferredMonitor: _('Preferred Monitor'),
+    PrimaryMonitor: _('Primary'),
+    LeftOfPrimaryMonitor: _('Left of Primary'),
+    RightOfPrimaryMonitor: _('Right of Primary'),
+    AbovePrimaryMonitor: _('Above Primary'),
+    BelowPrimaryMonitor: _('Below Primary'),
+    PleaseWait: _('Please Wait...')
 };
