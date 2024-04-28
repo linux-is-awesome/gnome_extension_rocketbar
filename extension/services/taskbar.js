@@ -2,7 +2,7 @@
  * JSDoc types
  *
  * @typedef {import('../core/context/jobs.js').Jobs.Job} Job
- * @typedef {import('./taskbar/windowRouter.js').WindowInfo} WindowInfo
+ * @typedef {{window: Meta.Window, app: Shell.App, workspace: number, monitor?: string?, hasFocus?: boolean}} WindowInfo
  */
 
 import GObject from 'gi://GObject';
@@ -26,7 +26,7 @@ const SUPPORTED_WINDOW_TYPES = [
 /** @enum {string} */
 const ConfigFields = {
     enableFavorites: 'taskbar-show-favorites',
-    multiMonitorRouting: 'multi-monitor-routing'
+    windowRouting: 'multi-monitor-window-routing'
 };
 
 class TaskbarService {
@@ -154,23 +154,24 @@ class TaskbarService {
         this.#handleWindows();
         this.#handleWorkspace();
         Context.signals.add(this,
-            [Shell.AppSystem.get_default(), Event.AppStateChanged, (_, app) => this.#handleAppState(app)],
-            [global.window_manager, Event.SwitchWorkspace, () => this.#handleWorkspace()]);
+            [Shell.AppSystem.get_default(), Event.AppStateChanged, (_, app) => this.#handleAppStateAsync(app)],
+            [global.window_manager, Event.SwitchWorkspace, () => this.#handleWorkspace(),
+                                    Event.WindowMapped, (_, windowActor) => this.#handleWindowMapped(windowActor)]);
     }
 
     #handleConfig() {
         if (!this.#config || !this.#windows) return;
-        const { enableFavorites, multiMonitorRouting } = this.#config;
+        const { enableFavorites, windowRouting } = this.#config;
         if (!enableFavorites && this.#favorites) {
             this.#favorites?.destroy();
             this.#favorites = null;
         } else if (enableFavorites && !this.#favorites) {
             this.#favorites = new Favorites(() => this.#trackAll(Delay.Queue));
         }
-        if (!multiMonitorRouting && this.#windowRouter) {
+        if (!windowRouting && this.#windowRouter) {
             this.#windowRouter?.destroy();
             this.#windowRouter = null;
-        } else if (multiMonitorRouting && !this.#windowRouter) {
+        } else if (windowRouting && !this.#windowRouter) {
             this.#windowRouter = new WindowRouter(this.#windows);
         }
     }
@@ -225,6 +226,14 @@ class TaskbarService {
             this.#addWindow(window, false);
         }
         this.#trackAll();
+    }
+
+    /**
+     * @param {Shell.App} app
+     */
+    #handleAppStateAsync(app) {
+        if (!app?.id) return;
+        Context.jobs.removeAll(app).new(app).destroy(() => this.#handleAppState(app));
     }
 
     /**
@@ -311,7 +320,6 @@ class TaskbarService {
         this.#trackApp(app);
     }
 
-
     /**
      * @param {Meta.Window} window
      * @param {Shell.App} app
@@ -351,6 +359,17 @@ class TaskbarService {
         else if (!appWindows.has(window)) appWindows.add(window);
         if (!this.#workspace || !this.#windowRouter) return;
         this.#windowRouter.route(windowInfo);
+    }
+
+    /**
+     * @param {Meta.WindowActor} windowActor
+     */
+    #handleWindowMapped(windowActor) {
+        if (!windowActor || !this.#windowRouter) return;
+        const window = windowActor.meta_window;
+        if (!window || !this.#windows) return;
+        const windowInfo = this.#windows.get(window);
+        if (windowInfo) this.#windowRouter.route(windowInfo);
     }
 
     /**

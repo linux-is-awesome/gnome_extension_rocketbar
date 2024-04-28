@@ -40,6 +40,7 @@ export const Event = {
     WindowDemandsAttention: 'window-demands-attention',
     WindowAdded: 'window_added',
     WindowRemoved: 'window_removed',
+    WindowMapped: 'map',
     Minimize: 'minimize',
     Unminimize: 'unminimize',
     MenuClosed: 'menu-closed',
