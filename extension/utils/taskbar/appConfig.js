@@ -194,9 +194,7 @@ export class AppConfig extends SharedConfig {
 
     #loadConfigOverride() {
         try {
-            const configOverride = this.isJSONConfig ?
-                                   this.settings?.[CONFIG_OVERRIDE_SETTINGS_KEY] :
-                                   this.settings?.get_string(CONFIG_OVERRIDE_SETTINGS_KEY);
+            const configOverride = this.settings?.get_string(CONFIG_OVERRIDE_SETTINGS_KEY);
             if (!configOverride?.length) return;
             this.#configOverride = JSON.parse(configOverride);
         } catch (e) {
@@ -258,7 +256,6 @@ export class AppConfig extends SharedConfig {
     }
 
     #saveConfigOverride() {
-        if (this.isJSONConfig) return;
         this.settings?.set_string(CONFIG_OVERRIDE_SETTINGS_KEY, JSON.stringify(this.#configOverride));
     }
 

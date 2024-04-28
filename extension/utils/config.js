@@ -24,8 +24,6 @@ export const Config = (client, fields, callback, options = { path: null, isAfter
     /** @type {(Gio.Settings|{[key: string]: *})?} */
     const settings = Context.getSettings(path);
     if (!settings) return {};
-    /** @type {boolean} */
-    const isJSONConfig = settings instanceof Gio.Settings === false;
     /** @type {Config} */
     const values = {};
     /** @type {(string|GObject.ConnectFlags|((_, key: string) => void))[]} */
@@ -44,10 +42,6 @@ export const Config = (client, fields, callback, options = { path: null, isAfter
         if (typeof settingsKey !== 'string') continue;
         if (settingsKey.startsWith(DUMMY_FIELD_PREFIX)) {
             values[fieldName] = null;
-            continue;
-        }
-        if (isJSONConfig) {
-            values[fieldName] = settings[settingsKey] ?? null;
             continue;
         }
         values[fieldName] = settings.get_value(settingsKey)?.unpack() ?? null;
@@ -76,11 +70,6 @@ export class SharedConfig {
     /** @type {Gio.Settings?} */
     get settings() {
         return this.#settings;
-    }
-
-    /** @type {boolean} */
-    get isJSONConfig() {
-        return this.#settings instanceof Gio.Settings === false;
     }
 
     /** @param {(client: ConfigClient, settingsKey: string) => void} callback */
