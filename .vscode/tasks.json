@@ -134,9 +134,9 @@
             "problemMatcher": []
         },
         {
-            "label": "load-default-settings",
+            "label": "update-dconf",
             "type": "shell",
-            "command": "cd scripts && ./load-default-settings",
+            "command": "cd scripts && ./update-dconf",
             "group": "build",
             "presentation": {
                 "reveal": "always",
