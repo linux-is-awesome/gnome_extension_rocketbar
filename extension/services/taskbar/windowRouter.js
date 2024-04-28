@@ -4,8 +4,7 @@
  * @typedef {import('gi://Shell').App} Shell.App
  * @typedef {import('resource:///org/gnome/shell/ui/modalDialog.js').ModalDialog} ModalDialog
  * @typedef {import('../../core/context/jobs.js').Jobs.Job} Job
- *
- * @typedef {{window: Meta.Window, app: Shell.App, workspace: number, hasFocus?: boolean, monitor?: string?}} WindowInfo
+ * @typedef {import('../taskbar.js').WindowInfo} WindowInfo
  */
 
 import Meta from 'gi://Meta';
@@ -18,8 +17,10 @@ import { MainLayout, Overview } from '../../core/shell.js';
 import Context from '../../core/context.js';
 import { Event, Delay } from '../../core/enums.js';
 import { Labels } from '../../core/labels.js';
+import { Config } from '../../utils/config.js';
 import { PreferredMonitor } from '../../utils/taskbar/appConfig.js';
 
+const CONFIG_PATH = 'taskbar';
 const STORAGE_KEY_MONITORS = 'monitors';
 
 /** @type {{[value: string]: number}} */
@@ -44,6 +45,12 @@ const StatusTextProps = {
     y_align: Clutter.ActorAlign.CENTER
 };
 
+/** @enum {string} */
+const ConfigFields = {
+    windowsPreferredMonitor: 'windows-preferred-monitor',
+    appConfig: 'appbutton-config-override'
+};
+
 export default class WindowRouter {
 
     /** @type {Map<string, number>} */
@@ -61,8 +68,14 @@ export default class WindowRouter {
     /** @type {ModalDialog?} */
     #status = null;
 
+    /** @type {{[appId: string]: {[key: string]: *}}?} */
+    #appConfig = null;
+
     /** @type {Job?} */
     #job = Context.jobs.new(this);
+
+    /** @type {Config?} */
+    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey), { path: CONFIG_PATH });
 
     /** @type {boolean} */
     get #hasMultipleMonitors() {
@@ -87,8 +100,9 @@ export default class WindowRouter {
      */
     constructor(windows) {
         this.#windows = windows;
-        this.#validateSession();
+        this.#handleConfig();
         this.#updateMonitors();
+        this.#validateSession();
         Context.signals.add(this,
             [global.backend.get_monitor_manager(), Event.MonitorsChanged, () => this.#handleMonitors()]);
     }
@@ -101,6 +115,8 @@ export default class WindowRouter {
         this.#saveSession();
         this.#windows = null;
         this.#job = null;
+        this.#config = null;
+        this.#appConfig = null;
     }
 
     recover() {
@@ -114,12 +130,20 @@ export default class WindowRouter {
      */
     route(windowInfo) {
         if (!windowInfo) return;
-        const { window, workspace, monitor } = windowInfo;
+        const { app, window, workspace, monitor } = windowInfo;
+        if (!app || !window) return;
         const windowMonitor = window.get_monitor();
         const windowWorkspace = window.get_workspace().index();
         if (windowMonitor < 0 || windowWorkspace < 0) return;
-        const targetMonitor = typeof monitor === 'string' ?
-                              this.#monitors.get(monitor) ?? windowMonitor : windowMonitor;
+        const appId = app.id;
+        const appConfig = appId ? this.#appConfig?.[appId] : null;
+        const preferredMonitorName = appConfig?.windowsPreferredMonitor ||
+                                     this.#config?.windowsPreferredMonitor;
+        const preferredMonitor = typeof preferredMonitorName === 'string' ?
+                                 this.#monitors.get(preferredMonitorName) : null;
+        const windowLastMonitor = typeof monitor === 'string' ?
+                                  this.#monitors.get(monitor) : null;
+        const targetMonitor = windowLastMonitor ?? preferredMonitor ?? windowMonitor;
         const targetWorkspace = typeof workspace === 'number' &&
                                 workspace > windowWorkspace ? workspace : windowWorkspace;
         if (windowMonitor === targetMonitor &&
@@ -237,6 +261,21 @@ export default class WindowRouter {
     #hideStatus() {
         this.#status?.close();
         this.#status = null;
+    }
+
+    /**
+     * @param {string?} [settingsKey]
+     */
+    #handleConfig(settingsKey) {
+        if (!this.#config) return;
+        if (settingsKey && settingsKey !== ConfigFields.appConfig) return;
+        const appConfig = this.#config.appConfig;
+        if (!appConfig?.length) return;
+        try {
+            this.#appConfig = JSON.parse(appConfig);
+        } catch (e) {
+            Context.logError(WindowRouter.name, e);
+        }
     }
 
 }
