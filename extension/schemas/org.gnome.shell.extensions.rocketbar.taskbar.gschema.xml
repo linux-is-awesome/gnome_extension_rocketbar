@@ -31,7 +31,7 @@
             <default>false</default>
             <summary>Preserve the selected Taskbar position</summary>
         </key>
-        <key type="b" name="multi-monitor-routing">
+        <key type="b" name="multi-monitor-window-routing">
             <default>false</default>
         </key>
         <key type="s" name="windows-preferred-monitor">

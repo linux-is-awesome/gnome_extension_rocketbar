@@ -457,7 +457,7 @@ class CustomizeChildMenu extends ChildMenu {
             item.visible = config.isolateWorkspaces ?? false;
         };
         const preferredMonitorVisibilityHandler = item => {
-            item.visible = config.multiMonitorRouting ?? false;
+            item.visible = config.windowRouting ?? false;
         };
         this.#activateBehavior(config[ConfigField.ActivateBehavior],
                               !configProvider.hasConfigOverride(app, ConfigField.ActivateBehavior))

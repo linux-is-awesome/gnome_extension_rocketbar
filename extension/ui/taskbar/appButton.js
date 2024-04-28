@@ -423,7 +423,7 @@ export class AppButton extends RuntimeButton {
             case ConfigFields.activateBehavior:
             case ConfigFields.demandsAttentionBehavior:
             case ConfigFields.windowsPreferredMonitor:
-            case ConfigFields.multiMonitorRouting:
+            case ConfigFields.windowRouting:
                 return;
             case ConfigFields.isolateWorkspaces:
             case ConfigFields.showAllWindows:

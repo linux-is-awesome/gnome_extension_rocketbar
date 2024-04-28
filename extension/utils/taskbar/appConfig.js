@@ -16,7 +16,7 @@ const CONFIG_OVERRIDE_SETTINGS_KEY = 'appbutton-config-override';
 export const ConfigFields = {
     isolateWorkspaces: 'taskbar-isolate-workspaces',
     showAllWindows: 'taskbar-show-all-windows',
-    multiMonitorRouting: 'multi-monitor-routing',
+    windowRouting: 'multi-monitor-window-routing',
     windowsPreferredMonitor: 'windows-preferred-monitor',
     enableIndicators: 'appbutton-enable-indicators',
     enableMenus: 'appbutton-enable-menus',
