@@ -2,6 +2,7 @@ import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import { initializeDeferredWork as DeferredWork } from 'resource:///org/gnome/shell/ui/main.js';
 import { Overview } from '../core/shell.js';
+import Context from '../core/context.js';
 import { Event } from '../core/enums.js';
 import { Animation, AnimationDuration } from '../ui/base/animation.js';
 
@@ -48,17 +49,18 @@ export default class {
         dash.add_style_class_name(STYLE_CLASS);
         const showAppsButton = dash.showAppsButton;
         if (!showAppsButton) return;
+        Context.signals.add(this, [showAppsButton, Event.Checked, () => this.#updateActorRotation()]);
         let style_class = showAppsButton.get_style_class_name();
         let child = showAppsButton.get_child();
         this.#showAppsButtonDefaultProps = { style_class, child };
         style_class = SHOW_APPS_BUTTON_STYLE_CLASS;
         child = this.#actor;
         showAppsButton.set({ style_class, child });
-        showAppsButton.connectObject(Event.Checked, () => this.#updateActorRotation(), this);
         this.#updateActorRotation();
     }
 
     destroy() {
+        Context.signals.removeAll(this);
         this.#actor?.destroy();
         this.#actor = null;
         const dash = Overview.dash;
@@ -72,7 +74,6 @@ export default class {
         this.#dashWorkId = null;
         this.#showAppsButtonDefaultProps = null;
         dash.remove_style_class_name(STYLE_CLASS);
-        dash.showAppsButton?.disconnectObject(this);
         dash._box?.show();
         dash._background?.show();
         dash._queueRedisplay();
