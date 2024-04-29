@@ -21,6 +21,9 @@
         <key type="b" name="popups-prevent-focus">
             <default>false</default>
         </key>
+        <key type="b" name="popups-no-delay">
+            <default>false</default>
+        </key>
         <key type="b" name="primary-input-source">
             <default>false</default>
         </key>

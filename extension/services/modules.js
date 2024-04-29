@@ -12,6 +12,7 @@ export const Module = {
     TweakOverviewKillDash: 'tweaks/overviewKillDash',
     TweakOverviewClicks: 'tweaks/overviewClicks',
     TweakPopupsPreventFocus: 'tweaks/popupsPreventFocus',
+    TweakPopupsNoDelay: 'tweaks/popupsNoDelay',
     TweakPrimaryInputSource: 'tweaks/primaryInputSource',
     NotificationCounter: 'ui/notificationCounter',
     Taskbar: 'ui/taskbar'
@@ -23,11 +24,13 @@ const Modules = {
         Module.TweakOverviewKillDash,
         Module.TweakOverviewClicks,
         Module.TweakPopupsPreventFocus,
+        Module.TweakPopupsNoDelay,
         Module.TweakPrimaryInputSource,
         Module.NotificationCounter,
         Module.Taskbar
     ],
     [SessionMode.Locksreen]: [
+        Module.TweakPopupsNoDelay,
         Module.TweakPrimaryInputSource
     ]
 };
@@ -37,6 +40,7 @@ const ConfigFields = {
     [Module.TweakOverviewKillDash]: 'overview-kill-dash',
     [Module.TweakOverviewClicks]: 'overview-empty-space-clicks',
     [Module.TweakPopupsPreventFocus]: 'popups-prevent-focus',
+    [Module.TweakPopupsNoDelay]: 'popups-no-delay',
     [Module.TweakPrimaryInputSource]: 'primary-input-source',
     [Module.NotificationCounter]: 'notification-counter-enabled',
     [Module.Taskbar]: 'taskbar-enabled'
