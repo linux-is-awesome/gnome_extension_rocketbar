@@ -357,8 +357,7 @@ class TaskbarService {
         const appWindows = this.#apps.get(app);
         if (!appWindows) this.#apps.set(app, new Set([window]));
         else if (!appWindows.has(window)) appWindows.add(window);
-        if (!this.#workspace || !this.#windowRouter) return;
-        this.#windowRouter.route(windowInfo);
+        if (this.#workspace) this.#routeWindow(windowInfo);
     }
 
     /**
@@ -369,7 +368,17 @@ class TaskbarService {
         const window = windowActor.meta_window;
         if (!window || !this.#windows) return;
         const windowInfo = this.#windows.get(window);
-        if (windowInfo) this.#windowRouter.route(windowInfo);
+        if (windowInfo) this.#routeWindow(windowInfo);
+    }
+
+    /**
+     * @param {WindowInfo} windowInfo
+     */
+    #routeWindow(windowInfo) {
+        if (!this.#windowRouter || !windowInfo?.window) return;
+        const { window } = windowInfo;
+        Context.jobs.new(window).destroy(() =>
+            this.#windows?.has(window) && this.#windowRouter?.route(windowInfo));
     }
 
     /**
