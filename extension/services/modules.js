@@ -14,6 +14,7 @@ export const Module = {
     TweakPopupsPreventFocus: 'tweaks/popupsPreventFocus',
     TweakPopupsNoDelay: 'tweaks/popupsNoDelay',
     TweakPrimaryInputSource: 'tweaks/primaryInputSource',
+    TweakUpperCaseInputSource: 'tweaks/upperCaseInputSource',
     NotificationCounter: 'ui/notificationCounter',
     Taskbar: 'ui/taskbar'
 };
@@ -26,12 +27,14 @@ const Modules = {
         Module.TweakPopupsPreventFocus,
         Module.TweakPopupsNoDelay,
         Module.TweakPrimaryInputSource,
+        Module.TweakUpperCaseInputSource,
         Module.NotificationCounter,
         Module.Taskbar
     ],
     [SessionMode.Locksreen]: [
         Module.TweakPopupsNoDelay,
-        Module.TweakPrimaryInputSource
+        Module.TweakPrimaryInputSource,
+        Module.TweakUpperCaseInputSource
     ]
 };
 
@@ -42,6 +45,7 @@ const ConfigFields = {
     [Module.TweakPopupsPreventFocus]: 'popups-prevent-focus',
     [Module.TweakPopupsNoDelay]: 'popups-no-delay',
     [Module.TweakPrimaryInputSource]: 'primary-input-source',
+    [Module.TweakUpperCaseInputSource]: 'upper-case-input-source',
     [Module.NotificationCounter]: 'notification-counter-enabled',
     [Module.Taskbar]: 'taskbar-enabled'
 };

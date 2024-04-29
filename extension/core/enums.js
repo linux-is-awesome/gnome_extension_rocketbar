@@ -48,7 +48,8 @@ export const Event = {
     MoveY: 'notify::y',
     AdjustmentChanged: 'changed',
     MonitorsChanged: 'monitors-changed',
-    SessionUpdated: 'updated'
+    SessionUpdated: 'updated',
+    InputSourcesChanged: 'sources-changed'
 };
 
 /**
