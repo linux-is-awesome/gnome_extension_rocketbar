@@ -10,6 +10,7 @@ const MODULE_FILE_TYPE = '.js';
 /** @enum {string} */
 export const Module = {
     TweakOverviewKillDash: 'tweaks/overviewKillDash',
+    TweakOverviewHideSearch: 'tweaks/overviewHideSearch',
     TweakOverviewClicks: 'tweaks/overviewClicks',
     TweakPopupsPreventFocus: 'tweaks/popupsPreventFocus',
     TweakPopupsNoDelay: 'tweaks/popupsNoDelay',
@@ -23,6 +24,7 @@ export const Module = {
 const Modules = {
     [SessionMode.Desktop]: [
         Module.TweakOverviewKillDash,
+        Module.TweakOverviewHideSearch,
         Module.TweakOverviewClicks,
         Module.TweakPopupsPreventFocus,
         Module.TweakPopupsNoDelay,
@@ -41,6 +43,7 @@ const Modules = {
 /** @type {{[field: Module]: string}} */
 const ConfigFields = {
     [Module.TweakOverviewKillDash]: 'overview-kill-dash',
+    [Module.TweakOverviewHideSearch]: 'overview-hide-search',
     [Module.TweakOverviewClicks]: 'overview-empty-space-clicks',
     [Module.TweakPopupsPreventFocus]: 'popups-prevent-focus',
     [Module.TweakPopupsNoDelay]: 'popups-no-delay',

@@ -49,7 +49,8 @@ export const Event = {
     AdjustmentChanged: 'changed',
     MonitorsChanged: 'monitors-changed',
     SessionUpdated: 'updated',
-    InputSourcesChanged: 'sources-changed'
+    InputSourcesChanged: 'sources-changed',
+    SearchActive: 'notify::search-active'
 };
 
 /**

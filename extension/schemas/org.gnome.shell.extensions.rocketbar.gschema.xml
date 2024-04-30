@@ -18,6 +18,9 @@
         <key type="b" name="overview-empty-space-clicks">
             <default>false</default>
         </key>
+        <key type="b" name="overview-hide-search">
+            <default>false</default>
+        </key>
         <key type="b" name="popups-prevent-focus">
             <default>false</default>
         </key>
