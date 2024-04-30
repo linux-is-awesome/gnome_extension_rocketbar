@@ -16,6 +16,7 @@ export const Module = {
     TweakPopupsNoDelay: 'tweaks/popupsNoDelay',
     TweakPrimaryInputSource: 'tweaks/primaryInputSource',
     TweakUpperCaseInputSource: 'tweaks/upperCaseInputSource',
+    TweakMenusClickToOpen: 'tweaks/menusClickToOpen',
     NotificationCounter: 'ui/notificationCounter',
     Taskbar: 'ui/taskbar'
 };
@@ -30,13 +31,15 @@ const Modules = {
         Module.TweakPopupsNoDelay,
         Module.TweakPrimaryInputSource,
         Module.TweakUpperCaseInputSource,
+        Module.TweakMenusClickToOpen,
         Module.NotificationCounter,
         Module.Taskbar
     ],
     [SessionMode.Locksreen]: [
         Module.TweakPopupsNoDelay,
         Module.TweakPrimaryInputSource,
-        Module.TweakUpperCaseInputSource
+        Module.TweakUpperCaseInputSource,
+        Module.TweakMenusClickToOpen
     ]
 };
 
@@ -49,6 +52,7 @@ const ConfigFields = {
     [Module.TweakPopupsNoDelay]: 'popups-no-delay',
     [Module.TweakPrimaryInputSource]: 'primary-input-source',
     [Module.TweakUpperCaseInputSource]: 'upper-case-input-source',
+    [Module.TweakMenusClickToOpen]: 'menus-click-to-open',
     [Module.NotificationCounter]: 'notification-counter-enabled',
     [Module.Taskbar]: 'taskbar-enabled'
 };

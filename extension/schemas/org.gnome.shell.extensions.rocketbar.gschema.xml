@@ -33,6 +33,9 @@
         <key type="b" name="upper-case-input-source">
             <default>false</default>
         </key>
+        <key type="b" name="menus-click-to-open">
+            <default>false</default>
+        </key>
         <key type="b" name="notification-service-enable-unity-dbus">
             <default>false</default>
             <summary>Use Unity Launcher API DBus interface to count notifications for apps</summary>
