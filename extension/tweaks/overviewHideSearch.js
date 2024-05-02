@@ -62,6 +62,7 @@ export default class {
         const duration = AnimationDuration.Fast;
         const isHeightRestored = await Animation(searchContainer, duration, { height, mode });
         if (!isHeightRestored) return;
+        searchContainer.set_height(-1);
         Animation(searchContainer, duration, { ...AnimationType.OpacityMax, mode });
     }
 
