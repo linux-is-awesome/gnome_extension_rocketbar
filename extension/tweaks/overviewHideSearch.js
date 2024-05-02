@@ -35,8 +35,8 @@ export default class {
 
     destroy() {
         Context.signals.removeAll(this);
-        this.#showSearch();
         this.#restoreWorkspaceThumbnailsScale();
+        this.#searchContainer?.set({ ...AnimationType.OpacityMax, height: -1 });
         this.#searchContainer = null;
         this.#searchController = null;
         this.#backup = null;
@@ -47,23 +47,28 @@ export default class {
         const searchContainerOpacity = this.#searchContainer.opacity;
         const isSearchActive = !!this.#searchController.searchActive;
         const isSearchShown = searchContainerOpacity === AnimationType.OpacityMax.opacity;
-        const isSearchHidden = searchContainerOpacity === AnimationType.OpacityMin.opacity;
-        if ((isSearchActive && isSearchShown) || (!isSearchActive && isSearchHidden)) return;
+        if (isSearchActive && isSearchShown) return;
         if (isSearchActive) this.#showSearch();
         else this.#hideSearch();
     }
 
-    #showSearch() {
+    async #showSearch() {
         if (this.#searchContainer instanceof St.Widget === false) return;
-        this.#searchContainer.set_height(-1);
+        const searchContainer = this.#searchContainer;
+        searchContainer.set_height(-1);
+        const height = searchContainer.get_height();
+        searchContainer.set_height(0);
         const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
-        const animationParams = { ...AnimationType.OpacityMax, mode };
-        Animation(this.#searchContainer, AnimationDuration.Slower, animationParams);
+        const duration = AnimationDuration.Fast;
+        const isHeightRestored = await Animation(searchContainer, duration, { height, mode });
+        if (!isHeightRestored) return;
+        Animation(searchContainer, duration, { ...AnimationType.OpacityMax, mode });
     }
 
     #hideSearch() {
         if (this.#searchContainer instanceof St.Widget === false) return;
-        this.#searchContainer.set({ opacity: AnimationType.OpacityMin.opacity, height: 0 });
+        this.#searchContainer.remove_all_transitions();
+        this.#searchContainer.set({ ...AnimationType.OpacityMin, height: 0 });
     }
 
     #overrideWorkspaceThumbnailsScale() {
