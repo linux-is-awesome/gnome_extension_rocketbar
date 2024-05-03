@@ -468,7 +468,7 @@ export class TaskbarClient {
         this.#workspace = this.workspace;
         if (!this.#testWindow(current)) return false;
         const isValidWindow = TaskbarClient.#service.isValidWindow(current);
-        if (isValidWindow && !new Set(this.#app.get_windows()).has(current)) return false;
+        if (isValidWindow && !new WeakSet(this.#app.get_windows()).has(current)) return false;
         else if (!isValidWindow && !new Set(this.#app.get_pids()).has(current.get_pid())) return false;
         TaskbarClient.#focusedWindow = { window: current, app: this.#app };
         return true;
