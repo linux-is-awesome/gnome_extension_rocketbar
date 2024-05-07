@@ -97,9 +97,9 @@ class ButtonMenuTrigger extends PopupDummyMenu {
         super(actor);
         this.#actor = actor;
         this.#button = button;
-        this.sourceActor = button?.actor ?? actor;
-        Context.signals.add(this, [button?.actor, Event.KeyPress, (_, event) => this.#keyPress(event)]);
+        this.sourceActor = button.actor;
         Context.layout.addMenu(this);
+        Context.signals.add(this, [this.sourceActor, Event.KeyPress, (_, event) => this.#keyPress(event)]);
     }
 
     /**
