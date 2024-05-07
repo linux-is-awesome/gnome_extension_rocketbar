@@ -1,12 +1,7 @@
-/**
- * JSDoc types
- *
- * @typedef {import('resource:///org/gnome/shell/ui/panel.js').Panel} MainPanel
- */
-
 import Clutter from 'gi://Clutter';
 import { MainPanel } from '../core/shell.js';
 import Context from '../core/context.js';
+import { Component, ComponentEvent } from './base/component.js';
 import { Event } from '../core/enums.js';
 import { Config } from '../utils/config.js';
 
@@ -17,10 +12,15 @@ const ConfigFields = {
     soundVolumeControl: 'sound-volume-control'
 };
 
-export default class Panel {
+/**
+ * @augments Component<MainPanel>
+ */
+export default class Panel extends Component {
 
-    /** @type {MainPanel?} */
-    #actor = null;
+    /** @type {{[event: string]: () => *}?} */
+    #events = {
+        [ComponentEvent.Destroy]: () => this.#destroy()
+    };
 
     /** @type {number?} */
     #pressedButton = null;
@@ -30,16 +30,17 @@ export default class Panel {
 
     /** @type {boolean} */
     get #isEventSource() {
-        if (!this.#actor) return false;
+        if (!this.isValid) return false;
         const [x, y] = global.get_pointer();
         const currentActor = global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y);
-        return this.#actor === currentActor;
+        return this.actor === currentActor;
     }
 
     constructor() {
-        this.#actor = MainPanel;
+        super(MainPanel, true);
+        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         Context.signals.add(this, [
-            this.#actor,
+            this.actor,
             Event.ButtonPress, (_, event) => this.#handlePress(event),
             Event.ButtonRelease, (_, event) => this.#handleRelease(event),
             Event.Leave, () => this.#handleRelease(),
@@ -47,18 +48,17 @@ export default class Panel {
         ]);
     }
 
-    destroy() {
+    #destroy() {
         Context.signals.removeAll(this);
-        this.#actor = null;
         this.#pressedButton = null;
         this.#config = null;
+        this.#events = null;
     }
 
     /**
      * @param {string} settingsKey
      */
     #handleConfig(settingsKey) {
-        if (!this.#actor) return;
         switch (settingsKey) {
             default:
         }
@@ -115,7 +115,7 @@ export default class Panel {
      */
     #changeSoundVolume(event) {
         if (!event || !this.#config?.soundVolumeControl) return Clutter.EVENT_PROPAGATE;
-        const quickSettings = this.#actor?.statusArea?.quickSettings;
+        const quickSettings = this.actor?.statusArea?.quickSettings;
         const outputVolumeIndicator = quickSettings?._volumeOutput?._indicator;
         if (outputVolumeIndicator instanceof Clutter.Actor === false) return Clutter.EVENT_PROPAGATE;
         outputVolumeIndicator.emit(Event.Scroll, event);
@@ -127,7 +127,7 @@ export default class Panel {
      */
     #muteSoundVolume() {
         if (!this.#config?.soundVolumeControl) return Clutter.EVENT_PROPAGATE;
-        const quickSettings = this.#actor?.statusArea?.quickSettings;
+        const quickSettings = this.actor?.statusArea?.quickSettings;
         const outputVolumeIndicator = quickSettings?._volumeOutput;
         const outputVolumeSlider = outputVolumeIndicator?.quickSettingsItems?.[0];
         if (outputVolumeSlider instanceof Clutter.Actor === false) return Clutter.EVENT_PROPAGATE;
