@@ -3,17 +3,17 @@
     <schema id="org.gnome.shell.extensions.rocketbar"
             path="/org/gnome/shell/extensions/rocketbar/">
 
-        <key type="b" name="taskbar-enabled">
+        <key type="b" name="panel">
             <default>true</default>
-            <summary>Enable Taskbar</summary>
         </key>
-        <key type="b" name="notification-counter-enabled">
+        <key type="b" name="taskbar">
+            <default>true</default>
+        </key>
+        <key type="b" name="notification-counter">
             <default>false</default>
-            <summary>Enable Notification Counter</summary>
         </key>
         <key type="b" name="overview-kill-dash">
             <default>false</default>
-            <summary>Hide the Dash from Overview and prevent it from rerendering behind the scene</summary>
         </key>
         <key type="b" name="overview-empty-space-clicks">
             <default>false</default>

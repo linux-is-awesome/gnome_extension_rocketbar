@@ -17,6 +17,7 @@ export const Module = {
     TweakPrimaryInputSource: 'tweaks/primaryInputSource',
     TweakUpperCaseInputSource: 'tweaks/upperCaseInputSource',
     TweakMenusClickToOpen: 'tweaks/menusClickToOpen',
+    Panel: 'ui/panel',
     NotificationCounter: 'ui/notificationCounter',
     Taskbar: 'ui/taskbar'
 };
@@ -32,6 +33,7 @@ const Modules = {
         Module.TweakPrimaryInputSource,
         Module.TweakUpperCaseInputSource,
         Module.TweakMenusClickToOpen,
+        Module.Panel,
         Module.NotificationCounter,
         Module.Taskbar
     ],
@@ -53,8 +55,9 @@ const ConfigFields = {
     [Module.TweakPrimaryInputSource]: 'primary-input-source',
     [Module.TweakUpperCaseInputSource]: 'upper-case-input-source',
     [Module.TweakMenusClickToOpen]: 'menus-click-to-open',
-    [Module.NotificationCounter]: 'notification-counter-enabled',
-    [Module.Taskbar]: 'taskbar-enabled'
+    [Module.Panel]: 'panel',
+    [Module.NotificationCounter]: 'notification-counter',
+    [Module.Taskbar]: 'taskbar'
 };
 
 export default class ModulesService {
