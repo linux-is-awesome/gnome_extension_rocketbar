@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+    <schema id="org.gnome.shell.extensions.rocketbar.panel"
+            path="/org/gnome/shell/extensions/rocketbar/panel/">
+
+        <key type="b" name="sound-volume-control">
+            <default>false</default>
+        </key>
+
+    </schema>
+</schemalist>

@@ -50,7 +50,8 @@ export const Event = {
     MonitorsChanged: 'monitors-changed',
     SessionUpdated: 'updated',
     InputSourcesChanged: 'sources-changed',
-    SearchActive: 'notify::search-active'
+    SearchActive: 'notify::search-active',
+    IconClicked: 'icon-clicked'
 };
 
 /**
