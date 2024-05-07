@@ -5,6 +5,7 @@
  * @typedef {import('gi://Clutter').Actor} Clutter.Actor
  */
 
+import GObject from 'gi://GObject';
 import St from 'gi://St';
 import Mtk from 'gi://Mtk';
 import * as Dnd from 'resource:///org/gnome/shell/ui/dnd.js';
@@ -45,6 +46,12 @@ export const ComponentLocation = {
  * @template {St.Widget} ComponentActor
  */
 export class Component {
+
+    /** @type {*} */
+    #signalTracker = null;
+
+    /** @type {boolean} */
+    #isWrapper = false;
 
     /** @type {boolean} */
     #isValid = true;
@@ -153,7 +160,7 @@ export class Component {
         if (this.#themeContext) return this.#themeContext.scale_factor;
         this.#themeContext = St.ThemeContext.get_for_stage(global.stage);
         this.#themeContext.connectObject(Event.ScaleFactor, () =>
-            this.#notifySelf(ComponentEvent.Scale), this.#actor);
+            this.#notifySelf(ComponentEvent.Scale), this.#signalTracker);
         return this.#themeContext.scale_factor;
     }
 
@@ -163,7 +170,7 @@ export class Component {
         if (this.#uiSettings) return this.#uiSettings.get_double(UI_SCALE_SETTINGS_KEY);
         this.#uiSettings = MainLayout._interfaceSettings ?? null;
         this.#uiSettings?.connectObject(`changed::${UI_SCALE_SETTINGS_KEY}`, () =>
-            this.#notifySelf(ComponentEvent.Scale), this.#actor);
+            this.#notifySelf(ComponentEvent.Scale), this.#signalTracker);
         return this.#uiSettings?.get_double(UI_SCALE_SETTINGS_KEY) ?? 0;
     }
 
@@ -184,18 +191,24 @@ export class Component {
 
     /**
      * @param {ComponentActor} actor
+     * @param {boolean} [isWrapper]
      */
-    constructor(actor) {
+    constructor(actor, isWrapper = false) {
         if (actor instanceof St.Widget === false) {
             throw new Error(`Unable to construct ${this.constructor.name}, ${actor} is not an instance of St.Widget.`);
         }
+        this.#isWrapper = isWrapper;
+        this.#signalTracker = { actor };
         this.#actor = actor;
+        this.#actor.connectObject(Event.Destroy, () => this.#destroy(),
+                                  GObject.ConnectFlags.AFTER, this.#signalTracker);
+        if (isWrapper) return;
         this.#actor._delegate = this;
-        this.#actor.connect_after(Event.Destroy, () => this.#destroy());
     }
 
     destroy() {
-        this.#actor?.destroy();
+        if (this.#isWrapper) this.#destroy();
+        else this.#actor?.destroy();
     }
 
     /**
@@ -362,16 +375,18 @@ export class Component {
     #destroy() {
         if (!this.#isValid || !this.#actor) return;
         this.#isValid = false;
-        this.#actor?.remove_all_transitions();
+        this.#actor.remove_all_transitions();
         this.#setDragEvents(false);
         this.#notifySelf(ComponentEvent.Destroy);
-        this.#themeContext?.disconnectObject(this.#actor);
-        this.#uiSettings?.disconnectObject(this.#actor);
+        this.#actor.disconnectObject(this.#signalTracker);
+        this.#themeContext?.disconnectObject(this.#signalTracker);
+        this.#uiSettings?.disconnectObject(this.#signalTracker);
         this.#themeContext = null;
         this.#uiSettings = null;
         this.#actor._delegate = null;
         this.#actor = null;
         this.#parent = null;
+        this.#signalTracker = null;
     }
 
     #setMappedHandler() {
