@@ -10,6 +10,9 @@
  * @typedef {import('resource:///org/gnome/shell/ui/messageTray').MessageTray} MessageTray
  * @typedef {import('resource:///org/gnome/shell/ui/osdWindow').OsdWindowManager} OsdWindowManager
  *
+ * @typedef {SessionMode} Session
+ * @typedef {LayoutManager} MainLayout
+ * @typedef {Panel} MainPanel
  * @typedef {{_app: Shell.App}} WindowAttentionSource
  * @typedef {import('resource:///org/gnome/shell/ui/notificationDaemon.js').FdoNotificationDaemonSource} FdoNotificationDaemonSource
  * @typedef {import('resource:///org/gnome/shell/ui/notificationDaemon.js').GtkNotificationDaemonAppSource} GtkNotificationDaemonAppSource
