@@ -6,6 +6,9 @@
         <key type="b" name="sound-volume-control">
             <default>false</default>
         </key>
+        <key type="b" name="click-hide-overview">
+            <default>false</default>
+        </key>
 
     </schema>
 </schemalist>

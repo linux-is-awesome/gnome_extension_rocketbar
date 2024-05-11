@@ -1,5 +1,5 @@
 import Clutter from 'gi://Clutter';
-import { MainPanel } from '../core/shell.js';
+import { MainPanel, Overview } from '../core/shell.js';
 import Context from '../core/context.js';
 import { Component, ComponentEvent } from './base/component.js';
 import { Event } from '../core/enums.js';
@@ -9,7 +9,8 @@ const CONFIG_PATH = 'panel';
 
 /** @enum {string} */
 const ConfigFields = {
-    soundVolumeControl: 'sound-volume-control'
+    soundVolumeControl: 'sound-volume-control',
+    clickHideOverview: 'click-hide-overview'
 };
 
 /**
@@ -92,6 +93,8 @@ export default class Panel extends Component {
      */
     #click() {
         switch (this.#pressedButton) {
+            case Clutter.BUTTON_PRIMARY:
+                return this.#hideOverview();
             case Clutter.BUTTON_MIDDLE:
                 return this.#muteSoundVolume();
             case Clutter.BUTTON_SECONDARY:
@@ -110,15 +113,12 @@ export default class Panel extends Component {
     }
 
     /**
-     * @param {Clutter.Event} event
      * @returns {boolean}
      */
-    #changeSoundVolume(event) {
-        if (!event || !this.#config?.soundVolumeControl) return Clutter.EVENT_PROPAGATE;
-        const quickSettings = this.actor?.statusArea?.quickSettings;
-        const outputVolumeIndicator = quickSettings?._volumeOutput?._indicator;
-        if (outputVolumeIndicator instanceof Clutter.Actor === false) return Clutter.EVENT_PROPAGATE;
-        outputVolumeIndicator.emit(Event.Scroll, event);
+    #hideOverview() {
+        const canCloseOverview = Overview.visible && !!this.#config?.clickHideOverview;
+        if (!canCloseOverview) return Clutter.EVENT_PROPAGATE;
+        Overview.hide();
         return Clutter.EVENT_STOP;
     }
 
@@ -132,6 +132,19 @@ export default class Panel extends Component {
         const outputVolumeSlider = outputVolumeIndicator?.quickSettingsItems?.[0];
         if (outputVolumeSlider instanceof Clutter.Actor === false) return Clutter.EVENT_PROPAGATE;
         outputVolumeSlider.emit(Event.IconClicked);
+        return Clutter.EVENT_STOP;
+    }
+
+    /**
+     * @param {Clutter.Event} event
+     * @returns {boolean}
+     */
+    #changeSoundVolume(event) {
+        if (!event || !this.#config?.soundVolumeControl) return Clutter.EVENT_PROPAGATE;
+        const quickSettings = this.actor?.statusArea?.quickSettings;
+        const outputVolumeIndicator = quickSettings?._volumeOutput?._indicator;
+        if (outputVolumeIndicator instanceof Clutter.Actor === false) return Clutter.EVENT_PROPAGATE;
+        outputVolumeIndicator.emit(Event.Scroll, event);
         return Clutter.EVENT_STOP;
     }
 
