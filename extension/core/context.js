@@ -11,8 +11,8 @@ import { SessionMode } from './enums.js';
 import Jobs from './context/jobs.js';
 import Signals from './context/signals.js';
 import LayoutManager from './context/layout.js';
-import ModulesService from '../services/modules.js';
-import LauncherApiProxy from '../services/launcherApi.js';
+import Modules from '../services/modules.js';
+import LauncherApi from '../services/launcherApi.js';
 
 const SETTINGS_SCHEMA_KEY = 'settings-schema';
 
@@ -75,7 +75,7 @@ export default class Context {
         return instance.#systemSettings;
     }
 
-    /** @type {LauncherApiProxy?} */
+    /** @type {LauncherApi?} */
     static get launcherApi() {
         return this.instance.#launcherApi;
     }
@@ -139,10 +139,10 @@ export default class Context {
     /** @type {LayoutManager?} */
     #layout = null;
 
-    /** @type {ModulesService?} */
+    /** @type {Modules?} */
     #modules = null;
 
-    /** @type {LauncherApiProxy?} */
+    /** @type {LauncherApi?} */
     #launcherApi = null;
 
     /** @type {St.IconTheme?} */
@@ -182,8 +182,8 @@ export default class Context {
     }
 
     #initialize() {
-        this.#launcherApi = new LauncherApiProxy();
-        this.#modules = new ModulesService();
+        this.#launcherApi = new LauncherApi();
+        this.#modules = new Modules();
     }
 
     #destroy() {
