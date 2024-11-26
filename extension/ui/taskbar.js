@@ -387,7 +387,6 @@ export default class Taskbar extends ScrollView {
         this.dropEvents = true;
         this.#separator?.connect(Event.Hover, () => this.#handleChildReaction(this.#separator));
         this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.(data));
-        Context.layout.requestInit(this, () => this.#setParent());
     }
 
     /**
@@ -425,8 +424,8 @@ export default class Taskbar extends ScrollView {
      */
     #handleMapped(sender) {
         if (!this.isValid || !sender) return;
-        if (sender === this) return Context.layout.queueAfterInit(this, () => this.#rerender());
-        this.#allocation?.add(sender);
+        if (sender === this) Context.desktop.queueClient(this, () => this.#rerender());
+        else this.#allocation?.add(sender);
     }
 
     /**
@@ -444,7 +443,7 @@ export default class Taskbar extends ScrollView {
     }
 
     #destroy() {
-        Context.layout.removeClient(this);
+        Context.desktop.removeClient(this);
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
         this.#allocation?.destroy();
@@ -560,7 +559,7 @@ export default class Taskbar extends ScrollView {
     }
 
     #rerender() {
-        if (!this.#appButtons || !this.hasAllocation || Context.layout.isQueued(this)) return;
+        if (!this.#appButtons || !this.hasAllocation || Context.desktop.isQueued(this)) return;
         const favoriteApps = this.#service?.favorites?.apps;
         const runningApps = this.#getRunningApps();
         const apps = favoriteApps && runningApps ? new Set([...favoriteApps, ...runningApps]) :

@@ -11,14 +11,14 @@ import { MainLayout, MainPanel } from '../shell.js';
 import { Component } from '../../ui/base/component.js';
 import { Event, Delay } from '../enums.js';
 
-export default class LayoutManager {
+export default class Desktop {
 
     /** @type {Map<*, (() => void)?>?} */
     #clients = new Map();
 
     /** @type {boolean} */
-    get isStartingUp() {
-        return MainLayout._startingUp ?? false;
+    get isReady() {
+        return !MainLayout._startingUp;
     }
 
     destroy() {
@@ -37,7 +37,7 @@ export default class LayoutManager {
             MainPanel.menuManager?.addMenu(menu);
             this.addOverlay(menu.actor);
         } catch (e) {
-            console.error(`${Context.metadata?.name} unable to add menu.`, e);
+            Context.logError(`${Desktop.name} failed to add menu.`, e);
         }
     }
 
@@ -50,7 +50,7 @@ export default class LayoutManager {
             MainPanel.menuManager?.removeMenu(menu);
             this.removeOverlay(menu.actor);
         } catch (e) {
-            console.error(`${Context.metadata?.name} unable to remove menu.`, e);
+            Context.logError(`${Desktop.name} failed to remove menu.`, e);
         }
     }
 
@@ -79,40 +79,31 @@ export default class LayoutManager {
 
     /**
      * @param {*} client
-     * @param {() => void} callback
+     * @param {(() => void)?} [callback]
      */
-    requestInit(client, callback) {
-        if (!this.#clients || !client ||
-            typeof callback !== 'function' ||
-            typeof this.#clients.get(client) === 'function') return;
-        if (!this.isStartingUp) {
+    addClient(client, callback) {
+        if (!this.#clients || !client) return;
+        if (this.isReady) {
             this.#clients.set(client, null);
-            callback();
+            if (typeof callback === 'function') callback();
             return;
         }
-        this.#clients.set(client, callback);
-        if (Context.signals.hasClient(this)) return;
-        Context.signals.add(this, [MainLayout, Event.StartupComplete, () => this.#initClients()]);
+        this.#clients.set(client, callback ?? null);
+        if (typeof callback !== 'function' ||
+            Context.signals.hasClient(this)) return;
+        Context.signals.add(this, [MainLayout, Event.StartupComplete, () => this.#handleStartup()]);
     }
 
     /**
      * @param {*} client
      * @param {() => void} callback
      */
-    queueAfterInit(client, callback) {
-        if (!client || !this.#clients?.has(client) ||
-            typeof callback !== 'function' ||
-            typeof this.#clients.get(client) === 'function') return;
+    queueClient(client, callback) {
+        if (!client || typeof callback !== 'function' ||
+            !this.#clients?.has(client)) return;
+        if (!this.isReady) return Context.logError(`${Desktop.name} is not ready to queue client requests.`);
         this.#clients.set(client, callback);
-        Context.jobs.removeAll(this).new(this, Delay.Background).destroy(() => this.#handleAfterInit());
-    }
-
-    /**
-     * @param {*} client
-     * @returns {boolean}
-     */
-    isQueued(client) {
-        return typeof this.#clients?.get(client) === 'function';
+        Context.jobs.removeAll(this).new(this, Delay.Background).destroy(() => this.#notifyClients());
     }
 
     /**
@@ -126,21 +117,32 @@ export default class LayoutManager {
         Context.signals.removeAll(this);
     }
 
-    #initClients() {
-        this.#processClients();
+    /**
+     * @param {*} client
+     * @returns {boolean}
+     */
+    hasClient(client) {
+        return this.#clients?.has(client) ?? false;
+    }
+
+    /**
+     * @param {*} client
+     * @returns {boolean}
+     */
+    isQueued(client) {
+        return typeof this.#clients?.get(client) === 'function';
+    }
+
+    #handleStartup() {
         Context.signals.removeAll(this);
+        this.#notifyClients();
     }
 
-    #handleAfterInit() {
-        this.#processClients();
-        this.#clients?.clear();
-    }
-
-    #processClients() {
+    #notifyClients() {
         if (!this.#clients?.size) return;
         for (const [client, callback] of this.#clients) {
+            if (typeof callback !== 'function') continue;
             this.#clients.set(client, null);
-            if (typeof callback === 'function') callback();
         }
     }
 

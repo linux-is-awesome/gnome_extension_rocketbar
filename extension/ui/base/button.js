@@ -98,7 +98,7 @@ class ButtonMenuTrigger extends PopupDummyMenu {
         this.#actor = actor;
         this.#button = button;
         this.sourceActor = button.actor;
-        Context.layout.addMenu(this);
+        Context.desktop.addMenu(this);
         Context.signals.add(this, [this.sourceActor, Event.KeyPress, (_, event) => this.#keyPress(event)]);
     }
 
@@ -119,7 +119,7 @@ class ButtonMenuTrigger extends PopupDummyMenu {
     destroy() {
         if (!this.#actor) return;
         Context.signals.removeAll(this);
-        Context.layout.removeMenu(this);
+        Context.desktop.removeMenu(this);
         this.#actor?.destroy();
         this.#actor = null;
         this.#button = null;
@@ -298,7 +298,7 @@ export class Button extends Component {
         }
         this.#menu = menu;
         this.#menu.connect(Event.OpenStateChanged, () => this.#focus());
-        Context.layout.addMenu(this.#menu);
+        Context.desktop.addMenu(this.#menu);
     }
 
     /** @type {Tooltip?} */

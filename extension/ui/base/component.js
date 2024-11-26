@@ -497,7 +497,7 @@ export class Component {
             const notifyParams = { event, target, params, sender };
             return this.#notifyCallback(notifyParams);
         } catch (e) {
-            console.error(`${this.constructor.name} notify failed for event ${event}`, e);
+            console.error(`${this.constructor.name} notify failed for event ${event}.`, e);
         }
         return null;
     }

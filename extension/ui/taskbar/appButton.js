@@ -351,7 +351,7 @@ export class AppButton extends RuntimeButton {
         const monitorRect = this.monitorRect;
         if (!monitorRect) return;
         const actor = this.#appIcon.dragActor;
-        Context.layout.addOverlay(actor);
+        Context.desktop.addOverlay(actor);
         actor.set_position(x, y);
         actor.set_pivot_point(0.5, 0.5);
         const [width, height] = actor.get_size();

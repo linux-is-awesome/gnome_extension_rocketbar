@@ -164,7 +164,7 @@ export class Tooltip extends Component {
         const delay = shownTooltip && shownTooltip.#isVisible ?
                       Math.min(this.#showDelay, this.#hideDelay) : this.#showDelay;
         this.#fadeInJob = this.#job.reset(delay);
-        this.#fadeInJob.queue(() => this.hasAllocation ? this.#fadeIn() : Context.layout.addOverlay(super.actor));
+        this.#fadeInJob.queue(() => this.hasAllocation ? this.#fadeIn() : Context.desktop.addOverlay(super.actor));
     }
 
     /**
@@ -275,7 +275,7 @@ export class Tooltip extends Component {
         actor.remove_all_transitions();
         this.#transformRect = {};
         this.#job?.reset(Delay.Redraw)
-                  .queue(() => this.#fadeInJob ? this.show() : Context.layout.removeOverlay(actor));
+                  .queue(() => this.#fadeInJob ? this.show() : Context.desktop.removeOverlay(actor));
         this.setProps(defaultProps).setSize();
         this.#targetSize = null;
         if (Tooltip.#shownTooltip === this) {

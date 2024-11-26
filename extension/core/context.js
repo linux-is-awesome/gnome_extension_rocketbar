@@ -10,7 +10,7 @@ import { Session, MainLayout } from './shell.js';
 import { SessionMode } from './enums.js';
 import Jobs from './context/jobs.js';
 import Signals from './context/signals.js';
-import LayoutManager from './context/layout.js';
+import Desktop from './context/desktop.js';
 import Modules from '../services/modules.js';
 import LauncherApi from '../services/launcherApi.js';
 
@@ -54,11 +54,11 @@ export default class Context {
         return instance.#signals;
     }
 
-    /** @type {LayoutManager} */
-    static get layout() {
+    /** @type {Desktop} */
+    static get desktop() {
         const instance = this.instance;
-        instance.#layout ??= new LayoutManager();
-        return instance.#layout;
+        instance.#desktop ??= new Desktop();
+        return instance.#desktop;
     }
 
     /** @type {St.IconTheme} */
@@ -101,7 +101,7 @@ export default class Context {
             storage.set(schemaId, settings);
             return settings;
         } catch (e) {
-            this.logError(`unable to load settings for the path ${path}`);
+            this.logError(`unable to load settings for the path ${path}.`);
         }
         return null;
     }
@@ -136,8 +136,8 @@ export default class Context {
     /** @type {Signals?} */
     #signals = null;
 
-    /** @type {LayoutManager?} */
-    #layout = null;
+    /** @type {Desktop?} */
+    #desktop = null;
 
     /** @type {Modules?} */
     #modules = null;
@@ -170,7 +170,7 @@ export default class Context {
             Context.logError(`unable to destroy ${Context.name}.`, e);
         } finally {
             this.#modules = null;
-            this.#layout = null;
+            this.#desktop = null;
             this.#jobs = null;
             this.#signals = null;
             this.#launcherApi = null;
@@ -189,7 +189,7 @@ export default class Context {
     #destroy() {
         this.#jobs?.removeAll(this);
         this.#modules?.destroy();
-        this.#layout?.destroy();
+        this.#desktop?.destroy();
         this.#jobs?.destroy();
         this.#signals?.destroy();
         this.#launcherApi?.destroy();
