@@ -17,7 +17,7 @@ import { MainLayout, Overview } from '../../core/shell.js';
 import Context from '../../core/context.js';
 import { Event, Delay } from '../../core/enums.js';
 import { Labels } from '../../core/labels.js';
-import { Config } from '../../utils/config.js';
+import { Config, InnerConfig } from '../../utils/config.js';
 import { PreferredMonitor } from '../../utils/taskbar/appConfig.js';
 
 const CONFIG_PATH = 'taskbar';
@@ -269,13 +269,7 @@ export default class WindowRouter {
     #handleConfig(settingsKey) {
         if (!this.#config) return;
         if (settingsKey && settingsKey !== ConfigFields.appConfig) return;
-        const appConfig = this.#config.appConfig;
-        if (!appConfig?.length) return;
-        try {
-            this.#appConfig = JSON.parse(appConfig);
-        } catch (e) {
-            Context.logError(WindowRouter.name, e);
-        }
+        this.#appConfig = InnerConfig(this.#config, ConfigFields.appConfig);
     }
 
 }

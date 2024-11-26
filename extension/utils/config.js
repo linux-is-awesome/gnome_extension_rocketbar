@@ -30,7 +30,7 @@ export const Config = (client, fields, callback, options = { path: null, isAfter
     const signals = [];
     /** @type {Map<string?, string>}*/
     const valueMapping = new Map();
-    /** @type {((_, key: string) => void)} */
+    /** @type {(_, key: string) => void} */
     const valueHandler = (_, key) => {
         const configField = valueMapping.get(key);
         if (!configField) return;
@@ -53,10 +53,24 @@ export const Config = (client, fields, callback, options = { path: null, isAfter
     return values;
 };
 
-export class SharedConfig {
+/**
+ * @param {Config|Gio.Settings} parentConfig
+ * @param {string} field
+ * @returns {*}
+ */
+export const InnerConfig = (parentConfig, field) => {
+    try {
+        const value = parentConfig instanceof Gio.Settings ?
+                      parentConfig.get_string(field) :
+                      parentConfig?.[field];
+        if (typeof value === 'string' && value.length) return JSON.parse(value);
+    } catch (e) {
+        Context.logError(`Failed to parse ${InnerConfig.name} for field ${field}.`, e);
+    }
+    return null;
+};
 
-    /** @type {Gio.Settings?} */
-    #settings = null;
+export class SharedConfig {
 
     /** @type {Config?} */
     #config = null;
@@ -66,11 +80,6 @@ export class SharedConfig {
 
     /** @type {((client: ConfigClient, settingsKey: string) => void)?} */
     #configHandler = this.#handleClientConfig;
-
-    /** @type {Gio.Settings?} */
-    get settings() {
-        return this.#settings;
-    }
 
     /** @param {(client: ConfigClient, settingsKey: string) => void} callback */
     set configHandler(callback) {
@@ -84,8 +93,6 @@ export class SharedConfig {
      */
     constructor(fields, options) {
         if (!fields) return;
-        const { path } = options ?? {};
-        this.#settings = Context.getSettings(path);
         this.#config = Config(this, fields, settingsKey => this.#handleConfig(settingsKey), options);
     }
 
@@ -127,7 +134,6 @@ export class SharedConfig {
         this.#clients.delete(client);
         if (this.#clients.size) return false;
         Context.signals.removeAll(this);
-        this.#settings = null;
         this.#clients = null;
         this.#configHandler = null;
         this.#config = null;

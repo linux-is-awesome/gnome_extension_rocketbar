@@ -7,7 +7,7 @@
  */
 
 import Context from '../../core/context.js';
-import { SharedConfig } from '../config.js';
+import { SharedConfig, InnerConfig } from '../config.js';
 
 const CONFIG_PATH = 'taskbar';
 const CONFIG_OVERRIDE_SETTINGS_KEY = 'appbutton-config-override';
@@ -90,7 +90,9 @@ export class AppConfig extends SharedConfig {
     constructor() {
         super(ConfigFields, { path: CONFIG_PATH });
         this.configHandler = this.#setAppConfig;
-        this.#loadConfigOverride();
+        const settings = Context.getSettings(CONFIG_PATH);
+        if (!settings) return;
+        this.#configOverride = InnerConfig(settings, CONFIG_OVERRIDE_SETTINGS_KEY) ?? {};
     }
 
     /**
@@ -192,16 +194,6 @@ export class AppConfig extends SharedConfig {
         this.#setAppConfig([app, this.getClientDetails(app)]);
     }
 
-    #loadConfigOverride() {
-        try {
-            const configOverride = this.settings?.get_string(CONFIG_OVERRIDE_SETTINGS_KEY);
-            if (!configOverride?.length) return;
-            this.#configOverride = JSON.parse(configOverride);
-        } catch (e) {
-            Context.logError(AppConfig.name, e);
-        }
-    }
-
     /**
      * @param {[Shell.App, AppConfigDetails]} appConfig
      * @param {string?} [settingsKey]
@@ -256,7 +248,8 @@ export class AppConfig extends SharedConfig {
     }
 
     #saveConfigOverride() {
-        this.settings?.set_string(CONFIG_OVERRIDE_SETTINGS_KEY, JSON.stringify(this.#configOverride));
+        const configOverride = JSON.stringify(this.#configOverride);
+        Context.getSettings(CONFIG_PATH)?.set_string(CONFIG_OVERRIDE_SETTINGS_KEY, configOverride);
     }
 
 }
