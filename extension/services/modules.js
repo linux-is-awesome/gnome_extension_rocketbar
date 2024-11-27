@@ -40,7 +40,8 @@ const Modules = {
         Module.TweakPopupsNoDelay,
         Module.TweakPrimaryInputSource,
         Module.TweakUpperCaseInputSource,
-        Module.TweakMenusClickToOpen
+        Module.TweakMenusClickToOpen,
+        Module.Panel
     ]
 };
 
@@ -54,9 +55,7 @@ const ConfigFields = {
     [Module.TweakPrimaryInputSource]: 'primary-input-source',
     [Module.TweakUpperCaseInputSource]: 'upper-case-input-source',
     [Module.TweakMenusClickToOpen]: 'menus-click-to-open',
-    [Module.Panel]: 'panel',
-    [Module.NotificationCounter]: 'notification-counter',
-    [Module.Taskbar]: 'taskbar'
+    [Module.Panel]: 'panel'
 };
 
 class ModuleService {
@@ -109,7 +108,7 @@ export class ModuleManager {
     /** @type {Map<Module, *>?} */
     #moduleInstances = new Map();
 
-    /** @type {((newModules: Module[]) => void)?} */
+    /** @type {((newModules: Map<Module, string>) => void)?} */
     #callback = null;
 
     /** @type {Map<Module, *>?} */
@@ -118,7 +117,7 @@ export class ModuleManager {
     }
 
     /**
-     * @param {((newModules: Module[]) => void)} [callback]
+     * @param {((newModules: Map<Module, string>) => void)} [callback]
      */
     constructor(callback) {
         this.#callback = callback ?? null;
@@ -162,7 +161,12 @@ export class ModuleManager {
         if (!newModules.size) return;
         await Promise.all([...newModules.values()]);
         if (typeof this.#callback !== 'function') return;
-        this.#callback([...newModules.keys()]);
+        for (const name in Module) {
+            const module = Module[name];
+            if (!newModules.has(module)) continue;
+            newModules.set(module, name);
+        }
+        this.#callback(newModules);
     }
 
     /**

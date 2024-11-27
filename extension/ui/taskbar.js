@@ -391,6 +391,19 @@ export default class Taskbar extends ScrollView {
 
     /**
      * @override
+     * @param {St.Widget|Component} parent
+     * @param {number} [position]
+     * @returns {this}
+     */
+    setParent(parent, position) {
+        const desktop = Context.desktop;
+        if (desktop.isReady && desktop.hasClient(this)) super.setParent(parent, position);
+        else desktop.addClient(this, () => super.setParent(parent, position));
+        return this;
+    }
+
+    /**
+     * @override
      * @param {St.Widget|Component} actor
      * @param {boolean} [deceleration]
      * @returns {Promise<boolean>?}
@@ -412,11 +425,6 @@ export default class Taskbar extends ScrollView {
                 this.#rerender();
                 break;
         }
-    }
-
-    #setParent() {
-        if (!MainPanel._leftBox) return;
-        this.setParent(MainPanel._leftBox, -1);
     }
 
     /**

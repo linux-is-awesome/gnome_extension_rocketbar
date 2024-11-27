@@ -6,12 +6,6 @@
         <key type="b" name="panel">
             <default>true</default>
         </key>
-        <key type="b" name="taskbar">
-            <default>true</default>
-        </key>
-        <key type="b" name="notification-counter">
-            <default>false</default>
-        </key>
         <key type="b" name="overview-kill-dash">
             <default>false</default>
         </key>
