@@ -88,9 +88,9 @@ export default class Desktop {
             if (typeof callback === 'function') callback();
             return;
         }
-        this.#clients.set(client, callback ?? null);
-        if (typeof callback !== 'function' ||
-            Context.signals.hasClient(this)) return;
+        const isValidCallback = typeof callback === 'function';
+        this.#clients.set(client, isValidCallback ? callback : null);
+        if (!isValidCallback || Context.signals.hasClient(this)) return;
         Context.signals.add(this, [MainLayout, Event.StartupComplete, () => this.#handleStartup()]);
     }
 
@@ -99,8 +99,7 @@ export default class Desktop {
      * @param {() => void} callback
      */
     queueClient(client, callback) {
-        if (!client || typeof callback !== 'function' ||
-            !this.#clients?.has(client)) return;
+        if (!client || typeof callback !== 'function' || !this.#clients?.has(client)) return;
         if (!this.isReady) return Context.logError(`${Desktop.name} is not ready to queue client requests.`);
         this.#clients.set(client, callback);
         Context.jobs.removeAll(this).new(this, Delay.Background).destroy(() => this.#notifyClients());
@@ -143,6 +142,7 @@ export default class Desktop {
         for (const [client, callback] of this.#clients) {
             if (typeof callback !== 'function') continue;
             this.#clients.set(client, null);
+            callback();
         }
     }
 
