@@ -186,7 +186,16 @@ export default class NotificationCounter extends Component {
         this.#createCounter();
         this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         Context.signals.add(this, [St.Settings.get(), Event.FontName, () => this.#rerender()]);
-        Context.desktop.addClient(this, () => this.setParent(this.#dateMenu));
+        Context.desktop.addClient(this, () => super.setParent(this.#dateMenu));
+    }
+
+    /**
+     * Note: This component doesn't support changing the parent.
+     *
+     * @override
+     */
+    setParent() {
+        return this;
     }
 
     #destroy() {
