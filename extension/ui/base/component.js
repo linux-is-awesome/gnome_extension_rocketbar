@@ -221,7 +221,7 @@ export class Component {
     }
 
     /**
-     * @param {St.Widget|Component<St.Widget>} parent
+     * @param {St.Widget|Component<St.Widget>|null} parent
      * @param {number} [position] -1..0..999
      * @returns {this}
      */
@@ -233,20 +233,18 @@ export class Component {
             parentComponent = parent;
             parent = parent.actor;
         }
-        if (parent instanceof St.Widget === false) return this;
         this.#parent = parentComponent;
         const oldParent = this.parentActor;
         const isParentChanged = oldParent !== parent;
-        if (isParentChanged) {
-            oldParent?.remove_child(this.#actor);
-            this.#setMappedHandler();
-        }
+        if (isParentChanged) oldParent?.remove_child(this.#actor);
+        if (parent instanceof St.Widget === false) return this;
+        if (isParentChanged) this.#setMappedHandler();
         if (parent instanceof St.Bin) {
             if (isParentChanged) parent.set_child(this.#actor);
             return this;
         }
-        if (isParentChanged) parent.insert_child_at_index(this.#actor, position);
-        else this.#setPosition(position);
+        if (!isParentChanged) this.#setPosition(position);
+        else parent.insert_child_at_index(this.#actor, position);
         return this;
     }
 
