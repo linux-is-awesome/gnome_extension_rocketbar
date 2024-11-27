@@ -214,7 +214,7 @@
         <key type="b" name="tooltip-shrink-window-titles">
             <default>true</default>
         </key>
-        <key type="b" name="tooltip-enable-windows-preview">
+        <key type="b" name="tooltip-enable-window-previews">
             <default>true</default>
         </key>
         <key type="s" name="progress-bar-position">

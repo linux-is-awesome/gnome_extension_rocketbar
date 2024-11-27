@@ -28,7 +28,7 @@ const ConfigFields = {
     showDelay: 'tooltip-show-delay',
     hideDelay: 'tooltip-hide-delay',
     shrinkWindowTitles: 'tooltip-shrink-window-titles',
-    enableWindowsPreview: 'tooltip-enable-windows-preview'
+    enableWindowPreviews: 'tooltip-enable-window-previews'
 };
 
 /** @enum {string} */
