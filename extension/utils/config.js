@@ -65,7 +65,7 @@ export const InnerConfig = (parentConfig, field) => {
                       parentConfig?.[field];
         if (typeof value === 'string' && value.length) return JSON.parse(value);
     } catch (e) {
-        Context.logError(`Failed to parse ${InnerConfig.name} for field ${field}.`, e);
+        Context.logError(`${InnerConfig.name} failed to parse value for field "${field}".`, e);
     }
     return null;
 };
