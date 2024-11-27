@@ -296,10 +296,14 @@ export class ShellTweaks {
     _handlePanelMiddleButton(event) {
 
         // handle middle button press on empty space only
-        if (!event || event.get_source() !== Main.panel ||
-                event.get_button() !== Clutter.BUTTON_MIDDLE) {
+        if (!event || event.get_button() !== Clutter.BUTTON_MIDDLE) {
             return Clutter.EVENT_PROPAGATE;
         }
+
+        const [x, y] = global.get_pointer();
+        const currentActor = global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y);
+
+        if (currentActor !== Main.panel) return Clutter.EVENT_PROPAGATE;
 
         // mute/unmute sound volume
 
