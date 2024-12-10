@@ -21,6 +21,7 @@ import { Config, InnerConfig } from '../../utils/config.js';
 import { PreferredMonitor } from '../../utils/taskbar/appConfig.js';
 
 const CONFIG_PATH = 'taskbar';
+const CONFIG_FIELD_APP_CONFIG = 'appConfig';
 const STORAGE_KEY_MONITORS = 'monitors';
 
 /** @type {{[value: string]: number}} */
@@ -48,7 +49,7 @@ const StatusTextProps = {
 /** @enum {string} */
 const ConfigFields = {
     windowsPreferredMonitor: 'windows-preferred-monitor',
-    appConfig: 'appbutton-config-override'
+    [CONFIG_FIELD_APP_CONFIG]: 'appbutton-config-override'
 };
 
 export default class WindowRouter {
@@ -269,7 +270,7 @@ export default class WindowRouter {
     #handleConfig(settingsKey) {
         if (!this.#config) return;
         if (settingsKey && settingsKey !== ConfigFields.appConfig) return;
-        this.#appConfig = InnerConfig(this.#config, ConfigFields.appConfig);
+        this.#appConfig = InnerConfig(this.#config, CONFIG_FIELD_APP_CONFIG);
     }
 
 }
