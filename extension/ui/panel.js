@@ -226,6 +226,9 @@ export default class Panel extends Component {
      */
     #changeSoundVolume(event) {
         if (!event || !this.#config?.soundVolumeControl) return Clutter.EVENT_PROPAGATE;
+        const scrollDirection = event.get_scroll_direction();
+        const isCtrlPressed = !!(event.get_state() & Clutter.ModifierType.CONTROL_MASK);
+        if (isCtrlPressed && scrollDirection === Clutter.ScrollDirection.SMOOTH) return Clutter.EVENT_PROPAGATE;
         const quickSettings = this.actor?.statusArea?.quickSettings;
         const outputVolumeIndicator = quickSettings?._volumeOutput?._indicator;
         if (outputVolumeIndicator instanceof Clutter.Actor === false) return Clutter.EVENT_PROPAGATE;
