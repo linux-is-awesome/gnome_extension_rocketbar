@@ -758,7 +758,7 @@ export class AppButton extends RuntimeButton {
         const { event, button } = params ?? {};
         const isSecondaryButton = button === Clutter.BUTTON_SECONDARY;
         const isMiddleButton = button === Clutter.BUTTON_MIDDLE;
-        const isCtrlPressed = !event ? false : (event.get_state() & Clutter.ModifierType.CONTROL_MASK) !== 0;
+        const isCtrlPressed = !!(event && event.get_state() & Clutter.ModifierType.CONTROL_MASK);
         return { isSecondaryButton, isMiddleButton, isCtrlPressed };
     }
 
