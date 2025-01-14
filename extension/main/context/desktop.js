@@ -1,6 +1,4 @@
 /**
- * JSDoc types
- *
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupMenu} PopupMenu
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupDummyMenu} PopupDummyMenu
  */
@@ -9,7 +7,7 @@ import St from 'gi://St';
 import Context from '../context.js';
 import { MainLayout, MainPanel } from '../shell.js';
 import { Component } from '../../ui/base/component.js';
-import { Event, Delay } from '../enums.js';
+import { Event, Delay } from '../../shared/enums.js';
 
 export default class Desktop {
 

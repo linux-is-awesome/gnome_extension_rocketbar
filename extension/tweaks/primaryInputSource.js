@@ -1,14 +1,12 @@
 /**
- * JSDoc types
- *
  * @typedef {import('resource:///org/gnome/shell/ui/status/keyboard.js').InputSourceManager} InputSourceManager
  */
 
 import St from 'gi://St';
 import { getInputSourceManager as InputSourceManager } from 'resource:///org/gnome/shell/ui/status/keyboard.js';
-import { Overview } from '../core/shell.js';
-import Context from '../core/context.js';
-import { Event } from '../core/enums.js';
+import { Overview } from '../main/shell.js';
+import Context from '../main/context.js';
+import { Event } from '../shared/enums.js';
 
 const PRIMARY_INPUT_SOURCE = '0';
 

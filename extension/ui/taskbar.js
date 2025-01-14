@@ -1,8 +1,6 @@
 /**
- * JSDoc types
- *
  * @typedef {import('gi://Meta').Workspace} Meta.Workspace
- * @typedef {import('../core/context/jobs.js').Jobs.Job} Job
+ * @typedef {import('../main/context/jobs.js').Jobs.Job} Job
  * @typedef {import('./base/component.js').Component<St.Widget>} Component
  * @typedef {{competitor: Component, rect: Mtk.Rectangle}} DropCompetitor
  */
@@ -12,12 +10,12 @@ import Clutter from 'gi://Clutter';
 import Shell from 'gi://Shell';
 import Mtk from 'gi://Mtk';
 import { DragMotionResult } from 'resource:///org/gnome/shell/ui/dnd.js';
-import Context from '../core/context.js';
+import Context from '../main/context.js';
 import { TaskbarClient } from '../services/taskbar.js';
 import { ScrollView } from './base/scrollView.js';
 import { Separator } from './taskbar/separator.js';
 import { AppButton, AppButtonEvent } from './taskbar/appButton.js';
-import { Event, Delay } from '../core/enums.js';
+import { Event, Delay } from '../shared/enums.js';
 import { ComponentEvent } from './base/component.js';
 import { Config } from '../utils/config.js';
 import { Animation, AnimationDuration } from './base/animation.js';

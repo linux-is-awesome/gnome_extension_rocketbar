@@ -1,12 +1,10 @@
 /**
- * JSDoc types
- *
  * @typedef {import('gi://Mtk').Rectangle} Mtk.Rectangle
  */
 
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
-import Context from '../../core/context.js';
+import Context from '../../main/context.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Animation, AnimationDuration, AnimationType } from '../base/animation.js';
 import { Config } from '../../utils/config.js';

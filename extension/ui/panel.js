@@ -1,8 +1,8 @@
 import Clutter from 'gi://Clutter';
-import { MainPanel, Overview } from '../core/shell.js';
-import Context from '../core/context.js';
+import { MainPanel, Overview } from '../main/shell.js';
+import Context from '../main/context.js';
 import { Component, ComponentEvent } from './base/component.js';
-import { Event } from '../core/enums.js';
+import { Event } from '../shared/enums.js';
 import { ModuleManager, Module } from '../services/modules.js';
 import { Config, InnerConfig } from '../utils/config.js';
 

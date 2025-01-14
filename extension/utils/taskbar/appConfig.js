@@ -1,12 +1,10 @@
 /**
- * JSDoc types
- *
  * @typedef {import('gi://Shell').App} Shell.App
  * @typedef {import('../config.js').Config} Config
  * @typedef {{config?: Config?, clients?: Map<*, ((settingsKey?: string?) => void)?>}} AppConfigDetails
  */
 
-import Context from '../../core/context.js';
+import Context from '../../main/context.js';
 import { SharedConfig, InnerConfig } from '../config.js';
 
 const CONFIG_PATH = 'taskbar';

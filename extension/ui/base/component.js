@@ -1,6 +1,4 @@
 /**
- * JSDoc types
- *
  * @typedef {import('gi://Gio').Settings} Gio.Settings
  * @typedef {import('gi://Clutter').Actor} Clutter.Actor
  */
@@ -9,8 +7,8 @@ import GObject from 'gi://GObject';
 import St from 'gi://St';
 import Mtk from 'gi://Mtk';
 import * as Dnd from 'resource:///org/gnome/shell/ui/dnd.js';
-import { MainLayout } from '../../core/shell.js';
-import { Event } from '../../core/enums.js';
+import { MainLayout } from '../../main/shell.js';
+import { Event } from '../../shared/enums.js';
 
 const DRAG_TIMEOUT_THRESHOLD = 200;
 const UI_SCALE_SETTINGS_KEY = 'text-scaling-factor';

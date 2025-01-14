@@ -1,14 +1,12 @@
 /**
- * JSDoc types
- *
- * @typedef {import('./core/context.js').default} Context
+ * @typedef {import('./main/context.js').default} Context
  */
 
-import { Extension as ShellExtension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const DEFAULT_RUNTIME_PATH = '/core/context.js';
+const DEFAULT_RUNTIME_PATH = '/main/context.js';
 
-export default class Extension extends ShellExtension {
+export default class extends Extension {
 
     /** @type {Context?} */
     #runtime = null;

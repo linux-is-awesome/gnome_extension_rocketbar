@@ -1,14 +1,12 @@
 /**
- * JSDoc types
- *
- * @typedef {import('../../core/context/jobs.js').Jobs.Job} Job
+ * @typedef {import('../../main/context/jobs.js').Jobs.Job} Job
  */
 
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
-import Context from '../../core/context.js';
+import Context from '../../main/context.js';
 import { Component } from './component.js';
-import { Event, Delay } from '../../core/enums.js';
+import { Event, Delay } from '../../shared/enums.js';
 import { Animation, AnimationDuration } from './animation.js';
 
 const FADE_EFFECT_NAME = 'fade';

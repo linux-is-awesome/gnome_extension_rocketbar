@@ -1,6 +1,4 @@
 /**
- * JSDoc types
- *
  * @typedef {import('gi://Mtk').Rectangle} Mtk.Rectangle
  * @typedef {import('resource:///org/gnome/shell/ui/boxpointer.js').PopupAnimation} BoxPointer.PopupAnimation
  */
@@ -8,11 +6,11 @@
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import { PopupMenu, PopupDummyMenu } from 'resource:///org/gnome/shell/ui/popupMenu.js';
-import Context from '../../core/context.js';
+import Context from '../../main/context.js';
 import { Component, ComponentLocation } from './component.js';
 import { LongPressAction } from './longPressAction.js';
 import { Tooltip, TooltipEvent } from './tooltip.js';
-import { Event, PseudoClass } from '../../core/enums.js';
+import { Event, PseudoClass } from '../../shared/enums.js';
 import { Animation, AnimationType, AnimationDuration } from './animation.js';
 import { Gradient } from '../../utils/gradient.js';
 

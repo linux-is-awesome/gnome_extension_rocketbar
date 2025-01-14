@@ -1,9 +1,7 @@
 /**
- * JSDoc types
- *
  * @typedef {import('gi://Shell').App} Shell.App
  * @typedef {import('resource:///org/gnome/shell/ui/modalDialog.js').ModalDialog} ModalDialog
- * @typedef {import('../../core/context/jobs.js').Jobs.Job} Job
+ * @typedef {import('../../main/context/jobs.js').Jobs.Job} Job
  * @typedef {import('../taskbar.js').WindowInfo} WindowInfo
  */
 
@@ -13,10 +11,10 @@ import St from 'gi://St';
 import { activateWindow as FocusedWindow,
          moveWindowToMonitorAndWorkspace as RoutedWindow } from 'resource:///org/gnome/shell/ui/main.js';
 import { ModalDialog } from 'resource:///org/gnome/shell/ui/modalDialog.js';
-import { MainLayout, Overview } from '../../core/shell.js';
-import Context from '../../core/context.js';
-import { Event, Delay } from '../../core/enums.js';
-import { Labels } from '../../core/labels.js';
+import { MainLayout, Overview } from '../../main/shell.js';
+import Context from '../../main/context.js';
+import { Event, Delay } from '../../shared/enums.js';
+import { Labels } from '../../main/labels.js';
 import { Config, InnerConfig } from '../../utils/config.js';
 import { PreferredMonitor } from '../../utils/taskbar/appConfig.js';
 

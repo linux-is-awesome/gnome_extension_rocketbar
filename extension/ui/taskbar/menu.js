@@ -1,6 +1,4 @@
 /**
- * JSDoc types
- *
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupBaseMenuItem} PopupBaseMenuItem
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupMenuItem} PopupMenuItem
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupSeparatorMenuItem} PopupSeparatorMenuItem
@@ -15,8 +13,8 @@ import St from 'gi://St';
 import { AppMenu } from 'resource:///org/gnome/shell/ui/appMenu.js';
 import { PopupMenuSection,
          PopupSeparatorMenuItem } from 'resource:///org/gnome/shell/ui/popupMenu.js';
-import Context from '../../core/context.js';
-import { Delay, Event } from '../../core/enums.js';
+import Context from '../../main/context.js';
+import { Delay, Event } from '../../shared/enums.js';
 import { ComponentLocation } from '../base/component.js';
 import { SliderMenuItem, CollapsibleGroup, ChildMenu } from '../base/menu.js';
 import { Icon } from '../base/icon.js';
@@ -25,7 +23,7 @@ import { FileSelector } from '../../utils/zenity.js';
 import { ActivateBehavior, DemandsAttentionBehavior,
          PreferredMonitor, AppIconSize } from '../../utils/taskbar/appConfig.js';
 import { SoundVolumeIcon } from '../../utils/soundVolumeIcon.js';
-import { Labels } from '../../core/labels.js';
+import { Labels } from '../../main/labels.js';
 
 const CONFIG_PATH = 'taskbar';
 const UNWANTED_STYLE_CLASS = 'app-menu';

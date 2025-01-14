@@ -1,13 +1,11 @@
 /**
- * JSDoc types
- *
- * @typedef {import('../core/context/jobs.js').Jobs.Job} Job
+ * @typedef {import('../main/context/jobs.js').Jobs.Job} Job
  */
 
 import Shell from 'gi://Shell';
-import Context from '../core/context.js';
-import { MessageTray } from '../core/shell.js';
-import { Delay } from '../core/enums.js';
+import Context from '../main/context.js';
+import { MessageTray } from '../main/shell.js';
+import { Delay } from '../shared/enums.js';
 import { Config } from '../utils/config.js';
 
 const APPID_REGEXP_STRING = /.desktop/g;

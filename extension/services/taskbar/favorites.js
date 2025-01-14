@@ -1,14 +1,12 @@
 /**
- * JSDoc types
- *
  * @typedef {*} AppFavorites
  * @typedef {*} ParentalControlsManager
  */
 
 import Shell from 'gi://Shell';
 import { getAppFavorites as AppFavorites } from 'resource:///org/gnome/shell/ui/appFavorites.js';
-import Context from '../../core/context.js';
-import { Event } from '../../core/enums.js';
+import Context from '../../main/context.js';
+import { Event } from '../../shared/enums.js';
 
 export default class Favorites {
 

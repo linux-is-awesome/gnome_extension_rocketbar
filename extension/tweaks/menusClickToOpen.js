@@ -1,4 +1,4 @@
-import { MainPanel } from '../core/shell.js';
+import { MainPanel } from '../main/shell.js';
 
 export default class {
 

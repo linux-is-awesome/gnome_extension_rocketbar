@@ -1,6 +1,4 @@
 /**
- * JSDoc types
- *
  * @typedef {import('gi://cairo').Context} cairo.Context
  * @typedef {import('./appButton.js').AppButton} AppButton
  * @typedef {import('../../utils/config.js').Config} Config
@@ -9,7 +7,7 @@
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import { Component, ComponentEvent } from '../base/component.js';
-import { Event } from '../../core/enums.js';
+import { Event } from '../../shared/enums.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { SharedConfig } from '../../utils/config.js';
 

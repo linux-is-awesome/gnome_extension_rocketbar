@@ -1,9 +1,9 @@
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import Gio from 'gi://Gio';
-import Context from '../../core/context.js';
+import Context from '../../main/context.js';
 import { Component } from './component.js';
-import { Delay, Event } from '../../core/enums.js';
+import { Delay, Event } from '../../shared/enums.js';
 
 const ASSETS_ICONS_PATH = `${Context.path}/assets/icons/`;
 const ASSETS_ICON_FILE_TYPE = '.svg';

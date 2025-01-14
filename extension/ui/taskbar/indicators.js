@@ -1,18 +1,16 @@
 /**
- * JSDoc types
- *
  * @typedef {import('gi://cairo').Context} cairo.Context
- * @typedef {import('../../core/context/jobs.js').Jobs.Job} Job
+ * @typedef {import('../../main/context/jobs.js').Jobs.Job} Job
  * @typedef {import('./appButton.js').AppButton} AppButton
  * @typedef {import('../../utils/config.js').Config} Config
  */
 
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
-import Context from '../../core/context.js';
-import { Overview } from '../../core/shell.js';
+import Context from '../../main/context.js';
+import { Overview } from '../../main/shell.js';
 import { Component, ComponentEvent } from '../base/component.js';
-import { Event } from '../../core/enums.js';
+import { Event } from '../../shared/enums.js';
 import { SharedConfig } from '../../utils/config.js';
 import { Animation, AnimationType } from '../base/animation.js';
 

@@ -1,6 +1,4 @@
 /**
- * JSDoc types
- *
  * @typedef {import('resource:///org/gnome/shell/ui/slider.js').Slider} Slider
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupBaseMenuItem} PopupBaseMenuItem
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupSubMenu} PopupSubMenu
@@ -18,7 +16,7 @@ import { arrowIcon as ArrowIcon,
          PopupSeparatorMenuItem,
          PopupBaseMenuItem,
          PopupMenuSection } from 'resource:///org/gnome/shell/ui/popupMenu.js';
-import { Event, PseudoClass } from '../../core/enums.js';
+import { Event, PseudoClass } from '../../shared/enums.js';
 import { Icon } from './icon.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 

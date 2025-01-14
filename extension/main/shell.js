@@ -1,6 +1,4 @@
 /**
- * JSDoc types
- *
  * @typedef {import('gi://Shell').App} Shell.App
  *
  * @typedef {import('resource:///org/gnome/shell/ui/sessionMode').SessionMode} SessionMode

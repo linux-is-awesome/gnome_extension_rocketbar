@@ -1,13 +1,11 @@
 /**
- * JSDoc types
- *
  * @typedef {import('resource:///org/gnome/shell/ui/status/keyboard.js').InputSourceIndicator} InputSourceIndicator
  */
 import { getInputSourceManager as InputSourceManager,
          InputSourcePopup } from 'resource:///org/gnome/shell/ui/status/keyboard.js';
-import { MainPanel } from '../core/shell.js';
-import Context from '../core/context.js';
-import { Event } from '../core/enums.js';
+import { MainPanel } from '../main/shell.js';
+import Context from '../main/context.js';
+import { Event } from '../shared/enums.js';
 
 export default class {
 

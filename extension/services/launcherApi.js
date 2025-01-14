@@ -1,11 +1,9 @@
 /**
- * JSDoc types
- *
  * @typedef {import('gi://GLib').Variant} GLib.Variant
  */
 
 import Gio from 'gi://Gio';
-import Context from '../core/context.js';
+import Context from '../main/context.js';
 import { Config } from '../utils/config.js';
 
 const DBUS_NAME = 'com.canonical.Unity';

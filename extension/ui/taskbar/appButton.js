@@ -1,9 +1,7 @@
 /**
- * JSDoc types
- *
  * @typedef {import('gi://Meta').Window} Meta.Window
  * @typedef {import('gi://Mtk').Rectangle} Mtk.Rectangle
- * @typedef {import('../../core/context/jobs.js').Jobs.Job} Job
+ * @typedef {import('../../main/context/jobs.js').Jobs.Job} Job
  * @typedef {import('../../utils/config.js').Config} Config
  */
 
@@ -11,8 +9,8 @@ import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Shell from 'gi://Shell';
 import { activateWindow as FocusedWindow } from 'resource:///org/gnome/shell/ui/main.js';
-import { Overview } from '../../core/shell.js';
-import Context from '../../core/context.js';
+import { Overview } from '../../main/shell.js';
+import Context from '../../main/context.js';
 import { RuntimeButton, ButtonEvent } from '../base/button.js';
 import { TaskbarClient } from '../../services/taskbar.js';
 import { AppIcon, AppIconAnimation, AppIconEvent } from './appIcon.js';
@@ -24,7 +22,7 @@ import { Tooltip } from './tooltip.js';
 import { Indicators } from './indicators.js';
 import { NotificationHandler } from '../../services/notifications.js';
 import { AppSoundVolumeControl } from '../../services/soundVolume.js';
-import { Event, Delay } from '../../core/enums.js';
+import { Event, Delay } from '../../shared/enums.js';
 import { ComponentEvent } from '../base/component.js';
 import { Animation, AnimationDuration, AnimationType } from '../base/animation.js';
 

@@ -1,13 +1,11 @@
 /**
- * JSDoc types
- *
  * @typedef {import('./appButton.js').AppButton} AppButton
  * @typedef {import('../../utils/config.js').Config} Config
  */
 
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
-import { Event } from '../../core/enums.js';
+import { Event } from '../../shared/enums.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Icon } from '../base/icon.js';
 import { Tooltip as BaseTooltip } from '../base/tooltip.js';

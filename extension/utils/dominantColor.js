@@ -1,6 +1,6 @@
 import Gio from 'gi://Gio';
 import GdkPixbuf from 'gi://GdkPixbuf';
-import Context from '../core/context.js';
+import Context from '../main/context.js';
 
 const SAMPLE_SIZE = 20;
 const RGB_STRING_SPLITTER = ',';

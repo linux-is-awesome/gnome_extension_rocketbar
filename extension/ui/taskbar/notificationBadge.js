@@ -1,6 +1,4 @@
 /**
- * JSDoc types
- *
  * @typedef {import('./appButton.js').AppButton} AppButton
  * @typedef {import('../../utils/config.js').Config} Config
  */

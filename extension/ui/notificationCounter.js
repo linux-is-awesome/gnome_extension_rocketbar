@@ -1,18 +1,16 @@
 /**
- * JSDoc types
- *
  * @typedef {import('resource:///org/gnome/shell/ui/dateMenu.js').DateMenuButton} DateMenuButton
  */
 
 import GObject from 'gi://GObject';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
-import Context from '../core/context.js';
-import { MainPanel } from '../core/shell.js';
+import Context from '../main/context.js';
+import { MainPanel } from '../main/shell.js';
 import { Component, ComponentEvent } from './base/component.js';
 import { NotificationHandler } from '../services/notifications.js';
 import { Config } from '../utils/config.js';
-import { Event, Property } from '../core/enums.js';
+import { Event, Property } from '../shared/enums.js';
 import { Animation, AnimationDuration, AnimationType } from './base/animation.js';
 
 const MODULE_NAME = 'Rocketbar__NotificationCounter';

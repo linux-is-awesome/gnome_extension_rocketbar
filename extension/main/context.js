@@ -1,13 +1,11 @@
 /**
- * JSDoc types
- *
  * @typedef {import('gi://Gio').Settings} Gio.Settings
- * @typedef {import('../extension.js').default} Extension
+ * @typedef {import('resource:///org/gnome/shell/extensions/extension.js').Extension} Extension
  */
 
 import St from 'gi://St';
 import { Session, MainLayout } from './shell.js';
-import { SessionMode } from './enums.js';
+import { SessionMode } from '../shared/enums.js';
 import Jobs from './context/jobs.js';
 import Signals from './context/signals.js';
 import Desktop from './context/desktop.js';
@@ -121,7 +119,7 @@ export default class Context {
 
     /**
      * @param {string?} [message]
-     * @param {?} [error]
+     * @param {*} [error]
      */
     static logError(message, error) {
         console.error(`${this.metadata?.name ?? this.name} ${message ?? ''}`, error ?? '');

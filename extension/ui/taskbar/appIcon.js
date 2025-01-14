@@ -1,12 +1,10 @@
 /**
- * JSDoc types
- *
  * @typedef {import('gi://Shell').App} Shell.App
  */
 
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
-import Context from '../../core/context.js';
+import Context from '../../main/context.js';
 import { ComponentEvent, ComponentLocation } from '../base/component.js';
 import { Icon, IconEvent } from '../base/icon.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';

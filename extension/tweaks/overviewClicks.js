@@ -1,13 +1,11 @@
 /**
- * JSDoc types
- *
  * @typedef {import('resource:///org/gnome/shell/ui/overviewControls.js').ControlsManager} ControlsManager
  * @typedef {import('resource:///org/gnome/shell/ui/searchController.js').SearchController} SearchController
  */
 
 import Clutter from 'gi://Clutter';
-import { Overview } from '../core/shell.js';
-import { Event } from '../core/enums.js';
+import { Overview } from '../main/shell.js';
+import { Event } from '../shared/enums.js';
 
 export default class {
 

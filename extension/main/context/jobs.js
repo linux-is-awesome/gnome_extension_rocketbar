@@ -1,13 +1,11 @@
 /**
- * JSDoc types
- *
  * @typedef {Job} Jobs.Job
  * @typedef {import('gi://Meta').Laters} Meta.Laters
  */
 
 import GLib from 'gi://GLib';
 import Context from '../context.js';
-import { Delay } from '../enums.js';
+import { Delay } from '../../shared/enums.js';
 
 const LATER_TYPE_BEFORE_REDRAW = 1;
 const LATER_TYPE_IDLE = 2;

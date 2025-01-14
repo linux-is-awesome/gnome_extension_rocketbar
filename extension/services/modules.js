@@ -1,6 +1,6 @@
-import Context from '../core/context.js';
-import { Session } from '../core/shell.js';
-import { SessionMode, Event } from '../core/enums.js';
+import Context from '../main/context.js';
+import { Session } from '../main/shell.js';
+import { SessionMode, Event } from '../shared/enums.js';
 import { Config } from '../utils/config.js';
 
 const MODULE_ROOT_PATH = '../';

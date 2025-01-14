@@ -1,5 +1,5 @@
 import Gio from 'gi://Gio';
-import Context from '../core/context.js';
+import Context from '../main/context.js';
 
 Gio._promisify(Gio.Subprocess.prototype, 'communicate_utf8_async');
 

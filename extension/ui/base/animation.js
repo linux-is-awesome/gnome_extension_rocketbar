@@ -1,11 +1,9 @@
 /**
- * JSDoc types
- *
  * @typedef {import('resource:///org/gnome/shell/ui/boxpointer.js').BoxPointer} BoxPointer
  */
 
 import St from 'gi://St';
-import Context from '../../core/context.js';
+import Context from '../../main/context.js';
 import { Component } from './component.js';
 
 /** @enum {number} */

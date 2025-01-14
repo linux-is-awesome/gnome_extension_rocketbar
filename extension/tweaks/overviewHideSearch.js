@@ -1,15 +1,13 @@
 /**
- * JSDoc types
- *
  * @typedef {import('resource:///org/gnome/shell/ui/searchController.js').SearchController} SearchController
  */
 
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import { ThumbnailsBox, MAX_THUMBNAIL_SCALE } from 'resource:///org/gnome/shell/ui/workspaceThumbnail.js';
-import { Overview } from '../core/shell.js';
-import Context from '../core/context.js';
-import { Event } from '../core/enums.js';
+import { Overview } from '../main/shell.js';
+import Context from '../main/context.js';
+import { Event } from '../shared/enums.js';
 import { Animation, AnimationDuration, AnimationType } from '../ui/base/animation.js';
 
 const WORKSPACE_THUMBNAIL_SCALE = 0.1;

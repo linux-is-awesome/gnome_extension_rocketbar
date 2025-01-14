@@ -1,13 +1,11 @@
 /**
- * JSDoc types
- *
  * @typedef {{[configField: string]: *} & {[configField: string]: string|boolean|number|null}} Config
  * @typedef {[client: *, details: {[key: string]: *}]} ConfigClient
  */
 
 import Gio from 'gi://Gio';
 import GObject from 'gi://GObject';
-import Context from '../core/context.js';
+import Context from '../main/context.js';
 
 const DUMMY_FIELD_PREFIX = '~';
 
@@ -21,7 +19,7 @@ const DUMMY_FIELD_PREFIX = '~';
 export const Config = (client, fields, callback, options = { path: null, isAfter: false }) => {
     if (!client || !fields) return {};
     const { path, isAfter } = options ?? {};
-    /** @type {(Gio.Settings|{[key: string]: *})?} */
+    /** @type {Gio.Settings?} */
     const settings = Context.getSettings(path);
     if (!settings) return {};
     /** @type {Config} */

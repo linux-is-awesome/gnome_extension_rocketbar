@@ -1,15 +1,13 @@
 /**
- * JSDoc types
- *
  * @typedef {import('gi://Meta').Window} Meta.Window
- * @typedef {import('../core/context/jobs.js').Jobs.Job} Job
+ * @typedef {import('../main/context/jobs.js').Jobs.Job} Job
  */
 
 import Gvc from 'gi://Gvc';
 import Shell from 'gi://Shell';
 import { getMixerControl as MixerControl } from 'resource:///org/gnome/shell/ui/status/volume.js';
-import Context from '../core/context.js';
-import { Delay } from '../core/enums.js';
+import Context from '../main/context.js';
+import { Delay } from '../shared/enums.js';
 
 const SOUND_STREAM_MIN_VOLUME = 0;
 const SOUND_STREAM_MAX_VOLUME = 1;
