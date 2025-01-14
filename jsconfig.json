@@ -14,7 +14,8 @@
         "noImplicitAny": false,
         "baseUrl": ".",
         "paths": {
-            "resource:///org/gnome/shell/*": ["../gnome-shell/js/*"]
+            "resource:///org/gnome/shell/*": ["../gnome-shell/js/*"],
+            "resource:///org/gnome/Shell/Extensions/js/*": ["../gnome-shell/js/*"]
         }
     }
 }
