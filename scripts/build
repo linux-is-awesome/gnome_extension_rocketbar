@@ -5,18 +5,20 @@ if [ "$1" = "dev" ]; then
     cd ../extension-dev
 
     gnome-extensions pack --force\
-                        --extra-source devUtils.js/\
-                        --extra-source ../LICENSE\
-                        --extra-source ../extension/schemas/\
-                        --extra-source ../extension/assets/\
-                        --extra-source ../extension/ui/\
-                        --extra-source ../extension/services/\
-                        --extra-source ../extension/utils/\
-                        --extra-source ../extension/core/\
-                        --extra-source ../extension/tweaks/\
-                        --extra-source ../extension/settings/\
-                        --extra-source ../extension/stylesheet.css/\
-                        --out-dir ../
+                          --extra-source devUtils.js/\
+                          --extra-source ../extension/prefs.js/\
+                          --extra-source ../extension/schemas/\
+                          --extra-source ../extension/assets/\
+                          --extra-source ../extension/main/\
+                          --extra-source ../extension/preferences/\
+                          --extra-source ../extension/services/\
+                          --extra-source ../extension/ui/\
+                          --extra-source ../extension/tweaks/\
+                          --extra-source ../extension/utils/\
+                          --extra-source ../extension/shared/\
+                          --extra-source ../extension/stylesheet.css/\
+                          --extra-source ../LICENSE\
+                          --out-dir ../
 
     exit 0
 fi
@@ -25,12 +27,13 @@ cd ../extension
 
 gnome-extensions pack --force\
                       --podir=locale ./\
-                      --extra-source ../LICENSE\
                       --extra-source assets/\
-                      --extra-source ui/\
+                      --extra-source main/\
+                      --extra-source preferences/\
                       --extra-source services/\
-                      --extra-source utils/\
-                      --extra-source core/\
+                      --extra-source ui/\
                       --extra-source tweaks/\
-                      --extra-source settings/\
+                      --extra-source utils/\
+                      --extra-source shared/\
+                      --extra-source ../LICENSE\
                       --out-dir ../
