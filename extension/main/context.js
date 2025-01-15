@@ -2,9 +2,6 @@
  * @typedef {import('resource:///org/gnome/shell/extensions/extension.js').Extension} Extension
  */
 
-import St from 'gi://St';
-import { Session, MainLayout } from './shell.js';
-import { SessionMode } from '../shared/enums.js';
 import Settings from '../shared/settings.js';
 import Jobs from './context/jobs.js';
 import Signals from './context/signals.js';
@@ -59,29 +56,9 @@ export default class Context {
         return instance.#desktop;
     }
 
-    /** @type {St.IconTheme} */
-    static get iconTheme() {
-        const instance = this.instance;
-        instance.#iconTheme ??= new St.IconTheme();
-        return instance.#iconTheme;
-    }
-
-    /** @type {St.Settings} */
-    static get systemSettings() {
-        const instance = this.instance;
-        instance.#systemSettings ??= St.Settings.get();
-        return instance.#systemSettings;
-    }
-
     /** @type {LauncherApi?} */
     static get launcherApi() {
         return this.instance.#launcherApi;
-    }
-
-    /** @type {boolean} */
-    static get isSessionLocked() {
-        return Session.currentMode === SessionMode.Locksreen ||
-               MainLayout.screenShieldGroup?.visible === true;
     }
 
     /**
@@ -134,20 +111,14 @@ export default class Context {
     /** @type {Signals?} */
     #signals = null;
 
-    /** @type {Desktop?} */
-    #desktop = null;
-
     /** @type {Modules?} */
     #modules = null;
 
     /** @type {LauncherApi?} */
     #launcherApi = null;
 
-    /** @type {St.IconTheme?} */
-    #iconTheme = null;
-
-    /** @type {St.Settings?} */
-    #systemSettings = null;
+    /** @type {Desktop?} */
+    #desktop = null;
 
     /**
      * @param {Extension} extension
@@ -157,7 +128,7 @@ export default class Context {
         if (!extension) throw new Error(`${Context.name} requires an instance of the extension class.`);
         this.#extension = extension;
         Context.#instance = this;
-        if (!Context.isSessionLocked) this.#initialize();
+        if (!Context.desktop.isLocked) this.#initialize();
         else Context.jobs.new(this).destroy(() => this.#initialize());
     }
 
@@ -168,12 +139,10 @@ export default class Context {
             Context.logError(`unable to destroy ${Context.name}.`, e);
         } finally {
             this.#modules = null;
-            this.#desktop = null;
             this.#jobs = null;
             this.#signals = null;
             this.#launcherApi = null;
-            this.#iconTheme = null;
-            this.#systemSettings = null;
+            this.#desktop = null;
             this.#extension = null;
             Context.#instance = null;
         }
@@ -197,7 +166,7 @@ export default class Context {
     #cleanSessionStorage() {
         const sessionStorage = Context.#sessionStorage;
         if (!sessionStorage) return;
-        if (!Context.isSessionLocked) {
+        if (!Context.desktop.isLocked) {
             sessionStorage.clear();
             Context.#sessionStorage = null;
             return;

@@ -139,7 +139,7 @@ export class AppIcon extends Icon {
                 return Animation(this, duration, animation.params);
             case AppIconAnimation.Activate:
             case AppIconAnimation.Deactivate:
-                if (!Context.systemSettings.enableAnimations) return true;
+                if (!Context.desktop.settings.enableAnimations) return true;
                 const mode = Clutter.AnimationMode.EASE_OUT_SINE;
                 const location = this.location === ComponentLocation.Top ? 1 : -1;
                 const translation_y = animation.translation_y * location * this.uiScale * this.globalScale;
@@ -156,7 +156,7 @@ export class AppIcon extends Icon {
     }
 
     #handleIconTexture() {
-        const iconThemeName = Context.systemSettings.gtk_icon_theme;
+        const iconThemeName = Context.desktop.settings.gtk_icon_theme;
         if (AppIcon.iconThemeName !== iconThemeName) {
             AppIcon.iconThemeName = iconThemeName;
             this.#dominantColors.clear();

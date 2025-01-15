@@ -5,18 +5,42 @@
 
 import St from 'gi://St';
 import Context from '../context.js';
-import { MainLayout, MainPanel } from '../shell.js';
+import { MainLayout, MainPanel, Session } from '../shell.js';
 import { Component } from '../../ui/base/component.js';
-import { Event, Delay } from '../../shared/enums.js';
+import { Event, Delay, SessionMode } from '../../shared/enums.js';
 
 export default class Desktop {
 
     /** @type {Map<*, (() => void)?>?} */
     #clients = new Map();
 
+    /** @type {St.IconTheme?} */
+    #iconTheme = null;
+
+    /** @type {St.Settings?} */
+    #settings = null;
+
     /** @type {boolean} */
     get isReady() {
         return !MainLayout._startingUp;
+    }
+
+    /** @type {boolean} */
+    get isLocked() {
+        return Session.currentMode === SessionMode.Locksreen ||
+               MainLayout.screenShieldGroup?.visible === true;
+    }
+
+    /** @type {St.IconTheme} */
+    get iconTheme() {
+        this.#iconTheme ??= new St.IconTheme();
+        return this.#iconTheme;
+    }
+
+    /** @type {St.Settings} */
+    get settings() {
+        this.#settings ??= St.Settings.get();
+        return this.#settings;
     }
 
     destroy() {
@@ -24,6 +48,8 @@ export default class Desktop {
         Context.signals.removeAll(this);
         this.#clients?.clear();
         this.#clients = null;
+        this.#iconTheme = null;
+        this.#settings = null;
     }
 
     /**

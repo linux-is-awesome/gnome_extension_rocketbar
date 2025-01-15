@@ -133,7 +133,7 @@ class IndicatorBase {
     }
 
     #updateAnimationStep() {
-        const animationFrames = Context.systemSettings.enable_animations ? ANIMATION_FRAMES : 1;
+        const animationFrames = Context.desktop.settings.enable_animations ? ANIMATION_FRAMES : 1;
         this.#animationStep = Math.max(Math.abs(this.diff) / animationFrames, ANIMATION_STEP_MIN);
     }
 

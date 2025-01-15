@@ -94,7 +94,7 @@ export class Icon extends Component {
         const actor = this.actor;
         const iconPath = this.#iconPath;
         const hasIconPath = !!iconPath;
-        let isThemeControlled = hasIconPath && Context.iconTheme.has_icon(iconPath);
+        let isThemeControlled = hasIconPath && Context.desktop.iconTheme.has_icon(iconPath);
         let isVisible = isThemeControlled;
         if (isThemeControlled) {
             const oldName = actor.get_icon_name();
@@ -120,7 +120,7 @@ export class Icon extends Component {
         this.notifySelf(IconEvent.TextureChanged);
         if (!isThemeControlled) Context.signals.removeAll(actor);
         if (!isThemeControlled || Context.signals.hasClient(actor)) return;
-        Context.signals.add(actor, [Context.systemSettings, Event.IconTheme, () =>
+        Context.signals.add(actor, [Context.desktop.settings, Event.IconThemeChanged, () =>
             Context.jobs.removeAll(actor).new(actor, Delay.Background).destroy(() => this.#rerender())]);
     }
 

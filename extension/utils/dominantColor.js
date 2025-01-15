@@ -15,7 +15,7 @@ const Pixbuf = icon => {
             return GdkPixbuf.Pixbuf.new_from_file(icon.get_file().get_path() ?? '');
         }
         if (icon instanceof Gio.ThemedIcon) {
-            return Context.iconTheme.lookup_by_gicon(icon, SAMPLE_SIZE, 0)?.load_icon() ?? null;
+            return Context.desktop.iconTheme.lookup_by_gicon(icon, SAMPLE_SIZE, 0)?.load_icon() ?? null;
         }
     } catch (e) {
         Context.logError(`${Pixbuf.name} loading failed.`, e);

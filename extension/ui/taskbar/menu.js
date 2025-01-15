@@ -477,7 +477,7 @@ class CustomizeChildMenu extends ChildMenu {
         if (!this.#config) return;
         St.Clipboard.get_default().get_text(St.ClipboardType.CLIPBOARD, (_, iconPath) => {
             const isValidIcon = !!iconPath && (Icon.isIconFilePath(iconPath) ||
-                                               Context.iconTheme.has_icon(iconPath));
+                                               Context.desktop.iconTheme.has_icon(iconPath));
             this.#clipboardIconPath = isValidIcon ? iconPath : null;
             this.setItemActiveState(this.#importIconItem, isValidIcon);
         });
@@ -530,8 +530,8 @@ class CustomizeChildMenu extends ChildMenu {
         const iconSize = Math.round((AppIconSize.Max - AppIconSize.Min) * slider.value) + AppIconSize.Min;
         menuItem.value = iconSize;
         if (this.#isSyncing || !this.#appButton) return;
-        const job = Context.jobs.removeAll(this).new(this, Delay.Sleep);
-        job.destroy(() => this.#setConfigOverride(ConfigField.IconSize, iconSize));
+        Context.jobs.removeAll(this).new(this, Delay.Sleep).destroy(() =>
+            this.#setConfigOverride(ConfigField.IconSize, iconSize));
     }
 
     /**

@@ -40,7 +40,7 @@ export const AnimationType = {
 const AdjustmentAnimation = (actor, duration, params) => {
     const value = params.value ?? 0;
     delete params.value;
-    const canAnimate = duration > AnimationDuration.Disabled && Context.systemSettings.enableAnimations;
+    const canAnimate = duration > AnimationDuration.Disabled && Context.desktop.settings.enableAnimations;
     if (!canAnimate) return new Promise(resolve => (actor.set_value(value), resolve(true)));
     return new Promise(resolve => actor.ease(value, { ...params, duration, onStopped: resolve }));
 };
@@ -54,7 +54,7 @@ const AdjustmentAnimation = (actor, duration, params) => {
 const WidgetAnimation = (actor, duration, params) => {
     const canAnimate = actor.mapped &&
                        duration > AnimationDuration.Disabled &&
-                       Context.systemSettings.enableAnimations;
+                       Context.desktop.settings.enableAnimations;
     if (!canAnimate) return new Promise(resolve => (actor.set(params), resolve(true)));
     return new Promise(resolve => actor.ease({ ...params, duration, onStopped: resolve }));
 };
