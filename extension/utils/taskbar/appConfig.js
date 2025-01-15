@@ -246,8 +246,7 @@ export class AppConfig extends SharedConfig {
     }
 
     #saveConfigOverride() {
-        const configOverride = JSON.stringify(this.#configOverride);
-        Context.getSettings(CONFIG_PATH)?.set_string(CONFIG_OVERRIDE_SETTINGS_KEY, configOverride);
+        Context.getSettings(CONFIG_PATH)?.set(CONFIG_OVERRIDE_SETTINGS_KEY, this.#configOverride);
     }
 
 }

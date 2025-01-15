@@ -3,9 +3,9 @@
  * @typedef {[client: *, details: {[key: string]: *}]} ConfigClient
  */
 
-import Gio from 'gi://Gio';
 import GObject from 'gi://GObject';
 import Context from '../main/context.js';
+import Settings from '../shared/settings.js';
 
 const DUMMY_FIELD_PREFIX = '~';
 
@@ -19,7 +19,7 @@ const DUMMY_FIELD_PREFIX = '~';
 export const Config = (client, fields, callback, options = { path: null, isAfter: false }) => {
     if (!client || !fields) return {};
     const { path, isAfter } = options ?? {};
-    /** @type {Gio.Settings?} */
+    /** @type {Settings?} */
     const settings = Context.getSettings(path);
     if (!settings) return {};
     /** @type {Config} */
@@ -32,7 +32,7 @@ export const Config = (client, fields, callback, options = { path: null, isAfter
     const valueHandler = (_, key) => {
         const configField = valueMapping.get(key);
         if (!configField) return;
-        values[configField] = settings.get_value(key)?.unpack() ?? null;
+        values[configField] = settings.get(key);
         if (typeof callback === 'function') callback(key);
     };
     for (const fieldName in fields) {
@@ -42,24 +42,24 @@ export const Config = (client, fields, callback, options = { path: null, isAfter
             values[fieldName] = null;
             continue;
         }
-        values[fieldName] = settings.get_value(settingsKey)?.unpack() ?? null;
+        values[fieldName] = settings.get(settingsKey);
         valueMapping.set(settingsKey, fieldName);
         signals.push(`changed::${settingsKey}`, valueHandler);
         if (isAfter) signals.push(GObject.ConnectFlags.AFTER);
     }
-    if (signals.length) Context.signals.add(client, [settings, ...signals]);
+    if (signals.length) Context.signals.add(client, [settings.source, ...signals]);
     return values;
 };
 
 /**
- * @param {Config|Gio.Settings} parentConfig
+ * @param {Config|Settings} parentConfig
  * @param {string} field
  * @returns {*}
  */
 export const InnerConfig = (parentConfig, field) => {
     try {
-        const value = parentConfig instanceof Gio.Settings ?
-                      parentConfig.get_string(field) :
+        const value = parentConfig instanceof Settings ?
+                      parentConfig.get(field) :
                       parentConfig?.[field];
         if (typeof value === 'string' && value.length) return JSON.parse(value);
     } catch (e) {

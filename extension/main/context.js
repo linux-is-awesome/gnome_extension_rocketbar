@@ -1,11 +1,11 @@
 /**
- * @typedef {import('gi://Gio').Settings} Gio.Settings
  * @typedef {import('resource:///org/gnome/shell/extensions/extension.js').Extension} Extension
  */
 
 import St from 'gi://St';
 import { Session, MainLayout } from './shell.js';
 import { SessionMode } from '../shared/enums.js';
+import Settings from '../shared/settings.js';
 import Jobs from './context/jobs.js';
 import Signals from './context/signals.js';
 import Desktop from './context/desktop.js';
@@ -86,7 +86,7 @@ export default class Context {
 
     /**
      * @param {string?} [path]
-     * @returns {Gio.Settings?}
+     * @returns {Settings?}
      */
     static getSettings(path) {
         try {
@@ -95,7 +95,7 @@ export default class Context {
             const schemaId = path ? `${extension.metadata[SETTINGS_SCHEMA_KEY]}.${path}` : '';
             const storage = this.getStorage(this.name);
             if (storage.has(schemaId)) return storage.get(schemaId);
-            const settings = extension.getSettings(schemaId);
+            const settings = new Settings(extension.getSettings(schemaId));
             storage.set(schemaId, settings);
             return settings;
         } catch (e) {
