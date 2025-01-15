@@ -167,7 +167,7 @@ export class Component {
         if (!this.#actor) return 0;
         if (this.#uiSettings) return this.#uiSettings.get_double(UI_SCALE_SETTINGS_KEY);
         this.#uiSettings = MainLayout._interfaceSettings ?? null;
-        this.#uiSettings?.connectObject(`changed::${UI_SCALE_SETTINGS_KEY}`, () =>
+        this.#uiSettings?.connectObject(`${Event.Changed}::${UI_SCALE_SETTINGS_KEY}`, () =>
             this.#notifySelf(ComponentEvent.Scale), this.#signalTracker);
         return this.#uiSettings?.get_double(UI_SCALE_SETTINGS_KEY) ?? 0;
     }

@@ -6,6 +6,7 @@
 import GObject from 'gi://GObject';
 import Context from '../main/context.js';
 import Settings from '../shared/settings.js';
+import { Event } from '../shared/enums.js';
 
 const DUMMY_FIELD_PREFIX = '~';
 
@@ -44,7 +45,7 @@ export const Config = (client, fields, callback, options = { path: null, isAfter
         }
         values[fieldName] = settings.get(settingsKey);
         valueMapping.set(settingsKey, fieldName);
-        signals.push(`changed::${settingsKey}`, valueHandler);
+        signals.push(`${Event.Changed}::${settingsKey}`, valueHandler);
         if (isAfter) signals.push(GObject.ConnectFlags.AFTER);
     }
     if (signals.length) Context.signals.add(client, [settings.source, ...signals]);

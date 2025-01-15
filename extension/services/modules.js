@@ -64,7 +64,7 @@ class ModuleService {
     #managers = new Set();
 
     constructor() {
-        Context.signals.add(this, [Session, Event.SessionUpdated, () => this.#update()]);
+        Context.signals.add(this, [Session, Event.Updated, () => this.#update()]);
     }
 
     destroy() {

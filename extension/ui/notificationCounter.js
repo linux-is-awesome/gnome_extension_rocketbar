@@ -113,8 +113,8 @@ class DateMenu extends Component {
         const target = this.#dateMenu?._indicator;
         if (!target) return;
         Context.signals.add(this,
-            [target, Event.Visible, indicator => indicator?.hide()],
-            [target._settings, `changed::${DND_SETTINGS_FIELD}`, () => this.notifyChildren(DateMenuEvent.DndChanged)]);
+            [target, Event.VisibleChanged, indicator => indicator?.hide()],
+            [target._settings, `${Event.Changed}::${DND_SETTINGS_FIELD}`, () => this.notifyChildren(DateMenuEvent.DndChanged)]);
     }
 
     #setParent() {
@@ -183,7 +183,7 @@ export default class NotificationCounter extends Component {
         super(new St.BoxLayout({ name: MODULE_NAME }));
         this.#createCounter();
         this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
-        Context.signals.add(this, [St.Settings.get(), Event.FontName, () => this.#rerender()]);
+        Context.signals.add(this, [St.Settings.get(), Event.FontNameChanged, () => this.#rerender()]);
         Context.desktop.addClient(this, () => super.setParent(this.#dateMenu));
     }
 

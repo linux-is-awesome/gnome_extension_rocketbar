@@ -413,7 +413,7 @@ export class ChildMenu extends PopupMenuSection {
             menuItem.hide();
             return;
         }
-        menuItem.connectObject(Event.Visible, () => this.#hideMenuItem(menuItem), this);
+        menuItem.connectObject(Event.VisibleChanged, () => this.#hideMenuItem(menuItem), this);
     }
 
     #hide() {

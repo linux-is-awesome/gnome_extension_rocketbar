@@ -50,8 +50,8 @@ export default class Favorites {
         if (typeof callback !== 'function') return;
         this.#callback = callback;
         Context.signals.add(this,
-            [Shell.AppSystem.get_default(), Event.InstalledAppsChanged, () => this.#handleInstalled()],
-            [this.#favorites, Event.FavoritesChanged, () => this.#handleChanged()]);
+            [Shell.AppSystem.get_default(), Event.InstalledChanged, () => this.#handleInstalled()],
+            [this.#favorites, Event.Changed, () => this.#handleChanged()]);
         this.#callback();
     }
 
