@@ -1,10 +1,10 @@
 /**
- * @typedef {import('./main/context.js').default} Context
+ * @typedef {import('./main/core/context.js').default} Context
  */
 
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const DEFAULT_RUNTIME_PATH = '/main/context.js';
+const DEFAULT_RUNTIME_PATH = '/main/core/context.js';
 
 export default class extends Extension {
 

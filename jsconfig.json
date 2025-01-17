@@ -10,7 +10,7 @@
         "noImplicitThis": true,
         "strictNullChecks": true,
         "noImplicitReturns": true,
-        "noPropertyAccessFromIndexSignature": false, 
+        "noPropertyAccessFromIndexSignature": false,
         "noImplicitAny": false,
         "baseUrl": ".",
         "paths": {
