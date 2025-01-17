@@ -70,7 +70,7 @@
         {
             "label": "uninstall",
             "type": "shell",
-            "command": "./uninstall",
+            "command": "cd scripts && ./uninstall",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -82,6 +82,28 @@
             "label": "uninstall-dev",
             "type": "shell",
             "command": "cd scripts && ./uninstall dev",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "open-preferences",
+            "type": "shell",
+            "command": "cd scripts && ./open-preferences",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "open-preferences-dev",
+            "type": "shell",
+            "command": "cd scripts && ./open-preferences dev",
             "group": "build",
             "presentation": {
                 "reveal": "always",

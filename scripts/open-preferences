@@ -1,0 +1,11 @@
+#!/bin/sh
+
+cd ../
+
+UUID=`cat ./extension/metadata.json | grep -oP '(?<="uuid": ")[^"]*'`
+
+if [ "$1" = "dev" ]; then
+    UUID=`cat ./extension-dev/metadata.json | grep -oP '(?<="uuid": ")[^"]*'`
+fi
+
+gnome-extensions prefs $UUID
