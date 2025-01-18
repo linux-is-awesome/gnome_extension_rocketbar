@@ -352,9 +352,9 @@ class IndicatorsBackend {
      * @param {string} colorString
      */
     #setColor(colorString) {
+        if (!this.#canvas) return;
         this.#color = colorString ? Clutter.color_from_string(colorString)[1] : this.#color;
-        if (!this.#color) return;
-        Clutter.cairo_set_source_color(this.#canvas, this.#color);
+        if (this.#color) this.#canvas.setSourceColor(this.#color);
     }
 
     #animate() {

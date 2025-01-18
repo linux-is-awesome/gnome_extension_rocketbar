@@ -30,7 +30,7 @@ export class ScrollView extends Component {
     #layout = null;
 
     /** @type {St.Adjustment?} */
-    #scroll = super.actor?.hscroll?.adjustment;
+    #scroll = super.actor?.hadjustment;
 
     /** @type {number} */
     #scrollPosition = 0;
@@ -83,7 +83,7 @@ export class ScrollView extends Component {
     constructor(name = null) {
         super(new St.ScrollView({ name, ...DefaultProps }));
         this.#layout = new St.BoxLayout();
-        super.actor.add_actor(this.#layout);
+        super.actor.add_child(this.#layout);
         super.actor.connect(Event.Destroy, () => this.#destroy());
         this.#scroll?.connect(Event.Changed, () => this.#handleScrollJob?.reset().queue(() =>
                                                    this.#handleScrollSize()));

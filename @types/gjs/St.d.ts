@@ -5592,10 +5592,6 @@ declare module 'gi://St' {
          */
         enableMouseScrolling: boolean
         /**
-         * The horizontal #StScrollBar for the #StScrollView.
-         */
-        readonly hscroll: ScrollBar
-        /**
          * The #StPolicyType for when to show the horizontal #StScrollBar.
          */
         hscrollbar_policy: PolicyType
@@ -5620,10 +5616,6 @@ declare module 'gi://St' {
          */
         overlayScrollbars: boolean
         /**
-         * The vertical #StScrollBar for the #StScrollView.
-         */
-        readonly vscroll: ScrollBar
-        /**
          * The #StPolicyType for when to show the vertical #StScrollBar.
          */
         vscrollbar_policy: PolicyType
@@ -5639,6 +5631,9 @@ declare module 'gi://St' {
          * Whether the vertical #StScrollBar is visible.
          */
         readonly vscrollbarVisible: boolean
+
+        readonly hadjustment: Adjustment
+        readonly vadjustment: Adjustment
 
         // Conflicting properties
 

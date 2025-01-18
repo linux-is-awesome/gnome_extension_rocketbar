@@ -1,8 +1,6 @@
 declare module 'gi://cairo' {
 
-    import type GObject from 'gi://GObject';
-    import type GLib from 'gi://GLib';
-
+    import type Clutter from 'gi://Clutter';
 
     enum Status {
         SUCCESS,
@@ -242,6 +240,8 @@ declare module 'gi://cairo' {
         closePath(): void
 
         fill(): void
+
+        setSourceColor(color: Clutter.Color): void
 
         $dispose(): void
     }

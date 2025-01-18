@@ -158,8 +158,7 @@ export class ProgressBar extends Component {
      */
     #setColor(canvas, colorString) {
         const color = Clutter.color_from_string(colorString)[1];
-        if (!color) return;
-        Clutter.cairo_set_source_color(canvas, color);
+        if (color) canvas.setSourceColor(color);
     }
 
 }
