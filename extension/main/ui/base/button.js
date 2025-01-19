@@ -21,6 +21,8 @@ const MENU_TRIGGER_NAME = 'Rocketbar__Button_MenuTrigger';
 const DefaultProps = {
     reactive: true,
     can_focus: true,
+    y_expand: false,
+    x_expand: false,
     button_mask: St.ButtonMask.ONE | St.ButtonMask.TWO | St.ButtonMask.THREE,
     style_class: STYLE_CLASS
 };

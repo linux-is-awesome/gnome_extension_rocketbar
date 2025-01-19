@@ -56,7 +56,6 @@ const DefaultProps = {
 const BadgeProps = {
     name: `${MODULE_NAME}-Badge`,
     style_class: STYLE_CLASS,
-    x_expand: false,
     y_expand: false,
     visible: false,
     text: DEFAULT_TEXT,
