@@ -24,7 +24,7 @@ import { NotificationHandler } from '../../services/notifications.js';
 import { AppSoundVolumeControl } from '../../services/soundVolume.js';
 import { ComponentEvent } from '../base/component.js';
 import { Animation, AnimationDuration, AnimationType } from '../base/animation.js';
-import { Event, Delay } from '../../../shared/core/enums.js';
+import { Event, Delay, Progress } from '../../../shared/core/enums.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
 
@@ -142,7 +142,7 @@ export class AppButton extends RuntimeButton {
     #notificationsCount = 0;
 
     /** @type {number} */
-    #progress = 0;
+    #progress = Progress.Min;
 
     /** @type {CycleWindowsQueue?} */
     #cycleWindowsQueue = null;
@@ -640,7 +640,8 @@ export class AppButton extends RuntimeButton {
         if (!canHandleProgress && !this.#progress) return;
         const appId = this.#notificationHandler?.appId;
         const progress = canHandleProgress && appId ?
-                         Context.launcherApi?.progress?.get(appId) ?? 0 : 0;
+                         Context.launcherApi?.progress?.get(appId) ?? Progress.Min :
+                         Progress.Min;
         if (progress === this.#progress) return;
         this.#progress = progress;
         if (this.#isFadeInRequired) return;
