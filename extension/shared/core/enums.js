@@ -73,6 +73,13 @@ export const Delay = {
     Scheduled: 1000
 };
 
+/** @enum {number} */
+export const Progress = {
+    Infinite: -1,
+    Min: 0,
+    Max: 1
+};
+
 /**
  * @enum {string} Shell session modes
  */
