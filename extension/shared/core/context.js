@@ -104,8 +104,8 @@ export default class Context {
      * @param {() => boolean} [destroyCallback] return `true` to destroy the session storage, otherwise return `false`
      */
     constructor(extension, destroyCallback) {
-        if (_instance) throw new Error(`${Context.name} already has an instance.`);
-        if (!extension) throw new Error(`${Context.name} requires an instance of the extension class.`);
+        if (_instance) throw new Error(`${this.constructor.name} already has an instance.`);
+        if (!extension) throw new Error(`${this.constructor.name} requires an instance of the extension class.`);
         this.#extension = extension;
         this.#destroyCallback = destroyCallback ?? this.#destroyCallback;
         _instance = this;
@@ -119,7 +119,7 @@ export default class Context {
             this.#signals?.destroy();
             this.#cleanSessionStorage(callbackResult);
         } catch (e) {
-            Context.logError(`unable to destroy ${Context.name}.`, e);
+            Context.logError(`unable to destroy ${this.constructor.name}.`, e);
         } finally {
             this.#jobs = null;
             this.#signals = null;
@@ -138,7 +138,7 @@ export default class Context {
             _sessionStorage = null;
             return;
         }
-        _sessionStorage.delete(Context.name);
+        _sessionStorage.delete(this.constructor.name);
         const clients = [..._sessionStorage.keys()];
         for (let i = 0, l = clients.length; i < l; ++i) {
             const client = clients[i];
