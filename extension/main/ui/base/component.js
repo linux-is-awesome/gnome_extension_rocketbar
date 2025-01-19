@@ -266,7 +266,7 @@ export class Component {
         if (!this.#actor ||
             typeof event !== 'string' ||
             typeof callback !== 'function') return null;
-        if (event === ComponentEvent.Notify) {
+        if (event === ComponentEvent.Notify && !this.#notifyCallback) {
             this.#notifyCallback = callback;
             return event;
         }
