@@ -5,11 +5,13 @@
 import Gio from 'gi://Gio';
 import Context from '../core/context.js';
 import { Config } from '../../shared/utils/config.js';
+import { Progress } from '../../shared/core/enums.js';
 
 const DBUS_NAME = 'com.canonical.Unity';
 const DBUS_SIGNAL_SOURCE = 'com.canonical.Unity.LauncherEntry';
 const LAUNCHER_ENTRY_COUNT_KEY = 'count';
 const LAUNCHER_ENTRY_PROGRESS_KEY = 'progress';
+const LAUNCHER_ENTRY_PROGRESS_VISIBLE_KEY = 'progress-visible';
 const APPID_REGEXP_STRING = /(^\w+:|^)\/\/|(.desktop)/g;
 const PROGRESS_VALUE_DECIMAL_PLACES = 2;
 
@@ -95,7 +97,9 @@ class LauncherApiService {
         const appId = appUri?.replace(APPID_REGEXP_STRING, '');
         if (!appId || !props) return;
         const count = props[LAUNCHER_ENTRY_COUNT_KEY]?.get_int64() ?? 0;
-        const progress = props[LAUNCHER_ENTRY_PROGRESS_KEY]?.get_double() ?? 0;
+        const progress = props[LAUNCHER_ENTRY_PROGRESS_KEY]?.get_double() ??
+                         props[LAUNCHER_ENTRY_PROGRESS_VISIBLE_KEY]?.get_boolean() ?
+                         Progress.Infinite : Progress.Min;
         this.#handleNotifications(appId, count);
         this.#handleProgress(appId, progress);
     }
@@ -116,9 +120,11 @@ class LauncherApiService {
      * @param {number} value
      */
     #handleProgress(appId, value) {
-        value = Math.max(0, +parseFloat(`${value}`).toFixed(PROGRESS_VALUE_DECIMAL_PLACES) || 0);
+        value = value === Progress.Infinite ? value :
+                Math.max(Progress.Min,
+                Math.min(Progress.Max, +parseFloat(`${value}`).toFixed(PROGRESS_VALUE_DECIMAL_PLACES)));
         const oldValue = this.#progress.get(appId) ?? 0;
-        if (value === oldValue || (value === 1 && !this.#progress.has(appId))) return;
+        if (value === oldValue || (value === Progress.Max && !this.#progress.has(appId))) return;
         if (value) this.#progress.set(appId, value);
         else if (!this.#progress.has(appId)) return;
         else this.#progress.delete(appId);
