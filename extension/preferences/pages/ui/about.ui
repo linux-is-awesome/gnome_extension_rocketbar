@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <object class="AdwPreferencesPage" id="about">
+        <property name="title" translatable="yes">About</property>
+        <property name="icon-name">help-about-symbolic</property>
+        <child>
+            <object class="AdwPreferencesGroup">
+                <child>
+                    <object class="GtkPicture" id="logo"></object>
+                </child>
+            </object>
+        </child>
+        <child>
+            <object class="AdwPreferencesGroup" id="version">
+                <child>
+                    <object class="AdwActionRow">
+                        <property name="title" translatable="yes">Current Version</property>
+                        <property name="activatable-widget">version-trigger</property>
+                        <child>
+                            <object class="GtkLabel" id="version-name"></object>
+                        </child>
+                        <child>
+                            <object class="GtkLinkButton" id="version-trigger">
+                                <property name="visible">false</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwActionRow">
+                        <property name="title" translatable="yes">Release Notes</property>
+                        <property name="activatable-widget">release-notes</property>
+                        <child>
+                            <object class="GtkLinkButton" id="release-notes">
+                                <property name="icon-name">accessories-dictionary-symbolic</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+            </object>
+        </child>
+        <child>
+            <object class="AdwPreferencesGroup" id="support">
+                <property name="title" translatable="yes">Support</property>
+                <child>
+                    <object class="AdwActionRow">
+                        <property name="title" translatable="yes">Report a Bug</property>
+                        <property name="activatable-widget">report-bug</property>
+                        <child>
+                            <object class="GtkLinkButton" id="report-bug">
+                                <property name="icon-name">mail-mark-junk-symbolic</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwActionRow">
+                        <property name="title" translatable="yes">Suggest a Feature</property>
+                        <property name="activatable-widget">suggest-feature</property>
+                        <child>
+                            <object class="GtkLinkButton" id="suggest-feature">
+                                <property name="icon-name">user-available-symbolic</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwActionRow">
+                        <property name="title" translatable="yes">Rate and Feedback</property>
+                        <property name="activatable-widget">home-page</property>
+                        <child>
+                            <object class="GtkLinkButton" id="home-page">
+                                <property name="icon-name">semi-starred-symbolic</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+            </object>
+        </child>
+    </object>
+</interface>
