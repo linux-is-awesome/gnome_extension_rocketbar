@@ -1,45 +1,9 @@
-/**
- * @typedef {object} Labels
- * @property {string} Pin
- * @property {string} SoundVolumeControl
- * @property {string} Customize
- * @property {string} ActivateBehavior
- * @property {string} DemandsAttentionBehavior
- * @property {string} CustomIcon
- * @property {string} IconSize
- * @property {string} IconFromClipboard
- * @property {string} NoIconInClipboard
- * @property {string} ResetToDefault
- * @property {string} ResetAllToDefault
- * @property {string} NewWindow
- * @property {string} FindWindow
- * @property {string} MoveWindows
- * @property {string} FocusActive
- * @property {string} FocusAll
- * @property {string} SelectIcon
- * @property {string} Icon
- * @property {string} AppDefault
- * @property {string} CurrentWorkspace
- * @property {string} OtherWorkspaces
- * @property {string} CloseAll
- * @property {string} CurrentMonitor
- * @property {string} MonitorLeft
- * @property {string} MonitorRight
- * @property {string} MonitorAbove
- * @property {string} MonitorBelow
- * @property {string} MoveTo
- * @property {string} PreferredMonitor
- * @property {string} PrimaryMonitor
- * @property {string} LeftOfPrimaryMonitor
- * @property {string} RightOfPrimaryMonitor
- * @property {string} AbovePrimaryMonitor
- * @property {string} BelowPrimaryMonitor
- * @property {string} PleaseWait
- *
- * @param {(label: string) => string} _
- * @returns {Labels}
- */
-export default _ => ({
+import Context from './context.js';
+
+const _ = Context.gettext;
+
+/** @enum {string} */
+export const Label = {
     Pin: _('Pin'),
     SoundVolumeControl: _('Sound Volume Control'),
     Customize: _('Customize'),
@@ -75,4 +39,4 @@ export default _ => ({
     AbovePrimaryMonitor: _('Above Primary'),
     BelowPrimaryMonitor: _('Below Primary'),
     PleaseWait: _('Please Wait...')
-});
+};

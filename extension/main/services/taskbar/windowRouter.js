@@ -13,10 +13,10 @@ import { activateWindow as FocusedWindow,
 import { ModalDialog } from 'resource:///org/gnome/shell/ui/modalDialog.js';
 import { MainLayout, Overview } from '../../core/shell.js';
 import Context from '../../core/context.js';
-import { Event, Delay } from '../../../shared/core/enums.js';
-import { Labels } from '../../core/labels.js';
 import { Config, InnerConfig } from '../../../shared/utils/config.js';
 import { PreferredMonitor } from '../../utils/taskbar/appConfig.js';
+import { Event, Delay } from '../../../shared/core/enums.js';
+import { Label } from '../../../shared/core/labels.js';
 
 const CONFIG_PATH = 'taskbar';
 const CONFIG_FIELD_APP_CONFIG = 'appConfig';
@@ -39,7 +39,7 @@ const StatusProps = {
 
 /** @type {{[prop: string]: *}} */
 const StatusTextProps = {
-    text: Labels.PleaseWait,
+    text: Label.PleaseWait,
     x_align: Clutter.ActorAlign.CENTER,
     y_align: Clutter.ActorAlign.CENTER
 };

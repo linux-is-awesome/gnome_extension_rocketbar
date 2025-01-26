@@ -23,13 +23,13 @@ import { FileSelector } from '../../utils/zenity.js';
 import { ActivateBehavior, DemandsAttentionBehavior,
          PreferredMonitor, AppIconSize } from '../../utils/taskbar/appConfig.js';
 import { SoundVolumeIcon } from '../../utils/soundVolumeIcon.js';
-import { Labels } from '../../core/labels.js';
+import { Label } from '../../../shared/core/labels.js';
 
 const CONFIG_PATH = 'taskbar';
 const UNWANTED_STYLE_CLASS = 'app-menu';
 const STYLE_CLASS = 'rocketbar__popup-menu';
 const ICON_PATH_SEPARATOR = '/';
-const ICON_FILE_TYPE_FILTER = `${Labels.Icon} | *.svg *.png`;
+const ICON_FILE_TYPE_FILTER = `${Label.Icon} | *.svg *.png`;
 
 /** @type {{[prop: string]: boolean}} */
 const DefaultProps = {
@@ -45,26 +45,26 @@ const MenuPosition = {
 
 /** @type {{[value: string]: string}} */
 const ActivateBehaviorRadioGroup = {
-    [ActivateBehavior.NewWindow]: Labels.NewWindow,
-    [ActivateBehavior.FindWindow]: Labels.FindWindow,
-    [ActivateBehavior.MoveWindows]: Labels.MoveWindows
+    [ActivateBehavior.NewWindow]: Label.NewWindow,
+    [ActivateBehavior.FindWindow]: Label.FindWindow,
+    [ActivateBehavior.MoveWindows]: Label.MoveWindows
 };
 
 /** @type {{[value: string]: string}} */
 const DemandsAttentionBehaviorRadioGroup = {
-    [DemandsAttentionBehavior.Default]: Labels.AppDefault,
-    [DemandsAttentionBehavior.FocusActive]: Labels.FocusActive,
-    [DemandsAttentionBehavior.FocusAll]: Labels.FocusAll
+    [DemandsAttentionBehavior.Default]: Label.AppDefault,
+    [DemandsAttentionBehavior.FocusActive]: Label.FocusActive,
+    [DemandsAttentionBehavior.FocusAll]: Label.FocusAll
 };
 
 /** @type {{[value: string]: string}} */
 const PreferredMonitorRadioGroup = {
-    [PreferredMonitor.Default]: Labels.AppDefault,
-    [PreferredMonitor.Primary]: Labels.PrimaryMonitor,
-    [PreferredMonitor.Left]: Labels.LeftOfPrimaryMonitor,
-    [PreferredMonitor.Right]: Labels.RightOfPrimaryMonitor,
-    [PreferredMonitor.Above]: Labels.AbovePrimaryMonitor,
-    [PreferredMonitor.Below]: Labels.BelowPrimaryMonitor
+    [PreferredMonitor.Default]: Label.AppDefault,
+    [PreferredMonitor.Primary]: Label.PrimaryMonitor,
+    [PreferredMonitor.Left]: Label.LeftOfPrimaryMonitor,
+    [PreferredMonitor.Right]: Label.RightOfPrimaryMonitor,
+    [PreferredMonitor.Above]: Label.AbovePrimaryMonitor,
+    [PreferredMonitor.Below]: Label.BelowPrimaryMonitor
 };
 
 /** @enum {number} */
@@ -110,7 +110,7 @@ class SoundVolumeControlGroup extends CollapsibleGroup {
      * @param {AppButton?} appButton
      */
     constructor(appButton) {
-        super(Labels.SoundVolumeControl);
+        super(Label.SoundVolumeControl);
         this.#appButton = appButton;
         this.#inputVolumeSlider = new SliderMenuItem((menuItem, event) => this.#setVolume(menuItem, event));
         this.#outputVolumeSlider = new SliderMenuItem((menuItem, event) => this.#setVolume(menuItem, event));
@@ -225,9 +225,9 @@ class CurrentWorkspaceSection extends PopupMenuSection {
         this.#appButton = appButton;
         this.actor.hide();
         this.actor.connect(Event.Destroy, () => this.#destroy());
-        this.#title = new PopupSeparatorMenuItem(Labels.CurrentWorkspace);
+        this.#title = new PopupSeparatorMenuItem(Label.CurrentWorkspace);
         this.addMenuItem(this.#title);
-        this.addAction(Labels.CloseAll, () => this.#closeAll());
+        this.addAction(Label.CloseAll, () => this.#closeAll());
     }
 
     #destroy() {
@@ -260,7 +260,7 @@ class CurrentWorkspaceSection extends PopupMenuSection {
             const index = direction === MonitorDirection.CurrentMonitor ? currentMonitor :
                           display.get_monitor_neighbor_index(currentMonitor, direction);
             if (index < 0 || ignoredMonitors.has(index)) continue;
-            const actionLabel = `${Labels.MoveTo} ${Labels[monitor]}`;
+            const actionLabel = `${Label.MoveTo} ${Label[monitor]}`;
             this.#actions.set(index, this.addAction(actionLabel, () => this.#moveToMonitor(index)));
         }
     }
@@ -297,9 +297,9 @@ class OtherWorkspacesSection extends PopupMenuSection {
     constructor(appButton) {
         super();
         this.actor.hide();
-        this.addMenuItem(new PopupSeparatorMenuItem(Labels.OtherWorkspaces));
-        this.addAction(Labels.FindWindow, () => appButton?.activate(ActivateBehavior.FindWindow));
-        this.addAction(Labels.MoveWindows, () => appButton?.activate(ActivateBehavior.MoveWindows));
+        this.addMenuItem(new PopupSeparatorMenuItem(Label.OtherWorkspaces));
+        this.addAction(Label.FindWindow, () => appButton?.activate(ActivateBehavior.FindWindow));
+        this.addAction(Label.MoveWindows, () => appButton?.activate(ActivateBehavior.MoveWindows));
     }
 
 }
@@ -344,7 +344,7 @@ class CustomizeChildMenu extends ChildMenu {
      * @param {() => void} [callback]
      */
     constructor(appButton, callback) {
-        super(Labels.Customize, callback);
+        super(Label.Customize, callback);
         this.#appButton = appButton;
         this.actor.connect(Event.Destroy, () => this.#destroy());
         this.menu.connect(Event.OpenStateChanged, () => this.#sync());
@@ -373,38 +373,38 @@ class CustomizeChildMenu extends ChildMenu {
 
     #createMenuItems() {
         this.#activateBehavior = this.addRadioGroup(
-            Labels.ActivateBehavior, ActivateBehaviorRadioGroup,
+            Label.ActivateBehavior, ActivateBehaviorRadioGroup,
             (...args) => this.#setRadioGroupValue(...args), true);
         this.#demandsAttentionBehavior = this.addRadioGroup(
-            Labels.DemandsAttentionBehavior, DemandsAttentionBehaviorRadioGroup,
+            Label.DemandsAttentionBehavior, DemandsAttentionBehaviorRadioGroup,
             (...args) => this.#setRadioGroupValue(...args), true);
         this.#preferredMonitor = this.addRadioGroup(
-            Labels.PreferredMonitor, PreferredMonitorRadioGroup,
+            Label.PreferredMonitor, PreferredMonitorRadioGroup,
             (...args) => this.#setRadioGroupValue(...args), true);
         this.#customIcon = this.#addCustomIconGroup();
         this.#iconSize = this.#addIconSizeSlider();
         this.addSeparator();
-        this.#resetAllItem = this.menu.addAction(Labels.ResetAllToDefault, () => this.#resetAll());
+        this.#resetAllItem = this.menu.addAction(Label.ResetAllToDefault, () => this.#resetAll());
     }
 
     /**
      * @returns {(iconPath: string?) => void}
      */
     #addCustomIconGroup() {
-        const separator = this.addSeparator(Labels.CustomIcon);
-        const collapsible = this.addCollapsibleGroup(Labels.AppDefault);
+        const separator = this.addSeparator(Label.CustomIcon);
+        const collapsible = this.addCollapsibleGroup(Label.AppDefault);
         const collapsibleMenu = collapsible.menu;
         collapsibleMenu.itemActivated = () => {};
-        collapsibleMenu.addAction(Labels.SelectIcon, () => this.#selectIcon());
-        this.#importIconItem = collapsibleMenu.addAction(Labels.IconFromClipboard, () => {
+        collapsibleMenu.addAction(Label.SelectIcon, () => this.#selectIcon());
+        this.#importIconItem = collapsibleMenu.addAction(Label.IconFromClipboard, () => {
             if (typeof this.#clipboardIconPath !== 'string') return;
             this.#setCustomIcon(this.#clipboardIconPath);
         });
         this.setItemActiveState(this.#importIconItem, false);
-        const resetIconItem = collapsibleMenu.addAction(Labels.ResetToDefault, () => this.#setCustomIcon());
+        const resetIconItem = collapsibleMenu.addAction(Label.ResetToDefault, () => this.#setCustomIcon());
         return iconPath => {
             const isEmptyIconPath = typeof iconPath !== 'string' || !iconPath.trim();
-            collapsible.title = isEmptyIconPath ? Labels.AppDefault : iconPath.split(ICON_PATH_SEPARATOR).pop();
+            collapsible.title = isEmptyIconPath ? Label.AppDefault : iconPath.split(ICON_PATH_SEPARATOR).pop();
             this.setChangedIndicator(separator, !isEmptyIconPath);
             this.setItemActiveState(resetIconItem, !isEmptyIconPath);
         };
@@ -414,7 +414,7 @@ class CustomizeChildMenu extends ChildMenu {
      * @returns {(iconSize: number, defaultIconSize: number, isDefault: boolean) => void}
      */
     #addIconSizeSlider() {
-        const separator = this.addSeparator(Labels.IconSize);
+        const separator = this.addSeparator(Label.IconSize);
         const iconSizeSlider = new SliderMenuItem(
             menuItem => (this.#setIconSize(menuItem), this.setChangedIndicator(separator)),
             null, AppIconSize.Min);
@@ -508,7 +508,7 @@ class CustomizeChildMenu extends ChildMenu {
     async #selectIcon() {
         if (!this.#config) return;
         this.parentMenu?.toggle();
-        const iconPath = await FileSelector(Labels.SelectIcon, ICON_FILE_TYPE_FILTER, this.#config[ConfigField.IconPath]);
+        const iconPath = await FileSelector(Label.SelectIcon, ICON_FILE_TYPE_FILTER, this.#config[ConfigField.IconPath]);
         if (typeof iconPath !== 'string') return;
         this.#setCustomIcon(iconPath);
     }
@@ -713,7 +713,7 @@ export class Menu extends AppMenu {
         if (!this.#config?.showFavorites) return this._toggleFavoriteItem.hide();
         const isFavorite = this._appFavorites?.isFavorite(this._app?.id);
         if (isFavorite) return;
-        this._toggleFavoriteItem?.label?.set_text(Labels.Pin);
+        this._toggleFavoriteItem?.label?.set_text(Label.Pin);
     }
 
     /**
