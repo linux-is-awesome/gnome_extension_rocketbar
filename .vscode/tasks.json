@@ -95,8 +95,9 @@
             "command": "cd scripts && ./open-preferences",
             "group": "build",
             "presentation": {
-                "reveal": "always",
-                "panel": "shared"
+                "reveal": "silent",
+                "revealProblems": "onProblem",
+                "close": true
             },
             "problemMatcher": []
         },
@@ -106,30 +107,33 @@
             "command": "cd scripts && ./open-preferences dev",
             "group": "build",
             "presentation": {
-                "reveal": "always",
-                "panel": "shared"
+                "reveal": "silent",
+                "revealProblems": "onProblem",
+                "close": true
             },
             "problemMatcher": []
         },
         {
             "label": "debug",
             "type": "shell",
-            "command": "./scripts/debug",
+            "command": "nohup ./scripts/debug new-window >/dev/null 2>&1",
             "group": "build",
             "presentation": {
-                "reveal": "always",
-                "panel": "shared"
+                "reveal": "silent",
+                "revealProblems": "onProblem",
+                "close": true
             },
             "problemMatcher": []
         },
         {
-            "label": "debug-terminal",
+            "label": "debug-prefs",
             "type": "shell",
-            "command": "nohup ./scripts/debug new-window >/dev/null 2>&1",
+            "command": "nohup ./scripts/debug-prefs new-window >/dev/null 2>&1",
             "group": "build",
             "presentation": {
-                "reveal": "always",
-                "panel": "shared"
+                "reveal": "silent",
+                "revealProblems": "onProblem",
+                "close": true
             },
             "problemMatcher": []
         },
