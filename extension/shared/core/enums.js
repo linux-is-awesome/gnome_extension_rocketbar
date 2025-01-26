@@ -73,7 +73,9 @@ export const Delay = {
     Scheduled: 1000
 };
 
-/** @enum {number} */
+/**
+ * @enum {number}
+ */
 export const Progress = {
     Infinite: -1,
     Min: 0,
@@ -96,4 +98,14 @@ export const PseudoClass = {
     Focus: 'focus',
     Active: 'active',
     Insensitive: 'insensitive'
+};
+
+/**
+ * @enum {string}
+ */
+export const MetadataField = {
+    Name: 'name',
+    Url: 'url',
+    SettingsSchema: 'settings-schema',
+    VersionName: 'version-name'
 };
