@@ -4,4 +4,4 @@ cd ../extension
 
 FILE_NAME=`cat ./metadata.json | grep -oP '(?<="gettext-domain": ")[^"]*'`
 
-xgettext --output=./locale/$FILE_NAME.pot ./*/*.js
+xgettext --output=./locale/$FILE_NAME.pot ./shared/core/labels.js ./preferences/pages/ui/*.ui
