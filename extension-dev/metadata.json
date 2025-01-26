@@ -7,6 +7,6 @@
     "session-modes": ["user", "unlock-dialog"],
     "url": "https://github.com/linux-is-awesome/gnome_extension_rocketbar",
     "version": 1,
-    "internal-version": "2.0",
+    "version-name": "2.0",
     "shell-version": ["46","47"]
 }
