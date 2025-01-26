@@ -5,8 +5,7 @@
 import Jobs from './context/jobs.js';
 import Signals from './context/signals.js';
 import Settings from '../utils/settings.js';
-
-const SETTINGS_SCHEMA_KEY = 'settings-schema';
+import { MetadataField } from './enums.js';
 
 /** @type {Context?} */
 let _instance = null;
@@ -32,6 +31,13 @@ export default class Context {
         return this.instance.#extension?.path ?? null;
     }
 
+    /** @type {((text: string) => string)} */
+    static get gettext() {
+        const extension = this.instance.#extension;
+        if (!extension) throw new Error(`${this.name} is invalid.`);
+        return text => extension.gettext(text);
+    }
+
     /** @type {Jobs} */
     static get jobs() {
         const instance = this.instance;
@@ -54,7 +60,7 @@ export default class Context {
         try {
             const extension = this.instance.#extension;
             if (!extension) return null;
-            const schemaId = path ? `${extension.metadata[SETTINGS_SCHEMA_KEY]}.${path}` : '';
+            const schemaId = path ? `${extension.metadata[MetadataField.SettingsSchema]}.${path}` : '';
             const storage = this.getStorage(this.name);
             if (storage.has(schemaId)) return storage.get(schemaId);
             const settings = new Settings(extension.getSettings(schemaId));
