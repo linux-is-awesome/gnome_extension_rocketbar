@@ -219,13 +219,17 @@ export class Button extends Component {
         if (!this.isValid) return null;
         const result = super.rect;
         if (!result || !this.#style) return result;
-        const { width, spacingBefore, spacingAfter } = this.#style;
+        const { width, height, spacingBefore, spacingAfter } = this.#style;
         if (!width && !spacingBefore && !spacingAfter) return result;
         const scale = this.uiScale * this.globalScale;
         if (width) {
             result.width = Math.round(width * scale);
         } else {
             result.width -= Math.round((spacingBefore + spacingAfter) * scale);
+        }
+        if (height) {
+            result.y += Math.round((result.height - height) / 2 * scale);
+            result.height = Math.round(height * scale);
         }
         result.x += Math.round(spacingBefore * scale);
         return result;
