@@ -1,6 +1,6 @@
 {
     "name": "Rocketbar Dev",
-    "description": "Taskbar and misc additions for the GNOME Shell.",
+    "description": "Advanced Taskbar for GNOME Shell.",
     "uuid": "rocketbar.dev@chepkun.github.com",
     "settings-schema": "org.gnome.shell.extensions.rocketbar",
     "gettext-domain": "rocketbar",
