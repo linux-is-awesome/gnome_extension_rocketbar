@@ -3,6 +3,7 @@
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupDummyMenu} PopupDummyMenu
  */
 
+import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import Context from '../context.js';
 import { MainLayout, MainPanel, Session } from '../shell.js';
@@ -79,19 +80,19 @@ export default class Desktop {
     }
 
     /**
-     * @param {St.Widget|Component<St.Widget>} actor
+     * @param {Clutter.Actor|Component<St.Widget>} actor
      */
     addOverlay(actor) {
-        if (actor instanceof Component && MainLayout.uiGroup) {
+        if (actor instanceof Component && MainLayout.uiGroup instanceof St.Widget) {
             actor.setParent(MainLayout.uiGroup);
             return;
         }
-        if (actor instanceof St.Widget === false) return;
+        if (actor instanceof Clutter.Actor === false) return;
         MainLayout.uiGroup?.add_child(actor);
     }
 
     /**
-     * @param {St.Widget|Component<St.Widget>} actor
+     * @param {Clutter.Actor|Component<St.Widget>} actor
      */
     removeOverlay(actor) {
         if (actor instanceof Component) {
