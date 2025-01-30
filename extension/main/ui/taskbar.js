@@ -16,7 +16,7 @@ import { ScrollView } from './base/scrollView.js';
 import { Separator } from './taskbar/separator.js';
 import { AppButton, AppButtonEvent } from './taskbar/appButton.js';
 import { ComponentEvent } from './base/component.js';
-import { Animation, AnimationDuration } from './base/animation.js';
+import { Animation, AnimationDuration, AnimationType } from './base/animation.js';
 import { Event, Delay } from '../../shared/core/enums.js';
 import { Config } from '../../shared/utils/config.js';
 
@@ -59,6 +59,98 @@ const DropCompetitor = (competitor, xyRect) => {
     return { competitor, rect };
 };
 
+class DragActor {
+
+    /** @type {Clutter.Actor?} */
+    #actor = null;
+
+    /** @type {{[prop: string]: *}?} */
+    #actorProps = null;
+
+    /** @type {Clutter.Clone?} */
+    #actorClone = null;
+
+    /** @type {boolean} */
+    #isVisible = true;
+
+    /** @type {{x: number, y: number, width: number, height: number}?} */
+    get #actorRect() {
+        if (!this.#actor) return null;
+        const { x, y, width, height } = this.#actor;
+        return { x, y, width, height };
+    }
+
+    /** @type {Mtk.Rectangle?} */
+    get rect() {
+        if (!this.#actor) return null;
+        const result = new Mtk.Rectangle();
+        [result.x, result.y] = this.#actor.get_transformed_position();
+        [result.width, result.height] = this.#actor.get_transformed_size();
+        return result;
+    }
+
+    /**
+     * @param {Clutter.Actor} actor
+     */
+    constructor(actor) {
+        this.#actor = actor;
+        const { opacity } = actor;
+        this.#actorProps = { opacity };
+        this.#actorClone = new Clutter.Clone({
+            source: this.#actor,
+            reactive: false,
+            ...AnimationType.OpacityMin
+        });
+        Shell.util_set_hidden_from_pick(this.#actorClone, true);
+        Context.desktop.addOverlay(this.#actorClone);
+    }
+
+    destroy() {
+        Context.jobs.removeAll(this);
+        this.#actorClone?.remove_all_transitions();
+        this.#actorClone?.destroy();
+        this.#actorClone = null;
+        this.#actor = null;
+        this.#actorProps = null;
+    }
+
+    show() {
+        if (this.#isVisible || !this.#actorProps) return;
+        Context.jobs.removeAll(this);
+        this.#isVisible = true;
+        this.#actor?.set(this.#actorProps);
+        this.#actorClone?.set(AnimationType.OpacityMin);
+    }
+
+    /**
+     * @param {AppButton?} [candidate]
+     */
+    hide(candidate) {
+        if (!this.#isVisible || !this.#actor) return;
+        this.#isVisible = false;
+        const canAnimate = !!candidate && Context.desktop.settings.enable_animations;
+        if (!canAnimate) return this.#actor.set(AnimationType.OpacityMin);
+        Context.jobs.removeAll(this).new(this, Delay.Redraw).queue(() =>
+            this.#animateHide(candidate.iconRect));
+    }
+
+    /**
+     * @param {Mtk.Rectangle?} hideRect
+     */
+    #animateHide(hideRect) {
+        if (this.#isVisible || !this.#actorProps || !this.#actorClone) return;
+        const actorRect = this.#actorRect;
+        if (!actorRect || !hideRect) return this.#actor?.set(AnimationType.OpacityMin);
+        this.#actorClone.set({ ...actorRect, ...this.#actorProps });
+        this.#actor?.set(AnimationType.OpacityMin);
+        const { x, y, width, height } = hideRect;
+        const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
+        const animationParams = { x, y, width, height, mode, ...AnimationType.OpacityMin };
+        Animation(this.#actorClone, AnimationDuration.Default, animationParams);
+    }
+
+}
+
 class DragAndDropHandler {
 
     /** @type {DropCompetitor[]?} */
@@ -73,6 +165,9 @@ class DragAndDropHandler {
     /** @type {number} */
     #candidatePosition = -1;
 
+    /** @type {DragActor?} */
+    #dragActor = null;
+
     /** @type {(() => void)?} */
     #destroyCallback = null;
 
@@ -83,6 +178,11 @@ class DragAndDropHandler {
         const [x, y] = this.#parent.actor.get_transformed_position();
         [rect.x, rect.y] = [rect.x - x, rect.y - y];
         return rect;
+    }
+
+    /** @type {boolean} */
+    get hasCandidate() {
+        return !!this.#candidate;
     }
 
     /**
@@ -103,16 +203,18 @@ class DragAndDropHandler {
 
     destroy() {
         Context.signals.removeAll(this);
+        this.#dragActor?.destroy();
+        this.#candidate?.destroy();
+        this.#dragActor = null;
+        this.#candidate = null;
         this.#slots = null;
         this.#parent = null;
-        this.#candidate?.destroy();
-        this.#candidate = null;
         if (typeof this.#destroyCallback === 'function') this.#destroyCallback();
         this.#destroyCallback = null;
     }
 
     /**
-     * @param {{x: number, y:number, target: *, actor: Clutter.Actor}} params
+     * @param {{x: number, y: number, target: *, actor: Clutter.Actor}} params
      * @returns {Component|null}
      */
     handleDrag(params) {
@@ -145,6 +247,7 @@ class DragAndDropHandler {
             position++;
             slotRect = null;
         } else if (target === competitorAtPosition || target === competitorBeforePosition) {
+            this.#dragActor?.show();
             this.#candidate?.destroy();
             this.#candidate = null;
             return competitorAtPosition;
@@ -158,6 +261,7 @@ class DragAndDropHandler {
         this.#candidate?.destroy();
         this.#candidatePosition = position;
         this.#candidate = new AppButton(target.app, true).setParent(this.#parent, position);
+        this.#dragActor?.hide(this.#candidate);
         if (slotRect) this.#slots.splice(position, 0, DropCompetitor(this.#candidate, slotRect));
         return competitorAtPosition;
     }
@@ -182,24 +286,21 @@ class DragAndDropHandler {
      * @param {Clutter.Actor} actor
      */
     #watchDragActor(actor) {
-        if (Context.signals.hasClient(this)) return;
+        if (this.#dragActor) return;
+        this.#dragActor = new DragActor(actor);
         Context.signals.add(this, [actor, Event.Destroy, () => this.destroy(),
-                                          Event.MoveX, () => this.#handleDragActorPosition(actor),
-                                          Event.MoveY, () => this.#handleDragActorPosition(actor)]);
+                                          Event.MoveX, () => this.#handleDragActorPosition(),
+                                          Event.MoveY, () => this.#handleDragActorPosition()]);
     }
 
-    /**
-     * @param {Clutter.Actor} actor
-     */
-    #handleDragActorPosition(actor) {
-        if (!actor) return;
+    #handleDragActorPosition() {
+        if (!this.#dragActor) return;
         const parentRect = this.#parent?.rect;
-        if (!parentRect) return;
-        const actorRect = new Mtk.Rectangle();
-        [actorRect.x, actorRect.y] = actor.get_transformed_position();
-        [actorRect.width, actorRect.height] = actor.get_transformed_size();
-        const [parentContainsActor] = actorRect.intersect(parentRect);
+        const targetRect = this.#dragActor.rect;
+        if (!parentRect || !targetRect) return;
+        const [parentContainsActor] = targetRect.intersect(parentRect);
         if (parentContainsActor) return;
+        this.#dragActor.show();
         this.#candidate?.destroy();
         this.#candidate = null;
     }
@@ -468,14 +569,14 @@ export default class Taskbar extends ScrollView {
     /**
      * @param {*} target
      * @param {{x: number, y: number, actor: Clutter.Actor}} params
-     * @returns {DragMotionResult?}
+     * @returns {DragMotionResult}
      */
     #handleDragOver(target, params) {
-        if (!this.isValid || !params || target?.app instanceof Shell.App === false ||
-            !this.#allocation || !this.#appButtons || !this.#separator) return null;
+        if (!this.isValid || !this.#allocation ||
+            !this.#appButtons || !this.#separator || !params) return DragMotionResult.NO_DROP;
         const isAppButton = target instanceof AppButton;
-        if (isAppButton && !target.isValid) return null;
-        const result = isAppButton ? DragMotionResult.MOVE_DROP : DragMotionResult.COPY_DROP;
+        const isAppContainer = isAppButton || target?.app instanceof Shell.App;
+        if (!isAppContainer || (isAppButton && !target.isValid)) return DragMotionResult.NO_DROP;
         if (!isAppButton && this.#appButtons?.has(target.app)) {
             const appButton = this.#appButtons?.get(target.app);
             if (appButton?.isValid) {
@@ -496,7 +597,8 @@ export default class Taskbar extends ScrollView {
         const dragParams = { target, ...params };
         const competitor = this.#dndHandler.handleDrag(dragParams);
         if (competitor) super.scrollToActor(competitor);
-        return result;
+        return competitor && !this.#dndHandler.hasCandidate ? DragMotionResult.NO_DROP :
+               isAppButton ? DragMotionResult.MOVE_DROP : DragMotionResult.COPY_DROP;
     }
 
     /**
