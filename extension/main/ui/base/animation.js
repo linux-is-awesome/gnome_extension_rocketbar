@@ -2,6 +2,7 @@
  * @typedef {import('resource:///org/gnome/shell/ui/boxpointer.js').BoxPointer} BoxPointer
  */
 
+import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import Context from '../../core/context.js';
 import { Component } from './component.js';
@@ -40,27 +41,27 @@ export const AnimationType = {
 const AdjustmentAnimation = (actor, duration, params) => {
     const value = params.value ?? 0;
     delete params.value;
-    const canAnimate = duration > AnimationDuration.Disabled && Context.desktop.settings.enableAnimations;
+    const canAnimate = duration > AnimationDuration.Disabled && Context.desktop.settings.enable_animations;
     if (!canAnimate) return new Promise(resolve => (actor.set_value(value), resolve(true)));
     return new Promise(resolve => actor.ease(value, { ...params, duration, onStopped: resolve }));
 };
 
 /**
- * @param {St.Widget|BoxPointer} actor
+ * @param {Clutter.Actor|BoxPointer} actor
  * @param {number} duration
  * @param {{[param: string]: *}} params
  * @returns {Promise<boolean>}
  */
-const WidgetAnimation = (actor, duration, params) => {
+const ActorAnimation = (actor, duration, params) => {
     const canAnimate = actor.mapped &&
                        duration > AnimationDuration.Disabled &&
-                       Context.desktop.settings.enableAnimations;
+                       Context.desktop.settings.enable_animations;
     if (!canAnimate) return new Promise(resolve => (actor.set(params), resolve(true)));
     return new Promise(resolve => actor.ease({ ...params, duration, onStopped: resolve }));
 };
 
 /**
- * @param {St.Widget|St.Adjustment|BoxPointer|Component<St.Widget>} actor
+ * @param {Clutter.Actor|St.Adjustment|BoxPointer|Component<St.Widget>} actor
  * @param {number} [duration]
  * @param {{[param: string]: *}?} [params]
  * @returns {Promise<boolean>}
@@ -71,7 +72,7 @@ export const Animation = (actor, duration, params) => {
     if (actor instanceof Component && actor.isValid) {
         actor = actor.actor ?? actor;
     }
-    if (actor instanceof St.Widget) return WidgetAnimation(actor, duration, params);
-    else if (actor instanceof St.Adjustment) return AdjustmentAnimation(actor, duration, params);
+    if (actor instanceof St.Adjustment) return AdjustmentAnimation(actor, duration, params);
+    else if (actor instanceof Clutter.Actor) return ActorAnimation(actor, duration, params);
     else throw new Error(`${Animation.name} failed, unsupported actor ${actor}.`);
 };
