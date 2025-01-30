@@ -5,6 +5,7 @@
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import Context from '../../core/context.js';
+import { Overview } from '../../core/shell.js';
 import { ComponentEvent, ComponentLocation } from '../base/component.js';
 import { Icon, IconEvent } from '../base/icon.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
@@ -15,7 +16,6 @@ const FALLBACK_ICON_NAME = 'application-x-executable';
 const DEFAULT_SIZE = 20;
 const HIGHLIGHT_BRIGHTNESS = 0.1;
 const HIGHLIGHT_CONTRAST = 0.1;
-const DRAG_ACTOR_SIZE_SCALE = 1.5;
 
 /** @type {{[prop: string]: *}} */
 const DefaultProps = {
@@ -77,7 +77,7 @@ export class AppIcon extends Icon {
     /** @type {St.Icon} */
     get dragActor() {
         const gicon = this.actor.get_gicon();
-        const size = this.#size * DRAG_ACTOR_SIZE_SCALE * this.uiScale;
+        const size = Overview.dash?.iconSize || this.#size * this.uiScale;
         const actorProps = { name: `${MODULE_NAME}-DragActor`, icon_size: size, gicon };
         return new St.Icon(actorProps);
     }
@@ -139,7 +139,7 @@ export class AppIcon extends Icon {
                 return Animation(this, duration, animation.params);
             case AppIconAnimation.Activate:
             case AppIconAnimation.Deactivate:
-                if (!Context.desktop.settings.enableAnimations) return true;
+                if (!Context.desktop.settings.enable_animations) return true;
                 const mode = Clutter.AnimationMode.EASE_OUT_SINE;
                 const location = this.location === ComponentLocation.Top ? 1 : -1;
                 const translation_y = animation.translation_y * location * this.uiScale * this.globalScale;
