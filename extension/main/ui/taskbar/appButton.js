@@ -190,6 +190,19 @@ export class AppButton extends RuntimeButton {
         return !this.isFadeInDone;
     }
 
+    /** @type {Mtk.Rectangle?} */
+    get iconRect() {
+        if (!this.#appIcon || !this.#config) return null;
+        const centerRect = this.centerRect;
+        if (!centerRect) return null;
+        const { iconHPadding, iconVPadding, iconSize } = this.#config;
+        centerRect.x += iconHPadding;
+        centerRect.y += iconVPadding;
+        centerRect.height = iconSize;
+        centerRect.width = iconSize;
+        return centerRect;
+    }
+
     /** @type {Shell.App?} */
     get app() {
         return this.#app;
