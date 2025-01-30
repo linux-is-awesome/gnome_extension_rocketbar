@@ -144,7 +144,7 @@ export class Component {
         if (!this.#isValid || !this.#actor) return null;
         const [x, y] = this.#actor.get_transformed_position();
         const [width, height] = this.#actor.get_transformed_size();
-        return new Mtk.Rectangle({x, y, width, height});
+        return new Mtk.Rectangle({ x, y, width, height });
     }
 
     /** @type {Mtk.Rectangle?} */
