@@ -9,6 +9,7 @@ export const Event = {
     Changed: 'changed',
     Checked: 'notify::checked',
     Clicked: 'clicked',
+    Closed: 'closed',
     CloseRequest: 'close-request',
     Destroy: 'destroy',
     DragBegin: 'drag-begin',

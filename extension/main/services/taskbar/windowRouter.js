@@ -21,6 +21,7 @@ import { Label } from '../../../shared/core/labels.js';
 const CONFIG_PATH = 'taskbar';
 const CONFIG_FIELD_APP_CONFIG = 'appConfig';
 const STORAGE_KEY_MONITORS = 'monitors';
+const DISPLAY_CHANGE_DIALOG_CLASS_NAME = 'DisplayChangeDialog';
 
 /** @type {{[value: string]: number}} */
 const MonitorDirection = {
@@ -119,9 +120,9 @@ export default class WindowRouter {
     }
 
     recover() {
-        if (this.#isRouting || !this.#isRoutingQueued) return;
+        if (this.#isRouting || !this.#isRoutingQueued || !this.#job) return;
         this.#isRouting = true;
-        this.#job?.reset(Delay.Queue).queue(() => this.#start());
+        this.#job.reset(Delay.Queue).queue(() => this.#start());
     }
 
     /**
@@ -171,8 +172,12 @@ export default class WindowRouter {
         if (!this.#isRouting) this.#saveWindows();
         this.#isRouting = true;
         this.#job.reset(Delay.Queue).queue(() => {
-            this.#updateMonitors();
-            this.#start();
+            Context.signals.remove(this, Overview);
+            const activeModalDialog = this.#getActiveModalDialog();
+            const isDisplayChangeDialog = activeModalDialog?.constructor?.name === DISPLAY_CHANGE_DIALOG_CLASS_NAME;
+            if (!isDisplayChangeDialog) return this.#evaluateMonitorChanges();
+            Context.signals.add(this, [activeModalDialog, Event.Closed, () =>
+            (Context.signals.remove(this, activeModalDialog), this.#evaluateMonitorChanges())]);
         });
     }
 
@@ -186,6 +191,13 @@ export default class WindowRouter {
             const windowMonitor = window.get_monitor();
             windowInfo.monitor = monitors.get(windowMonitor) ?? null;
         }
+    }
+
+    #evaluateMonitorChanges() {
+        const hadMultipleMonitors = this.#hasMultipleMonitors;
+        this.#updateMonitors();
+        this.#isRouting = hadMultipleMonitors || this.#hasMultipleMonitors;
+        this.#start();
     }
 
     #updateMonitors() {
@@ -203,6 +215,7 @@ export default class WindowRouter {
     }
 
     #start() {
+        if (!this.#isRouting) return;
         this.#isRoutingQueued = false;
         if (!this.#windows?.size) {
             this.#isRouting = false;
@@ -219,6 +232,7 @@ export default class WindowRouter {
     }
 
     #execute() {
+        if (!this.#isRouting) return;
         this.#job?.reset(Delay.Queue).queue(() => {
             if (!this.#isRouting || !this.#windows?.size) {
                 return this.#finish();
@@ -248,8 +262,11 @@ export default class WindowRouter {
         });
     }
 
+    /**
+     * Note: Let's not show the status when another modal is displayed on the screen to avoid conflicts.
+     */
     #showStatus() {
-        if (this.#status) return;
+        if (this.#status || this.#getActiveModalDialog()) return;
         const text = new St.Label(StatusTextProps);
         this.#status = new ModalDialog(StatusProps);
         this.#status.buttonLayout?.hide();
@@ -269,6 +286,13 @@ export default class WindowRouter {
         if (!this.#config) return;
         if (settingsKey && settingsKey !== ConfigFields.appConfig) return;
         this.#appConfig = InnerConfig(this.#config, CONFIG_FIELD_APP_CONFIG);
+    }
+
+    /**
+     * @returns {Clutter.Actor?}
+     */
+    #getActiveModalDialog() {
+        return MainLayout.modalDialogGroup?.get_children().find(dialog => dialog.visible) ?? null;
     }
 
 }
