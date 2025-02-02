@@ -9,6 +9,7 @@ import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Shell from 'gi://Shell';
 import { activateWindow as FocusedWindow } from 'resource:///org/gnome/shell/ui/main.js';
+import { AppIcon as AppDisplayIcon  } from 'resource:///org/gnome/shell/ui/appDisplay.js';
 import { Overview } from '../../core/shell.js';
 import Context from '../../core/context.js';
 import { RuntimeButton, ButtonEvent } from '../base/button.js';
@@ -80,6 +81,47 @@ class CycleWindowsQueue {
 
 }
 
+class OverviewDragActor {
+
+    /** @type {AppButton?} */
+    #appButton = null;
+
+    /**
+     * @param {AppButton} appButton
+     * @param {AppIcon} appIcon
+     */
+    constructor(appButton, appIcon) {
+        this.#appButton = appButton;
+        const appDisplayIcon = new AppDisplayIcon(appButton.app);
+        appDisplayIcon.getDragActorSource = () => appIcon.actor;
+        appDisplayIcon.getDragActor = () => appIcon.dragActor;
+        appDisplayIcon.activate = () => appButton.activate();
+        appDisplayIcon.animateLaunchAtPos = (x, y) => appButton.animateLaunchAtPos(x, y);
+        appDisplayIcon._delegate = appButton;
+        appButton.actor._delegate = appDisplayIcon;
+        Overview.beginItemDrag(appDisplayIcon);
+    }
+
+    /**
+     * @param {boolean} [isDragCancelled]
+     */
+    destroy(isDragCancelled = false) {
+        if (!this.#appButton) return;
+        const appButtonActor = this.#appButton.actor;
+        if (appButtonActor._delegate instanceof AppDisplayIcon) {
+            const appDisplayIcon = appButtonActor._delegate;
+            if (isDragCancelled) Overview.cancelledItemDrag(appDisplayIcon);
+            Overview.endItemDrag(appDisplayIcon);
+            if (!isDragCancelled) Overview.cancelledItemDrag(appDisplayIcon);
+            appDisplayIcon._delegate = null;
+            appDisplayIcon.destroy();
+        }
+        appButtonActor._delegate = this.#appButton;
+        this.#appButton = null;
+    }
+
+}
+
 /**
  * @augments RuntimeButton<St.Bin>
  */
@@ -94,6 +136,9 @@ export class AppButton extends RuntimeButton {
         [ComponentEvent.Mapped]: () => this.#handleMapped(),
         [ComponentEvent.DragActorRequest]: () => this.#appIcon?.dragActor,
         [ComponentEvent.DragActorSourceRequest]: () => this.#appIcon?.actor,
+        [ComponentEvent.DragBegin]: () => this.#handleDragBegin(),
+        [ComponentEvent.DragCancelled]: () => this.#handleDragEnd(true),
+        [ComponentEvent.DragEnd]: () => this.#handleDragEnd(),
         [ComponentEvent.Scale]: () => this.#updateStyle(),
         [ButtonEvent.Press]: () => this.#press(),
         [ButtonEvent.Hover]: () => this.#hover(),
@@ -125,6 +170,9 @@ export class AppButton extends RuntimeButton {
 
     /** @type {AppIcon?} */
     #appIcon = null;
+
+    /** @type {OverviewDragActor?} */
+    #dragActor = null;
 
     /** @type {St.Widget?} */
     #layout = null;
@@ -324,6 +372,16 @@ export class AppButton extends RuntimeButton {
     }
 
     /**
+     * Note: This function is exposed to simulate behavior of `AppDisplay.AppIcon`.
+     *
+     * @deprecated
+     * @returns {St.Widget?}
+     */
+    get_parent() {
+        return this.parentActor;
+    }
+
+    /**
      * @param {ActivateBehavior?} [activateBehavior]
      */
     activate(activateBehavior) {
@@ -343,14 +401,14 @@ export class AppButton extends RuntimeButton {
     }
 
     /**
-     * Note: This function is exposed to simulate AppDisplay's behavior inside the Shell.
+     * Note: This function is exposed to simulate behavior of `AppDisplay.AppIcon`.
      */
     animateLaunch() {
         this.#appIcon?.animate(AppIconAnimation.Activate);
     }
 
     /**
-     * Note: This function is exposed to simulate AppDisplay's behavior inside the Shell.
+     * Note: This function is exposed to simulate behavior of `AppDisplay.AppIcon`.
      *
      * @param {number} x
      * @param {number} y
@@ -381,6 +439,7 @@ export class AppButton extends RuntimeButton {
     }
 
     #destroy() {
+        this.#handleDragEnd(true);
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
         Context.launcherApi?.disconnect(this);
@@ -522,6 +581,24 @@ export class AppButton extends RuntimeButton {
         const style = { spacingAfter, roundness, width, height };
         this.overrideStyle(style);
         this.notifyParents(ComponentEvent.Mapped);
+    }
+
+    /**
+     * Note: The App Grid can only accept favorite apps, otherwise it throws an exception.
+     */
+    #handleDragBegin() {
+        if (!this.#isFavorite || !this.#appIcon || !this.isValid) return;
+        const isAppGridVisible = Overview.visible && !!Overview.dash?.showAppsButton?.checked;
+        if (!isAppGridVisible) return;
+        this.#dragActor ??= new OverviewDragActor(this, this.#appIcon);
+    }
+
+    /**
+     * @param {boolean} [isDragCancelled]
+     */
+    #handleDragEnd(isDragCancelled = false) {
+        this.#dragActor?.destroy(isDragCancelled);
+        this.#dragActor = null;
     }
 
     /**
