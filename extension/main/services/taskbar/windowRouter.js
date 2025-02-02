@@ -173,7 +173,7 @@ export default class WindowRouter {
         this.#isRouting = true;
         this.#job.reset(Delay.Queue).queue(() => {
             Context.signals.remove(this, Overview);
-            const activeModalDialog = this.#getActiveModalDialog();
+            const activeModalDialog = Context.desktop.activeModalDialog;
             const isDisplayChangeDialog = activeModalDialog?.constructor?.name === DISPLAY_CHANGE_DIALOG_CLASS_NAME;
             if (!isDisplayChangeDialog) return this.#evaluateMonitorChanges();
             Context.signals.add(this, [activeModalDialog, Event.Closed, () =>
@@ -266,7 +266,7 @@ export default class WindowRouter {
      * Note: Let's not show the status when another modal is displayed on the screen to avoid conflicts.
      */
     #showStatus() {
-        if (this.#status || this.#getActiveModalDialog()) return;
+        if (this.#status || Context.desktop.activeModalDialog) return;
         const text = new St.Label(StatusTextProps);
         this.#status = new ModalDialog(StatusProps);
         this.#status.buttonLayout?.hide();
@@ -286,13 +286,6 @@ export default class WindowRouter {
         if (!this.#config) return;
         if (settingsKey && settingsKey !== ConfigFields.appConfig) return;
         this.#appConfig = InnerConfig(this.#config, CONFIG_FIELD_APP_CONFIG);
-    }
-
-    /**
-     * @returns {Clutter.Actor?}
-     */
-    #getActiveModalDialog() {
-        return MainLayout.modalDialogGroup?.get_children().find(dialog => dialog.visible) ?? null;
     }
 
 }
