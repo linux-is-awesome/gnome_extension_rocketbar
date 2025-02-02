@@ -1,11 +1,13 @@
 /**
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupMenu} PopupMenu
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupDummyMenu} PopupDummyMenu
+ * @typedef {import('resource:///org/gnome/shell/ui/modalDialog.js').ModalDialog} ModalDialog
  */
 
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import Context from '../context.js';
+import { ModalDialog } from 'resource:///org/gnome/shell/ui/modalDialog.js';
 import { MainLayout, MainPanel, Session } from '../shell.js';
 import { Component } from '../../ui/base/component.js';
 import { Event, Delay, SessionMode } from '../../../shared/core/enums.js';
@@ -42,6 +44,16 @@ export default class Desktop {
     get settings() {
         this.#settings ??= St.Settings.get();
         return this.#settings;
+    }
+
+    /** @type {ModalDialog?} */
+    get activeModalDialog() {
+        const dialogs = MainLayout.modalDialogGroup?.get_children();
+        if (!dialogs?.length) return null;
+        for (const dialog of dialogs) {
+            if (dialog instanceof ModalDialog && dialog.visible) return dialog;
+        }
+        return null;
     }
 
     destroy() {
