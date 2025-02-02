@@ -312,11 +312,9 @@ export default class Taskbar extends ScrollView {
         const isAppButton = target instanceof AppButton;
         const isAppContainer = isAppButton || target?.app instanceof Shell.App;
         if (!isAppContainer || (isAppButton && !target.isValid)) return DragMotionResult.NO_DROP;
-        if (!isAppButton && this.#appButtons?.has(target.app)) {
-            const appButton = this.#appButtons?.get(target.app);
-            if (appButton?.isValid) {
-                target = appButton;
-            }
+        if (!isAppButton && this.#appButtons.has(target.app)) {
+            const appButton = this.#appButtons.get(target.app);
+            target = appButton?.isValid ? appButton : target;
         }
         if (!this.#dndHandler) {
             Context.jobs.removeAll(this);
@@ -333,7 +331,7 @@ export default class Taskbar extends ScrollView {
         const competitor = this.#dndHandler.handleDrag(dragParams);
         if (competitor) super.scrollToActor(competitor);
         return competitor && !this.#dndHandler.hasCandidate ? DragMotionResult.NO_DROP :
-               isAppButton ? DragMotionResult.MOVE_DROP : DragMotionResult.COPY_DROP;
+               target instanceof AppButton ? DragMotionResult.MOVE_DROP : DragMotionResult.COPY_DROP;
     }
 
     /**
