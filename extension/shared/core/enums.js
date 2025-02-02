@@ -13,6 +13,7 @@ export const Event = {
     CloseRequest: 'close-request',
     Destroy: 'destroy',
     DragBegin: 'drag-begin',
+    DragCancelled: 'drag-cancelled',
     DragEnd: 'drag-end',
     FocusIn: 'key-focus-in',
     FocusOut: 'key-focus-out',

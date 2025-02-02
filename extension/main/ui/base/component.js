@@ -28,6 +28,7 @@ export const ComponentEvent = {
     AcceptDrop: 'component::accept-drop',
     DragOver: 'component::drag-over',
     DragBegin: 'component::drag-begin',
+    DragCancelled: 'component::drag-cancelled',
     DragEnd: 'component::drag-end',
     DragMotion: 'component::drag-motion',
     DragActorRequest: 'component::drag-actor-request',
@@ -100,11 +101,12 @@ export class Component {
         return this.#actor;
     }
 
-    /** @type {St.Widget|Component<St.Widget>|null} */
+    /** @type {Component<St.Widget>|St.Widget|null} */
     get parent() {
         if (!this.hasAllocation) return null;
         const result = this.#actor?.get_parent() ?? null;
         if (result?._delegate instanceof Component) return result._delegate;
+        if (result?._delegate?._delegate instanceof Component) return result._delegate._delegate;
         if (result instanceof St.Widget) return result;
         return null;
     }
@@ -305,9 +307,12 @@ export class Component {
         const children = this.#actor?.get_children();
         if (!children?.length) return this;
         for (let i = 0, l = children.length; i < l; ++i) {
-            /** @type {Component<St.Widget>} */
-            const child = children[i]._delegate;
-            if (child instanceof Component === false) continue;
+            let child = children[i]._delegate;
+            if (!child) continue;
+            if (child instanceof Component === false) {
+                child = child._delegate;
+                if (child instanceof Component === false) continue;
+            }
             if (child.#notifySelf(event, child, params, this)) break;
         }
         return this;
@@ -423,6 +428,7 @@ export class Component {
         this.#dragMonitor = {};
         this.#draggable = Dnd.makeDraggable(this.#actor, DraggableParams);
         this.#draggable.connect(Event.DragBegin, () => this.#dragBegin());
+        this.#draggable.connect(Event.DragCancelled, () => this.#dragCancelled());
         this.#draggable.connect(Event.DragEnd, () => this.#dragEnd());
         this.#dragMonitor.dragMotion = event => this.#dragMotion(event);
         this.#actor.connectObject(
@@ -443,6 +449,11 @@ export class Component {
         if (!this.#dragMonitor) return;
         Dnd.addDragMonitor(this.#dragMonitor);
         this.#notifySelf(ComponentEvent.DragBegin);
+    }
+
+    #dragCancelled() {
+        if (!this.#dragMonitor) return;
+        this.#notifySelf(ComponentEvent.DragCancelled);
     }
 
     #dragEnd() {
@@ -477,6 +488,7 @@ export class Component {
             parent = nextParent?._delegate;
         }
         return parent instanceof Component ? parent :
+               parent?._delegate instanceof Component ? parent._delegate :
                nextParent instanceof St.Widget ? this.#getNearestParentComponent(nextParent) : null;
     }
 
