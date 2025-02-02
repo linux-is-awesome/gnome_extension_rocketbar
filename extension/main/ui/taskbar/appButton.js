@@ -9,11 +9,11 @@ import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Shell from 'gi://Shell';
 import { activateWindow as FocusedWindow } from 'resource:///org/gnome/shell/ui/main.js';
-import { AppIcon as AppDisplayIcon  } from 'resource:///org/gnome/shell/ui/appDisplay.js';
 import { Overview } from '../../core/shell.js';
 import Context from '../../core/context.js';
 import { RuntimeButton, ButtonEvent } from '../base/button.js';
 import { TaskbarClient } from '../../services/taskbar.js';
+import { DragActor } from './appButton/dragActor.js';
 import { AppIcon, AppIconAnimation, AppIconEvent } from './appIcon.js';
 import { AppConfig, ConfigFields, ActivateBehavior, DemandsAttentionBehavior } from '../../utils/taskbar/appConfig.js';
 import { Menu } from './menu.js';
@@ -81,47 +81,6 @@ class CycleWindowsQueue {
 
 }
 
-class OverviewDragActor {
-
-    /** @type {AppButton?} */
-    #appButton = null;
-
-    /**
-     * @param {AppButton} appButton
-     * @param {AppIcon} appIcon
-     */
-    constructor(appButton, appIcon) {
-        this.#appButton = appButton;
-        const appDisplayIcon = new AppDisplayIcon(appButton.app);
-        appDisplayIcon.getDragActorSource = () => appIcon.actor;
-        appDisplayIcon.getDragActor = () => appIcon.dragActor;
-        appDisplayIcon.activate = () => appButton.activate();
-        appDisplayIcon.animateLaunchAtPos = (x, y) => appButton.animateLaunchAtPos(x, y);
-        appDisplayIcon._delegate = appButton;
-        appButton.actor._delegate = appDisplayIcon;
-        Overview.beginItemDrag(appDisplayIcon);
-    }
-
-    /**
-     * @param {boolean} [isDragCancelled]
-     */
-    destroy(isDragCancelled = false) {
-        if (!this.#appButton) return;
-        const appButtonActor = this.#appButton.actor;
-        if (appButtonActor._delegate instanceof AppDisplayIcon) {
-            const appDisplayIcon = appButtonActor._delegate;
-            if (isDragCancelled) Overview.cancelledItemDrag(appDisplayIcon);
-            Overview.endItemDrag(appDisplayIcon);
-            if (!isDragCancelled) Overview.cancelledItemDrag(appDisplayIcon);
-            appDisplayIcon._delegate = null;
-            appDisplayIcon.destroy();
-        }
-        appButtonActor._delegate = this.#appButton;
-        this.#appButton = null;
-    }
-
-}
-
 /**
  * @augments RuntimeButton<St.Bin>
  */
@@ -171,7 +130,7 @@ export class AppButton extends RuntimeButton {
     /** @type {AppIcon?} */
     #appIcon = null;
 
-    /** @type {OverviewDragActor?} */
+    /** @type {DragActor?} */
     #dragActor = null;
 
     /** @type {St.Widget?} */
@@ -590,7 +549,7 @@ export class AppButton extends RuntimeButton {
         if (!this.#isFavorite || !this.#appIcon || !this.isValid) return;
         const isAppGridVisible = Overview.visible && !!Overview.dash?.showAppsButton?.checked;
         if (!isAppGridVisible) return;
-        this.#dragActor ??= new OverviewDragActor(this, this.#appIcon);
+        this.#dragActor ??= new DragActor(this, this.#appIcon);
     }
 
     /**
