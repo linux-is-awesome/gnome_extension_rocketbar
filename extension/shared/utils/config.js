@@ -9,6 +9,7 @@ import Settings from './settings.js';
 import { Event } from '../core/enums.js';
 
 const DUMMY_FIELD_PREFIX = '~';
+const JSON_OBJECT_MIN_LENGTH = 2;
 
 /**
  * @param {*} client
@@ -55,14 +56,15 @@ export const Config = (client, fields, callback, options = { path: null, isAfter
 /**
  * @param {Config|Settings} parentConfig
  * @param {string} field
- * @returns {*}
+ * @returns {{[field: string]: *}|*[]|null}
  */
 export const InnerConfig = (parentConfig, field) => {
     try {
         const value = parentConfig instanceof Settings ?
                       parentConfig.get(field) :
                       parentConfig?.[field];
-        if (typeof value === 'string' && value.length) return JSON.parse(value);
+        if (typeof value === 'string' &&
+            value.length >= JSON_OBJECT_MIN_LENGTH) return JSON.parse(value);
     } catch (e) {
         Context.logError(`${InnerConfig.name} failed to parse value for field "${field}".`, e);
     }
