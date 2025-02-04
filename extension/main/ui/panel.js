@@ -7,6 +7,7 @@ import { ModuleManager, Module } from '../services/modules.js';
 import { Config, InnerConfig } from '../../shared/utils/config.js';
 
 const CONFIG_PATH = 'panel';
+const CONFIG_FIELD_ITEMS = 'items';
 
 /** @enum {string} */
 const PanelArea = {
@@ -17,7 +18,7 @@ const PanelArea = {
 
 /** @enum {string} */
 const ConfigFields = {
-    items: 'items',
+    [CONFIG_FIELD_ITEMS]: 'items',
     soundVolumeControl: 'sound-volume-control',
     clickHideOverview: 'click-hide-overview'
 };
@@ -88,7 +89,7 @@ export default class Panel extends Component {
         const items = new Map();
         const modules = [];
         const updatedItems = [];
-        const configItems = InnerConfig(this.#config, ConfigFields.items) ?? {};
+        const configItems = InnerConfig(this.#config, CONFIG_FIELD_ITEMS) ?? {};
         for (const id in configItems) {
             const itemConfig = configItems[id];
             if (!Array.isArray(itemConfig)) continue;
