@@ -90,7 +90,9 @@ export class AppConfig extends SharedConfig {
         this.configHandler = this.#setAppConfig;
         const settings = Context.getSettings(CONFIG_PATH);
         if (!settings) return;
-        this.#configOverride = InnerConfig(settings, CONFIG_OVERRIDE_SETTINGS_KEY) ?? {};
+        const configOverride = InnerConfig(settings, CONFIG_OVERRIDE_SETTINGS_KEY);
+        if (!configOverride || Array.isArray(configOverride)) return;
+        this.#configOverride = configOverride;
     }
 
     /**
