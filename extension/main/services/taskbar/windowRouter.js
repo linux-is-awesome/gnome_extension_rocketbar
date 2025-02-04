@@ -285,7 +285,8 @@ export default class WindowRouter {
     #handleConfig(settingsKey) {
         if (!this.#config) return;
         if (settingsKey && settingsKey !== ConfigFields.appConfig) return;
-        this.#appConfig = InnerConfig(this.#config, CONFIG_FIELD_APP_CONFIG);
+        const appConfig = InnerConfig(this.#config, CONFIG_FIELD_APP_CONFIG);
+        this.#appConfig = !Array.isArray(appConfig) ? appConfig : null;
     }
 
 }
