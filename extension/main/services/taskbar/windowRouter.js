@@ -180,8 +180,9 @@ export default class WindowRouter {
             const activeModalDialog = Context.desktop.activeModalDialog;
             const isDisplayChangeDialog = activeModalDialog?.constructor?.name === DISPLAY_CHANGE_DIALOG_CLASS_NAME;
             if (!isDisplayChangeDialog) return this.#evaluateMonitorChanges();
-            Context.signals.add(this, [activeModalDialog, Event.Closed, () =>
-            (Context.signals.remove(this, activeModalDialog), this.#evaluateMonitorChanges())]);
+            Context.signals.add(this, [activeModalDialog, Event.Closed, () => (
+            Context.signals.remove(this, activeModalDialog),
+            this.#evaluateMonitorChanges())]);
         });
     }
 
@@ -200,7 +201,7 @@ export default class WindowRouter {
     #evaluateMonitorChanges() {
         const hadMultipleMonitors = this.#hasMultipleMonitors;
         this.#updateMonitors();
-        this.#isRouting = hadMultipleMonitors || this.#hasMultipleMonitors;
+        this.#isRouting = hadMultipleMonitors || this.#hasMultipleMonitors || !!this.#status;
         this.#start();
     }
 
