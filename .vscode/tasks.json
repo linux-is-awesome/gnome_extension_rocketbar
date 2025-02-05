@@ -160,9 +160,31 @@
             "problemMatcher": []
         },
         {
-            "label": "update-dconf",
+            "label": "update-dconf-default",
             "type": "shell",
-            "command": "cd scripts && ./update-dconf",
+            "command": "cd scripts && ./update-dconf default",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "reset-dconf",
+            "type": "shell",
+            "command": "cd scripts && ./reset-dconf",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "update-dconf-custom",
+            "type": "shell",
+            "command": "cd scripts && ./update-dconf custom",
             "group": "build",
             "presentation": {
                 "reveal": "always",

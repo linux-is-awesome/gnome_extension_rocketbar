@@ -4,14 +4,14 @@ cd ../
 
 PATH=/`cat ./extension/metadata.json | grep -oP '(?<="settings-schema": ")[^"]*' | sed -r 's/[.]/\//g'`/
 
-/bin/cp ./extension/schemas/defaults.ini ./defaults.ini
+/bin/cp ./extension/schemas/ini/$1.ini ./settings.ini
 
 /bin/dconf dump $PATH > current.ini
 
-/usr/bin/crudini --merge --existing defaults.ini < current.ini
+/usr/bin/crudini --merge --existing settings.ini < current.ini
 
-/bin/dconf load $PATH < defaults.ini
+/bin/dconf load $PATH < settings.ini
 
-/bin/rm ./defaults.ini
+/bin/rm ./settings.ini
 
 /bin/rm ./current.ini
