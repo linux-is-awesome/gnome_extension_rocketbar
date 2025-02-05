@@ -8,12 +8,10 @@ import Clutter from 'gi://Clutter';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import Context from '../core/context.js';
-import { Event, Delay } from '../../shared/core/enums.js';
+import { SettingsPath, SettingsKey, Event, Delay } from '../../shared/core/enums.js';
 import { Config } from '../../shared/utils/config.js';
 import Favorites from './taskbar/favorites.js';
 import WindowRouter from './taskbar/windowRouter.js';
-
-const CONFIG_PATH = 'taskbar';
 
 const SUPPORTED_WINDOW_TYPES = [
     Meta.WindowType.NORMAL,
@@ -22,9 +20,14 @@ const SUPPORTED_WINDOW_TYPES = [
 ];
 
 /** @enum {string} */
-const ConfigFields = {
-    enableFavorites: 'taskbar-show-favorites',
-    windowRouting: 'multi-monitor-window-routing'
+const ConfigField = {
+    enableFavorites: SettingsKey.ShowFavorites,
+    windowRouting: SettingsKey.WindowRouting
+};
+
+/** @type {{[option: string]: *}} */
+const ConfigOptions = {
+    path: SettingsPath.Taskbar
 };
 
 class TaskbarService {
@@ -60,7 +63,7 @@ class TaskbarService {
     #clients = new Set();
 
     /** @type {Config?} */
-    #config = Config(this, ConfigFields, () => this.#handleConfig(), { path: CONFIG_PATH });
+    #config = Config(this, ConfigField, () => this.#handleConfig(), ConfigOptions);
 
     /** @type {Job?} */
     #job = null;

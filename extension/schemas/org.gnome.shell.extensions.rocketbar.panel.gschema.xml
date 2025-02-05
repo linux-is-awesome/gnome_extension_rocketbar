@@ -2,16 +2,14 @@
 <schemalist>
     <schema id="org.gnome.shell.extensions.rocketbar.panel"
             path="/org/gnome/shell/extensions/rocketbar/panel/">
-
-        <key type="b" name="sound-volume-control">
-            <default>false</default>
-        </key>
-        <key type="b" name="click-hide-overview">
-            <default>false</default>
-        </key>
         <key type="s" name="items">
             <default>'{}'</default>
         </key>
-
+        <key type="b" name="sound-volume-control">
+            <default>false</default>
+        </key>
+        <key type="b" name="click-to-hide-overview">
+            <default>false</default>
+        </key>
     </schema>
 </schemalist>

@@ -5,16 +5,15 @@
 
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
-import { Event } from '../../../shared/core/enums.js';
 import { Component, ComponentEvent } from '../base/component.js';
+import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { Icon } from '../base/icon.js';
 import { Tooltip as BaseTooltip } from '../base/tooltip.js';
 import { SharedConfig } from '../../../shared/utils/config.js';
+import { SettingsPath, SettingsKey, Event } from '../../../shared/core/enums.js';
 import { SoundVolumeIcon, SoundInputIcon, SoundOutputIcon } from '../../utils/soundVolumeIcon.js';
-import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_Tooltip';
-const CONFIG_PATH = 'taskbar';
 const LAYOUT_STYLE_CLASS = 'rocketbar__tooltip_layout';
 const WINDOW_TITLE_STYLE_CLASS = 'rocketbar__tooltip_window-title';
 const APP_STATUS_STYLE_CLASS = 'rocketbar__tooltip_app-status';
@@ -22,11 +21,16 @@ const APP_STATUS_ITEM_STYLE_CLASS = 'rocketbar__tooltip_app-status_item';
 const SOUND_VOLUME_CHANGE_STEP = 5;
 
 /** @enum {string} */
-const ConfigFields = {
-    showDelay: 'tooltip-show-delay',
-    hideDelay: 'tooltip-hide-delay',
-    shrinkWindowTitles: 'tooltip-shrink-window-titles',
-    enableWindowPreviews: 'tooltip-enable-window-previews'
+const ConfigField = {
+    showDelay: SettingsKey.TooltipShowDelay,
+    hideDelay: SettingsKey.TooltipHideDelay,
+    shrinkWindowTitles: SettingsKey.TooltipShrinkWindowTitles,
+    enableWindowPreviews: SettingsKey.TooltipWindowPreviews
+};
+
+/** @type {{[option: string]: *}} */
+const ConfigOptions = {
+    path: SettingsPath.Taskbar
 };
 
 /** @enum {string} */
@@ -345,7 +349,7 @@ export class Tooltip extends BaseTooltip {
 
     /** @type {SharedConfig} */
     get #configProvider() {
-        Tooltip.#sharedConfig ??= new SharedConfig(ConfigFields, { path: CONFIG_PATH });
+        Tooltip.#sharedConfig ??= new SharedConfig(ConfigField, ConfigOptions);
         return Tooltip.#sharedConfig;
     }
 

@@ -14,7 +14,6 @@ import { AppMenu } from 'resource:///org/gnome/shell/ui/appMenu.js';
 import { PopupMenuSection,
          PopupSeparatorMenuItem } from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import Context from '../../core/context.js';
-import { Delay, Event } from '../../../shared/core/enums.js';
 import { ComponentLocation } from '../base/component.js';
 import { SliderMenuItem, CollapsibleGroup, ChildMenu } from '../base/menu.js';
 import { Icon } from '../base/icon.js';
@@ -23,9 +22,9 @@ import { FileSelector } from '../../utils/zenity.js';
 import { ActivateBehavior, DemandsAttentionBehavior,
          PreferredMonitor, AppIconSize } from '../../utils/taskbar/appConfig.js';
 import { SoundVolumeIcon } from '../../utils/soundVolumeIcon.js';
+import { SettingsPath, SettingsKey, Delay, Event } from '../../../shared/core/enums.js';
 import { Label } from '../../../shared/core/labels.js';
 
-const CONFIG_PATH = 'taskbar';
 const UNWANTED_STYLE_CLASS = 'app-menu';
 const STYLE_CLASS = 'rocketbar__popup-menu';
 const ICON_PATH_SEPARATOR = '/';
@@ -77,7 +76,7 @@ const MonitorDirection = {
 };
 
 /** @enum {string} */
-const ConfigField = {
+const ConfigKey = {
     IconSize: 'iconSize',
     IconPath: 'iconPath',
     IconSizeOffset: 'iconSizeOffset',
@@ -87,9 +86,14 @@ const ConfigField = {
 };
 
 /** @enum {string} */
-const ConfigFields = {
-    isolateWorkspaces: 'taskbar-isolate-workspaces',
-    showFavorites: 'taskbar-show-favorites'
+const ConfigField = {
+    isolateWorkspaces: SettingsKey.IsolateWorkspaces,
+    showFavorites: SettingsKey.ShowFavorites
+};
+
+/** @type {{[option: string]: *}} */
+const ConfigOptions = {
+    path: SettingsPath.Taskbar
 };
 
 class SoundVolumeControlGroup extends CollapsibleGroup {
@@ -457,17 +461,17 @@ class CustomizeChildMenu extends ChildMenu {
         const preferredMonitorVisibilityHandler = item => {
             item.visible = config.windowRouting ?? false;
         };
-        this.#activateBehavior(config[ConfigField.ActivateBehavior],
-                              !configProvider.hasConfigOverride(app, ConfigField.ActivateBehavior))
+        this.#activateBehavior(config[ConfigKey.ActivateBehavior],
+                              !configProvider.hasConfigOverride(app, ConfigKey.ActivateBehavior))
                               .forEach(activateBehaviorVisibilityHandler);
-        this.#demandsAttentionBehavior(config[ConfigField.DemandsAttentionBehavior],
-                                       !configProvider.hasConfigOverride(app, ConfigField.DemandsAttentionBehavior));
-        this.#preferredMonitor(config[ConfigField.WindowsPreferredMonitor],
-                               !configProvider.hasConfigOverride(app, ConfigField.WindowsPreferredMonitor))
+        this.#demandsAttentionBehavior(config[ConfigKey.DemandsAttentionBehavior],
+                                       !configProvider.hasConfigOverride(app, ConfigKey.DemandsAttentionBehavior));
+        this.#preferredMonitor(config[ConfigKey.WindowsPreferredMonitor],
+                               !configProvider.hasConfigOverride(app, ConfigKey.WindowsPreferredMonitor))
                                .forEach(preferredMonitorVisibilityHandler);
-        this.#iconSize(config[ConfigField.IconSize], defaultConfig[ConfigField.IconSize],
-                       !configProvider.hasConfigOverride(app, ConfigField.IconSizeOffset));
-        this.#customIcon(config[ConfigField.IconPath]);
+        this.#iconSize(config[ConfigKey.IconSize], defaultConfig[ConfigKey.IconSize],
+                       !configProvider.hasConfigOverride(app, ConfigKey.IconSizeOffset));
+        this.#customIcon(config[ConfigKey.IconPath]);
         this.setItemActiveState(this.#resetAllItem, configProvider.hasConfigOverride(app));
         this.#scanClipboard();
         this.#isSyncing = false;
@@ -489,26 +493,26 @@ class CustomizeChildMenu extends ChildMenu {
      */
     #setRadioGroupValue(value, group) {
         if (this.#isSyncing || !this.#appButton) return;
-        let field = null;
+        let key = null;
         switch (group) {
             case ActivateBehaviorRadioGroup:
-                field = ConfigField.ActivateBehavior;
+                key = ConfigKey.ActivateBehavior;
                 break;
             case DemandsAttentionBehaviorRadioGroup:
-                field = ConfigField.DemandsAttentionBehavior;
+                key = ConfigKey.DemandsAttentionBehavior;
                 break;
             case PreferredMonitorRadioGroup:
-                field = ConfigField.WindowsPreferredMonitor;
+                key = ConfigKey.WindowsPreferredMonitor;
                 break;
         }
-        if (!field || !value) return;
-        this.#setConfigOverride(field, value);
+        if (!key || !value) return;
+        this.#setConfigOverride(key, value);
     }
 
     async #selectIcon() {
         if (!this.#config) return;
         this.parentMenu?.toggle();
-        const iconPath = await FileSelector(Label.SelectIcon, ICON_FILE_TYPE_FILTER, this.#config[ConfigField.IconPath]);
+        const iconPath = await FileSelector(Label.SelectIcon, ICON_FILE_TYPE_FILTER, this.#config[ConfigKey.IconPath]);
         if (typeof iconPath !== 'string') return;
         this.#setCustomIcon(iconPath);
     }
@@ -517,7 +521,7 @@ class CustomizeChildMenu extends ChildMenu {
      * @param {string|null} iconPath
      */
     #setCustomIcon(iconPath = null) {
-        this.#setConfigOverride(ConfigField.IconPath, iconPath ?? null);
+        this.#setConfigOverride(ConfigKey.IconPath, iconPath ?? null);
         if (typeof this.#customIcon !== 'function') return;
         this.#customIcon(iconPath);
     }
@@ -531,18 +535,18 @@ class CustomizeChildMenu extends ChildMenu {
         menuItem.value = iconSize;
         if (this.#isSyncing || !this.#appButton) return;
         Context.jobs.removeAll(this).new(this, Delay.Sleep).destroy(() =>
-            this.#setConfigOverride(ConfigField.IconSize, iconSize));
+            this.#setConfigOverride(ConfigKey.IconSize, iconSize));
     }
 
     /**
-     * @param {string} field
+     * @param {string} key
      * @param {string|number|boolean|null} value
      */
-    #setConfigOverride(field, value) {
+    #setConfigOverride(key, value) {
         const app = this.#appButton?.app;
         const configProvider = this.#appButton?.configProvider;
         if (!app || !configProvider) return;
-        configProvider.setConfigOverride(app, field, value);
+        configProvider.setConfigOverride(app, key, value);
         this.setItemActiveState(this.#resetAllItem);
     }
 
@@ -579,7 +583,7 @@ export class Menu extends AppMenu {
 
     /** @type {SharedConfig} */
     get #configProvider() {
-        Menu.#sharedConfig ??= new SharedConfig(ConfigFields, { path: CONFIG_PATH });
+        Menu.#sharedConfig ??= new SharedConfig(ConfigField, ConfigOptions);
         return Menu.#sharedConfig;
     }
 
@@ -685,7 +689,7 @@ export class Menu extends AppMenu {
      */
     #handleConfig(settingsKey) {
         switch (settingsKey) {
-            case ConfigFields.showFavorites:
+            case ConfigField.showFavorites:
                 this._updateFavoriteItem();
                 break;
         }

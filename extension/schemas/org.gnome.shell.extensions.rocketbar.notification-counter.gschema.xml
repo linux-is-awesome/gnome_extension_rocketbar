@@ -2,55 +2,41 @@
 <schemalist>
     <schema id="org.gnome.shell.extensions.rocketbar.notification-counter"
             path="/org/gnome/shell/extensions/rocketbar/notification-counter/">
-
-        <key type="b" name="notification-counter-hide-empty">
+        <key type="b" name="hide-when-empty">
             <default>false</default>
-            <summary>Hide Notification Counter when it's empty</summary>
         </key>
-        <key type="b" name="notification-counter-center-clock">
+        <key type="b" name="center-clock-position">
             <default>false</default>
-            <summary>Center the clock when Notification Counter is shown</summary>
         </key>
-        <key type="i" name="notification-counter-max-count">
-            <default>999</default>
-            <summary>Notification Counter max count to display</summary>
+        <key type="i" name="max-count">
+            <default>9</default>
         </key>
-        <key type="i" name="notification-counter-font-size">
+        <key type="i" name="font-size">
             <default>10</default>
-            <summary>Notification Counter font size</summary>
         </key>
-        <key type="i" name="notification-counter-roundness">
+        <key type="i" name="roundness">
             <default>10</default>
-            <summary>Notification Counter roundness</summary>
         </key>
-        <key type="i" name="notification-counter-margin-top">
+        <key type="i" name="vertical-offset">
             <default>0</default>
-            <summary>Notification Counter top margin</summary>
         </key>
-        <key type="s" name="notification-counter-color-empty">
+        <key type="s" name="color-when-empty">
             <default>'rgb(255, 255, 255)'</default>
-            <summary>Notification Counter color when empty</summary>
         </key>
-        <key type="s" name="notification-counter-color-not-empty">
+        <key type="s" name="color-when-not-empty">
             <default>'rgb(255, 255, 255)'</default>
-            <summary>Notification Counter color when not empty</summary>
         </key>
-        <key type="s" name="notification-counter-text-color">
+        <key type="s" name="text-color">
             <default>'rgb(0, 0, 0)'</default>
-            <summary>Notification Counter text color</summary>
         </key>
-        <key type="s" name="notification-counter-color-empty-dnd">
+        <key type="s" name="color-when-empty-dnd">
             <default>'rgba(255, 255, 255, 0.8)'</default>
-            <summary>Notification Counter - Do Not Disturb color when empty</summary>
         </key>
-        <key type="s" name="notification-counter-color-not-empty-dnd">
+        <key type="s" name="color-when-not-empty-dnd">
             <default>'rgba(255, 255, 255, 0.8)'</default>
-            <summary>Notification Counter - Do Not Disturb color when not empty</summary>
         </key>
-        <key type="s" name="notification-counter-text-color-dnd">
+        <key type="s" name="text-color-dnd">
             <default>'rgb(0, 0, 0)'</default>
-            <summary>Notification Counter - Do Not Disturb text color</summary>
         </key>
-
     </schema>
 </schemalist>

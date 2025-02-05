@@ -2,42 +2,17 @@
 <schemalist>
     <schema id="org.gnome.shell.extensions.rocketbar"
             path="/org/gnome/shell/extensions/rocketbar/">
-
-        <key type="b" name="panel">
-            <default>true</default>
+        <key type="s" name="modules">
+            <default>'["ui/panel"]'</default>
         </key>
-        <key type="b" name="overview-kill-dash">
+        <key type="b" name="launcher-api">
             <default>false</default>
         </key>
-        <key type="b" name="overview-empty-space-clicks">
+        <key type="b" name="notifications-launcher-api">
             <default>false</default>
         </key>
-        <key type="b" name="overview-hide-search">
+        <key type="b" name="notifications-count-attention-sources">
             <default>false</default>
         </key>
-        <key type="b" name="popups-prevent-focus">
-            <default>false</default>
-        </key>
-        <key type="b" name="popups-no-delay">
-            <default>false</default>
-        </key>
-        <key type="b" name="primary-input-source">
-            <default>false</default>
-        </key>
-        <key type="b" name="upper-case-input-source">
-            <default>false</default>
-        </key>
-        <key type="b" name="menus-click-to-open">
-            <default>false</default>
-        </key>
-        <key type="b" name="notification-service-enable-unity-dbus">
-            <default>false</default>
-            <summary>Use Unity Launcher API DBus interface to count notifications for apps</summary>
-        </key>
-        <key type="b" name="notification-service-count-attention-sources">
-            <default>false</default>
-            <summary>Count Window Demands Attention notifications for apps</summary>
-        </key>
-
     </schema>
 </schemalist>

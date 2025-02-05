@@ -8,17 +8,22 @@ import Context from '../../core/context.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Animation, AnimationDuration, AnimationType } from '../base/animation.js';
 import { Config } from '../../../shared/utils/config.js';
+import { SettingsPath, SettingsKey } from '../../../shared/core/enums.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_Separator';
-const CONFIG_PATH = 'taskbar';
 const BODY_COLOR = 'rgba(250, 250, 250, 0.5)';
 const BODY_WIDTH = 2;
 
 /** @enum {string} */
-const ConfigFields = {
-    iconSize: 'appbutton-icon-size',
-    iconHPadding: 'appbutton-icon-padding',
-    spacingAfter: 'appbutton-spacing'
+const ConfigField = {
+    iconSize: SettingsKey.AppButtonIconSize,
+    iconHPadding: SettingsKey.AppButtonIconHPadding,
+    spacingAfter: SettingsKey.AppButtonSpacing
+};
+
+/** @type {{[option: string]: *}} */
+const ConfigOptions = {
+    path: SettingsPath.Taskbar
 };
 
 /** @type {{[prop: string]: *}} */
@@ -59,7 +64,7 @@ export class Separator extends Component {
     #body = new St.Widget(BodyProps);
 
     /** @type {Config} */
-    #config = Config(this, ConfigFields, () => this.#handleConfig(), { path: CONFIG_PATH });
+    #config = Config(this, ConfigField, () => this.#handleConfig(), ConfigOptions);
 
     /** @type {number} */
     get #width() {

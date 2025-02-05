@@ -55,18 +55,18 @@ export const Config = (client, fields, callback, options = { path: null, isAfter
 
 /**
  * @param {Config|Settings} parentConfig
- * @param {string} field
- * @returns {{[field: string]: *}|*[]|null}
+ * @param {string} key
+ * @returns {{[key: string]: *}|*[]|null}
  */
-export const InnerConfig = (parentConfig, field) => {
+export const InnerConfig = (parentConfig, key) => {
     try {
         const value = parentConfig instanceof Settings ?
-                      parentConfig.get(field) :
-                      parentConfig?.[field];
+                      parentConfig.get(key) :
+                      parentConfig?.[key];
         if (typeof value === 'string' &&
             value.length >= JSON_OBJECT_MIN_LENGTH) return JSON.parse(value);
     } catch (e) {
-        Context.logError(`${InnerConfig.name} failed to parse value for field "${field}".`, e);
+        Context.logError(`${InnerConfig.name} failed to parse value for key "${key}".`, e);
     }
     return null;
 };

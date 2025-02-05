@@ -15,7 +15,8 @@ import { RuntimeButton, ButtonEvent } from '../base/button.js';
 import { TaskbarClient } from '../../services/taskbar.js';
 import { DragActor } from './appButton/dragActor.js';
 import { AppIcon, AppIconAnimation, AppIconEvent } from './appIcon.js';
-import { AppConfig, ConfigFields, ActivateBehavior, DemandsAttentionBehavior } from '../../utils/taskbar/appConfig.js';
+import { AppConfig, ConfigField,
+         ActivateBehavior, DemandsAttentionBehavior } from '../../utils/taskbar/appConfig.js';
 import { Menu } from './menu.js';
 import { NotificationBadge } from './notificationBadge.js';
 import { ProgressBar } from './progressBar.js';
@@ -303,7 +304,6 @@ export class AppButton extends RuntimeButton {
         this.#layout = new St.Widget({ ...LayoutProps, layout_manager: new Clutter.BinLayout() });
         this.#layout.add_child(this.display);
         this.actor.set_child(this.#layout);
-        this.dragEvents = true;
         this.#app = app;
         this.#isDropCandidate = isDropCandidate;
         this.actor.set_reactive(!isDropCandidate);
@@ -448,35 +448,35 @@ export class AppButton extends RuntimeButton {
     #handleConfig(settingsKey) {
         if (!this.#config || !this.#appIcon) return;
         switch (settingsKey) {
-            case ConfigFields.enableMinimizeAction:
-            case ConfigFields.activateBehavior:
-            case ConfigFields.demandsAttentionBehavior:
-            case ConfigFields.windowsPreferredMonitor:
-            case ConfigFields.windowRouting:
+            case ConfigField.enableMinimizeAction:
+            case ConfigField.activateBehavior:
+            case ConfigField.demandsAttentionBehavior:
+            case ConfigField.windowsPreferredMonitor:
+            case ConfigField.windowRouting:
                 return;
-            case ConfigFields.isolateWorkspaces:
-            case ConfigFields.showAllWindows:
+            case ConfigField.isolateWorkspaces:
+            case ConfigField.showAllWindows:
                 return this.#handleAppState();
-            case ConfigFields.enableIndicators:
-            case ConfigFields.enableSoundControl:
-            case ConfigFields.enableNotificationBadges:
-            case ConfigFields.enableProgressBars:
-            case ConfigFields.enableTooltips:
+            case ConfigField.enableIndicators:
+            case ConfigField.enableSoundControl:
+            case ConfigField.enableNotificationBadges:
+            case ConfigField.enableProgressBars:
+            case ConfigField.enableTooltips:
                 return this.#toggleFeatures();
-            case ConfigFields.backlightColor:
-            case ConfigFields.backlightIntensity:
-            case ConfigFields.backlightDominantColor:
+            case ConfigField.backlightColor:
+            case ConfigField.backlightIntensity:
+            case ConfigField.backlightDominantColor:
                 return this.#updateBacklight();
-            case ConfigFields.iconPath:
+            case ConfigField.iconPath:
                 this.#appIcon.iconPath = this.#config.iconPath;
                 return;
             default:
-            case ConfigFields.iconSize:
+            case ConfigField.iconSize:
                 this.#appIcon.setSize(this.#config.iconSize);
-            case ConfigFields.iconHPadding:
-            case ConfigFields.iconVPadding:
-            case ConfigFields.roundness:
-            case ConfigFields.spacingAfter:
+            case ConfigField.iconHPadding:
+            case ConfigField.iconVPadding:
+            case ConfigField.roundness:
+            case ConfigField.spacingAfter:
                 this.#updateStyle();
         }
         if (settingsKey) return;
@@ -491,7 +491,8 @@ export class AppButton extends RuntimeButton {
                 enableNotificationBadges,
                 enableProgressBars,
                 enableTooltips,
-                enableMenus } = this.#config;
+                enableMenus,
+                enableDragAndDrop } = this.#config;
         const isFadeInRequired = this.#isFadeInRequired;
         if (enableSoundControl && !this.#soundVolumeControl) {
             this.#soundVolumeControl = new AppSoundVolumeControl(this.#app, () => this.#handleSoundStreams());
@@ -532,6 +533,7 @@ export class AppButton extends RuntimeButton {
         }
         this.requestTooltip = enableTooltips;
         this.requestMenu = enableMenus;
+        this.dragEvents = enableDragAndDrop;
     }
 
     #updateStyle() {
@@ -749,6 +751,7 @@ export class AppButton extends RuntimeButton {
      * @returns {boolean}
      */
     #scroll(event) {
+        if (!this.#config?.enableScroll) return Clutter.EVENT_PROPAGATE;
         const scrollDirection = event?.get_scroll_direction();
         if (scrollDirection !== Clutter.ScrollDirection.UP &&
             scrollDirection !== Clutter.ScrollDirection.DOWN) return Clutter.EVENT_PROPAGATE;

@@ -5,15 +5,15 @@
 import Shell from 'gi://Shell';
 import Context from '../core/context.js';
 import { MessageTray } from '../core/shell.js';
-import { Delay } from '../../shared/core/enums.js';
+import { SettingsKey, Delay } from '../../shared/core/enums.js';
 import { Config } from '../../shared/utils/config.js';
 
 const APPID_REGEXP_STRING = /.desktop/g;
 
 /** @enum {string} */
-const ConfigFields = {
-    enableLauncherApi: 'notification-service-enable-unity-dbus',
-    countAttentionSources: 'notification-service-count-attention-sources'
+const ConfigField = {
+    enableLauncherApi: SettingsKey.NotificationsLauncherApi,
+    countAttentionSources: SettingsKey.NotificationsCountAttentionSources
 };
 
 /** @enum {string} */
@@ -62,7 +62,7 @@ class NotificationService {
     #updateJob = Context.jobs.new(this, Delay.Background);
 
     /** @type {Config} */
-    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey));
+    #config = Config(this, ConfigField, settingsKey => this.#handleConfig(settingsKey));
 
     constructor() {
         this.#handleConfig();
@@ -117,7 +117,7 @@ class NotificationService {
      * @param {string} [settingsKey]
      */
     #handleConfig(settingsKey) {
-        if (settingsKey === ConfigFields.countAttentionSources) return this.#queueUpdate();
+        if (settingsKey === ConfigField.countAttentionSources) return this.#queueUpdate();
         if (this.#config.enableLauncherApi) Context.launcherApi?.connectNotifications(this, () => this.#queueUpdate());
         else Context.launcherApi?.disconnect(this);
         this.#queueUpdate();

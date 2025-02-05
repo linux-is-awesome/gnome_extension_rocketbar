@@ -6,34 +6,36 @@
 
 import Context from '../../core/context.js';
 import { SharedConfig, InnerConfig } from '../../../shared/utils/config.js';
+import { SettingsPath, SettingsKey } from '../../../shared/core/enums.js';
 
-const CONFIG_PATH = 'taskbar';
-const CONFIG_OVERRIDE_SETTINGS_KEY = 'appbutton-config-override';
+const CONFIG_OVERRIDE_SETTINGS_KEY = SettingsKey.AppButtonConfigOverride;
 
 /** @enum {string} */
-export const ConfigFields = {
-    isolateWorkspaces: 'taskbar-isolate-workspaces',
-    showAllWindows: 'taskbar-show-all-windows',
-    windowRouting: 'multi-monitor-window-routing',
-    windowsPreferredMonitor: 'windows-preferred-monitor',
-    enableIndicators: 'appbutton-enable-indicators',
-    enableMenus: 'appbutton-enable-menus',
-    enableTooltips: 'appbutton-enable-tooltips',
-    enableMinimizeAction: 'appbutton-enable-minimize-action',
-    activateBehavior: 'appbutton-running-app-activate-behavior',
-    demandsAttentionBehavior: 'appbutton-demands-attention-behavior',
-    enableSoundControl: 'appbutton-enable-sound-control',
-    enableNotificationBadges: 'appbutton-enable-notification-badges',
-    enableProgressBars: 'appbutton-enable-progress-bars',
-    iconSize: 'appbutton-icon-size',
-    iconPath: '~appbutton-icon-path',
-    iconHPadding: 'appbutton-icon-padding',
-    iconVPadding: 'appbutton-icon-vertical-padding',
-    spacingAfter: 'appbutton-spacing',
-    roundness: 'appbutton-roundness',
-    backlightColor: 'appbutton-backlight-color',
-    backlightIntensity: 'appbutton-backlight-intensity',
-    backlightDominantColor: 'appbutton-backlight-dominant-color'
+export const ConfigField = {
+    isolateWorkspaces: SettingsKey.IsolateWorkspaces,
+    showAllWindows: SettingsKey.ShowAllWindows,
+    windowRouting: SettingsKey.WindowRouting,
+    windowsPreferredMonitor: SettingsKey.WindowsPreferredMonitor,
+    enableIndicators: SettingsKey.AppButtonIndicators,
+    enableMenus: SettingsKey.AppButtonMenus,
+    enableTooltips: SettingsKey.AppButtonTooltips,
+    enableNotificationBadges: SettingsKey.AppButtonNotificationBadges,
+    enableProgressBars: SettingsKey.AppButtonProgressBars,
+    enableSoundControl: SettingsKey.AppButtonSoundVolumeControl,
+    enableMinimizeAction: SettingsKey.AppButtonMinimizeAction,
+    enableDragAndDrop: SettingsKey.AppButtonDragAndDrop,
+    enableScroll: SettingsKey.AppButtonScroll,
+    activateBehavior: SettingsKey.AppButtonActivateBehavior,
+    demandsAttentionBehavior: SettingsKey.AppButtonDemandsAttentionBehavior,
+    iconSize: SettingsKey.AppButtonIconSize,
+    iconPath: SettingsKey.AppButtonIconPath,
+    iconHPadding: SettingsKey.AppButtonIconHPadding,
+    iconVPadding: SettingsKey.AppButtonIconVPadding,
+    spacingAfter: SettingsKey.AppButtonSpacing,
+    roundness: SettingsKey.AppButtonRoundness,
+    backlightColor: SettingsKey.AppButtonBacklightColor,
+    backlightIntensity: SettingsKey.AppButtonBacklightIntensity,
+    backlightDominantColor: SettingsKey.AppButtonBacklightDominantColor
 };
 
 /** @enum {string} */
@@ -66,6 +68,11 @@ export const AppIconSize = {
     Max: 64
 };
 
+/** @type {{[option: string]: *}} */
+const ConfigOptions = {
+    path: SettingsPath.Taskbar
+};
+
 /** @type {Config}*/
 const DefaultConfigOverride = {
     iconSizeOffset: 0,
@@ -86,9 +93,9 @@ export class AppConfig extends SharedConfig {
     }
 
     constructor() {
-        super(ConfigFields, { path: CONFIG_PATH });
+        super(ConfigField, ConfigOptions);
         this.configHandler = this.#setAppConfig;
-        const settings = Context.getSettings(CONFIG_PATH);
+        const settings = Context.getSettings(ConfigOptions.path);
         if (!settings) return;
         const configOverride = InnerConfig(settings, CONFIG_OVERRIDE_SETTINGS_KEY);
         if (!configOverride || Array.isArray(configOverride)) return;
@@ -135,47 +142,47 @@ export class AppConfig extends SharedConfig {
 
     /**
      * @param {Shell.App} app
-     * @param {string} [field]
+     * @param {string} [key]
      * @returns {boolean}
      */
-    hasConfigOverride(app, field) {
+    hasConfigOverride(app, key) {
         if (!app?.id) return false;
         const appConfig = this.#configOverride[app?.id];
         if (!appConfig) return false;
-        if (field) return new Set(Object.keys(appConfig)).has(field);
+        if (key) return new Set(Object.keys(appConfig)).has(key);
         return true;
     }
 
     /**
      * @param {Shell.App} app
-     * @param {string} field
+     * @param {string} key
      * @param {*} value
      */
-    setConfigOverride(app, field, value) {
+    setConfigOverride(app, key, value) {
         if (!app?.id || !this.hasClient(app)) return;
-        if (!Object.keys(ConfigFields).includes(field)) return;
+        if (!Object.keys(ConfigField).includes(key)) return;
         const configOverride = this.#configOverride[app.id] ?? {};
-        const settingsKey = ConfigFields[field];
+        const settingsKey = ConfigField[key];
         switch (settingsKey) {
-            case ConfigFields.iconSize:
+            case ConfigField.iconSize:
                 if (typeof value !== 'number') return;
                 const defaultConfig = super.getConfig();
                 value -= defaultConfig?.iconSize;
                 if (configOverride.iconSizeOffset === value) return;
                 configOverride.iconSizeOffset = value;
                 break;
-            case ConfigFields.activateBehavior:
-            case ConfigFields.demandsAttentionBehavior:
-            case ConfigFields.windowsPreferredMonitor:
+            case ConfigField.activateBehavior:
+            case ConfigField.demandsAttentionBehavior:
+            case ConfigField.windowsPreferredMonitor:
                 if (!Object.values({
-                    [ConfigFields.activateBehavior]: ActivateBehavior,
-                    [ConfigFields.demandsAttentionBehavior]: DemandsAttentionBehavior,
-                    [ConfigFields.windowsPreferredMonitor]: PreferredMonitor
+                    [ConfigField.activateBehavior]: ActivateBehavior,
+                    [ConfigField.demandsAttentionBehavior]: DemandsAttentionBehavior,
+                    [ConfigField.windowsPreferredMonitor]: PreferredMonitor
                 }[settingsKey]).includes(value)) return;
             default:
-                if (configOverride[field] === value) return;
-                if (!value) delete configOverride[field];
-                else configOverride[field] = value;
+                if (configOverride[key] === value) return;
+                if (!value) delete configOverride[key];
+                else configOverride[key] = value;
         }
         if (!Object.keys(configOverride).length) return this.resetConfigOverride(app);
         this.#configOverride[app.id] = configOverride;
@@ -202,8 +209,8 @@ export class AppConfig extends SharedConfig {
         const { config, clients } = details;
         if (!config) return;
         const newConfig = this.#getAppConfig(app);
-        for (const field in newConfig) {
-            config[field] = newConfig[field];
+        for (const key in newConfig) {
+            config[key] = newConfig[key];
         }
         if (!clients?.size) return;
         const callbacks = clients.values();
@@ -248,7 +255,7 @@ export class AppConfig extends SharedConfig {
     }
 
     #saveConfigOverride() {
-        Context.getSettings(CONFIG_PATH)?.set(CONFIG_OVERRIDE_SETTINGS_KEY, this.#configOverride);
+        Context.getSettings(ConfigOptions.path)?.set(CONFIG_OVERRIDE_SETTINGS_KEY, this.#configOverride);
     }
 
 }

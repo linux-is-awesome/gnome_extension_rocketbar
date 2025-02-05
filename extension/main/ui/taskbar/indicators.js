@@ -10,12 +10,11 @@ import Clutter from 'gi://Clutter';
 import Context from '../../core/context.js';
 import { Overview } from '../../core/shell.js';
 import { Component, ComponentEvent } from '../base/component.js';
-import { Event } from '../../../shared/core/enums.js';
-import { SharedConfig } from '../../../shared/utils/config.js';
 import { Animation, AnimationType } from '../base/animation.js';
+import { SettingsPath, SettingsKey, Event } from '../../../shared/core/enums.js';
+import { SharedConfig } from '../../../shared/utils/config.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_Indicators';
-const CONFIG_PATH = 'taskbar';
 const ANIMATION_FRAMES = 15;
 const ANIMATION_INTERVAL = 10;
 const ANIMATION_STEP_MIN = 0.1;
@@ -28,22 +27,27 @@ const IndicatorsPosition = {
 };
 
 /** @enum {string} */
-const ConfigFields = {
-    limitInactive: 'indicator-display-limit',
-    limitActive: 'indicator-display-limit-active',
-    colorInactive: 'indicator-color-inactive',
-    colorActive: 'indicator-color-active',
-    dominantColorInactive: 'indicator-dominant-color-inactive',
-    dominantColorActive: 'indicator-dominant-color-active',
-    sizeInactive: 'indicator-width-inactive',
-    sizeActive: 'indicator-width-active',
-    spacingInactive: 'indicator-spacing-inactive',
-    spacingActive: 'indicator-spacing-active',
-    weightInactive: 'indicator-height-inactive',
-    weightActive: 'indicator-height-active',
-    offsetInactive: 'indicator-margin-inactive',
-    offsetActive: 'indicator-margin-active',
-    position: 'indicator-position'
+const ConfigField = {
+    limitInactive: SettingsKey.IndicatorLimitInactive,
+    limitActive: SettingsKey.IndicatorLimitActive,
+    colorInactive: SettingsKey.IndicatorColorInactive,
+    colorActive: SettingsKey.IndicatorColorActive,
+    dominantColorInactive: SettingsKey.IndicatorDominantColorInactive,
+    dominantColorActive: SettingsKey.IndicatorDominantColorActive,
+    sizeInactive: SettingsKey.IndicatorSizeInactive,
+    sizeActive: SettingsKey.IndicatorSizeActive,
+    spacingInactive: SettingsKey.IndicatorSpacingActive,
+    spacingActive: SettingsKey.IndicatorSpacingActive,
+    weightInactive: SettingsKey.IndicatorWeightInactive,
+    weightActive: SettingsKey.IndicatorWeightActive,
+    offsetInactive: SettingsKey.IndicatorOffsetInactive,
+    offsetActive: SettingsKey.IndicatorOffsetActive,
+    position: SettingsKey.IndicatorPosition
+};
+
+/** @type {{[option: string]: *}} */
+const ConfigOptions = {
+    path: SettingsPath.Taskbar
 };
 
 /** @type {{[prop: string]: *}} */
@@ -415,7 +419,7 @@ export class Indicators extends Component {
 
     /** @type {SharedConfig} */
     get #configProvider() {
-        Indicators.#sharedConfig ??= new SharedConfig(ConfigFields, { path: CONFIG_PATH });
+        Indicators.#sharedConfig ??= new SharedConfig(ConfigField, ConfigOptions);
         return Indicators.#sharedConfig;
     }
 

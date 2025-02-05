@@ -1,13 +1,12 @@
 import Clutter from 'gi://Clutter';
 import { MainPanel, Overview } from '../core/shell.js';
 import Context from '../core/context.js';
+import { ModuleManager } from '../services/modules.js';
 import { Component, ComponentEvent } from './base/component.js';
-import { Event } from '../../shared/core/enums.js';
-import { ModuleManager, Module } from '../services/modules.js';
+import { SettingsPath, SettingsKey, Event, Module } from '../../shared/core/enums.js';
 import { Config, InnerConfig } from '../../shared/utils/config.js';
 
-const CONFIG_PATH = 'panel';
-const CONFIG_FIELD_ITEMS = 'items';
+const CONFIG_KEY_ITEMS = 'items';
 
 /** @enum {string} */
 const PanelArea = {
@@ -17,10 +16,15 @@ const PanelArea = {
 };
 
 /** @enum {string} */
-const ConfigFields = {
-    [CONFIG_FIELD_ITEMS]: 'items',
-    soundVolumeControl: 'sound-volume-control',
-    clickHideOverview: 'click-hide-overview'
+const ConfigField = {
+    [CONFIG_KEY_ITEMS]: SettingsKey.Items,
+    soundVolumeControl: SettingsKey.SoundVolumeControl,
+    clickHideOverview: SettingsKey.ClickToHideOverview
+};
+
+/** @type {{[option: string]: *}} */
+const ConfigOptions = {
+    path: SettingsPath.Panel
 };
 
 /**
@@ -43,7 +47,7 @@ export default class Panel extends Component {
     #moduleManager = new ModuleManager(newModules => this.#updateItems([...newModules.values()]));
 
     /** @type {Config?} */
-    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey), { path: CONFIG_PATH });
+    #config = Config(this, ConfigField, settingsKey => this.#handleConfig(settingsKey), ConfigOptions);
 
     /** @type {boolean} */
     get #isEventSource() {
@@ -80,7 +84,7 @@ export default class Panel extends Component {
      * @param {string?} [settingsKey]
      */
     #handleConfig(settingsKey) {
-        if (settingsKey && settingsKey !== ConfigFields.items) return;
+        if (settingsKey && settingsKey !== ConfigField.items) return;
         this.#handleItems();
     }
 
@@ -89,7 +93,7 @@ export default class Panel extends Component {
         const items = new Map();
         const modules = [];
         const updatedItems = [];
-        const configItems = InnerConfig(this.#config, CONFIG_FIELD_ITEMS) ?? {};
+        const configItems = InnerConfig(this.#config, CONFIG_KEY_ITEMS) ?? {};
         for (const id in configItems) {
             const itemConfig = configItems[id];
             if (!Array.isArray(itemConfig)) continue;

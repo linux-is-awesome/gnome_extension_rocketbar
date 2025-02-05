@@ -1,25 +1,23 @@
 import Context from '../core/context.js';
 import { Session } from '../core/shell.js';
-import { SessionMode, Event } from '../../shared/core/enums.js';
-import { Config } from '../../shared/utils/config.js';
+import { SessionMode, Module, SettingsKey, Event } from '../../shared/core/enums.js';
+import { Config, InnerConfig } from '../../shared/utils/config.js';
 
 const MODULE_ROOT_PATH = '../';
 const MODULE_FILE_TYPE = '.js';
+const CONFIG_KEY_MODULES = 'modules';
 
-/** @enum {string} */
-export const Module = {
-    TweakOverviewKillDash: 'tweaks/overviewKillDash',
-    TweakOverviewHideSearch: 'tweaks/overviewHideSearch',
-    TweakOverviewClicks: 'tweaks/overviewClicks',
-    TweakPopupsPreventFocus: 'tweaks/popupsPreventFocus',
-    TweakPopupsNoDelay: 'tweaks/popupsNoDelay',
-    TweakPrimaryInputSource: 'tweaks/primaryInputSource',
-    TweakUpperCaseInputSource: 'tweaks/upperCaseInputSource',
-    TweakMenusClickToOpen: 'tweaks/menusClickToOpen',
-    Panel: 'ui/panel',
-    NotificationCounter: 'ui/notificationCounter',
-    Taskbar: 'ui/taskbar'
-};
+const CORE_MODULES = [
+    Module.TweakOverviewKillDash,
+    Module.TweakOverviewHideSearch,
+    Module.TweakOverviewClicks,
+    Module.TweakPrimaryInputSource,
+    Module.TweakUpperCaseInputSource,
+    Module.TweakPopupsPreventFocus,
+    Module.TweakPopupsNoDelay,
+    Module.TweakMenusClickToOpen,
+    Module.Panel
+];
 
 /** @type {{[sessionMode: SessionMode]: Module[]}} */
 const Modules = {
@@ -45,17 +43,9 @@ const Modules = {
     ]
 };
 
-/** @type {{[field: Module]: string}} */
-const ConfigFields = {
-    [Module.TweakOverviewKillDash]: 'overview-kill-dash',
-    [Module.TweakOverviewHideSearch]: 'overview-hide-search',
-    [Module.TweakOverviewClicks]: 'overview-empty-space-clicks',
-    [Module.TweakPopupsPreventFocus]: 'popups-prevent-focus',
-    [Module.TweakPopupsNoDelay]: 'popups-no-delay',
-    [Module.TweakPrimaryInputSource]: 'primary-input-source',
-    [Module.TweakUpperCaseInputSource]: 'upper-case-input-source',
-    [Module.TweakMenusClickToOpen]: 'menus-click-to-open',
-    [Module.Panel]: 'panel'
+/** @enum {string} */
+const ConfigField = {
+    [CONFIG_KEY_MODULES]: SettingsKey.Modules
 };
 
 class ModuleService {
@@ -207,7 +197,7 @@ export class ModuleManager {
 export default class DefaultModuleManager extends ModuleManager {
 
     /** @type {Config?} */
-    #config = Config(this, ConfigFields, () => this.#handleConfig());
+    #config = Config(this, ConfigField, () => this.#handleConfig());
 
     constructor() {
         super();
@@ -225,12 +215,9 @@ export default class DefaultModuleManager extends ModuleManager {
 
     #handleConfig() {
         if (!this.#config) return;
-        const managedModules = [];
-        for (const module in this.#config) {
-            if (!this.#config[module]) continue;
-            managedModules.push(module);
-        }
-        this.update(managedModules);
+        const configModules = InnerConfig(this.#config, CONFIG_KEY_MODULES);
+        const enabledModules = new Set(Array.isArray(configModules) ? configModules : []);
+        this.update(CORE_MODULES.filter(module => enabledModules.has(module)));
     }
 
 }

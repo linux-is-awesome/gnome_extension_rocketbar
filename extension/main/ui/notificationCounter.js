@@ -8,14 +8,13 @@ import Clutter from 'gi://Clutter';
 import Context from '../core/context.js';
 import { MainPanel } from '../core/shell.js';
 import { Component, ComponentEvent } from './base/component.js';
+import { Animation, AnimationDuration, AnimationType } from './base/animation.js';
 import { NotificationHandler } from '../services/notifications.js';
 import { Config } from '../../shared/utils/config.js';
-import { Event, Property } from '../../shared/core/enums.js';
-import { Animation, AnimationDuration, AnimationType } from './base/animation.js';
+import { SettingsPath, SettingsKey, Event, Property } from '../../shared/core/enums.js';
 
 const MODULE_NAME = 'Rocketbar__NotificationCounter';
-const CONFIG_PATH = 'notification-counter';
-const DND_SETTINGS_FIELD = 'show-banners';
+const DND_SETTINGS_KEY = 'show-banners';
 const CLOCK_DISPLAY_POSITION = 1;
 const DATE_MENU_STYLE_CLASS = 'rocketbar__date-menu';
 const COUNTER_STYLE_CLASS = 'rocketbar__notification-counter';
@@ -31,19 +30,24 @@ const DateMenuEvent = {
 };
 
 /** @enum {string} */
-const ConfigFields = {
-    hideEmpty: 'notification-counter-hide-empty',
-    centerClock: 'notification-counter-center-clock',
-    maxCount: 'notification-counter-max-count',
-    fontSize: 'notification-counter-font-size',
-    roundness: 'notification-counter-roundness',
-    margin: 'notification-counter-margin-top',
-    colorEmpty: 'notification-counter-color-empty',
-    colorNotEmpty: 'notification-counter-color-not-empty',
-    textColor: 'notification-counter-text-color',
-    colorEmptyDnd: 'notification-counter-color-empty-dnd',
-    colorNotEmptyDnd: 'notification-counter-color-not-empty-dnd',
-    textColorDnd: 'notification-counter-text-color-dnd'
+const ConfigField = {
+    hideEmpty: SettingsKey.HideEhenEmpty,
+    centerClock: SettingsKey.CenterClockPosition,
+    maxCount: SettingsKey.MaxCount,
+    fontSize: SettingsKey.FontSize,
+    roundness: SettingsKey.Roundness,
+    offset: SettingsKey.VerticalOffset,
+    colorEmpty: SettingsKey.ColorWhenEmpty,
+    colorNotEmpty: SettingsKey.ColorWhenNotEmpty,
+    textColor: SettingsKey.TextColor,
+    colorEmptyDnd: SettingsKey.ColorWhenEmptyDnd,
+    colorNotEmptyDnd: SettingsKey.ColorWhenNotEmptyDnd,
+    textColorDnd: SettingsKey.TextColorDnd
+};
+
+/** @type {{[option: string]: *}} */
+const ConfigOptions = {
+    path: SettingsPath.NotificationCounter
 };
 
 /** @type {{[prop: string]: *}} */
@@ -89,7 +93,7 @@ class DateMenu extends Component {
 
     /** @type {boolean} */
     get isDndEnabled() {
-        return this.#dateMenu?._indicator?._settings?.get_boolean(DND_SETTINGS_FIELD) === false;
+        return this.#dateMenu?._indicator?._settings?.get_boolean(DND_SETTINGS_KEY) === false;
     }
 
     constructor() {
@@ -114,7 +118,7 @@ class DateMenu extends Component {
         if (!target) return;
         Context.signals.add(this,
             [target, Event.VisibleChanged, indicator => indicator?.hide()],
-            [target._settings, `${Event.Changed}::${DND_SETTINGS_FIELD}`, () => this.notifyChildren(DateMenuEvent.DndChanged)]);
+            [target._settings, `${Event.Changed}::${DND_SETTINGS_KEY}`, () => this.notifyChildren(DateMenuEvent.DndChanged)]);
     }
 
     #setParent() {
@@ -166,7 +170,7 @@ export default class NotificationCounter extends Component {
     #totalCount = 0;
 
     /** @type {Config} */
-    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey), { path: CONFIG_PATH });
+    #config = Config(this, ConfigField, settingsKey => this.#handleConfig(settingsKey), ConfigOptions);
 
     /** @type {DateMenu} */
     #dateMenu = new DateMenu();
@@ -221,19 +225,19 @@ export default class NotificationCounter extends Component {
     #handleConfig(settingsKey) {
         if (!this.#counter) return;
         switch (settingsKey) {
-            case ConfigFields.hideEmpty:
+            case ConfigField.hideEmpty:
                 if (this.#isVisible) {
                     if (!this.#counter.visible) this.#rerender();
                     return;
                 }
                 this.#counter.hide();
-            case ConfigFields.centerClock:
+            case ConfigField.centerClock:
                 this.#updateClockMargin();
                 break;
-            case ConfigFields.maxCount:
+            case ConfigField.maxCount:
                 this.#setCount(this.#totalCount);
                 break;
-            case ConfigFields.fontSize:
+            case ConfigField.fontSize:
                 this.#updateStyle();
                 this.#updateClockMargin();
                 break;
@@ -295,7 +299,7 @@ export default class NotificationCounter extends Component {
     #updateStyle() {
         if (!this.#counter) return;
         const { borderColor, borderSize, backgroundColor, textColor, padding } = this.#getStyleValues();
-        const { fontSize, roundness, margin } = this.#config;
+        const { fontSize, roundness, offset } = this.#config;
         const scale = this.uiScale;
         const globalScale = this.globalScale;
         this.#counter.set_style(
@@ -312,7 +316,7 @@ export default class NotificationCounter extends Component {
         this.#counter.style +=
             `height: ${height}px;` +
             `min-width: ${height}px;` +
-            `${margin > 0 ? 'margin-top' : 'margin-bottom'}: ${Math.abs(margin)}px;`;
+            `${offset > 0 ? 'margin-top' : 'margin-bottom'}: ${Math.abs(offset)}px;`;
     }
 
     #getStyleValues() {

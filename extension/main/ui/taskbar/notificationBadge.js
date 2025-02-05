@@ -8,9 +8,9 @@ import Clutter from 'gi://Clutter';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { SharedConfig } from '../../../shared/utils/config.js';
+import { SettingsPath, SettingsKey } from '../../../shared/core/enums.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_NotificationBadge';
-const CONFIG_PATH = 'taskbar';
 const STYLE_CLASS = 'rocketbar__notification-badge';
 const DEFAULT_TEXT = '0';
 const BORDER_SIZE = 1;
@@ -34,15 +34,20 @@ const BadgeAnimation = {
 };
 
 /** @enum {string} */
-const ConfigFields = {
-    color: 'notification-badge-color',
-    fontColor: 'notification-badge-font-color',
-    borderColor: 'notification-badge-border-color',
-    position: 'notification-badge-position',
-    size: 'notification-badge-size',
-    margin: 'notification-badge-margin',
-    roundness: 'notification-badge-roundness',
-    maxCount: 'notification-badge-max-count'
+const ConfigField = {
+    color: SettingsKey.NotificationBadgeColor,
+    fontColor: SettingsKey.NotificationBadgeFontColor,
+    borderColor: SettingsKey.NotificationBadgeBorderColor,
+    position: SettingsKey.NotificationBadgePosition,
+    size: SettingsKey.NotificationBadgeSize,
+    offset: SettingsKey.NotificationBadgeOffset,
+    roundness: SettingsKey.NotificationBadgeRoundness,
+    maxCount: SettingsKey.NotificationBadgeMaxCount
+};
+
+/** @type {{[option: string]: *}} */
+const ConfigOptions = {
+    path: SettingsPath.Taskbar
 };
 
 /** @type {{[prop: string]: *}} */
@@ -89,7 +94,7 @@ export class NotificationBadge extends Component {
 
     /** @type {SharedConfig} */
     get #configProvider() {
-        NotificationBadge.#sharedConfig ??= new SharedConfig(ConfigFields, { path: CONFIG_PATH });
+        NotificationBadge.#sharedConfig ??= new SharedConfig(ConfigField, ConfigOptions);
         return NotificationBadge.#sharedConfig;
     }
 
@@ -150,19 +155,19 @@ export class NotificationBadge extends Component {
 
     #updateStyle() {
         if (!this.#config || !this.#badge?.visible || !this.isValid) return;
-        const { color, fontColor, borderColor, margin, size, roundness, position } = this.#config;
+        const { color, fontColor, borderColor, offset, size, roundness, position } = this.#config;
         const scale = this.uiScale;
         const fontSize = Math.max(size - BORDER_SIZE * 2, FONT_SIZE_MIN) * scale;
         const padding = this.#badge?.text?.length === 1 ? 0 : LONG_VALUE_PADDING * scale;
         const margins =
             position === BadgePosition.TopLeft ?
-            `margin-top: ${margin * scale}px; margin-left: ${margin * scale}px;` :
+            `margin-top: ${offset * scale}px; margin-left: ${offset * scale}px;` :
             position === BadgePosition.TopRight ?
-            `margin-top: ${margin * scale}px; margin-right: ${margin * scale}px;` :
+            `margin-top: ${offset * scale}px; margin-right: ${offset * scale}px;` :
             position === BadgePosition.BottomLeft ?
-            `margin-bottom: ${margin * scale}px; margin-left: ${margin * scale}px;` :
+            `margin-bottom: ${offset * scale}px; margin-left: ${offset * scale}px;` :
             position === BadgePosition.BottomRight ?
-            `margin-bottom: ${margin * scale}px; margin-right: ${margin * scale}px;` : '';
+            `margin-bottom: ${offset * scale}px; margin-right: ${offset * scale}px;` : '';
         this.#badge.set_style(
             `background-color: ${color};` +
             `color: ${fontColor};` +

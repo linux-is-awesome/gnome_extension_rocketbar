@@ -5,7 +5,7 @@
 import Gio from 'gi://Gio';
 import Context from '../core/context.js';
 import { Config } from '../../shared/utils/config.js';
-import { Progress } from '../../shared/core/enums.js';
+import { SettingsKey, Progress } from '../../shared/core/enums.js';
 
 const DBUS_NAME = 'com.canonical.Unity';
 const DBUS_SIGNAL_SOURCE = 'com.canonical.Unity.LauncherEntry';
@@ -16,8 +16,8 @@ const APPID_REGEXP_STRING = /(^\w+:|^)\/\/|(.desktop)/g;
 const PROGRESS_VALUE_DECIMAL_PLACES = 2;
 
 /** @enum {string} */
-const ConfigFields = {
-    enableLauncherApi: 'notification-service-enable-unity-dbus'
+const ConfigField = {
+    enableLauncherApi: SettingsKey.LauncherApi
 };
 
 /** @enum {string} */
@@ -145,7 +145,7 @@ export default class LauncherApiProxy {
     #progressClients = new Map();
 
     /** @type {Config} */
-    #config = Config(this, ConfigFields, () => this.#handleConfig());
+    #config = Config(this, ConfigField, () => this.#handleConfig());
 
     /** @type {Map<string, number>?} */
     get notifications() {

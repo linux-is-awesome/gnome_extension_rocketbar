@@ -15,11 +15,10 @@ import { MainLayout, Overview } from '../../core/shell.js';
 import Context from '../../core/context.js';
 import { Config, InnerConfig } from '../../../shared/utils/config.js';
 import { PreferredMonitor } from '../../utils/taskbar/appConfig.js';
-import { Event, Delay } from '../../../shared/core/enums.js';
+import { SettingsPath, SettingsKey, Event, Delay } from '../../../shared/core/enums.js';
 import { Label } from '../../../shared/core/labels.js';
 
-const CONFIG_PATH = 'taskbar';
-const CONFIG_FIELD_APP_CONFIG = 'appConfig';
+const CONFIG_KEY_APP_CONFIG = 'appConfig';
 const STORAGE_KEY_MONITORS = 'monitors';
 const DISPLAY_CHANGE_DIALOG_CLASS_NAME = 'DisplayChangeDialog';
 
@@ -46,9 +45,14 @@ const StatusTextProps = {
 };
 
 /** @enum {string} */
-const ConfigFields = {
-    windowsPreferredMonitor: 'windows-preferred-monitor',
-    [CONFIG_FIELD_APP_CONFIG]: 'appbutton-config-override'
+const ConfigField = {
+    windowsPreferredMonitor: SettingsKey.WindowsPreferredMonitor,
+    [CONFIG_KEY_APP_CONFIG]: SettingsKey.AppButtonConfigOverride
+};
+
+/** @type {{[option: string]: *}} */
+const ConfigOptions = {
+    path: SettingsPath.Taskbar
 };
 
 export default class WindowRouter {
@@ -75,7 +79,7 @@ export default class WindowRouter {
     #job = Context.jobs.new(this);
 
     /** @type {Config?} */
-    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey), { path: CONFIG_PATH });
+    #config = Config(this, ConfigField, settingsKey => this.#handleConfig(settingsKey), ConfigOptions);
 
     /** @type {boolean} */
     get #hasMultipleMonitors() {
@@ -284,8 +288,8 @@ export default class WindowRouter {
      */
     #handleConfig(settingsKey) {
         if (!this.#config) return;
-        if (settingsKey && settingsKey !== ConfigFields.appConfig) return;
-        const appConfig = InnerConfig(this.#config, CONFIG_FIELD_APP_CONFIG);
+        if (settingsKey && settingsKey !== ConfigField.appConfig) return;
+        const appConfig = InnerConfig(this.#config, CONFIG_KEY_APP_CONFIG);
         this.#appConfig = !Array.isArray(appConfig) ? appConfig : null;
     }
 

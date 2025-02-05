@@ -16,23 +16,22 @@ import { Separator } from './taskbar/separator.js';
 import { AppButton, AppButtonEvent } from './taskbar/appButton.js';
 import { DragAndDropHandler } from './taskbar/dndHandler.js';
 import { Animation, AnimationDuration } from './base/animation.js';
-import { Event, Delay } from '../../shared/core/enums.js';
+import { SettingsPath, SettingsKey, Event, Delay } from '../../shared/core/enums.js';
 import { Config } from '../../shared/utils/config.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar';
-const CONFIG_PATH = 'taskbar';
 const APP_ALLOCATION_THRESHOLD = 2;
 
 /** @enum {string} */
-const ConfigFields = {
-    enableSeparator: 'taskbar-enable-separator',
-    showAllWindows: 'taskbar-show-all-windows',
-    isolateWorkspaces: 'taskbar-isolate-workspaces'
+const ConfigField = {
+    enableSeparator: SettingsKey.Separator,
+    showAllWindows: SettingsKey.ShowAllWindows,
+    isolateWorkspaces: SettingsKey.IsolateWorkspaces
 };
 
 /** @type {{[option: string]: *}} */
 const ConfigOptions = {
-    path: CONFIG_PATH,
+    path: SettingsPath.Taskbar,
     isAfter: true
 };
 
@@ -178,7 +177,7 @@ export default class Taskbar extends ScrollView {
     #allocation = new TaskbarAllocation(this);
 
     /** @type {Config} */
-    #config = Config(this, ConfigFields, settingsKey => this.#handleConfig(settingsKey), ConfigOptions);
+    #config = Config(this, ConfigField, settingsKey => this.#handleConfig(settingsKey), ConfigOptions);
 
     /** @type {Map<Meta.Workspace, Set<Shell.App>>} */
     #runningApps = Context.getStorage(this.constructor.name);
@@ -252,9 +251,9 @@ export default class Taskbar extends ScrollView {
      */
     #handleConfig(settingsKey) {
         switch (settingsKey) {
-            case ConfigFields.enableSeparator:
-            case ConfigFields.showAllWindows:
-            case ConfigFields.isolateWorkspaces:
+            case ConfigField.enableSeparator:
+            case ConfigField.showAllWindows:
+            case ConfigField.isolateWorkspaces:
                 this.#rerender();
                 break;
         }

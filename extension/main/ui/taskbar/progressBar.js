@@ -9,12 +9,11 @@ import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Context from '../../core/context.js';
 import { Component, ComponentEvent } from '../base/component.js';
-import { Event, Progress } from '../../../shared/core/enums.js';
+import { SettingsPath, SettingsKey, Event, Progress } from '../../../shared/core/enums.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { SharedConfig } from '../../../shared/utils/config.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_ProgressBar';
-const CONFIG_PATH = 'taskbar';
 const INFINITE_PROGRESS_STEP = 0.01;
 const INFINITE_PROGRESS_DELAY = 15;
 
@@ -25,13 +24,18 @@ const ProgressBarPosition = {
 };
 
 /** @enum {string} */
-const ConfigFields = {
-    position: 'progress-bar-position',
-    width: 'progress-bar-width',
-    height: 'progress-bar-height',
-    margin: 'progress-bar-margin',
-    backgroundColor: 'progress-bar-background-color',
-    progressColor: 'progress-bar-progress-color'
+const ConfigField = {
+    position: SettingsKey.ProgressBarPosition,
+    width: SettingsKey.ProgressBarWidth,
+    height: SettingsKey.ProgressBarHeight,
+    offset: SettingsKey.ProgressBarOffset,
+    backgroundColor: SettingsKey.ProgressBarBackgroundColor,
+    fillColor: SettingsKey.ProgressBarFillColor
+};
+
+/** @type {{[option: string]: *}} */
+const ConfigOptions = {
+    path: SettingsPath.Taskbar
 };
 
 /** @type {{[prop: string]: *}} */
@@ -74,14 +78,14 @@ export class ProgressBar extends Component {
 
     /** @type {SharedConfig} */
     get #configProvider() {
-        ProgressBar.#sharedConfig ??= new SharedConfig(ConfigFields, { path: CONFIG_PATH });
+        ProgressBar.#sharedConfig ??= new SharedConfig(ConfigField, ConfigOptions);
         return ProgressBar.#sharedConfig;
     }
 
     /** @type {{[param: string]: *}?} */
     get #drawParams() {
         if (!this.#config) return null;
-        const { width, height, margin, backgroundColor, progressColor, position } = this.#config;
+        const { width, height, offset, backgroundColor, fillColor, position } = this.#config;
         const [canvasWidth, canvasHeight] = this.actor.get_surface_size();
         const scale = this.uiScale * this.globalScale;
         const isInfiniteProgress = this.#progress === Progress.Infinite;
@@ -90,11 +94,11 @@ export class ProgressBar extends Component {
         const radius = height / 2 * scale;
         const drawWidth = (width - height) * scale;
         const x = (canvasWidth - drawWidth) / 2;
-        const y = position === ProgressBarPosition.Bottom ? canvasHeight - (height + margin) * scale : margin * scale;
+        const y = position === ProgressBarPosition.Bottom ? canvasHeight - (height + offset) * scale : offset * scale;
         const drawHeight = y + radius;
         const progressWidth = drawWidth * progress - radius * (Progress.Max - progress);
         const progressX = x + (isInfiniteProgress && this.#infiniteProgress < 0 ? drawWidth - progressWidth : 0);
-        return { x, drawWidth, drawHeight, progressX, progressWidth, radius, angle, backgroundColor, progressColor };
+        return { x, drawWidth, drawHeight, progressX, progressWidth, radius, angle, backgroundColor, fillColor };
     }
 
     /**
@@ -157,7 +161,7 @@ export class ProgressBar extends Component {
         if (!drawParams) return;
         const { x, progressX, drawWidth, drawHeight,
                 progressWidth, radius, angle,
-                backgroundColor, progressColor } = drawParams;
+                backgroundColor, fillColor } = drawParams;
         this.#setColor(canvas, backgroundColor);
         canvas.newSubPath();
         canvas.arc(x, drawHeight, radius, angle, -angle);
@@ -166,7 +170,7 @@ export class ProgressBar extends Component {
         canvas.fillPreserve();
         canvas.setLineWidth(0);
         canvas.stroke();
-        this.#setColor(canvas, progressColor);
+        this.#setColor(canvas, fillColor);
         canvas.newSubPath();
         canvas.arc(progressX, drawHeight, radius, angle, -angle);
         canvas.arc(progressX + progressWidth, drawHeight, radius, -angle, angle);
