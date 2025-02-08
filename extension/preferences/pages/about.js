@@ -9,7 +9,7 @@ const SUPPORT_URL_PATH = '/issues/new?template=';
 const HOME_PAGE_URL = 'https://extensions.gnome.org/extension/5180';
 
 /** @enum {string} */
-const PageObject = {
+const Widget = {
     Logo: 'logo',
     Version: 'version',
     VersionName: 'version-name',
@@ -36,13 +36,13 @@ export default class extends Page {
         const path = Context.path;
         const metadata = Context.metadata ?? {};
         const githubUrl = metadata[MetadataField.Url] ?? '';
-        const logo = this.getPicture(PageObject.Logo);
-        const version = this.getGroup(PageObject.Version);
-        const versionName = this.getLabel(PageObject.VersionName);
-        const releaseNotes = this.getLinkButton(PageObject.ReleaseNotes);
-        const reportBug = this.getLinkButton(PageObject.ReportBug);
-        const suggestFeature = this.getLinkButton(PageObject.SuggestFeature);
-        const homePage = this.getLinkButton(PageObject.HomePage);
+        const logo = this.getPicture(Widget.Logo);
+        const version = this.getGroup(Widget.Version);
+        const versionName = this.getLabel(Widget.VersionName);
+        const releaseNotes = this.getLinkButton(Widget.ReleaseNotes);
+        const reportBug = this.getLinkButton(Widget.ReportBug);
+        const suggestFeature = this.getLinkButton(Widget.SuggestFeature);
+        const homePage = this.getLinkButton(Widget.HomePage);
         logo.set_filename(`${path}${LOGO_PATH}`);
         version.set_title(metadata[MetadataField.Name] ?? '');
         versionName.set_label(metadata[MetadataField.VersionName] ?? '');
