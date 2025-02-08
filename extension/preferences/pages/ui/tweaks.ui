@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <object class="AdwPreferencesPage" id="tweaks">
+        <property name="name">tweaks</property>
+        <property name="title">Tweaks</property>
+        <property name="icon-name">applications-science-symbolic</property>
+        <child>
+            <object class="AdwPreferencesGroup">
+                <property name="title" translatable="yes">Overview</property>
+                <child>
+                    <object class="AdwActionRow">
+                        <property name="title" translatable="yes">Hide Search</property>
+                        <property name="subtitle" translatable="yes">Hide search input and enlarge workspace thumbnails</property>
+                        <property name="activatable-widget">tweaks/overviewHideSearch</property>
+                        <child>
+                            <object class="GtkSwitch" id="tweaks/overviewHideSearch">
+                                <property name="valign">center</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwActionRow">
+                        <property name="title" translatable="yes">Empty Space Clicks</property>
+                        <property name="subtitle" translatable="yes">Primary button click hides the Overview, secondary button click toggles the App Grid</property>
+                        <property name="activatable-widget">tweaks/overviewClicks</property>
+                        <child>
+                            <object class="GtkSwitch" id="tweaks/overviewClicks">
+                                <property name="valign">center</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwActionRow">
+                        <property name="title" translatable="yes">Kill Dash</property>
+                        <property name="subtitle" translatable="yes">Hide the Dash and prevent it from rendering behind the scene. An arrow button to toggle the App Grid will be displayed instead</property>
+                        <property name="activatable-widget">tweaks/overviewKillDash</property>
+                        <child>
+                            <object class="GtkSwitch" id="tweaks/overviewKillDash">
+                                <property name="valign">center</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+            </object>
+        </child>
+        <child>
+            <object class="AdwPreferencesGroup">
+                <property name="title" translatable="yes">Popups</property>
+                <child>
+                    <object class="AdwActionRow">
+                        <property name="title" translatable="yes">Eliminate Display Delay</property>
+                        <property name="subtitle" translatable="yes">Instantly display all popups for better recognition</property>
+                        <property name="activatable-widget">tweaks/popupsNoDelay</property>
+                        <child>
+                            <object class="GtkSwitch" id="tweaks/popupsNoDelay">
+                                <property name="valign">center</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwActionRow">
+                        <property name="title" translatable="yes">Prevent Key Focus Grabbing</property>
+                        <property name="subtitle" translatable="yes">Useful on X11 and for XWayland windows to prevent focus loss when switching input language</property>
+                        <property name="activatable-widget">tweaks/popupsPreventFocus</property>
+                        <child>
+                            <object class="GtkSwitch" id="tweaks/popupsPreventFocus">
+                                <property name="valign">center</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+            </object>
+        </child>
+        <child>
+            <object class="AdwPreferencesGroup">
+                <property name="title" translatable="yes">Menus</property>
+                <child>
+                    <object class="AdwActionRow">
+                        <property name="title" translatable="yes">Click To Open</property>
+                        <property name="subtitle" translatable="yes">Require a click to open menus</property>
+                        <property name="activatable-widget">tweaks/menusClickToOpen</property>
+                        <child>
+                            <object class="GtkSwitch" id="tweaks/menusClickToOpen">
+                                <property name="valign">center</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+            </object>
+        </child>
+        <child>
+            <object class="AdwPreferencesGroup">
+                <property name="title" translatable="yes">Input Sources</property>
+                <child>
+                    <object class="AdwActionRow">
+                        <property name="title" translatable="yes">Primary Source For Password Fields</property>
+                        <property name="subtitle" translatable="yes">Automatically switch to the primary input language when any password field becomes active, this also applies to the lock screen</property>
+                        <property name="activatable-widget">tweaks/primaryInputSource</property>
+                        <child>
+                            <object class="GtkSwitch" id="tweaks/primaryInputSource">
+                                <property name="valign">center</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwActionRow">
+                        <property name="title" translatable="yes">Uppercase Indicator</property>
+                        <property name="subtitle" translatable="yes">Display input languages in uppercase (en > EN)</property>
+                        <property name="activatable-widget">tweaks/upperCaseInputSource</property>
+                        <child>
+                            <object class="GtkSwitch" id="tweaks/upperCaseInputSource">
+                                <property name="valign">center</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+            </object>
+        </child>
+    </object>
+</interface>
