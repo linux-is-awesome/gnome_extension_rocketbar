@@ -47,6 +47,16 @@ export default class Page {
 
     /**
      * @param {string} id
+     * @returns {Adw.ActionRow}
+     */
+    getRow(id) {
+        const result = this.#template.get_object(id);
+        if (result instanceof Adw.ActionRow) return result;
+        throw new Error(`${id} is not an instane of Adw.ActionRow.`);
+    }
+
+    /**
+     * @param {string} id
      * @returns {Gtk.Picture}
      */
     getPicture(id) {
@@ -73,6 +83,16 @@ export default class Page {
         const result = this.#template.get_object(id);
         if (result instanceof Gtk.LinkButton) return result;
         throw new Error(`${id} is not an instane of Gtk.LinkButton.`);
+    }
+
+    /**
+     * @param {string} id
+     * @returns {Gtk.Switch}
+     */
+    getSwitch(id) {
+        const result = this.#template.get_object(id);
+        if (result instanceof Gtk.Switch) return result;
+        throw new Error(`${id} is not an instane of Gtk.Switch.`);
     }
 
 }
