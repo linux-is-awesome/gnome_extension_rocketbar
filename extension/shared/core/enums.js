@@ -2,6 +2,7 @@
  * @enum {string} Standard GObject, Shell and GTK events to handle
  */
 export const Event = {
+    Active: 'notify::active',
     AppStateChanged: 'app-state-changed',
     ButtonPress: 'button-press-event',
     ButtonRelease: 'button-release-event',
