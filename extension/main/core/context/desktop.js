@@ -74,7 +74,7 @@ export default class Desktop {
             MainPanel.menuManager?.addMenu(menu);
             this.addOverlay(menu.actor);
         } catch (e) {
-            Context.logError(`${Desktop.name} failed to add menu.`, e);
+            Context.logError(`${this.constructor.name} failed to add menu.`, e);
         }
     }
 
@@ -87,7 +87,7 @@ export default class Desktop {
             MainPanel.menuManager?.removeMenu(menu);
             this.removeOverlay(menu.actor);
         } catch (e) {
-            Context.logError(`${Desktop.name} failed to remove menu.`, e);
+            Context.logError(`${this.constructor.name} failed to remove menu.`, e);
         }
     }
 
@@ -137,7 +137,7 @@ export default class Desktop {
      */
     queueClient(client, callback) {
         if (!client || typeof callback !== 'function' || !this.#clients?.has(client)) return;
-        if (!this.isReady) return Context.logError(`${Desktop.name} is not ready to queue client requests.`);
+        if (!this.isReady) return Context.logError(`${this.constructor.name} is not ready to queue client requests.`);
         this.#clients.set(client, callback);
         Context.jobs.removeAll(this).new(this, Delay.Background).destroy(() => this.#notifyClients());
     }

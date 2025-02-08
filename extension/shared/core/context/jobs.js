@@ -124,7 +124,7 @@ class Job {
      */
     #finish(result = true) {
         this.#id = null;
-        this.#job?.catch(e => Context.logError(`${Job.name} failed.`, e));
+        this.#job?.catch(e => Context.logError(`${this.constructor.name} failed.`, e));
         if (typeof this.#resolver === 'function') this.#resolver(result);
         this.#resolver = null;
         this.#job = null;
