@@ -14,7 +14,7 @@ const JSON_OBJECT_MIN_LENGTH = 2;
 /**
  * @param {*} client
  * @param {{[configField: string]: string}} fields
- * @param {(settingsKey: string) => void} [callback]
+ * @param {(settingsKey: string, value: *) => void} [callback]
  * @param {{path?: string?, isAfter?: boolean}} [options]
  * @returns {Config}
  */
@@ -34,8 +34,9 @@ export const Config = (client, fields, callback, options = { path: null, isAfter
     const valueHandler = (_, key) => {
         const configField = valueMapping.get(key);
         if (!configField) return;
-        values[configField] = settings.get(key);
-        if (typeof callback === 'function') callback(key);
+        const value = settings.get(key);
+        values[configField] = value;
+        if (typeof callback === 'function') callback(key, value);
     };
     for (const fieldName in fields) {
         const settingsKey = fields[fieldName];
