@@ -102,8 +102,8 @@ export default class Context {
     /** @type {Signals?} */
     #signals = null;
 
-    /** @type {() => boolean} */
-    #destroyCallback = () => true;
+    /** @type {(() => boolean)?} */
+    #destroyCallback = null;
 
     /**
      * @param {Extension} extension
@@ -113,13 +113,15 @@ export default class Context {
         if (_instance) throw new Error(`${this.constructor.name} already has an instance.`);
         if (!extension) throw new Error(`${this.constructor.name} requires an instance of the extension class.`);
         this.#extension = extension;
-        this.#destroyCallback = destroyCallback ?? this.#destroyCallback;
+        this.#destroyCallback = destroyCallback ?? null;
         _instance = this;
     }
 
     destroy() {
         try {
-            const callbackResult = this.#destroyCallback();
+            const callbackResult = typeof this.#destroyCallback === 'function' ?
+                                   this.#destroyCallback() ?? true : true;
+            this.#destroyCallback = null;
             this.#jobs?.removeAll(this);
             this.#jobs?.destroy();
             this.#signals?.destroy();
