@@ -498,6 +498,17 @@ export class TaskbarClient {
     }
 
     /**
+     * @param {Meta.Window} window
+     * @returns {boolean}
+     */
+    hasWindow(window) {
+        const service = TaskbarClient.#service;
+        if (!service) return false;
+        if (this.#app) return !!service.apps?.get(this.#app)?.has(window);
+        return !!service.windows?.has(window);
+    }
+
+    /**
      * @param {boolean} [currentWorkspace]
      * @param {boolean} [skipTaskbar]
      * @returns {Set<Meta.Window>?}
