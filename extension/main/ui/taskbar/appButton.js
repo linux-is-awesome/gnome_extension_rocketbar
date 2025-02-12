@@ -436,7 +436,7 @@ export class AppButton extends RuntimeButton {
         this.connect(Event.Scroll, (_, event) => this.#scroll(event));
         Context.signals.add(this,
             [global.display, Event.FocusWindow, () => this.#handleFocusedWindow(),
-                             Event.WindowDemandsAttention, (_, window) => this.#handleUrgentWindow(window)],
+                             Event.WindowDemandsAttention, (_, window) => this.#handleWindowAttention(window)],
             [global.window_manager, Event.Minimize, (_, actor) => this.#handleWindowState(actor?.meta_window),
                                     Event.Unminimize, (_, actor) => this.#handleWindowState(actor?.meta_window)]);
         Context.launcherApi?.connectProgress(this, () => this.#handleProgress());
@@ -661,19 +661,23 @@ export class AppButton extends RuntimeButton {
         if (!this.isValid || !this.#windows) return;
         for (const window of this.#windows) {
             window.get_icon_geometry = () => this.#getWindowIconGeometry(window);
-            if (window.demands_attention) this.#handleUrgentWindow(window);
+            if (window.demands_attention) this.#handleWindowAttention(window);
         }
     }
 
     /**
      * @param {Meta.Window} window
      */
-    #handleUrgentWindow(window) {
-        if (!window || !this.#windows?.has(window) || window.has_focus()) return;
-        const demandsAttentionBehavior = this.#config?.demandsAttentionBehavior;
-        if (!demandsAttentionBehavior || demandsAttentionBehavior === DemandsAttentionBehavior.Default) return;
-        if (demandsAttentionBehavior === DemandsAttentionBehavior.FocusActive && !this.#isActive) return;
-        FocusedWindow(window);
+    #handleWindowAttention(window) {
+        if (!this.#config || !window || window.has_focus()) return;
+        const { demandsAttentionBehavior } = this.#config;
+        switch (demandsAttentionBehavior) {
+            case DemandsAttentionBehavior.FocusActive:
+                if (!this.#isActive) return;
+            case DemandsAttentionBehavior.FocusAll:
+                if (!this.#service?.hasWindow(window)) return;
+                FocusedWindow(window);
+        }
     }
 
     /**
@@ -884,7 +888,7 @@ export class AppButton extends RuntimeButton {
 
     /**
      * @param {Meta.Window} window
-     * @returns {[success: boolean, geometry: Mtk.Rectangle|null]}
+     * @returns {[success: boolean, geometry: ?Mtk.Rectangle]}
      */
     #getWindowIconGeometry(window) {
         if (!window) return [false, null];
