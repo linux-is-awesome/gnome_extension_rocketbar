@@ -27,6 +27,13 @@ export default class extends Page {
     /** @type {Config} */
     #config = Config(this, ConfigField, settingKey => this.#handleConfig(settingKey));
 
+    /** @type {Set<Module>?} */
+    get #modules() {
+        const modules = InnerConfig(this.#config, CONFIG_KEY_MODULES);
+        if (!Array.isArray(modules)) return null;
+        return new Set(modules);
+    }
+
     constructor() {
         super(PAGE_NAME);
         this.#handleConfig();
@@ -36,12 +43,10 @@ export default class extends Page {
      * @param {string} [settingKey]
      */
     #handleConfig(settingKey) {
-        const configModules = InnerConfig(this.#config, CONFIG_KEY_MODULES);
-        if (!Array.isArray(configModules)) return;
-        const modules = new Set(configModules);
+        const modules = this.#modules;
         for (const module of MANAGED_MODULES) {
-            const widget = this.getSwitch(module);
-            const isModuleActive = modules.has(module);
+            const widget = this.getSwitchRow(module);
+            const isModuleActive = !!modules?.has(module);
             if (widget.get_active() !== isModuleActive) widget.set_active(isModuleActive);
             if (settingKey) continue;
             widget.connect(Event.Active, () => this.#toggleModule(module, widget.get_active()));
@@ -53,10 +58,9 @@ export default class extends Page {
      * @param {boolean} isActive
      */
     #toggleModule(module, isActive) {
+        const modules = this.#modules;
         const settings = Context.getSettings();
-        const configModules = InnerConfig(this.#config, CONFIG_KEY_MODULES);
-        if (!settings || !Array.isArray(configModules)) return;
-        const modules = new Set(configModules);
+        if (!modules || !settings) return;
         if (isActive) modules.add(module);
         else modules.delete(module);
         settings.set(ConfigField.modules, [...modules]);
