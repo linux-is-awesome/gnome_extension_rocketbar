@@ -1,6 +1,7 @@
 /**
- * @typedef {import('gi://Gtk').Switch} Gtk.Switch
+ * @typedef {import('gi://Adw').SwitchRow} Adw.SwitchRow
  */
+
 import Page from './base/page.js';
 import Context from '../core/context.js';
 import { Config } from '../../shared/utils/config.js';
@@ -30,26 +31,24 @@ export default class extends Page {
         if (!settings) return;
         for (const key in ConfigField) {
             const settingsKey = ConfigField[key];
-            const widget = this.getSwitch(settingsKey);
+            const widget = this.getSwitchRow(settingsKey);
             this.#handleConfig(settingsKey, this.#config[key], widget);
             widget.connect(Event.Active, () => settings.set(settingsKey, widget.get_active()));
         }
-
     }
 
     /**
      * @param {string} settingsKey
      * @param {*} value
-     * @param {Gtk.Switch} [widget]
+     * @param {Adw.SwitchRow} [widget]
      */
     #handleConfig(settingsKey, value, widget) {
         value ??= false;
         switch (settingsKey) {
             case ConfigField.launcherApi:
-                const rowId = `${ConfigField.notificationsLauncherApi}-row`;
-                this.getRow(rowId).set_sensitive(value);
+                this.getSwitchRow(ConfigField.notificationsLauncherApi).set_sensitive(value);
             default:
-                widget ??= this.getSwitch(settingsKey);
+                widget ??= this.getSwitchRow(settingsKey);
                 if (widget.get_active() === value) return;
                 widget.set_active(value);
         }

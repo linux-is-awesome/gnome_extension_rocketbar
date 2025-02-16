@@ -8,15 +8,9 @@
             <object class="AdwPreferencesGroup">
                 <property name="title" translatable="yes">Integrations</property>
                 <child>
-                    <object class="AdwActionRow">
+                    <object class="AdwSwitchRow" id="launcher-api">
                         <property name="title" translatable="yes">Launcher API</property>
                         <property name="subtitle" translatable="yes">Provides notification counters and progress tracking for applications that support this API</property>
-                        <property name="activatable-widget">launcher-api</property>
-                        <child>
-                            <object class="GtkSwitch" id="launcher-api">
-                                <property name="valign">center</property>
-                            </object>
-                        </child>
                     </object>
                 </child>
             </object>
@@ -25,27 +19,16 @@
             <object class="AdwPreferencesGroup">
                 <property name="title" translatable="yes">Notifications</property>
                 <child>
-                    <object class="AdwActionRow">
+                    <object class="AdwSwitchRow" id="notifications-count-attention-sources">
                         <property name="title" translatable="yes">Count Attention Sources</property>
                         <property name="subtitle" translatable="yes">Enable counting of Window Demands Attention notifications for applications</property>
-                        <property name="activatable-widget">notifications-count-attention-sources</property>
-                        <child>
-                            <object class="GtkSwitch" id="notifications-count-attention-sources">
-                                <property name="valign">center</property>
-                            </object>
-                        </child>
                     </object>
                 </child>
                 <child>
-                    <object class="AdwActionRow" id="notifications-launcher-api-row">
+                    <object class="AdwSwitchRow" id="notifications-launcher-api">
                         <property name="title" translatable="yes">Launcher API Integration</property>
                         <property name="subtitle" translatable="yes">Retrieve notification count from the Launcher API for applications that support this API</property>
-                        <property name="activatable-widget">notifications-launcher-api</property>
-                        <child>
-                            <object class="GtkSwitch" id="notifications-launcher-api">
-                                <property name="valign">center</property>
-                            </object>
-                        </child>
+                        <property name="sensitive">false</property>
                     </object>
                 </child>
             </object>
