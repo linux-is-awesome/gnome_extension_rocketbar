@@ -19,6 +19,8 @@ const PAGE_FILE_TYPE = '.js';
 /** @enum {string} */
 const Page = {
     About: 'about',
+    Panel: 'panel',
+    Tweaks: 'tweaks',
     Misc: 'misc'
 };
 
@@ -61,6 +63,9 @@ export default class Context extends SharedContext {
         Context.#instance = null;
     }
 
+    /**
+     * @returns {boolean}
+     */
     #destroy() {
         this.#pages.clear();
         this.#window = null;
@@ -111,6 +116,7 @@ export default class Context extends SharedContext {
     async #loadPage(page) {
         try {
             const pageModule = await import(`${PAGE_ROOT_PATH}${Page[page]}${PAGE_FILE_TYPE}`);
+            if (!this.#window) return;
             this.#pages.set(page, new pageModule.default());
         } catch (e) {
             Context.logError(`unable to load page: ${page}.`, e);
