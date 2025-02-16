@@ -40,6 +40,7 @@ export const Event = {
     Position: 'notify::position',
     Pressed: 'notify::pressed',
     Repaint: 'repaint',
+    SelectedItemChanged: 'notify::selected-item',
     ScaleFactor: 'notify::scale-factor',
     Scroll: 'scroll-event',
     SearchActive: 'notify::search-active',
@@ -86,14 +87,6 @@ export const Progress = {
 };
 
 /**
- * @enum {string} Shell session modes
- */
-export const SessionMode = {
-    Desktop: 'user',
-    Locksreen: 'unlock-dialog'
-};
-
-/**
  * @enum {string}
  */
 export const PseudoClass = {
@@ -101,6 +94,29 @@ export const PseudoClass = {
     Focus: 'focus',
     Active: 'active',
     Insensitive: 'insensitive'
+};
+
+/**
+ * @enum {string}
+ */
+export const Alignment = {
+    Top: 'top',
+    Bottom: 'bottom',
+    Left: 'left',
+    Right: 'right',
+    Center: 'center',
+    TopLeft: 'top-left',
+    TopRight: 'top-right',
+    BottomLeft: 'bottom-left',
+    BottomRight: 'bottom-right'
+};
+
+/**
+ * @enum {string} Shell session modes
+ */
+export const SessionMode = {
+    Desktop: 'user',
+    Locksreen: 'unlock-dialog'
 };
 
 /**
