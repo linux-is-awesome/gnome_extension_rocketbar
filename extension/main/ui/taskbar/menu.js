@@ -53,6 +53,7 @@ const ActivateBehaviorRadioGroup = {
 const DemandsAttentionBehaviorRadioGroup = {
     [DemandsAttentionBehavior.Default]: Label.AppDefault,
     [DemandsAttentionBehavior.FocusActive]: Label.FocusActive,
+    [DemandsAttentionBehavior.FocusWorkspace]: Label.FocusWorkspace,
     [DemandsAttentionBehavior.FocusAll]: Label.FocusAll
 };
 

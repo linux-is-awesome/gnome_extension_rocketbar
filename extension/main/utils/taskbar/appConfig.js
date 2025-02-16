@@ -49,6 +49,7 @@ export const ActivateBehavior = {
 export const DemandsAttentionBehavior = {
     Default: 'default',
     FocusActive: 'focus_active',
+    FocusWorkspace: 'focus_workspace',
     FocusAll: 'focus_all'
 };
 

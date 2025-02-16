@@ -671,11 +671,14 @@ export class AppButton extends RuntimeButton {
     #handleWindowAttention(window) {
         if (!this.#config || !window || window.has_focus()) return;
         const { demandsAttentionBehavior } = this.#config;
+        let isCurrentWorkspace = false;
         switch (demandsAttentionBehavior) {
             case DemandsAttentionBehavior.FocusActive:
                 if (!this.#isActive) return;
+            case DemandsAttentionBehavior.FocusWorkspace:
+                isCurrentWorkspace = true;
             case DemandsAttentionBehavior.FocusAll:
-                if (!this.#service?.hasWindow(window)) return;
+                if (!this.#service?.hasWindow(window, isCurrentWorkspace)) return;
                 FocusedWindow(window);
         }
     }

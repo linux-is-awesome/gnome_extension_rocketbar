@@ -499,11 +499,13 @@ export class TaskbarClient {
 
     /**
      * @param {Meta.Window} window
+     * @param {boolean} [currentWorkspace]
      * @returns {boolean}
      */
-    hasWindow(window) {
+    hasWindow(window, currentWorkspace = false) {
         const service = TaskbarClient.#service;
         if (!service) return false;
+        if (currentWorkspace && window.get_workspace() !== this.#workspace) return false;
         if (this.#app) return !!service.apps?.get(this.#app)?.has(window);
         return !!service.windows?.has(window);
     }
