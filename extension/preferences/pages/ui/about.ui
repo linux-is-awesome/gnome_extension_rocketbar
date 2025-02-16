@@ -15,14 +15,8 @@
                 <child>
                     <object class="AdwActionRow">
                         <property name="title" translatable="yes">Current Version</property>
-                        <property name="activatable-widget">version-trigger</property>
                         <child>
                             <object class="GtkLabel" id="version-name"></object>
-                        </child>
-                        <child>
-                            <object class="GtkLinkButton" id="version-trigger">
-                                <property name="visible">false</property>
-                            </object>
                         </child>
                     </object>
                 </child>
@@ -40,7 +34,7 @@
             </object>
         </child>
         <child>
-            <object class="AdwPreferencesGroup" id="support">
+            <object class="AdwPreferencesGroup">
                 <property name="title" translatable="yes">Support</property>
                 <child>
                     <object class="AdwActionRow">
