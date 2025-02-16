@@ -57,6 +57,36 @@ export default class Page {
 
     /**
      * @param {string} id
+     * @returns {Adw.SwitchRow}
+     */
+    getSwitchRow(id) {
+        const result = this.#template.get_object(id);
+        if (result instanceof Adw.SwitchRow) return result;
+        throw new Error(`${id} is not an instane of Adw.SwitchRow.`);
+    }
+
+    /**
+     * @param {string} id
+     * @returns {Adw.ComboRow}
+     */
+    getComboRow(id) {
+        const result = this.#template.get_object(id);
+        if (result instanceof Adw.ComboRow) return result;
+        throw new Error(`${id} is not an instane of Adw.ComboRow.`);
+    }
+
+    /**
+     * @param {string} id
+     * @returns {Adw.SpinRow}
+     */
+    getSpinRow(id) {
+        const result = this.#template.get_object(id);
+        if (result instanceof Adw.SpinRow) return result;
+        throw new Error(`${id} is not an instane of Adw.SpinRow.`);
+    }
+
+    /**
+     * @param {string} id
      * @returns {Gtk.Picture}
      */
     getPicture(id) {
