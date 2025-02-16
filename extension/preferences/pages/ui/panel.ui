@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <object class="AdwPreferencesPage" id="panel">
+        <property name="name">panel</property>
+        <property name="title">Panel</property>
+        <property name="icon-name">applications-system-symbolic</property>
+        <child>
+            <object class="AdwPreferencesGroup">
+                <child>
+                    <object class="AdwSwitchRow" id="ui/panel">
+                        <property name="title" translatable="yes">Enable Customization</property>
+                        <property name="subtitle" translatable="yes">Allow customization of the main panel</property>
+                    </object>
+                </child>
+            </object>
+        </child>
+        <child>
+            <object class="AdwPreferencesGroup" id="actions">
+                <property name="title" translatable="yes">Actions</property>
+                <property name="sensitive">false</property>
+                <child>
+                    <object class="AdwSwitchRow" id="sound-volume-control">
+                        <property name="title" translatable="yes">Sound Volume Control</property>
+                        <property name="subtitle" translatable="yes">Scroll to change output sound volume, Middle click to toggle mute</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwSwitchRow" id="click-to-hide-overview">
+                        <property name="title" translatable="yes">Click To Hide Overview</property>
+                        <property name="subtitle" translatable="yes">When in Overview, primary button click on the panel hides the Overview</property>
+                    </object>
+                </child>
+            </object>
+        </child>
+        <child>
+            <object class="AdwPreferencesGroup" id="ui/taskbar">
+                <property name="title" translatable="yes">Taskbar</property>
+                <property name="sensitive">false</property>
+                <child type="header-suffix">
+                    <object class="GtkSwitch" id="ui/taskbar-state">
+                        <property name="valign">center</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwComboRow" id="ui/taskbar-alignment">
+                        <property name="title" translatable="yes">Alignment</property>
+                        <property name="model">alignment-options</property>
+                        <property name="visible">false</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwSpinRow" id="ui/taskbar-position">
+                        <property name="title" translatable="yes">Position</property>
+                        <property name="visible">false</property>
+                        <property name="adjustment">
+                            <object class="GtkAdjustment">
+                                <property name="lower">-1</property>
+                                <property name="upper">20</property>
+                                <property name="value">0</property>
+                                <property name="step-increment">1</property>
+                            </object>
+                        </property>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwActionRow" id="ui/taskbar-customize">
+                        <property name="title" translatable="yes">Customize</property>
+                        <property name="sensitive">false</property>
+                        <property name="activatable-widget">ui/taskbar-customize-button</property>
+                        <child>
+                            <object class="GtkButton" id="ui/taskbar-customize-button">
+                                <property name="has-frame">false</property>
+                                <property name="icon-name">go-next-symbolic</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+            </object>
+        </child>
+        <child>
+            <object class="AdwPreferencesGroup" id="ui/notificationCounter">
+                <property name="title" translatable="yes">Notification Counter</property>
+                <property name="sensitive">false</property>
+                <child type="header-suffix">
+                    <object class="GtkSwitch" id="ui/notificationCounter-state">
+                        <property name="valign">center</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwActionRow" id="ui/notificationCounter-customize">
+                        <property name="title" translatable="yes">Customize</property>
+                        <property name="sensitive">false</property>
+                        <property name="activatable-widget">ui/notificationCounter-customize-button</property>
+                        <child>
+                            <object class="GtkButton" id="ui/notificationCounter-customize-button">
+                                <property name="has-frame">false</property>
+                                <property name="icon-name">go-next-symbolic</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+            </object>
+        </child>
+    </object>
+    <object class="GtkStringList" id="alignment-options">
+        <items>
+            <item translatable="yes">Left</item>
+            <item translatable="yes">Center</item>
+            <item translatable="yes">Right</item>
+        </items>
+    </object>
+</interface>
