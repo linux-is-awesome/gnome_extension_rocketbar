@@ -466,7 +466,7 @@ export default class Taskbar extends ScrollView {
     }
 
     /**
-     * @returns {Set<Shell.App>|null}
+     * @returns {Set<Shell.App>?}
      */
     #getRunningApps() {
         const workspace = this.#service?.workspace;

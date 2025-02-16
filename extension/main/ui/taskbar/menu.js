@@ -518,7 +518,7 @@ class CustomizeChildMenu extends ChildMenu {
     }
 
     /**
-     * @param {string|null} iconPath
+     * @param {string?} iconPath
      */
     #setCustomIcon(iconPath = null) {
         this.#setConfigOverride(ConfigKey.IconPath, iconPath ?? null);

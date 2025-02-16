@@ -184,7 +184,7 @@ export class DragAndDropHandler {
 
     /**
      * @param {{x: number, y: number, target: *, actor: Clutter.Actor}} params
-     * @returns {Component|null}
+     * @returns {Component?}
      */
     handleDrag(params) {
         if (!params || !this.#slots || !this.#parent) return null;
