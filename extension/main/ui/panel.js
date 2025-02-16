@@ -3,17 +3,10 @@ import { MainPanel, Overview } from '../core/shell.js';
 import Context from '../core/context.js';
 import { ModuleManager } from '../services/modules.js';
 import { Component, ComponentEvent } from './base/component.js';
-import { SettingsPath, SettingsKey, Event, Module } from '../../shared/core/enums.js';
+import { SettingsPath, SettingsKey, Event, Module, Alignment } from '../../shared/core/enums.js';
 import { Config, InnerConfig } from '../../shared/utils/config.js';
 
 const CONFIG_KEY_ITEMS = 'items';
-
-/** @enum {string} */
-const PanelArea = {
-    Left: 'left',
-    Center: 'center',
-    Right: 'right'
-};
 
 /** @enum {string} */
 const ConfigField = {
@@ -40,7 +33,7 @@ export default class Panel extends Component {
     /** @type {number?} */
     #pressedButton = null;
 
-    /** @type {Map<string, [area?: PanelArea, position?: number]>?} */
+    /** @type {Map<string, [alignment?: Alignment, position?: number]>?} */
     #items = null;
 
     /** @type {ModuleManager?} */
@@ -97,11 +90,11 @@ export default class Panel extends Component {
         for (const id in configItems) {
             const itemConfig = configItems[id];
             if (!Array.isArray(itemConfig)) continue;
-            const [itemName, area = null, position = null] = itemConfig;
+            const [itemName, alignment = null, position = null] = itemConfig;
             const module = Module[itemName];
             if (!module) continue;
             modules.push(module);
-            const itemNewConfig = [area, position];
+            const itemNewConfig = [alignment, position];
             const itemOldConfig = this.#items?.get(itemName) ?? [];
             items.set(itemName, itemNewConfig);
             if (`${itemNewConfig}` === `${itemOldConfig}`) continue;
@@ -125,28 +118,28 @@ export default class Panel extends Component {
             if (!module) continue;
             const instance = activeModules?.get(module);
             if (!instance) continue;
-            const [area, position] = this.#items.get(item) ?? [];
-            if (!area) continue;
-            this.#setItemPosition(instance, area, position);
+            const [alignment, position] = this.#items.get(item) ?? [];
+            if (!alignment) continue;
+            this.#setItemPosition(instance, alignment, position);
         }
     }
 
     /**
      * @param {Component|Clutter.Actor} item
-     * @param {PanelArea} area
+     * @param {Alignment} alignment
      * @param {number} [position]
      */
-    #setItemPosition(item, area, position) {
-        if (!item || !area) return;
+    #setItemPosition(item, alignment, position) {
+        if (!item || !alignment) return;
         let parent = null;
-        switch (area) {
-            case PanelArea.Left:
+        switch (alignment) {
+            case Alignment.Left:
                 parent = this.actor._leftBox;
                 break;
-            case PanelArea.Center:
+            case Alignment.Center:
                 parent = this.actor._centerBox;
                 break;
-            case PanelArea.Right:
+            case Alignment.Right:
                 parent = this.actor._rightBox;
                 position ??= 0;
                 break;
