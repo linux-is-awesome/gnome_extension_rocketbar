@@ -5,6 +5,7 @@
 import Gtk from 'gi://Gtk';
 import Adw from 'gi://Adw';
 import Context from '../../core/context.js';
+import { Event } from '../../../shared/core/enums.js';
 
 const UI_PATH = '/preferences/pages/ui/';
 const UI_FILE_TYPE = '.ui';
@@ -17,21 +18,40 @@ export default class Page {
     /** @type {Gtk.Builder} */
     #template = new Gtk.Builder();
 
+    /** @type {(() => void)?} */
+    #callback = null;
+
+    /** @type {boolean} */
+    #isInitialized = false;
+
     /**
      * @param {string} name
+     * @param {() => void} callback
      */
-    constructor(name) {
+    constructor(name, callback) {
         this.#template.add_from_file(`${Context.path}${UI_PATH}${name}${UI_FILE_TYPE}`);
         const instance = this.#template.get_object(name);
         if (instance instanceof Adw.PreferencesPage === false) return;
         this.#instance = instance;
+        this.#callback = callback;
+    }
+
+    /**
+     * @param {Adw.PreferencesPage?} visiblePage
+     */
+    #initialize(visiblePage) {
+        if (visiblePage !== this.#instance) return;
+        if (this.#isInitialized) return;
+        this.#isInitialized = true;
+        if (typeof this.#callback === 'function') this.#callback();
     }
 
     /**
      * @param {PreferencesWindow} window
      */
     setParent(window) {
-        if (!window || !this.#instance) return;
+        if (!window || !this.#instance || this.#isInitialized) return;
+        window.connect(Event.VisiblePageChanged, () => this.#initialize(window.get_visible_page()));
         window.add(this.#instance);
     }
 

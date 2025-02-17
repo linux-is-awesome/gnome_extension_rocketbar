@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
     <object class="AdwPreferencesPage" id="panel">
-        <property name="name">panel</property>
         <property name="title">Panel</property>
         <property name="icon-name">applications-system-symbolic</property>
         <child>

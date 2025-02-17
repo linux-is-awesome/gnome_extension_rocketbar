@@ -52,6 +52,7 @@ export const Event = {
     Updated: 'updated',
     ValueChanged: 'notify::value',
     VisibleChanged: 'notify::visible',
+    VisiblePageChanged: 'notify::visible-page',
     WindowAdded: 'window_added',
     WindowDemandsAttention: 'window-demands-attention',
     WindowMapped: 'map',

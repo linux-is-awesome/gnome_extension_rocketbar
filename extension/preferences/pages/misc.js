@@ -22,8 +22,7 @@ export default class extends Page {
     #config = Config(this, ConfigField, (settingsKey, value) => this.#handleConfig(settingsKey, value));
 
     constructor() {
-        super(PAGE_NAME);
-        this.#initialize();
+        super(PAGE_NAME, () => this.#initialize());
     }
 
     #initialize() {

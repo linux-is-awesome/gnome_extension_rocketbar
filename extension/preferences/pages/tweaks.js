@@ -35,8 +35,7 @@ export default class extends Page {
     }
 
     constructor() {
-        super(PAGE_NAME);
-        this.#handleConfig();
+        super(PAGE_NAME, () => this.#handleConfig());
     }
 
     /**

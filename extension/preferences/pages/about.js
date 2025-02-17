@@ -28,8 +28,7 @@ const SupportTemplate = {
 export default class extends Page {
 
     constructor() {
-        super(PAGE_NAME);
-        this.#initialize();
+        super(PAGE_NAME, () => this.#initialize());
     }
 
     #initialize() {
