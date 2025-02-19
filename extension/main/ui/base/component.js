@@ -227,13 +227,12 @@ export class Component {
      */
     setParent(parent, position = -1) {
         if (!this.#isValid || !this.#actor ||
-            typeof position !== 'number') return this;
-        let parentComponent = null;
+            parent === this || typeof position !== 'number') return this;
+        this.#parent = null;
         if (parent instanceof Component) {
-            parentComponent = parent;
+            this.#parent = parent;
             parent = parent.actor;
         }
-        this.#parent = parentComponent;
         const oldParent = this.parentActor;
         const isParentChanged = oldParent !== parent;
         if (isParentChanged) oldParent?.remove_child(this.#actor);
@@ -470,26 +469,12 @@ export class Component {
      */
     #notifyParents(event, params, sender = this) {
         if (typeof event !== 'string') return this;
-        const parent = this.#parent ?? this.#getNearestParentComponent();
-        if (!parent || parent.#notifySelf(event, parent, params, sender)) return this;
+        const parent = this.#parent ?? this.parent;
+        if (parent === this) return this;
+        if (parent instanceof Component === false ||
+            parent.#notifySelf(event, parent, params, sender)) return this;
         parent.#notifyParents(event, params, sender);
         return this;
-    }
-
-    /**
-     * @param {St.Widget|Component<St.Widget>|null} [parent]
-     * @returns {Component<St.Widget>?}
-     */
-    #getNearestParentComponent(parent = this.parent) {
-        if (!parent) return null;
-        let nextParent = null;
-        if (parent instanceof St.Widget) {
-            nextParent = parent.get_parent();
-            parent = nextParent?._delegate;
-        }
-        return parent instanceof Component ? parent :
-               parent?._delegate instanceof Component ? parent._delegate :
-               nextParent instanceof St.Widget ? this.#getNearestParentComponent(nextParent) : null;
     }
 
     /**
