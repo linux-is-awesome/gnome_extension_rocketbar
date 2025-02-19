@@ -438,6 +438,8 @@ export class Button extends Component {
         this.#tooltip = null;
         this.#css = null;
         this.#style = null;
+        if (!this.#display) return;
+        this.#display._delegate = null;
         this.#display = null;
     }
 
@@ -448,6 +450,7 @@ export class Button extends Component {
     #setDisplay(display, name) {
         if (display instanceof St.Widget === false) return;
         this.#display = display;
+        this.#display._delegate = this;
         this.#display.set(DisplayProps);
         this.actor.set_style_class_name(null);
         if (typeof name !== 'string') return;
