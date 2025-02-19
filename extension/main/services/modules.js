@@ -128,6 +128,7 @@ export class ModuleManager {
 
     /**
      * @param {Module[]} [modules]
+     * @returns {Promise<void>}
      */
     async update(modules) {
         if (!this.#moduleInstances) return;
@@ -161,6 +162,7 @@ export class ModuleManager {
 
     /**
      * @param {Module} module
+     * @returns {Promise<void>}
      */
     async #constructModule(module) {
         if (!this.#moduleInstances || !module) return;
