@@ -49,6 +49,9 @@ class TaskbarAllocation {
     /** @type {boolean} */
     #isUpdating = false;
 
+    /** @type {boolean} */
+    #isWorkspaceChanged = false;
+
     /** @type {St.BoxLayout?} */
     #actor = new St.BoxLayout(AllocationProps);
 
@@ -95,6 +98,11 @@ class TaskbarAllocation {
         this.#isDragMode = value;
     }
 
+    /** @param {boolean} value */
+    set isWorkspaceChanged(value) {
+        this.#isWorkspaceChanged = value;
+    }
+
     /**
      * @param {Taskbar} taskbar
      */
@@ -103,6 +111,7 @@ class TaskbarAllocation {
     }
 
     destroy() {
+        this.#actor?.remove_all_transitions();
         this.#job?.destroy();
         this.#job = null;
         this.#taskbar = null;
@@ -120,7 +129,9 @@ class TaskbarAllocation {
         if (!rect) return;
         const { width } = source.rect;
         this.#allocation.set(source, width);
-        this.#job?.reset(Delay.Redraw).queue(() => this.update());
+        this.#job?.reset(Delay.Redraw);
+        if (this.#isWorkspaceChanged) this.update();
+        else this.#job?.queue(() => this.update());
     }
 
     /**
@@ -140,24 +151,34 @@ class TaskbarAllocation {
         const { pageSize, scrollSize, scrollPosition } = this.#taskbar;
         const width = this.#allocationSize;
         const scrollOffset = Math.max(0, width - pageSize);
-        const duration = width >= scrollSize ? this.#isDragMode ? 0 : AnimationDuration.Faster :
-                                                                      AnimationDuration.Slower;
+        const duration = width >= scrollSize ?
+                         this.#isDragMode ? AnimationDuration.Disabled :
+                         AnimationDuration.Faster : AnimationDuration.Slower;
         const delay = width >= scrollSize ? 0 : Delay.Queue;
-        const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
         this.#taskbar.scrollLimit = scrollOffset;
-        const allocate = () => {
-            if (!this.#actor) return;
-            const animationParams = { width, mode, delay };
-            Animation(this.#actor, duration, animationParams);
-        };
-        if (scrollOffset > scrollPosition) return allocate();
-        const scrollJob = this.#taskbar.scrollToPosition(scrollOffset, true);
-        if (!scrollJob) return allocate();
+        const scrollJob = scrollOffset > scrollPosition ? null :
+                          this.#taskbar.scrollToPosition(scrollOffset, true);
+        if (!scrollJob) return this.#allocate(duration, delay, width);
         this.#isUpdating = true;
         const scrollJobResult = await scrollJob;
         if (!scrollJobResult || !this.#isUpdating) return;
         this.#isUpdating = false;
-        allocate();
+        this.#allocate(duration, delay, width);
+    }
+
+    /**
+     * @param {AnimationDuration} duration
+     * @param {Delay} delay
+     * @param {number} width
+     * @returns {Promise<void>}
+     */
+    async #allocate(duration, delay, width) {
+        if (!this.#actor) return;
+        const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
+        const animationParams = { width, mode, delay };
+        const isFinished = await Animation(this.#actor, duration, animationParams);
+        if (!isFinished) return;
+        this.#isWorkspaceChanged = false;
     }
 
 }
@@ -166,8 +187,8 @@ export default class Taskbar extends ScrollView {
 
     /** @type {{[event: string]: (...args) => *}?} */
     #events = {
-        [ComponentEvent.Destroy]: data => this.#handleDestroy(data?.sender),
-        [ComponentEvent.Mapped]: data => this.#handleMapped(data?.sender),
+        [ComponentEvent.Destroy]: data => (this.#handleDestroy(data?.sender), true),
+        [ComponentEvent.Mapped]: data => (this.#handleMapped(data?.sender), true),
         [ComponentEvent.DragOver]: data => this.#handleDragOver(data?.target, data?.params),
         [ComponentEvent.AcceptDrop]: () => this.#handleDrop(),
         [AppButtonEvent.Reaction]: data => (this.#handleChildReaction(data?.sender), true)
@@ -398,8 +419,10 @@ export default class Taskbar extends ScrollView {
     }
 
     #rerender() {
-        if (!this.#appButtons || !this.hasAllocation || Context.desktop.isQueued(this)) return;
-        const favoriteApps = this.#service?.favorites?.apps;
+        if (!this.#appButtons || !this.hasAllocation ||
+            !this.#allocation || !this.#service || Context.desktop.isQueued(this)) return;
+        this.#allocation.isWorkspaceChanged = this.#service.isWorkspaceChanged;
+        const favoriteApps = this.#service.favorites?.apps;
         const runningApps = this.#getRunningApps();
         const apps = favoriteApps && runningApps ? new Set([...favoriteApps, ...runningApps]) :
                                                    !favoriteApps ? runningApps :
