@@ -107,7 +107,7 @@ export class AppButton extends RuntimeButton {
         [ButtonEvent.Focus]: () => this.notifyParents(AppButtonEvent.Reaction),
         [ButtonEvent.RequestMenu]: () => new Menu(this),
         [ButtonEvent.RequestTooltip]: () => new Tooltip(this),
-        [AppIconEvent.DominantColorChanged]: () => this.#handleDominantColor()
+        [AppIconEvent.DominantColorChanged]: () => (this.#handleDominantColor(), true)
     };
 
     /** @type {boolean} */
@@ -562,13 +562,9 @@ export class AppButton extends RuntimeButton {
         this.#dragActor = null;
     }
 
-    /**
-     * @returns {boolean}
-     */
     #handleDominantColor() {
         this.#updateBacklight();
         this.#indicators?.rerender();
-        return true;
     }
 
     #updateBacklight() {
