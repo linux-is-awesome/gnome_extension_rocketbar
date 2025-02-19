@@ -157,14 +157,18 @@ class AppStatusItem extends Icon {
      * @returns {this}
      */
     setParent(parent) {
-        if (parent && this.#actor) parent.actor.add_child(this.#actor);
+        if (parent instanceof AppStatus === false || !this.#actor) return this;
+        parent.actor.add_child(this.#actor);
+        this.#actor._delegate = parent;
         return this;
     }
 
     #destroy() {
-        this.#actor = null;
         this.#value = null;
         this.#events = null;
+        if (!this.#actor) return;
+        this.#actor._delegate = null;
+        this.#actor = null;
     }
 
 }
@@ -177,8 +181,8 @@ class AppStatus extends Component {
     /** @type {{[event: string]: (...args) => *}?} */
     #events = {
         [ComponentEvent.Destroy]: () => this.#destroy(),
-        [Event.Clicked]: params => this.#handleItemClick(params),
-        [Event.Scroll]: params => this.#handleItemScroll(params)
+        [Event.Clicked]: params => (this.#handleItemClick(params), true),
+        [Event.Scroll]: params => (this.#handleItemScroll(params), true)
     };
 
     /** @type {Map<string, AppStatusItem>?} */
@@ -195,9 +199,8 @@ class AppStatus extends Component {
         this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.(data?.params));
         this.#appButton = appButton;
         this.#items = new Map();
-        const items = AppStatusItemIcon;
-        for (const icon in items) {
-            const iconName = items[icon];
+        for (const icon in AppStatusItemIcon) {
+            const iconName = AppStatusItemIcon[icon];
             const isReactive = iconName === AppStatusItemIcon.SoundInputVolume ||
                                iconName === AppStatusItemIcon.SoundOutputVolume;
             const statusItem = new AppStatusItem(iconName, isReactive);
@@ -227,13 +230,12 @@ class AppStatus extends Component {
 
     /**
      * @param {{name: string, event: Clutter.Event}} params
-     * @returns {boolean}
      */
     #handleItemClick(params) {
         const { name } = params ?? {};
         const item = this.#items?.get(name);
         const soundVolumeControl = this.#appButton?.soundVolumeControl;
-        if (!item) return true;
+        if (!item) return;
         switch (name) {
             case AppStatusItemIcon.SoundInputVolume:
             case AppStatusItemIcon.SoundOutputVolume:
@@ -243,19 +245,17 @@ class AppStatus extends Component {
                 else soundVolumeControl?.toggleOutputMute(callback);
                 break;
         }
-        return true;
     }
 
     /**
      * @param {{name: string, event: Clutter.Event}} params
-     * @returns {boolean}
      */
     #handleItemScroll(params) {
         const { name, event } = params ?? {};
-        if (!name || !event) return true;
+        if (!name || !event) return;
         const item = this.#items?.get(name);
         const scrollDirection = event.get_scroll_direction();
-        if (!item || scrollDirection === Clutter.ScrollDirection.SMOOTH) return true;
+        if (!item || scrollDirection === Clutter.ScrollDirection.SMOOTH) return;
         switch (name) {
             case AppStatusItemIcon.SoundInputVolume:
             case AppStatusItemIcon.SoundOutputVolume:
@@ -267,10 +267,9 @@ class AppStatus extends Component {
                 if (isInput) soundVolumeControl?.addInputVolume(step);
                 else soundVolumeControl?.addOutputVolume(step);
                 break;
-            default: return true;
+            default: return;
         }
         this.#updateStatus(name, item);
-        return true;
     }
 
     /**
