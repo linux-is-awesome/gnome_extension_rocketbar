@@ -1,5 +1,6 @@
 declare module 'gi://Shell' {
 
+    import type GObject from 'gi://GObject';
     import type Meta from 'gi://Meta';
 
     enum AppLaunchGpu {
