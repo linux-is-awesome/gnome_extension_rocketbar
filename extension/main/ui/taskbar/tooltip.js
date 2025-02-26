@@ -12,6 +12,7 @@ import { Tooltip as BaseTooltip } from '../base/tooltip.js';
 import { SharedConfig } from '../../../shared/utils/config.js';
 import { SettingsPath, SettingsKey, Event } from '../../../shared/core/enums.js';
 import { SoundVolumeIcon, SoundInputIcon, SoundOutputIcon } from '../../utils/soundVolumeIcon.js';
+import { WindowProxy } from '../../utils/taskbar/windowProxy.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_Tooltip';
 const LAYOUT_STYLE_CLASS = 'rocketbar__tooltip_layout';
@@ -80,20 +81,6 @@ const WindowTitleProps = {
 /** @type {{[prop: string]: *}} */
 const AppNameProps = {
     name: `${MODULE_NAME}-AppName`
-};
-
-/**
- * @param {string?} title
- * @param {string?} [appName]
- * @returns {string?}
- */
-const WindowTitleText = (title, appName) => {
-    if (!title || !appName) return title || null;
-    const endRegExp = new RegExp(` [-—](?=[^-]*$).*${appName}$`);
-    if (endRegExp.test(title)) {
-        return title.replace(endRegExp, '') || title;
-    }
-    return title.replace(new RegExp(`^${appName} - `), '') || title;
 };
 
 class AppStatusItem extends Icon {
@@ -329,7 +316,7 @@ export class Tooltip extends BaseTooltip {
     };
 
     /** @type {Config?} */
-    #config = this.#configProvider.getConfig(this, () => this.#handleConfig());
+    #config = this.#configProvider.getConfig(this, settingsKey => this.#handleConfig(settingsKey));
 
     /** @type {AppButton?} */
     #appButton = null;
@@ -345,6 +332,9 @@ export class Tooltip extends BaseTooltip {
 
     /** @type {AppStatus?} */
     #status = null;
+
+    /** @type {WindowProxy?} */
+    #activeWindow = null;
 
     /** @type {SharedConfig} */
     get #configProvider() {
@@ -369,6 +359,7 @@ export class Tooltip extends BaseTooltip {
         this.#layout.add_child(this.#status.actor);
         this.actor.add_child(this.#layout);
         this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
+        this.connect(Event.Mapped, () => this.#handleMapped());
         this.#handleConfig();
     }
 
@@ -381,12 +372,13 @@ export class Tooltip extends BaseTooltip {
         const isShown = this.isShown;
         if (isShown && !hasChanges) return;
         this.lockSize();
-        this.#updateWindowTitle();
+        this.#handleActiveWindow();
         this.#status?.rerender(isShown);
         super.rerender();
     }
 
     #destroy() {
+        this.#releaseActiveWindow();
         this.#layout = null;
         this.#appName = null;
         this.#windowTitle = null;
@@ -398,29 +390,53 @@ export class Tooltip extends BaseTooltip {
         Tooltip.#sharedConfig = null;
     }
 
-    #handleConfig() {
-        if (!this.#config) return;
-        const { showDelay, hideDelay } = this.#config;
-        this.showDelay = showDelay;
-        this.hideDelay = hideDelay;
+    #handleMapped() {
+        if (!this.isHidden) return;
+        if (this.#activeWindow) this.#releaseActiveWindow();
     }
 
-    #updateWindowTitle() {
-        if (!this.#windowTitle || !this.#appButton || !this.#config) return;
-        let text = null;
-        const { shrinkWindowTitles } = this.#config;
-        const windows = this.#appButton.windows;
-        const appWindows = this.#appButton.app?.get_windows();
-        const appName = shrinkWindowTitles ? this.#appButton.app?.get_name() : null;
-        if (windows?.size && appWindows?.length) {
-            for (const window of appWindows) {
-                if (!windows.has(window)) continue;
-                text = WindowTitleText(window.get_title(), appName);
+    /**
+     * @param {string} [settingsKey]
+     */
+    #handleConfig(settingsKey) {
+        if (!this.#config) return;
+        switch (settingsKey) {
+            case ConfigField.shrinkWindowTitles:
+                this.#releaseActiveWindow();
                 break;
-            }
+            default:
+                const { showDelay, hideDelay } = this.#config;
+                this.showDelay = showDelay;
+                this.hideDelay = hideDelay;
         }
-        const visible = !!text;
-        this.#windowTitle.set({ text, visible });
+    }
+
+    #handleActiveWindow() {
+        if (!this.#windowTitle || !this.#appButton || !this.#config) return;
+        const app = this.#appButton.app;
+        const windows = this.#appButton.windows;
+        const appWindows = app?.get_windows() ?? [];
+        let activeWindow = null;
+        for (const window of appWindows) {
+            if (!windows?.has(window)) continue;
+            activeWindow = window;
+            break;
+        }
+        const isActiveWindowChanged = !activeWindow || this.#activeWindow?.source !== activeWindow;
+        if (isActiveWindowChanged && this.#activeWindow) this.#releaseActiveWindow();
+        if (activeWindow && !this.#activeWindow) {
+            const { shrinkWindowTitles } = this.#config;
+            const appName = shrinkWindowTitles ? this.#appButton.app?.get_name() : null;
+            this.#activeWindow = new WindowProxy(activeWindow, appName);
+            this.#activeWindow.connect(Event.TitleChanged, () => this.rerender(true));
+        }
+        this.#windowTitle.visible = !!this.#activeWindow;
+        this.#windowTitle.set_text(this.#activeWindow?.title ?? null);
+    }
+
+    #releaseActiveWindow() {
+        this.#activeWindow?.destroy();
+        this.#activeWindow = null;
     }
 
 }
