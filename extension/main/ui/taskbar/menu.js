@@ -22,6 +22,7 @@ import { FileSelector } from '../../utils/zenity.js';
 import { ActivateBehavior, DemandsAttentionBehavior,
          PreferredMonitor, AppIconSize } from '../../utils/taskbar/appConfig.js';
 import { SoundVolumeIcon } from '../../utils/soundVolumeIcon.js';
+import { WindowProxy } from '../../utils/taskbar/windowProxy.js';
 import { SettingsPath, SettingsKey, Delay, Event } from '../../../shared/core/enums.js';
 import { Label } from '../../../shared/core/labels.js';
 
@@ -32,8 +33,7 @@ const ICON_FILE_TYPE_FILTER = `${Label.Icon} | *.svg *.png`;
 
 /** @type {{[prop: string]: boolean}} */
 const DefaultProps = {
-    favoritesSection: true,
-    showSingleWindows: true
+    favoritesSection: true
 };
 
 /** @type {{[position: string]: number}} */
@@ -579,6 +579,9 @@ export class Menu extends AppMenu {
     /** @type {CustomizeChildMenu?} */
     #customizeChildMenu = null;
 
+    /** @type {WindowProxy[]?} */
+    #windows = null;
+
     /** @type {Config?} */
     #config = this.#configProvider.getConfig(this, settingsKey => this.#handleConfig(settingsKey));
 
@@ -638,6 +641,15 @@ export class Menu extends AppMenu {
         super.open(animation);
     }
 
+    /**
+     * @override
+     * @param {BoxPointer.PopupAnimation} [animation]
+     */
+    close(animation) {
+        super.close(animation);
+        this.#clearWindows();
+    }
+
     rerender() {
         if (!this._app) return;
         if (this.#customizeChildMenu?.isOpen) {
@@ -645,8 +657,8 @@ export class Menu extends AppMenu {
             return;
         }
         this.#isRerenderQueued = false;
-        this._queueUpdateWindowsSection();
         this.#soundVolumeControlGroup?.update();
+        this.#handleWindows();
     }
 
     #createMenuItems() {
@@ -655,7 +667,7 @@ export class Menu extends AppMenu {
         if (this.#hasValidAppId) {
             this.#customizeChildMenu = new CustomizeChildMenu(this.#appButton, () => {
                 if (this.#isRerenderQueued) this.rerender();
-                else this.#updateSeparators();
+                this.#updateSeparators();
             });
             this.addMenuItem(this.#customizeChildMenu);
         }
@@ -683,6 +695,43 @@ export class Menu extends AppMenu {
     #updateSeparators() {
         if (!this.isOpen) return;
         this.emit(Event.OpenStateChanged, true);
+    }
+
+    #handleWindows() {
+        if (!this._app || !this.#appButton ||
+            !this.#config || !this._windowSection) return;
+        this.#clearWindows();
+        this._windowSection.removeAll();
+        const { isolateWorkspaces } = this.#config;
+        const appName = this._app.get_name();
+        const appWindows = this._app.get_windows();
+        const currentWorkspace = global.workspace_manager.get_active_workspace();
+        const taskbarWindows = this.#appButton.windows;
+        const workspaceWindows = [];
+        for (const window of appWindows) {
+            if (window.get_workspace() === currentWorkspace) workspaceWindows.push(window);
+            if (!taskbarWindows?.has(window)) continue;
+            const proxy = new WindowProxy(window, appName);
+            this.#windows ??= [];
+            this.#windows.push(proxy);
+            const menuItem = this._windowSection.addAction(proxy.title, () => proxy.activate());
+            proxy.connect(Event.TitleChanged, () => menuItem.label?.set_text(proxy.title));
+        }
+        this._openWindowsHeader.visible = !!this.#windows?.length;
+        if (this.#currentWorkspaceSection) {
+            this.#currentWorkspaceSection.isTitleVisible = !isolateWorkspaces;
+            this.#currentWorkspaceSection.windows = workspaceWindows;
+        }
+        if (this.#otherWorkspacesSection) {
+            const isSectionVisible = isolateWorkspaces && !!appWindows.length && !workspaceWindows.length;
+            this.#otherWorkspacesSection.isVisible = isSectionVisible;
+        }
+    }
+
+    #clearWindows() {
+        if (!this.#windows?.length) return;
+        for (const window of this.#windows) window.destroy();
+        this.#windows = null;
     }
 
     /**
@@ -722,42 +771,18 @@ export class Menu extends AppMenu {
     }
 
     /**
+     * Note: Replaced by `#handleWindows` function.
+     *
      * @override
      */
-    _updateWindowsSection() {
-        if (!this._app || !this.isOpen ||
-            !this.#appButton || this.#customizeChildMenu?.isOpen) return;
-        const appWindows = this._app.get_windows();
-        const taskbarWindows = this.#appButton.windows;
-        const currentWorkspace = global.workspace_manager.get_active_workspace();
-        const validWindows = [];
-        const workspaceWindows = [];
-        if (taskbarWindows?.size && appWindows?.length) {
-            for (const window of appWindows) {
-                if (taskbarWindows.has(window)) validWindows.push(window);
-                if (window.get_workspace() === currentWorkspace) workspaceWindows.push(window);
-            }
-        }
-        validWindows.filter = () => validWindows;
-        const app = this._app;
-        this._app = {
-            get_windows: () => validWindows,
-            get_name: () => app.get_name()
-        };
-        super._updateWindowsSection();
-        this._app = app;
-        if (!this.#config) return;
-        const { isolateWorkspaces } = this.#config;
-        if (this.#currentWorkspaceSection) {
-            this.#currentWorkspaceSection.isTitleVisible = !isolateWorkspaces;
-            this.#currentWorkspaceSection.windows = workspaceWindows;
-        }
-        if (this.#otherWorkspacesSection && this.#config) {
-            const isSectionVisible = isolateWorkspaces && !!appWindows.length && !workspaceWindows.length;
-            this.#otherWorkspacesSection.isVisible = isSectionVisible;
-        }
-        this.#updateSeparators();
-    }
+    _queueUpdateWindowsSection() {}
+
+    /**
+     * Note: Replaced by `#handleWindows` function.
+     *
+     * @override
+     */
+    _updateWindowsSection() {}
 
     /**
      * @override
