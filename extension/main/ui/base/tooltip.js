@@ -148,7 +148,7 @@ export class Tooltip extends Component {
         super.actor.add_child(this.#body);
         this.#sourceActor = sourceActor;
         this.connect(Event.Destroy, () => this.#destroy());
-        this.connect(Event.Mapped, () => this.#job?.reset(Delay.Redraw).queue(() => this.#fadeIn()));
+        this.connect(Event.Mapped, () => this.#handleMapped());
         this.#body.connect(Event.Hover, () => this.#hover());
         if (typeof name !== 'string') return;
         this.#body.set_name(`${name}-Body`);
@@ -203,6 +203,11 @@ export class Tooltip extends Component {
         this.#sourceActor = null;
         if (Tooltip.#shownTooltip !== this) return;
         Tooltip.#shownTooltip = null;
+    }
+
+    #handleMapped() {
+        if (this.#isHidden || !this.hasAllocation) return;
+        this.#job?.reset(Delay.Redraw).queue(() => this.#fadeIn());
     }
 
     #hover() {
