@@ -188,7 +188,8 @@ export class AppButton extends RuntimeButton {
         if (windows.length === this.#windowsCount) return windows;
         const result = [];
         for (const window of windows) {
-            if (this.#windows.has(window)) result.push(window);
+            if (!this.#windows.has(window)) continue;
+            result.push(window);
         }
         return result;
     }
