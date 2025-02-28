@@ -20,8 +20,8 @@ const PAGE_FILE_TYPE = '.js';
 const Page = {
     About: 'about',
     Panel: 'panel',
-    Tweaks: 'tweaks',
-    Misc: 'misc'
+    Misc: 'misc',
+    Tweaks: 'tweaks'
 };
 
 export default class Context extends SharedContext {
