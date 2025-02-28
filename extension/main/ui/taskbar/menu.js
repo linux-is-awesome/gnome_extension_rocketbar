@@ -659,6 +659,7 @@ export class Menu extends AppMenu {
         this.#isRerenderQueued = false;
         this.#soundVolumeControlGroup?.update();
         this.#handleWindows();
+        this.#updateSeparators();
     }
 
     #createMenuItems() {
@@ -667,7 +668,7 @@ export class Menu extends AppMenu {
         if (this.#hasValidAppId) {
             this.#customizeChildMenu = new CustomizeChildMenu(this.#appButton, () => {
                 if (this.#isRerenderQueued) this.rerender();
-                this.#updateSeparators();
+                else this.#updateSeparators();
             });
             this.addMenuItem(this.#customizeChildMenu);
         }
