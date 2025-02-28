@@ -18,16 +18,16 @@
             <object class="AdwPreferencesGroup">
                 <property name="title" translatable="yes">Notifications</property>
                 <child>
-                    <object class="AdwSwitchRow" id="notifications-count-attention-sources">
-                        <property name="title" translatable="yes">Count Attention Sources</property>
-                        <property name="subtitle" translatable="yes">Enable counting of Window Demands Attention notifications for applications</property>
-                    </object>
-                </child>
-                <child>
                     <object class="AdwSwitchRow" id="notifications-launcher-api">
                         <property name="title" translatable="yes">Launcher API Integration</property>
                         <property name="subtitle" translatable="yes">Retrieve notification count from the Launcher API for applications that support this API</property>
                         <property name="sensitive">false</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwSwitchRow" id="notifications-count-attention-sources">
+                        <property name="title" translatable="yes">Count Attention Sources</property>
+                        <property name="subtitle" translatable="yes">Enable counting of Window Demands Attention notifications for applications</property>
                     </object>
                 </child>
             </object>
