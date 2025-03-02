@@ -154,24 +154,28 @@ export class Tooltip extends Component {
         this.#body.set_name(`${name}-Body`);
     }
 
-    show() {
+    /**
+     * @param {boolean} [isInstant]
+     */
+    show(isInstant = false) {
         if (!this.#job || !this.isValid) return;
         this.#isHidden = false;
         const shownTooltip = Tooltip.#shownTooltip;
         if (shownTooltip && shownTooltip !== this) shownTooltip.hide();
+        const showDelay = isInstant ? Delay.Idle : this.#showDelay;
         const delay = shownTooltip && shownTooltip.#isVisible ?
-                      Math.min(this.#showDelay, this.#hideDelay) : this.#showDelay;
+                      Math.min(showDelay, this.#hideDelay) : showDelay;
         this.#fadeInJob = this.#job.reset(delay);
         this.#fadeInJob.queue(() => this.hasAllocation ? this.#fadeIn() : Context.desktop.addOverlay(super.actor));
     }
 
     /**
-     * @param {boolean} [preventRestore]
+     * @param {boolean} [isFinal]
      */
-    hide(preventRestore = false) {
+    hide(isFinal = false) {
         if (!this.isValid) return;
-        if (preventRestore) this.#body?.set_reactive(false);
-        if (this.#isHidden && preventRestore) return;
+        if (isFinal) this.#body?.set_reactive(false);
+        if (this.#isHidden && isFinal) return;
         this.#isHidden = true;
         this.#fadeInJob = null;
         this.#job?.reset(this.#hideDelay);
