@@ -763,6 +763,7 @@ export class AppButton extends RuntimeButton {
         if (Overview.visible) Overview.hide();
         Context.jobs.new(this, Delay.Sleep).destroy(() => null);
         this.#cycleWindows(false, scrollDirection === Clutter.ScrollDirection.UP);
+        if (this.#windowsCount > 1 && !this.tooltip?.isShown) this.tooltip?.show(true);
         return Clutter.EVENT_STOP;
 
     }
