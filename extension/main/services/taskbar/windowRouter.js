@@ -86,14 +86,6 @@ export default class WindowRouter {
         return this.#monitors.size > 1;
     }
 
-    /** @type {Map<number, string>} */
-    get #monitorsByIndex() {
-        const result = new Map();
-        if (!this.#monitors.size) return result;
-        for (const [direction, index] of this.#monitors) result.set(index, direction);
-        return result;
-    }
-
     /** @type {boolean} */
     get isRouting() {
         return this.#isRouting;
@@ -159,9 +151,11 @@ export default class WindowRouter {
     #validateSession() {
         const storage = Context.getStorage(this.constructor.name);
         const oldMonitors = storage.get(STORAGE_KEY_MONITORS);
-        if (!oldMonitors) return;
         storage.clear();
-        this.#isRoutingQueued = MainLayout.monitors !== oldMonitors;
+        if (!oldMonitors) return;
+        if (oldMonitors.length <= 1 &&
+            oldMonitors.length === MainLayout.monitors?.length) return;
+        this.#isRoutingQueued = oldMonitors !== MainLayout.monitors;
     }
 
     #saveSession() {
@@ -186,10 +180,25 @@ export default class WindowRouter {
         });
     }
 
+    /**
+     * Note: We need to handle monitor index swapping (e.g., primary 1 -> 0, right 0 -> 1)
+     *       to correctly restore windows afterwards.
+     */
     #saveWindows() {
         if (!this.#windows?.size) return;
         const hasMultipleMonitors = this.#hasMultipleMonitors;
-        const monitors = this.#monitorsByIndex;
+        const monitors = new Map();
+        if (hasMultipleMonitors) {
+            const display = global.display;
+            const primaryMonitor = display.get_primary_monitor();
+            monitors.set(primaryMonitor, PreferredMonitor.Primary);
+            for (const monitor in MonitorDirection) {
+                const direction = MonitorDirection[monitor];
+                const index = display.get_monitor_neighbor_index(primaryMonitor, direction);
+                if (index < 0) continue;
+                monitors.set(index, monitor);
+            }
+        }
         for (const [window, windowInfo] of this.#windows) {
             windowInfo.hasFocus = window.has_focus();
             if (!hasMultipleMonitors) continue;
