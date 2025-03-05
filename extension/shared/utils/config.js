@@ -67,7 +67,7 @@ export const InnerConfig = (parentConfig, key) => {
         if (typeof value === 'string' &&
             value.length >= JSON_OBJECT_MIN_LENGTH) return JSON.parse(value);
     } catch (e) {
-        Context.logError(`${InnerConfig.name} failed to parse value for key "${key}".`, e);
+        Context.logError(`${InnerConfig.name} failed to parse value for key: ${key}.`, e);
     }
     return null;
 };

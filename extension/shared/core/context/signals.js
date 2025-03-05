@@ -136,7 +136,7 @@ export default class Signals {
                        typeof target.connect === 'function' ?
                        target.connect(event, callback) : null;
             if (typeof id === 'number' || typeof id === 'string') connections.set(event, id);
-            else Context.logError(`${this.constructor.name} got invalid connection id for event "${event}": ${id}.`);
+            else Context.logError(`${this.constructor.name} got invalid connection id (${id}) for event: ${event}.`);
         } catch (e) {
             Context.logError(`${this.constructor.name} failed to connect target.`, e);
         }
