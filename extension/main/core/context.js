@@ -4,6 +4,7 @@
 
 import SharedContext from '../../shared/core/context.js';
 import Desktop from './context/desktop.js';
+import Hooks from './context/hooks.js';
 import Modules from '../services/modules.js';
 import LauncherApi from '../services/launcherApi.js';
 
@@ -28,6 +29,13 @@ export default class Context extends SharedContext {
         return instance.#desktop;
     }
 
+    /** @type {Hooks} */
+    static get hooks() {
+        const instance = this.instance;
+        instance.#hooks ??= new Hooks();
+        return instance.#hooks;
+    }
+
     /** @type {LauncherApi?} */
     static get launcherApi() {
         return this.instance.#launcherApi;
@@ -41,6 +49,9 @@ export default class Context extends SharedContext {
 
     /** @type {Desktop?} */
     #desktop = null;
+
+    /** @type {Hooks?} */
+    #hooks = null;
 
     /**
      * @param {Extension} extension
@@ -71,13 +82,15 @@ export default class Context extends SharedContext {
     #destroy() {
         const result = !Context.desktop.isLocked;
         try {
+            this.#hooks?.destroy();
             this.#modules?.destroy();
-            this.#desktop?.destroy();
             this.#launcherApi?.destroy();
+            this.#desktop?.destroy();
         } finally {
             this.#modules = null;
             this.#launcherApi = null;
             this.#desktop = null;
+            this.#hooks = null;
         }
         return result;
     }
