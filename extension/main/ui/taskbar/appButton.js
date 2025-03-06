@@ -76,7 +76,10 @@ class CycleWindowsQueue {
         }
         if (!minimize || nextWindow.minimized ||
             nextWindow !== this.#windows[0]) return FocusedWindow(nextWindow);
-        for (let i = 0, l = windows.length; i < l; ++i) windows[i].minimize();
+        for (const window of windows) {
+            if (!window.can_minimize()) continue;
+            window.minimize();
+        }
         this.#windows = null;
     }
 
@@ -801,7 +804,7 @@ export class AppButton extends RuntimeButton {
             const canFocus = window.minimized || !window.has_focus() ||
                              isCtrlPressed || isMiddleButton;
             if (canFocus) FocusedWindow(window);
-            else if (enableMinimizeAction) window.minimize();
+            else if (enableMinimizeAction && window.can_minimize()) window.minimize();
         } else this.#cycleWindows(enableMinimizeAction);
         return true;
     }
