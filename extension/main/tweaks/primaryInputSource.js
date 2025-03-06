@@ -15,25 +15,16 @@ export default class {
     /** @type {InputSourceManager?} */
     #inputSourceManager = InputSourceManager();
 
-    /** @type {(() => void)?} */
-    #backup = null;
-
     constructor() {
-        const callback = sender => this.#activatePrimaryInputSource(sender);
-        const originFunction = St.PasswordEntry.prototype.grab_key_focus;
-        St.PasswordEntry.prototype.grab_key_focus = function () {
-            callback(this);
-            originFunction.call(this);
-        };
-        this.#backup = originFunction;
+        const prototype = St.PasswordEntry.prototype;
+        Context.hooks.add(this, prototype, prototype.grab_key_focus,
+            sender => this.#activatePrimaryInputSource(sender), true);
     }
 
     destroy() {
         Context.signals.removeAll(this);
+        Context.hooks.removeAll(this);
         this.#inputSourceManager = null;
-        if (typeof this.#backup !== 'function') return;
-        St.PasswordEntry.prototype.grab_key_focus = this.#backup;
-        this.#backup = null;
     }
 
     /**

@@ -1,24 +1,16 @@
 import { SwitcherPopup } from 'resource:///org/gnome/shell/ui/switcherPopup.js';
+import Context from '../core/context.js';
 
 export default class {
 
-    /** @type {((...args) => boolean)?} */
-    #backup = null;
-
     constructor() {
-        const originFunction = SwitcherPopup.prototype.show;
-        SwitcherPopup.prototype.show = function (...args) {
-            const result = originFunction.call(this, ...args);
-            if (result) this._showImmediately();
-            return result;
-        };
-        this.#backup = originFunction;
+        const prototype = SwitcherPopup.prototype;
+        Context.hooks.add(this, prototype, prototype.show,
+            (sender, result) => (result && sender._showImmediately(), result));
     }
 
     destroy() {
-        if (typeof this.#backup !== 'function') return;
-        SwitcherPopup.prototype.show = this.#backup;
-        this.#backup = null;
+        Context.hooks.removeAll(this);
     }
 
 }

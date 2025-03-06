@@ -12,9 +12,6 @@ export default class {
     /** @type {InputSourceIndicator?} */
     #inputSourceIndicator = MainPanel.statusArea?.keyboard;
 
-    /** @type {((...args) => void)?} */
-    #backup = null;
-
     constructor() {
         const inputSourceManager = InputSourceManager();
         Context.signals.add(this,
@@ -25,25 +22,21 @@ export default class {
 
     destroy() {
         Context.signals.removeAll(this);
+        Context.hooks.removeAll(this);
         this.#inputSourceIndicator?._sourcesChanged();
         this.#inputSourceIndicator?._currentSourceChanged();
         this.#inputSourceIndicator = null;
-        if (typeof this.#backup !== 'function') return;
-        InputSourcePopup.prototype._init = this.#backup;
-        this.#backup = null;
     }
 
     #updatePopup() {
-        const initPopupFunction = InputSourcePopup.prototype._init;
-        InputSourcePopup.prototype._init = function (items, ...args) {
-            items = items?.map(item => ({
+        const prototype = InputSourcePopup.prototype;
+        Context.hooks.add(this, prototype, prototype._init, (_, items, ...args) => [
+            null, items.map(item => ({
                 shortName: item._shortName?.toUpperCase(),
                 displayName: item.displayName,
                 activate: () => item.activate()
-            }));
-            initPopupFunction.call(this, items, ...args);
-        };
-        this.#backup = initPopupFunction;
+            })), ...args
+        ], true);
     }
 
     #updateIndicator() {

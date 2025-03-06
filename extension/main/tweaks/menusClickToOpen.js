@@ -1,17 +1,16 @@
 import { MainPanel } from '../core/shell.js';
+import Context from '../core/context.js';
 
 export default class {
 
     constructor() {
         const menuManager = MainPanel.menuManager;
-        if (typeof menuManager?._changeMenu !== 'function') return;
-        menuManager._changeMenu = () => {};
+        if (!menuManager) return;
+        Context.hooks.add(this, menuManager, menuManager._changeMenu, () => true, true);
     }
 
     destroy() {
-        const menuManager = MainPanel.menuManager;
-        if (typeof menuManager?._changeMenu !== 'function') return;
-        menuManager._changeMenu = menuManager.constructor.prototype._changeMenu;
+        Context.hooks.removeAll(this);
     }
 
 }

@@ -1,5 +1,6 @@
 /**
  * @typedef {import('resource:///org/gnome/shell/ui/searchController.js').SearchController} SearchController
+ * @typedef {import('resource:///org/gnome/shell/ui/workspaceThumbnail.js').ThumbnailsBox} ThumbnailsBox
  */
 
 import Clutter from 'gi://Clutter';
@@ -20,24 +21,29 @@ export default class {
     /** @type {SearchController?} */
     #searchController = Overview.searchController ?? null;
 
-    /** @type {((...args) => void)?} */
-    #backup = null;
+    /** @type {ThumbnailsBox?} */
+    #workspaceThumbnails = Overview._overview?._controls?._thumbnailsBox ?? null;
 
     constructor() {
-        if (!this.#searchController || !this.#searchContainer) return;
+        if (!this.#searchController || !this.#searchContainer || !this.#workspaceThumbnails) return;
         Context.signals.add(this,
             [this.#searchController, Event.SearchActive, () => this.#toggleSearch()]);
         this.#toggleSearch();
-        this.#overrideWorkspaceThumbnailsScale();
+        this.#setWorkspaceThumbnailsScale(this.#workspaceThumbnails, WORKSPACE_THUMBNAIL_SCALE);
+        const prototype = ThumbnailsBox.prototype;
+        Context.hooks.add(this, prototype, prototype._init,
+            target => this.#setWorkspaceThumbnailsScale(target, WORKSPACE_THUMBNAIL_SCALE), true);
     }
 
     destroy() {
+        if (!this.#searchContainer || !this.#searchController || !this.#workspaceThumbnails) return;
         Context.signals.removeAll(this);
-        this.#restoreWorkspaceThumbnailsScale();
-        this.#searchContainer?.set({ ...AnimationType.OpacityMax, height: -1 });
+        Context.hooks.removeAll(this);
+        this.#setWorkspaceThumbnailsScale(this.#workspaceThumbnails, MAX_THUMBNAIL_SCALE);
+        this.#searchContainer.set({ ...AnimationType.OpacityMax, height: -1 });
         this.#searchContainer = null;
         this.#searchController = null;
-        this.#backup = null;
+        this.#workspaceThumbnails = null;
     }
 
     #toggleSearch() {
@@ -70,24 +76,13 @@ export default class {
         this.#searchContainer.set({ ...AnimationType.OpacityMin, height: 0 });
     }
 
-    #overrideWorkspaceThumbnailsScale() {
-        const workspaceThumbnails = Overview._overview?._controls?._thumbnailsBox;
-        if (!workspaceThumbnails) return;
-        workspaceThumbnails._maxThumbnailScale = WORKSPACE_THUMBNAIL_SCALE;
-        const initThumbnailsBoxFunction = ThumbnailsBox.prototype._init;
-        ThumbnailsBox.prototype._init = function (...args) {
-            this._maxThumbnailScale = WORKSPACE_THUMBNAIL_SCALE;
-            initThumbnailsBoxFunction.call(this, ...args);
-        };
-        this.#backup = initThumbnailsBoxFunction;
-    }
-
-    #restoreWorkspaceThumbnailsScale() {
-        if (typeof this.#backup !== 'function') return;
-        ThumbnailsBox.prototype._init = this.#backup;
-        const workspaceThumbnails = Overview._overview?._controls?._thumbnailsBox;
-        if (!workspaceThumbnails) return;
-        workspaceThumbnails._maxThumbnailScale = MAX_THUMBNAIL_SCALE;
+    /**
+     * @param {ThumbnailsBox} target
+     * @param {number} scale
+     */
+    #setWorkspaceThumbnailsScale(target, scale) {
+        if (!target) return;
+        target._maxThumbnailScale = scale;
     }
 
 }
