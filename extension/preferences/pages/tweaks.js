@@ -14,7 +14,8 @@ const MANAGED_MODULES = [
     Module.TweakPopupsNoDelay,
     Module.TweakPopupsPreventFocus,
     Module.TweakPrimaryInputSource,
-    Module.TweakUpperCaseInputSource
+    Module.TweakUpperCaseInputSource,
+    Module.TweakDndSystemNotifications
 ];
 
 /** @enum {string} */
