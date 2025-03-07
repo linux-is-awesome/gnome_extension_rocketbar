@@ -62,10 +62,11 @@ export const Event = {
 };
 
 /**
- * @enum {string} Standard GObject properties
+ * @enum {string}
  */
 export const Property = {
-    Visible: 'visible'
+    Visible: 'visible',
+    ShowBanners: 'showBanners'
 };
 
 /**
