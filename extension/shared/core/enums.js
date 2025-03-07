@@ -238,6 +238,7 @@ export const Module = {
     TweakPrimaryInputSource: 'tweaks/primaryInputSource',
     TweakUpperCaseInputSource: 'tweaks/upperCaseInputSource',
     TweakMenusClickToOpen: 'tweaks/menusClickToOpen',
+    TweakDndSystemNotifications: 'tweaks/dndSystemNotifications',
     Panel: 'ui/panel',
     NotificationCounter: 'ui/notificationCounter',
     Taskbar: 'ui/taskbar'

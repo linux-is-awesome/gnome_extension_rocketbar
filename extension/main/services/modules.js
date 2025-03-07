@@ -16,6 +16,7 @@ const CORE_MODULES = [
     Module.TweakPopupsPreventFocus,
     Module.TweakPopupsNoDelay,
     Module.TweakMenusClickToOpen,
+    Module.TweakDndSystemNotifications,
     Module.Panel
 ];
 
@@ -30,6 +31,7 @@ const Modules = {
         Module.TweakPrimaryInputSource,
         Module.TweakUpperCaseInputSource,
         Module.TweakMenusClickToOpen,
+        Module.TweakDndSystemNotifications,
         Module.Panel,
         Module.NotificationCounter,
         Module.Taskbar
