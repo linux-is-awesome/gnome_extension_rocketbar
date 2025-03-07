@@ -1,5 +1,5 @@
 /**
- * @typedef {import('gi://Shell').App} Shell.App
+ * @typedef {import('gi://Meta').Window} Meta.Window
  *
  * @typedef {import('resource:///org/gnome/shell/ui/sessionMode').SessionMode} SessionMode
  * @typedef {import('resource:///org/gnome/shell/ui/layout.js').LayoutManager} LayoutManager
@@ -11,7 +11,7 @@
  * @typedef {SessionMode} Session
  * @typedef {LayoutManager} MainLayout
  * @typedef {Panel} MainPanel
- * @typedef {{_app: Shell.App}} WindowAttentionSource
+ * @typedef {{_window: Meta.Window}} WindowAttentionSource
  * @typedef {import('resource:///org/gnome/shell/ui/notificationDaemon.js').FdoNotificationDaemonSource} FdoNotificationDaemonSource
  * @typedef {import('resource:///org/gnome/shell/ui/notificationDaemon.js').GtkNotificationDaemonAppSource} GtkNotificationDaemonAppSource
  * @typedef {import('resource:///org/gnome/shell/ui/messageTray.js').Source &

@@ -40,20 +40,20 @@ class NotificationService {
     #notificationAppId = source => ({
         [NotificationSource.FdoNotification]: source.app?.id,
         [NotificationSource.GtkNotification]: source._appId,
-        [NotificationSource.WindowAttention]: source._app?.id
+        [NotificationSource.WindowAttention]: this.#windowTracker?.get_window_app(source._window)?.id
     })[source.constructor?.name]?.replace(APPID_REGEXP_STRING, '');
 
-    /** @type {Set<MessageTray.Source>} */
+    /** @type {Shell.WindowTracker?} */
+    #windowTracker = Shell.WindowTracker.get_default();
+
+    /** @type {Set<MessageTray.Source>?} */
     #notifications = new Set();
 
-    /** @type {Set<NotificationHandler>?} */
-    #handlers = new Set();
+    /** @type {Map<string, number>?} */
+    #countByAppId = new Map();
 
-    /** @type {Map<string|number, number>} */
-    #countForApps = new Map();
-
-    /** @type {boolean} */
-    #hasCountByPid = false;
+    /** @type {Map<NotificationHandler, (count: number) => void>?} */
+    #handlers = new Map();
 
     /** @type {number} */
     #totalCount = 0;
@@ -61,12 +61,12 @@ class NotificationService {
     /** @type {Job?} */
     #updateJob = Context.jobs.new(this, Delay.Background);
 
-    /** @type {Config} */
-    #config = Config(this, ConfigField, settingsKey => this.#handleConfig(settingsKey));
+    /** @type {Config?} */
+    #config = Config(this, ConfigField, () => this.#handleConfig());
 
     constructor() {
         this.#handleConfig();
-        this.#initNotifications();
+        this.#loadNotifications();
         Context.signals.add(this, [
             MessageTray,
             MessageTrayEvent.SourceAdded, (_, source) => this.#addNotification(source),
@@ -83,47 +83,42 @@ class NotificationService {
         this.#updateJob?.destroy();
         Context.signals.removeAll(this);
         Context.launcherApi?.disconnect(this);
+        this.#notifications?.clear();
+        this.#notifications = null;
+        this.#countByAppId = null;
         this.#handlers = null;
         this.#updateJob = null;
+        this.#windowTracker = null;
+        this.#config = null;
         return true;
     }
 
     /**
      * @param {NotificationHandler} handler
+     * @param {(count: number) => void} callback
      */
-    addHandler(handler) {
-        if (!this.#handlers || handler instanceof NotificationHandler === false) return;
-        this.#handlers.add(handler);
-        this.#triggerHandler(handler);
+    addHandler(handler, callback) {
+        if (!this.#handlers || !handler || !callback) return;
+        this.#handlers.set(handler, callback);
+        this.#triggerHandler(handler, callback);
     }
 
     /**
      * @param {NotificationHandler} handler
      */
     removeHandler(handler) {
-        if (!handler || !this.#handlers?.has(handler)) return;
+        if (!this.#handlers || !handler || !this.#handlers.has(handler)) return;
         this.#handlers.delete(handler);
     }
 
-    /**
-     * @param {NotificationHandler} handler
-     */
-    triggerHandler(handler) {
-        if (!handler || !this.#handlers?.has(handler)) return;
-        this.#triggerHandler(handler);
-    }
-
-    /**
-     * @param {string} [settingsKey]
-     */
-    #handleConfig(settingsKey) {
-        if (settingsKey === ConfigField.countAttentionSources) return this.#queueUpdate();
-        if (this.#config.enableLauncherApi) Context.launcherApi?.connectNotifications(this, () => this.#queueUpdate());
-        else Context.launcherApi?.disconnect(this);
+    #handleConfig() {
+        if (!this.#config) return;
+        if (!this.#config.enableLauncherApi) Context.launcherApi?.disconnect(this);
+        else Context.launcherApi?.connectNotifications(this, () => this.#queueUpdate());
         this.#queueUpdate();
     }
 
-    #initNotifications() {
+    #loadNotifications() {
         const sources = MessageTray.getSources();
         if (!sources?.length) return;
         for (let i = 0, l = sources.length; i < l; ++i) this.#addNotification(sources[i]);
@@ -133,7 +128,7 @@ class NotificationService {
      * @param {MessageTray.Source} source
      */
     #addNotification(source) {
-        if (this.#notifications.has(source)) return;
+        if (!this.#notifications || this.#notifications.has(source)) return;
         this.#notifications.add(source);
         Context.signals.add(this, [source, MessageTrayEvent.CountChanged, () => this.#queueUpdate()]);
         this.#queueUpdate();
@@ -143,7 +138,7 @@ class NotificationService {
      * @param {MessageTray.Source} source
      */
     #removeNotification(source) {
-        if (!this.#notifications.has(source)) return;
+        if (!this.#notifications || !this.#notifications.has(source)) return;
         this.#notifications.delete(source);
         Context.signals.remove(this, source);
         this.#queueUpdate();
@@ -154,58 +149,37 @@ class NotificationService {
         this.#updateJob.reset().queue(() => this.#update());
     }
 
-    /**
-     * Note: FdoNotification source may not have appId in some cases.
-     *       As an example: Thunderbird notifications when using SysTray-X addon.
-     *       As a workaround for such cases pid can be used to count app notifications.
-     *       For Flatpak apps dbus access in required to count notifications for them.
-     */
     #update() {
-        if (!this.#handlers) return;
+        if (!this.#handlers || !this.#notifications ||
+            !this.#countByAppId || !this.#config) return;
+        const { countAttentionSources } = this.#config;
         this.#totalCount = 0;
-        this.#hasCountByPid = false;
         const launcherApiCount = Context.launcherApi?.notifications;
-        if (!launcherApiCount) this.#countForApps.clear();
-        else this.#countForApps = new Map([...launcherApiCount]);
+        if (!launcherApiCount) this.#countByAppId.clear();
+        else this.#countByAppId = new Map([...launcherApiCount]);
         for (const source of this.#notifications) {
             const sourceCount = source.count ?? 0;
             if (!sourceCount) continue;
             this.#totalCount += sourceCount;
+            const isWindowAttentionSource = source.constructor.name === NotificationSource.WindowAttention;
+            if (isWindowAttentionSource && !countAttentionSources) continue;
             const appId = this.#notificationAppId(source);
-            if (appId && launcherApiCount?.has(appId)) continue;
-            if (appId) {
-                const countForApp = this.#countForApps.get(appId) ?? 0;
-                this.#countForApps.set(appId, countForApp + sourceCount);
-            }
-            if (source.pid) {
-                const countForApp = this.#countForApps.get(source.pid) ?? 0;
-                this.#countForApps.set(source.pid, countForApp + sourceCount);
-                this.#hasCountByPid = true;
-            }
+            if (!appId) continue;
+            if (!isWindowAttentionSource && launcherApiCount?.has(appId)) continue;
+            const countForApp = this.#countByAppId.get(appId) ?? 0;
+            this.#countByAppId.set(appId, countForApp + sourceCount);
         }
-        for (const handler of this.#handlers) this.#triggerHandler(handler);
+        for (const [handler, callback] of this.#handlers) this.#triggerHandler(handler, callback);
     }
 
     /**
-     * Note: Count notifications by pid as a backup option.
-     *       This workaround helps with Thunderbird notifications when using SysTray-X addon.
-     *       Probably can be useful for other apps as well.
-     *       It doesn't allow to count notifications for separate Chrome windows separately.
-     *       Doesn't help to count notifications for Flatpak apps without dbus access.
-     *
      * @param {NotificationHandler} handler
+     * @param {(count: number) => void} callback
      */
-    #triggerHandler(handler) {
+    #triggerHandler(handler, callback) {
         const appId = handler.appId;
-        if (typeof appId !== 'string') return handler.setCount(this.#totalCount);
-        let count = this.#countForApps.get(appId) ?? 0;
-        if (count || !this.#hasCountByPid) return handler.setCount(count);
-        const pids = handler.pids;
-        if (!pids?.length) return handler.setCount(count);
-        for (let i = 0, l = pids.length; i < l; ++i) {
-            count += this.#countForApps.get(pids[i]) ?? 0;
-        }
-        handler.setCount(count);
+        if (typeof appId !== 'string') callback(this.#totalCount);
+        else callback(this.#countByAppId?.get(appId) ?? 0);
     }
 
 }
@@ -224,9 +198,6 @@ export class NotificationHandler {
     /** @type {string?} */
     #appId = null;
 
-    /** @type {number[]?} */
-    #pids = null;
-
     /** @type {number?} */
     #count = null;
 
@@ -239,15 +210,6 @@ export class NotificationHandler {
     }
 
     /**
-     * @type {number[]?}
-     */
-    get pids() {
-        if (this.#pids?.length) return this.#pids;
-        if (!this.appId) return null;
-        return Context.getStorage(this.constructor.name).get(this.#appId);
-    }
-
-    /**
      * @param {(count: number) => void} callback
      * @param {Shell.App?} [app]
      */
@@ -256,11 +218,11 @@ export class NotificationHandler {
         this.#callback = callback;
         this.#app = app instanceof Shell.App ? app : null;
         NotificationHandler.#service ??= new NotificationService();
-        NotificationHandler.#service.addHandler(this);
+        NotificationHandler.#service.addHandler(this, count => this.#setCount(count));
     }
 
     destroy() {
-        this.setCount(0);
+        this.#setCount(0);
         this.#callback = null;
         this.#app = null;
         if (!NotificationHandler.#service) return;
@@ -270,24 +232,9 @@ export class NotificationHandler {
     }
 
     /**
-     * Note: This is a special function to call outside this class and catch pids of the running app.
-     *       So basically the app should be running at some point, otherwise it may not get notifications count.
-     *       Usually all windows of a single app share the same pid.
-     */
-    updatePids() {
-        if (!this.appId) return;
-        const oldPids = this.#pids ?? [];
-        this.#pids = this.#app?.get_pids() ?? null;
-        if (!this.#pids?.length) return;
-        if (`${oldPids}` === `${this.#pids}`) return;
-        Context.getStorage(this.constructor.name).set(this.#appId, this.#pids);
-        NotificationHandler.#service?.triggerHandler(this);
-    }
-
-    /**
      * @param {number} count
      */
-    setCount(count) {
+    #setCount(count) {
         if (typeof this.#callback !== 'function') return;
         if (this.#count === count) return;
         this.#count = count;

@@ -591,7 +591,6 @@ export class AppButton extends RuntimeButton {
         this.#windowsCount = this.#windows?.size ?? 0;
         if (!isFavorite && !this.#windowsCount) return this.#queueDestroy();
         this.#isFavorite = isFavorite;
-        this.#notificationHandler?.updatePids();
         this.#soundVolumeControl?.update();
         if (!this.#isActive || !this.#windowsCount) this.#handleFocusedWindow();
         if (this.#windowsCount) this.#handleWindows();
