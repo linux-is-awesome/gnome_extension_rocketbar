@@ -3,12 +3,14 @@
  */
 
 import Shell from 'gi://Shell';
+import Meta from 'gi://Meta';
 import Context from '../core/context.js';
 import { MessageTray } from '../core/shell.js';
-import { SettingsKey, Delay } from '../../shared/core/enums.js';
+import { SettingsKey, Event, Delay } from '../../shared/core/enums.js';
 import { Config } from '../../shared/utils/config.js';
 
 const APPID_REGEXP_STRING = /.desktop/g;
+const WINDOW_ATTENTION_SOURCE_CLASS = 'WindowAttentionSource';
 
 /** @enum {string} */
 const ConfigField = {
@@ -16,32 +18,7 @@ const ConfigField = {
     countAttentionSources: SettingsKey.NotificationsCountAttentionSources
 };
 
-/** @enum {string} */
-const MessageTrayEvent = {
-    SourceAdded: 'source-added',
-    SourceRemoved: 'source-removed',
-    QueueChanged: 'queue-changed',
-    CountChanged: 'notify::count'
-};
-
-/** @enum {string} */
-const NotificationSource = {
-    FdoNotification: 'FdoNotificationDaemonSource',
-    GtkNotification: 'GtkNotificationDaemonAppSource',
-    WindowAttention: 'WindowAttentionSource'
-};
-
 class NotificationService {
-
-    /**
-     * @param {MessageTray.Source} source
-     * @returns {string?}
-     */
-    #notificationAppId = source => ({
-        [NotificationSource.FdoNotification]: source.app?.id,
-        [NotificationSource.GtkNotification]: source._appId,
-        [NotificationSource.WindowAttention]: this.#windowTracker?.get_window_app(source._window)?.id
-    })[source.constructor?.name]?.replace(APPID_REGEXP_STRING, '');
 
     /** @type {Shell.WindowTracker?} */
     #windowTracker = Shell.WindowTracker.get_default();
@@ -69,9 +46,9 @@ class NotificationService {
         this.#loadNotifications();
         Context.signals.add(this, [
             MessageTray,
-            MessageTrayEvent.SourceAdded, (_, source) => this.#addNotification(source),
-            MessageTrayEvent.SourceRemoved, (_, source) => this.#removeNotification(source),
-            MessageTrayEvent.QueueChanged, () => this.#queueUpdate()
+            Event.SourceAdded, (_, source) => this.#addNotification(source),
+            Event.SourceRemoved, (_, source) => this.#removeNotification(source),
+            Event.QueueChanged, () => this.#queueUpdate()
         ]);
     }
 
@@ -128,9 +105,9 @@ class NotificationService {
      * @param {MessageTray.Source} source
      */
     #addNotification(source) {
-        if (!this.#notifications || this.#notifications.has(source)) return;
+        if (!source || !this.#notifications || this.#notifications.has(source)) return;
         this.#notifications.add(source);
-        Context.signals.add(this, [source, MessageTrayEvent.CountChanged, () => this.#queueUpdate()]);
+        Context.signals.add(this, [source, Event.CountChanged, () => this.#queueUpdate()]);
         this.#queueUpdate();
     }
 
@@ -161,15 +138,26 @@ class NotificationService {
             const sourceCount = source.count ?? 0;
             if (!sourceCount) continue;
             this.#totalCount += sourceCount;
-            const isWindowAttentionSource = source.constructor.name === NotificationSource.WindowAttention;
+            const isWindowAttentionSource = source.constructor?.name === WINDOW_ATTENTION_SOURCE_CLASS;
             if (isWindowAttentionSource && !countAttentionSources) continue;
-            const appId = this.#notificationAppId(source);
-            if (!appId) continue;
+            const sourceAppId = source.app?.id ?? source._appId ?? this.#getWindowAppId(source._window);
+            if (!sourceAppId || typeof sourceAppId !== 'string') continue;
+            const appId = sourceAppId.replace(APPID_REGEXP_STRING, '');
             if (!isWindowAttentionSource && launcherApiCount?.has(appId)) continue;
-            const countForApp = this.#countByAppId.get(appId) ?? 0;
-            this.#countByAppId.set(appId, countForApp + sourceCount);
+            const oldCount = this.#countByAppId.get(appId) ?? 0;
+            this.#countByAppId.set(appId, oldCount + sourceCount);
         }
         for (const [handler, callback] of this.#handlers) this.#triggerHandler(handler, callback);
+    }
+
+    /**
+     * @param {Meta.Window?} [window]
+     * @returns {string?}
+     */
+    #getWindowAppId(window) {
+        return window instanceof Meta.Window ?
+               this.#windowTracker?.get_window_app(window)?.id ?? null :
+               null;
     }
 
     /**

@@ -11,7 +11,7 @@
  * @typedef {SessionMode} Session
  * @typedef {LayoutManager} MainLayout
  * @typedef {Panel} MainPanel
- * @typedef {{_window: Meta.Window}} WindowAttentionSource
+ * @typedef {{_window?: Meta.Window?}} WindowAttentionSource
  * @typedef {import('resource:///org/gnome/shell/ui/notificationDaemon.js').FdoNotificationDaemonSource} FdoNotificationDaemonSource
  * @typedef {import('resource:///org/gnome/shell/ui/notificationDaemon.js').GtkNotificationDaemonAppSource} GtkNotificationDaemonAppSource
  * @typedef {import('resource:///org/gnome/shell/ui/messageTray.js').Source &
