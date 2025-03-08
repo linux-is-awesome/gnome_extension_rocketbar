@@ -129,9 +129,9 @@ class NotificationService {
     #update() {
         if (!this.#handlers || !this.#notifications ||
             !this.#countByAppId || !this.#config) return;
-        const { countAttentionSources } = this.#config;
+        const { enableLauncherApi, countAttentionSources } = this.#config;
         this.#totalCount = 0;
-        const launcherApiCount = Context.launcherApi?.notifications;
+        const launcherApiCount = enableLauncherApi ? Context.launcherApi?.notifications : null;
         if (!launcherApiCount) this.#countByAppId.clear();
         else this.#countByAppId = new Map([...launcherApiCount]);
         for (const source of this.#notifications) {
