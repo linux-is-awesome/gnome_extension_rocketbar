@@ -140,20 +140,22 @@ export default class Hooks {
      * @param {string|Function} method
      * @param {(...args) => *} callback
      * @param {boolean} [isBefore]
+     * @returns {this}
      */
     add(client, target, method, callback, isBefore = false) {
         if (!this.#hooks || !client || !target ||
-            !method || typeof callback !== 'function') return;
+            !method || typeof callback !== 'function') return this;
         const functionName = typeof method === 'function' ?
                              method.name || this.#getFunctionName(target, method) :
                              method;
         if (typeof functionName !== 'string' ||
-            typeof target[functionName] !== 'function') return;
+            typeof target[functionName] !== 'function') return this;
         const hooks = this.#hooks.get(target) ?? new Map();
         const hook = hooks?.get(functionName) ?? new Hook(target, functionName);
         hook.addClient(client, callback, isBefore);
         hooks.set(functionName, hook);
         this.#hooks.set(target, hooks);
+        return this;
     }
 
     /**
