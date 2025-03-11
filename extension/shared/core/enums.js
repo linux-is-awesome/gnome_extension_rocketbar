@@ -69,6 +69,7 @@ export const Event = {
  * @enum {string}
  */
 export const Property = {
+    Name: 'name',
     Visible: 'visible',
     ShowBanners: 'showBanners'
 };

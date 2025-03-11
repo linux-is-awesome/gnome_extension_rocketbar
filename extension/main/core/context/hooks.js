@@ -1,4 +1,5 @@
 import Context from '../context.js';
+import { Property } from '../../../shared/core/enums.js';
 
 class Hook {
 
@@ -38,6 +39,7 @@ class Hook {
             result = afterClientsCallback(this, result, args) ?? result;
             return result;
         };
+        Object.defineProperty(this.#target[functionName], Property.Name, { value: functionName });
     }
 
     /**
@@ -153,8 +155,7 @@ export default class Hooks {
         const hooks = this.#hooks.get(target) ?? new Map();
         const hook = hooks?.get(functionName) ?? new Hook(target, functionName);
         hook.addClient(client, callback, isBefore);
-        hooks.set(functionName, hook);
-        this.#hooks.set(target, hooks);
+        this.#hooks.set(target, hooks.set(functionName, hook));
         return this;
     }
 
