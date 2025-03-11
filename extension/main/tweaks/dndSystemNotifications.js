@@ -12,11 +12,11 @@ export default class {
 
     constructor() {
         const prototype = Source.prototype;
-        Context.hooks.add(this, prototype, prototype.addNotification, (target, notification) => {
-            if (target?.constructor?.name !== Source.name ||
+        Context.hooks.add(this, prototype, prototype.addNotification, (source, notification) => {
+            if (source?.constructor?.name !== Source.name ||
                 notification?.urgency === Urgency.CRITICAL ||
-                target.policy.showBanners) return;
-            Object.defineProperty(target.policy, Property.ShowBanners, PropertyDescriptor);
+                source.policy.showBanners) return;
+            Object.defineProperty(source.policy, Property.ShowBanners, PropertyDescriptor);
         }, true);
     }
 
