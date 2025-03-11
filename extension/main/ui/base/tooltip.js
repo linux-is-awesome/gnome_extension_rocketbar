@@ -314,16 +314,17 @@ export class Tooltip extends Component {
     #moveAndResize() {
         if (!this.#sourceActor || !this.hasAllocation) return;
         const actor = super.actor;
-        const sourceActorRect = this.#sourceActor.centerRect;
+        const sourceActorRect = this.#sourceActor.rect;
+        const sourceActorCenterRect = this.#sourceActor.centerRect;
         const monitorRect = this.#sourceActor.monitorRect;
-        if (!sourceActorRect || !monitorRect) return;
+        if (!sourceActorRect || !sourceActorCenterRect || !monitorRect) return;
         let [width, height] = this.#targetSize ?? actor.get_size();
         const offset = this.#offset ?? 0;
         const maxWidth = monitorRect.width - offset;
         width = Math.min(maxWidth, width);
         const style = `max-width: ${maxWidth}px;`;
-        const sourceCenter = Math.floor((sourceActorRect.width - width) / 2);
-        let x = Math.max(monitorRect.x, sourceActorRect.x + sourceCenter);
+        const sourceCenter = Math.floor((sourceActorCenterRect.width - width) / 2);
+        let x = Math.max(monitorRect.x, sourceActorCenterRect.x + sourceCenter);
         const xOverflow = monitorRect.width - (x + width);
         if (x > monitorRect.x && xOverflow < 0) {
             x = Math.max(monitorRect.x, x + xOverflow);
