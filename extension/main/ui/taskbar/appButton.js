@@ -15,8 +15,7 @@ import { RuntimeButton, ButtonEvent } from '../base/button.js';
 import { TaskbarClient } from '../../services/taskbar.js';
 import { DragActor } from './appButton/dragActor.js';
 import { AppIcon, AppIconAnimation, AppIconEvent } from './appIcon.js';
-import { AppConfig, ConfigField,
-         ActivateBehavior, DemandsAttentionBehavior } from '../../utils/taskbar/appConfig.js';
+import { AppConfig, ConfigField, ActivateBehavior } from '../../utils/taskbar/appConfig.js';
 import { Menu } from './menu.js';
 import { NotificationBadge } from './notificationBadge.js';
 import { ProgressBar } from './progressBar.js';
@@ -353,8 +352,8 @@ export class AppButton extends RuntimeButton {
                 this.#moveWindows();
                 break;
             case ActivateBehavior.FindWindow:
-                const sortedWindows = this.#app?.get_windows();
-                if (sortedWindows?.length) FocusedWindow(sortedWindows[0]);
+                const appWindows = this.#app?.get_windows();
+                if (appWindows?.length) FocusedWindow(appWindows[0]);
                 break;
             case ActivateBehavior.NewWindow:
             default:
@@ -439,8 +438,7 @@ export class AppButton extends RuntimeButton {
     #connectSignals() {
         this.connect(Event.Scroll, (_, event) => this.#scroll(event));
         Context.signals.add(this,
-            [global.display, Event.FocusWindow, () => this.#handleFocusedWindow(),
-                             Event.WindowDemandsAttention, (_, window) => this.#handleWindowAttention(window)],
+            [global.display, Event.FocusWindow, () => this.#handleFocusedWindow()],
             [global.window_manager, Event.Minimize, (_, actor) => this.#handleWindowState(actor?.meta_window),
                                     Event.Unminimize, (_, actor) => this.#handleWindowState(actor?.meta_window)]);
         Context.launcherApi?.connectProgress(this, () => this.#handleProgress());
@@ -660,25 +658,6 @@ export class AppButton extends RuntimeButton {
         if (!this.isValid || !this.#windows) return;
         for (const window of this.#windows) {
             window.get_icon_geometry = () => this.#getWindowIconGeometry(window);
-            if (window.demands_attention) this.#handleWindowAttention(window);
-        }
-    }
-
-    /**
-     * @param {Meta.Window} window
-     */
-    #handleWindowAttention(window) {
-        if (!this.#config || !window || window.has_focus()) return;
-        const { demandsAttentionBehavior } = this.#config;
-        let isCurrentWorkspace = false;
-        switch (demandsAttentionBehavior) {
-            case DemandsAttentionBehavior.FocusActive:
-                if (!this.#isActive) return;
-            case DemandsAttentionBehavior.FocusWorkspace:
-                isCurrentWorkspace = true;
-            case DemandsAttentionBehavior.FocusAll:
-                if (!this.#service?.hasWindow(window, isCurrentWorkspace)) return;
-                FocusedWindow(window);
         }
     }
 
@@ -851,10 +830,10 @@ export class AppButton extends RuntimeButton {
         const workspace = this.#service?.workspace;
         if (!workspace) return;
         this.animateLaunch();
-        const sortedWindows = this.#app?.get_windows();
+        const appWindows = this.#app?.get_windows();
         for (const window of windows) window.change_workspace(workspace);
-        if (Overview.visible || !sortedWindows?.length) return;
-        FocusedWindow(sortedWindows[0]);
+        if (Overview.visible || !appWindows?.length) return;
+        FocusedWindow(appWindows[0]);
     }
 
     /**
