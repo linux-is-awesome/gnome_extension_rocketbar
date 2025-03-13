@@ -4,6 +4,7 @@
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupSubMenu} PopupSubMenu
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupSubMenuMenuItem} PopupSubMenuMenuItem
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupSeparatorMenuItem} PopupSeparatorMenuItem
+ * @typedef {(value: string, isDefaultValue: boolean) => (PopupBaseMenuItem|CollapsibleGroup)[]} RadioGroup
  */
 
 import Clutter from 'gi://Clutter';
@@ -293,7 +294,7 @@ export class ChildMenu extends PopupMenuSection {
      * @param {{[value: string]: string}} items
      * @param {(value: string, items: {[value: string]: string}) => void} callback
      * @param {boolean} [isCollapsible]
-     * @returns {(value: string, isDefaultValue: boolean) => (PopupBaseMenuItem|CollapsibleGroup)[]}
+     * @returns {RadioGroup}
      */
     addRadioGroup(title, items, callback, isCollapsible = false) {
         /** @type {Map<string, PopupBaseMenuItem?>} */
