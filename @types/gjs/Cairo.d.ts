@@ -1,6 +1,7 @@
 declare module 'gi://cairo' {
 
     import type Clutter from 'gi://Clutter';
+    import type Cogl from 'gi://Cogl';
 
     enum Status {
         SUCCESS,
@@ -241,7 +242,7 @@ declare module 'gi://cairo' {
 
         fill(): void
 
-        setSourceColor(color: Clutter.Color): void
+        setSourceColor(color: Cogl.Color): void
 
         $dispose(): void
     }
