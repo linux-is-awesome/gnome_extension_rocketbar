@@ -7,6 +7,7 @@
 
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
+import Cogl from 'gi://Cogl';
 import Context from '../../core/context.js';
 import { Overview } from '../../core/shell.js';
 import { Component, ComponentEvent } from '../base/component.js';
@@ -273,7 +274,7 @@ class IndicatorsBackend {
     /** @type {cairo.Context?} */
     #canvas = null;
 
-    /** @type {Clutter.Color?} */
+    /** @type {Cogl.Color?} */
     #color = null;
 
     /** @type {Indicator[]?} */
@@ -353,11 +354,11 @@ class IndicatorsBackend {
     }
 
     /**
-     * @param {string} colorString
+     * @param {string?} [colorString]
      */
     #setColor(colorString) {
         if (!this.#canvas) return;
-        this.#color = colorString ? Clutter.color_from_string(colorString)[1] : this.#color;
+        this.#color = colorString ? Cogl.Color.from_string(colorString)[1] : this.#color;
         if (this.#color) this.#canvas.setSourceColor(this.#color);
     }
 

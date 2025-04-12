@@ -7,6 +7,7 @@
 
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
+import Cogl from 'gi://Cogl';
 import Context from '../../core/context.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { SettingsPath, SettingsKey, Event, Progress } from '../../../shared/core/enums.js';
@@ -187,7 +188,7 @@ export class ProgressBar extends Component {
      * @param {string} colorString
      */
     #setColor(canvas, colorString) {
-        const color = Clutter.color_from_string(colorString)[1];
+        const color = Cogl.Color.from_string(colorString)[1];
         if (color) canvas.setSourceColor(color);
     }
 
