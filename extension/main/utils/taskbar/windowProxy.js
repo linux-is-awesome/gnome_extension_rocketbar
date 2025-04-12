@@ -12,7 +12,7 @@ import { Event } from '../../../shared/core/enums.js';
  * @returns {string?}
  */
 const WindowTitle = (title = null, appName) => {
-    if (!title || !appName) return title || null;
+    if (!title || !appName) return title || appName || null;
     const endRegExp = new RegExp(` [-—](?=[^-]*$).*${appName}$`);
     if (endRegExp.test(title)) {
         return title.replace(endRegExp, '') || title;
@@ -35,8 +35,9 @@ export class WindowProxy {
 
     /** @type {string?} */
     get title() {
-        if (!this.#window) return this.#appName;
-        return WindowTitle(this.#window.get_title(), this.#appName);
+        const windowTitle = this.#window?.get_title()?.trim();
+        if (!windowTitle) return this.#appName;
+        return WindowTitle(windowTitle, this.#appName);
     }
 
     /**
