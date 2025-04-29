@@ -62,6 +62,7 @@ export const Event = {
     WindowAdded: 'window_added',
     WindowDemandsAttention: 'window-demands-attention',
     WindowMapped: 'map',
+    WindowMarkedUrgent: 'window-marked-urgent',
     WindowRemoved: 'window_removed'
 };
 
@@ -163,7 +164,9 @@ export const SettingsKey = {
     ShowAllWindows: 'show-all-windows',
     Separator: 'separator',
     WindowRouting: 'window-routing',
-    WindowsPreferredMonitor: 'windows-preferred-monitor',
+    PreferredMonitor: 'preferred-monitor',
+    AttentionBehavior: 'attention-behavior',
+    AttentionNotificationsBehavior: 'attention-notifications-behavior',
     AppButtonMenus: 'appbutton-menus',
     AppButtonTooltips: 'appbutton-tooltips',
     AppButtonIndicators: 'appbutton-indicators',
@@ -182,7 +185,6 @@ export const SettingsKey = {
     AppButtonBacklightDominantColor: 'appbutton-backlight-dominant-color',
     AppButtonBacklightIntensity: 'appbutton-backlight-intensity',
     AppButtonActivateBehavior: 'appbutton-activate-behavior',
-    AppButtonDemandsAttentionBehavior: 'appbutton-demands-attention-behavior',
     AppButtonMinimizeAction: 'appbutton-minimize-action',
     AppButtonConfigOverride: 'appbutton-config-override',
     IndicatorDominantColorActive: 'indicator-dominant-color-active',

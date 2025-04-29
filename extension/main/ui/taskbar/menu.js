@@ -5,6 +5,7 @@
  * @typedef {import('resource:///org/gnome/shell/ui/boxpointer.js').PopupAnimation} BoxPointer.PopupAnimation
  * @typedef {import('./appButton.js').AppButton} AppButton
  * @typedef {import('../../../shared/utils/config.js').Config} Config
+ * @typedef {import('../base/menu.js').RadioGroup} RadioGroup
  */
 
 import Clutter from 'gi://Clutter';
@@ -19,8 +20,8 @@ import { SliderMenuItem, CollapsibleGroup, ChildMenu } from '../base/menu.js';
 import { Icon } from '../base/icon.js';
 import { SharedConfig } from '../../../shared/utils/config.js';
 import { FileSelector } from '../../utils/zenity.js';
-import { ActivateBehavior, DemandsAttentionBehavior,
-         PreferredMonitor, AppIconSize } from '../../utils/taskbar/appConfig.js';
+import { AppIconSize, ActivateBehavior, PreferredMonitor,
+         AttentionBehavior, AttentionNotificationsBehavior } from '../../utils/taskbar/appConfig.js';
 import { SoundVolumeIcon } from '../../utils/soundVolumeIcon.js';
 import { WindowProxy } from '../../utils/taskbar/windowProxy.js';
 import { SettingsPath, SettingsKey, Delay, Event } from '../../../shared/core/enums.js';
@@ -50,11 +51,20 @@ const ActivateBehaviorRadioGroup = {
 };
 
 /** @type {{[value: string]: string}} */
-const DemandsAttentionBehaviorRadioGroup = {
-    [DemandsAttentionBehavior.Default]: Label.AppDefault,
-    [DemandsAttentionBehavior.FocusActive]: Label.FocusActive,
-    [DemandsAttentionBehavior.FocusWorkspace]: Label.FocusWorkspace,
-    [DemandsAttentionBehavior.FocusAll]: Label.FocusAll
+const AttentionBehaviorRadioGroup = {
+    [AttentionBehavior.Default]: Label.AppDefault,
+    [AttentionBehavior.FocusActive]: Label.FocusActive,
+    [AttentionBehavior.FocusWorkspace]: Label.FocusWorkspace,
+    [AttentionBehavior.FocusAll]: Label.FocusAll
+};
+
+/** @type {{[value: string]: string}} */
+const AttentionNotificationsBehaviorRadioGroup = {
+    [AttentionNotificationsBehavior.Default]: Label.SystemDefault,
+    [AttentionNotificationsBehavior.Disable]: Label.Disable,
+    [AttentionNotificationsBehavior.Hide]: Label.AlwaysHide,
+    [AttentionNotificationsBehavior.Show]: Label.AlwaysShow,
+    [AttentionNotificationsBehavior.Critical]: Label.Critical
 };
 
 /** @type {{[value: string]: string}} */
@@ -82,8 +92,9 @@ const ConfigKey = {
     IconPath: 'iconPath',
     IconSizeOffset: 'iconSizeOffset',
     ActivateBehavior: 'activateBehavior',
-    DemandsAttentionBehavior: 'demandsAttentionBehavior',
-    WindowsPreferredMonitor: 'windowsPreferredMonitor'
+    AttentionBehavior: 'attentionBehavior',
+    AttentionNotificationsBehavior: 'attentionNotificationsBehavior',
+    PreferredMonitor: 'preferredMonitor'
 };
 
 /** @enum {string} */
@@ -314,13 +325,16 @@ class CustomizeChildMenu extends ChildMenu {
     /** @type {AppButton?} */
     #appButton = null;
 
-    /** @type {((value: string, isDefault: boolean) => (PopupBaseMenuItem|CollapsibleGroup)[])?} */
+    /** @type {RadioGroup?} */
     #activateBehavior = null;
 
-    /** @type {((value: string, isDefault: boolean) => (PopupBaseMenuItem|CollapsibleGroup)[])?} */
-    #demandsAttentionBehavior = null;
+    /** @type {RadioGroup?} */
+    #attentionBehavior = null;
 
-    /** @type {((value: string, isDefault: boolean) => (PopupBaseMenuItem|CollapsibleGroup)[])?} */
+    /** @type {RadioGroup?} */
+    #attentionNotificationsBehavior = null;
+
+    /** @type {RadioGroup?} */
     #preferredMonitor = null;
 
     /** @type {((iconSize: number, defaultIconSize: number, isDefault: boolean) => void)?} */
@@ -368,7 +382,8 @@ class CustomizeChildMenu extends ChildMenu {
         Context.jobs.removeAll(this);
         this.#appButton = null;
         this.#activateBehavior = null;
-        this.#demandsAttentionBehavior = null;
+        this.#attentionBehavior = null;
+        this.#attentionNotificationsBehavior = null;
         this.#preferredMonitor = null;
         this.#iconSize = null;
         this.#customIcon = null;
@@ -380,8 +395,11 @@ class CustomizeChildMenu extends ChildMenu {
         this.#activateBehavior = this.addRadioGroup(
             Label.ActivateBehavior, ActivateBehaviorRadioGroup,
             (...args) => this.#setRadioGroupValue(...args), true);
-        this.#demandsAttentionBehavior = this.addRadioGroup(
-            Label.DemandsAttentionBehavior, DemandsAttentionBehaviorRadioGroup,
+        this.#attentionBehavior = this.addRadioGroup(
+            Label.AttentionBehavior, AttentionBehaviorRadioGroup,
+            (...args) => this.#setRadioGroupValue(...args), true);
+        this.#attentionNotificationsBehavior = this.addRadioGroup(
+            Label.AttentionNotifcations, AttentionNotificationsBehaviorRadioGroup,
             (...args) => this.#setRadioGroupValue(...args), true);
         this.#preferredMonitor = this.addRadioGroup(
             Label.PreferredMonitor, PreferredMonitorRadioGroup,
@@ -409,7 +427,8 @@ class CustomizeChildMenu extends ChildMenu {
         const resetIconItem = collapsibleMenu.addAction(Label.ResetToDefault, () => this.#setCustomIcon());
         return iconPath => {
             const isEmptyIconPath = typeof iconPath !== 'string' || !iconPath.trim();
-            collapsible.title = isEmptyIconPath ? Label.AppDefault : iconPath.split(ICON_PATH_SEPARATOR).pop();
+            collapsible.title = isEmptyIconPath ? Label.AppDefault :
+                                iconPath.split(ICON_PATH_SEPARATOR).pop() ?? iconPath;
             this.setChangedIndicator(separator, !isEmptyIconPath);
             this.setItemActiveState(resetIconItem, !isEmptyIconPath);
         };
@@ -444,7 +463,8 @@ class CustomizeChildMenu extends ChildMenu {
     #sync() {
         if (!this.isOpen ||
             typeof this.#activateBehavior !== 'function' ||
-            typeof this.#demandsAttentionBehavior !== 'function' ||
+            typeof this.#attentionBehavior !== 'function' ||
+            typeof this.#attentionNotificationsBehavior !== 'function' ||
             typeof this.#preferredMonitor !== 'function' ||
             typeof this.#iconSize !== 'function' ||
             typeof this.#customIcon !== 'function') return;
@@ -463,15 +483,17 @@ class CustomizeChildMenu extends ChildMenu {
             item.visible = config.windowRouting ?? false;
         };
         this.#activateBehavior(config[ConfigKey.ActivateBehavior],
-                              !configProvider.hasConfigOverride(app, ConfigKey.ActivateBehavior))
-                              .forEach(activateBehaviorVisibilityHandler);
-        this.#demandsAttentionBehavior(config[ConfigKey.DemandsAttentionBehavior],
-                                       !configProvider.hasConfigOverride(app, ConfigKey.DemandsAttentionBehavior));
-        this.#preferredMonitor(config[ConfigKey.WindowsPreferredMonitor],
-                               !configProvider.hasConfigOverride(app, ConfigKey.WindowsPreferredMonitor))
-                               .forEach(preferredMonitorVisibilityHandler);
+            !configProvider.hasConfigOverride(app, ConfigKey.ActivateBehavior))
+            .forEach(activateBehaviorVisibilityHandler);
+        this.#attentionBehavior(config[ConfigKey.AttentionBehavior],
+            !configProvider.hasConfigOverride(app, ConfigKey.AttentionBehavior));
+        this.#attentionNotificationsBehavior(config[ConfigKey.AttentionNotificationsBehavior],
+            !configProvider.hasConfigOverride(app, ConfigKey.AttentionNotificationsBehavior));
+        this.#preferredMonitor(config[ConfigKey.PreferredMonitor],
+            !configProvider.hasConfigOverride(app, ConfigKey.PreferredMonitor))
+            .forEach(preferredMonitorVisibilityHandler);
         this.#iconSize(config[ConfigKey.IconSize], defaultConfig[ConfigKey.IconSize],
-                       !configProvider.hasConfigOverride(app, ConfigKey.IconSizeOffset));
+            !configProvider.hasConfigOverride(app, ConfigKey.IconSizeOffset));
         this.#customIcon(config[ConfigKey.IconPath]);
         this.setItemActiveState(this.#resetAllItem, configProvider.hasConfigOverride(app));
         this.#scanClipboard();
@@ -499,11 +521,14 @@ class CustomizeChildMenu extends ChildMenu {
             case ActivateBehaviorRadioGroup:
                 key = ConfigKey.ActivateBehavior;
                 break;
-            case DemandsAttentionBehaviorRadioGroup:
-                key = ConfigKey.DemandsAttentionBehavior;
+            case AttentionBehaviorRadioGroup:
+                key = ConfigKey.AttentionBehavior;
+                break;
+            case AttentionNotificationsBehaviorRadioGroup:
+                key = ConfigKey.AttentionNotificationsBehavior;
                 break;
             case PreferredMonitorRadioGroup:
-                key = ConfigKey.WindowsPreferredMonitor;
+                key = ConfigKey.PreferredMonitor;
                 break;
         }
         if (!key || !value) return;

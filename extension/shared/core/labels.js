@@ -8,7 +8,8 @@ export const Label = {
     SoundVolumeControl: _('Sound Volume Control'),
     Customize: _('Customize'),
     ActivateBehavior: _('Activation Behavior'),
-    DemandsAttentionBehavior: _('Demands Attention Behavior'),
+    AttentionBehavior: _('Attention Behavior'),
+    AttentionNotifcations: _('Attention Notifications'),
     CustomIcon: _('Custom Icon'),
     IconSize: _('Icon Size'),
     IconFromClipboard: _('Icon from Clipboard'),
@@ -39,5 +40,10 @@ export const Label = {
     RightOfPrimaryMonitor: _('Right of Primary'),
     AbovePrimaryMonitor: _('Above Primary'),
     BelowPrimaryMonitor: _('Below Primary'),
-    PleaseWait: _('Please Wait...')
+    PleaseWait: _('Please Wait...'),
+    SystemDefault: _('System Default'),
+    Disable: _('Disable'),
+    AlwaysHide: _('Always Hide'),
+    AlwaysShow: _('Always Show'),
+    Critical: _('Critical')
 };

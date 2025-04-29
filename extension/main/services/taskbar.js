@@ -1,4 +1,5 @@
 /**
+ * @typedef {import('../core/shell.js').MessageTray.Source} MessageTraySource
  * @typedef {import('../../shared/core/context/jobs.js').Jobs.Job} Job
  * @typedef {{window: Meta.Window, app: Shell.App, workspace: number, monitor?: string?, hasFocus?: boolean}} WindowInfo
  */
@@ -7,11 +8,17 @@ import GObject from 'gi://GObject';
 import Clutter from 'gi://Clutter';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
+import { activateWindow as FocusedWindow } from 'resource:///org/gnome/shell/ui/main.js';
+import { Source as MessageTraySource, Urgency } from 'resource:///org/gnome/shell/ui/messageTray.js';
 import Context from '../core/context.js';
-import { SettingsPath, SettingsKey, Event, Delay } from '../../shared/core/enums.js';
-import { Config } from '../../shared/utils/config.js';
 import Favorites from './taskbar/favorites.js';
 import WindowRouter from './taskbar/windowRouter.js';
+import { AttentionBehavior, AttentionNotificationsBehavior } from '../utils/taskbar/appConfig.js';
+import { SettingsPath, SettingsKey, Event, Delay, Property } from '../../shared/core/enums.js';
+import { Config, InnerConfig } from '../../shared/utils/config.js';
+
+const CONFIG_KEY_APP_CONFIG = 'appConfig';
+const WINDOW_ATTENTION_SOURCE_CLASS = 'WindowAttentionSource';
 
 const SUPPORTED_WINDOW_TYPES = [
     Meta.WindowType.NORMAL,
@@ -21,8 +28,12 @@ const SUPPORTED_WINDOW_TYPES = [
 
 /** @enum {string} */
 const ConfigField = {
-    enableFavorites: SettingsKey.ShowFavorites,
-    windowRouting: SettingsKey.WindowRouting
+    favorites: SettingsKey.ShowFavorites,
+    windowRouting: SettingsKey.WindowRouting,
+    preferredMonitor: SettingsKey.PreferredMonitor,
+    attentionBehavior: SettingsKey.AttentionBehavior,
+    attentionNotificationsBehavior: SettingsKey.AttentionNotificationsBehavior,
+    [CONFIG_KEY_APP_CONFIG]: SettingsKey.AppButtonConfigOverride
 };
 
 /** @type {{[option: string]: *}} */
@@ -35,7 +46,7 @@ class TaskbarService {
     /** @type {Set<Meta.WindowType>} */
     #windowTypes = new Set(SUPPORTED_WINDOW_TYPES);
 
-    /** @type {Shell.WindowTracker} */
+    /** @type {Shell.WindowTracker?} */
     #windowTracker = Shell.WindowTracker.get_default();
 
     /** @type {WindowRouter?} */
@@ -56,14 +67,17 @@ class TaskbarService {
     /** @type {Map<Meta.Window, WindowInfo>?} */
     #windows = Context.getStorage(this.constructor.name);
 
-    /** @type {Set<Shell.App>?} */
-    #trackedApps = new Set();
+    /** @type {WeakSet<Shell.App>?} */
+    #trackedApps = new WeakSet();
 
-    /** @type {Set<TaskbarClient>?} */
-    #clients = new Set();
+    /** @type {Map<TaskbarClient, () => void>?} */
+    #clients = new Map();
 
     /** @type {Config?} */
-    #config = Config(this, ConfigField, () => this.#handleConfig(), ConfigOptions);
+    #config = Config(this, ConfigField, settingsKey => this.#handleConfig(settingsKey), ConfigOptions);
+
+    /** @type {{[appId: string]: {[key: string]: *}}?} */
+    #appConfig = null;
 
     /** @type {Job?} */
     #job = null;
@@ -88,7 +102,7 @@ class TaskbarService {
         return this.#workspace;
     }
 
-    /** @type {Set<Shell.App>?} */
+    /** @type {WeakSet<Shell.App>?} */
     get trackedApps() {
         return this.#trackedApps;
     }
@@ -108,30 +122,33 @@ class TaskbarService {
     destroy() {
         if (this.#clients?.size) return false;
         Context.signals.removeAll(this);
+        Context.hooks.removeAll(this);
         this.#job?.destroy();
         this.#favorites?.destroy();
         this.#windowRouter?.destroy();
         this.#apps?.clear();
-        this.#trackedApps?.clear();
         this.#clients?.clear();
         this.#job = null;
         this.#workspace = null;
         this.#favorites = null;
         this.#windowRouter = null;
+        this.#windowTracker = null;
         this.#trackedApps = null;
         this.#apps = null;
         this.#windows = null;
         this.#clients = null;
         this.#config = null;
+        this.#appConfig = null;
         return true;
     }
 
     /**
      * @param {TaskbarClient} client
+     * @param {() => void} callback
      */
-    addClient(client) {
+    addClient(client, callback) {
         if (!this.#clients || this.#clients.has(client)) return;
-        this.#clients.add(client);
+        this.#clients.set(client, callback);
     }
 
     /**
@@ -157,16 +174,29 @@ class TaskbarService {
         Context.signals.add(this,
             [Shell.AppSystem.get_default(), Event.AppStateChanged, (_, app) => this.#handleAppStateAsync(app)],
             [global.window_manager, Event.SwitchWorkspace, () => this.#handleWorkspace(),
-                                    Event.WindowMapped, (_, windowActor) => this.#handleWindowMapped(windowActor)]);
+                                    Event.WindowMapped, (_, windowActor) => this.#handleWindowMapped(windowActor)],
+            [global.display, Event.WindowDemandsAttention, (_, window) => this.#handleWindowAttention(window),
+                             Event.WindowMarkedUrgent, (_, window) => this.#handleWindowAttention(window)]);
+        Context.hooks.add(this, MessageTraySource.prototype, MessageTraySource.prototype.addNotification,
+            (source, notification) => this.#handleWindowAttentionNotification(source, notification), true);
     }
 
-    #handleConfig() {
-        if (!this.#config || !this.#windows) return;
-        const { enableFavorites, windowRouting } = this.#config;
-        if (!enableFavorites && this.#favorites) {
+    /**
+     * @param {string} [settingsKey]
+     */
+    #handleConfig(settingsKey) {
+        if (!this.#config || !this.#windows ||
+            settingsKey === ConfigField.attentionBehavior ||
+            settingsKey === ConfigField.attentionNotificationsBehavior) return;
+        const { favorites, windowRouting, preferredMonitor } = this.#config;
+        if (!this.#appConfig || settingsKey === ConfigField.appConfig) {
+            const appConfig = InnerConfig(this.#config, CONFIG_KEY_APP_CONFIG);
+            this.#appConfig = appConfig && !Array.isArray(appConfig) ? appConfig : {};
+        }
+        if (!favorites && this.#favorites) {
             this.#favorites?.destroy();
             this.#favorites = null;
-        } else if (enableFavorites && !this.#favorites) {
+        } else if (favorites && !this.#favorites) {
             this.#favorites = new Favorites(() => this.#trackAll(Delay.Queue));
         }
         if (!windowRouting && this.#windowRouter) {
@@ -175,6 +205,9 @@ class TaskbarService {
         } else if (windowRouting && !this.#windowRouter) {
             this.#windowRouter = new WindowRouter(this.#windows);
         }
+        if (!this.#windowRouter) return;
+        this.#windowRouter.preferredMonitor = preferredMonitor;
+        this.#windowRouter.appConfig = this.#appConfig;
     }
 
     #handleWindows() {
@@ -204,7 +237,7 @@ class TaskbarService {
             if (!newWindows.has(window)) this.#windows.delete(window);
         }
         if (!this.#windowRouter || !hasValidOldWindow) return;
-        this.#windowRouter.recover();
+        this.#windowRouter.restore();
     }
 
     #handleWorkspace() {
@@ -286,7 +319,7 @@ class TaskbarService {
      */
     #addWindow(window, track = true) {
         if (!this.#windows || this.#updateWindowInfo(window)) return;
-        const app = this.#windowTracker.get_window_app(window);
+        const app = this.#windowTracker?.get_window_app(window);
         if (typeof app?.id !== 'string') return;
         this.#createWindowInfo(window, app);
         if (track) this.#trackApp(app);
@@ -298,7 +331,7 @@ class TaskbarService {
      * @param {Meta.Window} window
      */
     #removeWindowAsync(window) {
-        if (!this.#windows || !this.isValidWindow(window)) return;
+        if (!this.#windows) return;
         Context.jobs.removeAll(window);
         if (!this.#windows.has(window)) return;
         Context.jobs.new(window).destroy(() => this.#removeWindow(window));
@@ -373,6 +406,60 @@ class TaskbarService {
     }
 
     /**
+     * @param {Meta.Window} window
+     */
+    #handleWindowAttention(window) {
+        if (!this.#windowTracker || !this.#config ||
+            window instanceof Meta.Window === false || window.has_focus()) return;
+        const app = this.#windowTracker.get_window_app(window);
+        if (!app?.id) return;
+        const appConfig = this.#appConfig?.[app.id] ?? null;
+        const behavior = appConfig?.attentionBehavior || this.#config.attentionBehavior;
+        switch (behavior) {
+            case AttentionBehavior.FocusActive:
+                const focusedWindow = global.display.get_focus_window();
+                const appWindows = app.get_windows();
+                const isActive = !!focusedWindow && new WeakSet(appWindows).has(focusedWindow);
+                if (!isActive) return;
+            case AttentionBehavior.FocusWorkspace:
+                if (window.get_workspace() !== this.#workspace) return;
+            case AttentionBehavior.FocusAll:
+                FocusedWindow(window);
+        }
+    }
+
+    /**
+     * @param {MessageTraySource} source
+     * @param {*} notification
+     * @returns {*}
+     */
+    #handleWindowAttentionNotification(source, notification) {
+        if (!this.#windowTracker || !this.#config || !notification ||
+            source?.constructor?.name !== WINDOW_ATTENTION_SOURCE_CLASS) return;
+        const window = source._window;
+        if (window instanceof Meta.Window === false) return;
+        const app = this.#windowTracker.get_window_app(window);
+        if (!app?.id) return;
+        const appConfig = this.#appConfig?.[app.id] ?? null;
+        const behavior = appConfig?.attentionNotificationsBehavior ??
+                         this.#config.attentionNotificationsBehavior;
+        switch (behavior) {
+            case AttentionNotificationsBehavior.Disable:
+                return Context.jobs.removeAll(source).new(source).destroy(() => (
+                       notification.destroy(), source.destroy()));
+            case AttentionNotificationsBehavior.Hide:
+            case AttentionNotificationsBehavior.Show:
+            case AttentionNotificationsBehavior.Critical:
+                const value = behavior !== AttentionNotificationsBehavior.Hide;
+                if (source.policy.showBanners === value) return;
+                const propertyDescriptor = { value, writable: true };
+                Object.defineProperty(source.policy, Property.ShowBanners, propertyDescriptor);
+                if (behavior !== AttentionNotificationsBehavior.Critical) return;
+                notification.urgency = Urgency.CRITICAL;
+        }
+    }
+
+    /**
      * @param {WindowInfo} windowInfo
      */
     #routeWindow(windowInfo) {
@@ -403,10 +490,12 @@ class TaskbarService {
 
     #notifyClients() {
         if (!this.#clients?.size) return;
-        const clients = [...this.#clients];
-        for (let i = 0, l = clients.length; i < l; ++i) clients[i].triggerNotify(this.#trackedApps);
-        if (this.#trackedApps) this.#trackedApps.clear();
-        else this.#trackedApps = new Set();
+        for (const [client, callback] of this.#clients) {
+            const app = this.#trackedApps ? client.app : null;
+            if (app && !this.#trackedApps?.has(app)) continue;
+            callback();
+        }
+        this.#trackedApps = new WeakSet();
         this.#oldWorkspace = this.#workspace;
     }
 
@@ -423,11 +512,13 @@ export class TaskbarClient {
     /** @type {Shell.App?} */
     #app = null;
 
-    /** @type {(() => void)?} */
-    #callback = null;
-
     /** @type {Meta.Workspace?} */
     #workspace = null;
+
+    /** @type {Shell.App?} */
+    get app() {
+        return this.#app;
+    }
 
     /** @type {Favorites?} */
     get favorites() {
@@ -453,7 +544,7 @@ export class TaskbarClient {
     get hasFocusedWindow() {
         if (!TaskbarClient.#service || !this.#app ||
             this.#app.state === Shell.AppState.STOPPED) return false;
-        const current = global.display.focus_window;
+        const current = global.display.get_focus_window();
         const old = TaskbarClient.#focusedWindow;
         if (!current && !old) return false;
         if (!current && old) {
@@ -468,9 +559,11 @@ export class TaskbarClient {
         if (current === old?.window) return this.#app === old?.app;
         this.#workspace = this.workspace;
         if (!this.#testWindow(current)) return false;
+        const windowApp = TaskbarClient.#service.windows?.get(current)?.app;
+        if (windowApp && this.#app !== windowApp) return false;
         const isValidWindow = TaskbarClient.#service.isValidWindow(current);
         if (isValidWindow && !new WeakSet(this.#app.get_windows()).has(current)) return false;
-        else if (!isValidWindow && !new Set(this.#app.get_pids()).has(current.get_pid())) return false;
+        if (!isValidWindow && !new Set(this.#app.get_pids()).has(current.get_pid())) return false;
         TaskbarClient.#focusedWindow = { window: current, app: this.#app };
         return true;
     }
@@ -481,33 +574,17 @@ export class TaskbarClient {
      */
     constructor(callback, app) {
         if (typeof callback !== 'function') return;
-        this.#callback = callback;
         this.#app = app instanceof Shell.App ? app : null;
         TaskbarClient.#service ??= new TaskbarService();
-        TaskbarClient.#service.addClient(this);
+        TaskbarClient.#service.addClient(this, callback);
     }
 
     destroy() {
-        this.#callback = null;
         this.#app = null;
-        if (!TaskbarClient.#service) return;
-        TaskbarClient.#service.removeClient(this);
-        if (!TaskbarClient.#service.destroy()) return;
+        TaskbarClient.#service?.removeClient(this);
+        if (!TaskbarClient.#service?.destroy()) return;
         TaskbarClient.#service = null;
         TaskbarClient.#focusedWindow = null;
-    }
-
-    /**
-     * @param {Meta.Window} window
-     * @param {boolean} [currentWorkspace]
-     * @returns {boolean}
-     */
-    hasWindow(window, currentWorkspace = false) {
-        const service = TaskbarClient.#service;
-        if (!service) return false;
-        if (currentWorkspace && window.get_workspace() !== this.#workspace) return false;
-        if (this.#app) return !!service.apps?.get(this.#app)?.has(window);
-        return !!service.windows?.has(window);
     }
 
     /**
@@ -562,14 +639,6 @@ export class TaskbarClient {
     }
 
     /**
-     * @param {Set<Shell.App>?} [apps]
-     */
-    triggerNotify(apps) {
-        if (typeof this.#callback !== 'function') return;
-        if (!apps?.size || !this.#app || apps.has(this.#app)) this.#callback();
-    }
-
-    /**
      * @param {boolean} currentWorkspace
      * @param {boolean} skipTaskbar
      * @returns {boolean}
@@ -587,7 +656,7 @@ export class TaskbarClient {
      * @returns {boolean}
      */
     #testWindow(window, currentWorkspace = true, skipTaskbar = true) {
-        if (!skipTaskbar && window.skip_taskbar) return false;
+        if (!skipTaskbar && window.is_skip_taskbar()) return false;
         if (currentWorkspace && window.get_workspace() !== this.#workspace) return false;
         return true;
     }

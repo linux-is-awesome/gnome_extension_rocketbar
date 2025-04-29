@@ -13,14 +13,12 @@ import { activateWindow as FocusedWindow,
 import { ModalDialog } from 'resource:///org/gnome/shell/ui/modalDialog.js';
 import { MainLayout, Overview } from '../../core/shell.js';
 import Context from '../../core/context.js';
-import { Config, InnerConfig } from '../../../shared/utils/config.js';
 import { PreferredMonitor } from '../../utils/taskbar/appConfig.js';
-import { SettingsPath, SettingsKey, Event, Delay } from '../../../shared/core/enums.js';
+import { Event, Delay } from '../../../shared/core/enums.js';
 import { Label } from '../../../shared/core/labels.js';
 
-const CONFIG_KEY_APP_CONFIG = 'appConfig';
 const STORAGE_KEY_MONITORS = 'monitors';
-const DISPLAY_CHANGE_DIALOG_CLASS_NAME = 'DisplayChangeDialog';
+const DISPLAY_CHANGE_DIALOG_CLASS = 'DisplayChangeDialog';
 
 /** @type {{[value: string]: number}} */
 const MonitorDirection = {
@@ -44,17 +42,6 @@ const StatusTextProps = {
     y_align: Clutter.ActorAlign.CENTER
 };
 
-/** @enum {string} */
-const ConfigField = {
-    windowsPreferredMonitor: SettingsKey.WindowsPreferredMonitor,
-    [CONFIG_KEY_APP_CONFIG]: SettingsKey.AppButtonConfigOverride
-};
-
-/** @type {{[option: string]: *}} */
-const ConfigOptions = {
-    path: SettingsPath.Taskbar
-};
-
 export default class WindowRouter {
 
     /** @type {Map<string, number>} */
@@ -75,11 +62,11 @@ export default class WindowRouter {
     /** @type {{[appId: string]: {[key: string]: *}}?} */
     #appConfig = null;
 
+    /** @type {PreferredMonitor?} */
+    #preferredMonitor = null;
+
     /** @type {Job?} */
     #job = Context.jobs.new(this);
-
-    /** @type {Config?} */
-    #config = Config(this, ConfigField, settingsKey => this.#handleConfig(settingsKey), ConfigOptions);
 
     /** @type {boolean} */
     get #hasMultipleMonitors() {
@@ -91,12 +78,21 @@ export default class WindowRouter {
         return this.#isRouting;
     }
 
+    /** @param {PreferredMonitor} value */
+    set preferredMonitor(value) {
+        this.#preferredMonitor = value;
+    }
+
+    /** @param {{[appId: string]: {[key: string]: *}}} value */
+    set appConfig(value) {
+        this.#appConfig = value;
+    }
+
     /**
      * @param {Map<Meta.Window, WindowInfo>} windows
      */
     constructor(windows) {
         this.#windows = windows;
-        this.#handleConfig();
         this.#updateMonitors();
         this.#validateSession();
         Context.signals.add(this,
@@ -111,11 +107,10 @@ export default class WindowRouter {
         this.#saveSession();
         this.#windows = null;
         this.#job = null;
-        this.#config = null;
         this.#appConfig = null;
     }
 
-    recover() {
+    restore() {
         if (this.#isRouting || !this.#isRoutingQueued || !this.#job) return;
         this.#isRouting = true;
         this.#job.reset(Delay.Queue).queue(() => this.#start());
@@ -127,16 +122,15 @@ export default class WindowRouter {
     route(windowInfo) {
         if (!windowInfo) return;
         const { app, window, workspace, monitor } = windowInfo;
-        if (!app || !window) return;
+        if (!window) return;
         const windowMonitor = window.get_monitor();
-        const windowWorkspace = window.get_workspace().index();
+        const windowWorkspace = window.get_workspace()?.index() ?? -1;
         if (windowMonitor < 0 || windowWorkspace < 0) return;
-        const appId = app.id;
-        const appConfig = appId ? this.#appConfig?.[appId] : null;
-        const preferredMonitorName = appConfig?.windowsPreferredMonitor ||
-                                     this.#config?.windowsPreferredMonitor;
-        const preferredMonitor = typeof preferredMonitorName === 'string' ?
-                                 this.#monitors.get(preferredMonitorName) : null;
+        const appId = app?.id;
+        const appConfig = appId && this.#appConfig ? this.#appConfig[appId] : null;
+        const preferredMonitorKey = appConfig?.preferredMonitor || this.#preferredMonitor;
+        const preferredMonitor = typeof preferredMonitorKey === 'string' ?
+                                 this.#monitors.get(preferredMonitorKey) : null;
         const windowLastMonitor = typeof monitor === 'string' ?
                                   this.#monitors.get(monitor) : null;
         const targetMonitor = windowLastMonitor ?? preferredMonitor ?? windowMonitor;
@@ -172,7 +166,7 @@ export default class WindowRouter {
         this.#job.reset(Delay.Queue).queue(() => {
             Context.signals.remove(this, Overview);
             const activeModalDialog = Context.desktop.activeModalDialog;
-            const isDisplayChangeDialog = activeModalDialog?.constructor?.name === DISPLAY_CHANGE_DIALOG_CLASS_NAME;
+            const isDisplayChangeDialog = activeModalDialog?.constructor?.name === DISPLAY_CHANGE_DIALOG_CLASS;
             if (!isDisplayChangeDialog) return this.#evaluateMonitorChanges();
             Context.signals.add(this, [activeModalDialog, Event.Closed, () => (
             Context.signals.remove(this, activeModalDialog),
@@ -291,16 +285,6 @@ export default class WindowRouter {
     #hideStatus() {
         this.#status?.close();
         this.#status = null;
-    }
-
-    /**
-     * @param {string?} [settingsKey]
-     */
-    #handleConfig(settingsKey) {
-        if (!this.#config) return;
-        if (settingsKey && settingsKey !== ConfigField.appConfig) return;
-        const appConfig = InnerConfig(this.#config, CONFIG_KEY_APP_CONFIG);
-        this.#appConfig = !Array.isArray(appConfig) ? appConfig : null;
     }
 
 }

@@ -17,7 +17,13 @@
         <key type="b" name="window-routing">
             <default>false</default>
         </key>
-        <key type="s" name="windows-preferred-monitor">
+        <key type="s" name="preferred-monitor">
+            <default>'default'</default>
+        </key>
+        <key type="s" name="attention-behavior">
+            <default>'default'</default>
+        </key>
+        <key type="s" name="attention-notifications-behavior">
             <default>'default'</default>
         </key>
         <key type="s" name="appbutton-config-override">
@@ -76,9 +82,6 @@
         </key>
         <key type="s" name="appbutton-activate-behavior">
             <default>'new_window'</default>
-        </key>
-        <key type="s" name="appbutton-demands-attention-behavior">
-            <default>'default'</default>
         </key>
         <key type="b" name="indicator-dominant-color-active">
             <default>false</default>
