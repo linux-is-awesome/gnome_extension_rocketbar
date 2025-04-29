@@ -321,7 +321,7 @@ export class ChildMenu extends PopupMenuSection {
             for (const [itemValue, item] of group) {
                 if (!item) continue;
                 if (itemValue === value) item.setOrnament(Ornament.DOT);
-                else item.setOrnament(Ornament.NONE);
+                else item.setOrnament(Ornament.NO_DOT);
                 if (!collapsible) result.push(item);
             }
             if (typeof callback === 'function') callback(value, items);
