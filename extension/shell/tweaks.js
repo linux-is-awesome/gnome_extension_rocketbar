@@ -521,7 +521,7 @@ export class ShellTweaks {
 
     _handleLockScreen() {
 
-        if (!Main.sessionMode.isLocked || !this._config.lockscreenPrimaryInput) {
+        if (!Main.sessionMode.isLocked || !this._config?.lockscreenPrimaryInput) {
             return;
         }
 
