@@ -66,6 +66,7 @@ class DragActor {
         const { opacity } = actor;
         this.#actorProps = { opacity };
         this.#actorClone = new Clutter.Clone({
+            name: `${this.#actor.name}-DragActor`,
             source: this.#actor,
             reactive: false,
             ...AnimationType.OpacityMin

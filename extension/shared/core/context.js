@@ -67,7 +67,7 @@ export default class Context {
             storage.set(schemaId, settings);
             return settings;
         } catch (e) {
-            this.logError(`unable to load settings for the path ${path}.`);
+            this.logError(`unable to load settings for the path ${path}.`, e);
         }
         return null;
     }

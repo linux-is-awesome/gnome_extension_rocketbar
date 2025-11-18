@@ -147,7 +147,7 @@
             <default>10</default>
         </key>
         <key type="i" name="notification-badge-offset">
-            <default>7</default>
+            <default>4</default>
         </key>
         <key type="i" name="notification-badge-max-count">
             <default>99</default>
