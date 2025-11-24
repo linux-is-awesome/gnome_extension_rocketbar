@@ -150,7 +150,7 @@ export class ProgressBar extends Component {
         this.#infiniteProgress += INFINITE_PROGRESS_STEP;
         this.actor.queue_repaint();
         this.#infiniteProgressJob ??= Context.jobs.new(this, INFINITE_PROGRESS_DELAY);
-        this.#infiniteProgressJob.reset().queue(() => this.#toggleInfiniteProgress());
+        this.#infiniteProgressJob.reset().enqueue(() => this.#toggleInfiniteProgress());
     }
 
     #draw() {

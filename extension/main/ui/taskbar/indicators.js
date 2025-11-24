@@ -363,7 +363,7 @@ class IndicatorsBackend {
     }
 
     #animate() {
-        this.#job?.queue(() => {
+        this.#job?.enqueue(() => {
             if (!this.#indicators) return;
             this.#triggerRerender();
             const validIndicators = [];
@@ -375,7 +375,7 @@ class IndicatorsBackend {
             }
             if (animationsCount) return this.#animate();
             this.#indicators = validIndicators;
-            this.#job?.queue(() => this.#triggerRerender());
+            this.#job?.enqueue(() => this.#triggerRerender());
         });
     }
 

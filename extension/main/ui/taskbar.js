@@ -131,7 +131,7 @@ class TaskbarAllocation {
         this.#allocation.set(source, width);
         this.#job?.reset(Delay.Redraw);
         if (this.#isWorkspaceChanged) this.update();
-        else this.#job?.queue(() => this.update());
+        else this.#job?.enqueue(() => this.update());
     }
 
     /**
@@ -141,7 +141,7 @@ class TaskbarAllocation {
         if (!source || !this.#allocation?.has(source)) return;
         this.#allocation.delete(source);
         const delay = this.#isDragMode ? Delay.Scheduled : Delay.Redraw;
-        this.#job?.reset(delay).queue(() => this.update());
+        this.#job?.reset(delay).enqueue(() => this.update());
     }
 
     async update() {

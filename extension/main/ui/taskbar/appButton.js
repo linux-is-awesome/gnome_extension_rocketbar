@@ -741,7 +741,7 @@ export class AppButton extends RuntimeButton {
         const scrollDirection = event?.get_scroll_direction();
         if (scrollDirection !== Clutter.ScrollDirection.UP &&
             scrollDirection !== Clutter.ScrollDirection.DOWN) return Clutter.EVENT_PROPAGATE;
-        if (!this.#windowsCount || Context.jobs.hasClient(this)) return Clutter.EVENT_STOP;
+        if (!this.#windowsCount || Context.jobs.has(this)) return Clutter.EVENT_STOP;
         if (Overview.visible) Overview.hide();
         Context.jobs.new(this, Delay.Sleep).destroy(() => null);
         this.#cycleWindows(false, scrollDirection === Clutter.ScrollDirection.UP);

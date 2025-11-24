@@ -123,7 +123,7 @@ class NotificationService {
 
     #queueUpdate() {
         if (!this.#updateJob) return;
-        this.#updateJob.reset().queue(() => this.#update());
+        this.#updateJob.reset().enqueue(() => this.#update());
     }
 
     #update() {

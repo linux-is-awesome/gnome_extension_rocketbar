@@ -65,7 +65,7 @@ class Job {
      */
     destroy(callback) {
         if (!this.#isValid) return this;
-        if (typeof callback === 'function') return this.queue(() => (this.destroy(), callback()));
+        if (typeof callback === 'function') return this.enqueue(() => (this.destroy(), callback()));
         this.#abort();
         if (this.#destroyCallback) this.#destroyCallback(this);
         this.#delay = null;
@@ -77,7 +77,7 @@ class Job {
      * @param {() => void} callback
      * @returns {this}
      */
-    queue(callback) {
+    enqueue(callback) {
         if (typeof callback !== 'function') return this;
         this.#job = this.#currentJob?.then(isFinished => {
             if (isFinished) callback();
@@ -133,15 +133,71 @@ class Job {
 
 }
 
+class SharedJob extends Job {
+
+    /** @type {Map<*, () => void>?} */
+    #clients = new Map();
+
+    /** @type {Set?} */
+    get clients() {
+        if (!this.#clients) return null;
+        return new Set(this.#clients.keys());
+    }
+
+    /**
+     * @override
+     * @param {(() => void)?} [callback]
+     * @returns {this}
+     */
+    destroy(callback) {
+        super.destroy(callback);
+        if (typeof callback === 'function') return this;
+        this.#clients?.clear();
+        this.#clients = null;
+        return this;
+    }
+
+    /**
+     * @param {*} client
+     * @param {() => void} callback
+     */
+    addClient(client, callback) {
+        if (!this.#clients) return;
+        if (this.#clients.size) this.reset();
+        this.#clients.set(client, callback);
+        this.destroy(() => this.#triggerClientCallbacks());
+    }
+
+    /**
+     * @param {*} client
+     */
+    removeClient(client) {
+        if (!this.#clients?.has(client)) return;
+        this.#clients.delete(client);
+        if (!this.#clients.size) this.destroy();
+    }
+
+    #triggerClientCallbacks() {
+        if (!this.#clients?.size) return;
+        for (const [_, callback] of this.#clients) callback();
+    }
+
+}
+
 export default class Jobs {
 
     /** @type {Map<*, Set<Job>>?} */
     #jobs = new Map();
 
+    /** @type {Map<number, SharedJob>?} */
+    #sharedJobs = new Map();
+
     destroy() {
         if (!this.#jobs) return;
         const jobs = this.#jobs.values();
+        this.#sharedJobs?.clear();
         this.#jobs = null;
+        this.#sharedJobs = null;
         for (const clientJobs of jobs) {
             for (const job of clientJobs) job.destroy();
         }
@@ -153,16 +209,52 @@ export default class Jobs {
      * @returns {Job}
      */
     new(client, delay = Delay.Idle) {
-        if (!this.#jobs) throw new Error(`${this.constructor.name} unable to create a new ${Job.name}.`);
+        if (!this.#jobs || !client ||
+            typeof delay !== 'number') throw new Error(`${this.constructor.name} failed to create new ${Job.name}.`);
         return this.#add(client, new Job(job => this.#remove(client, job), delay));
+    }
+
+    /**
+     * @param {*} client
+     * @param {() => void} callback
+     * @param {number} [delay]
+     */
+    shared(client, callback, delay = Delay.Idle) {
+        if (!this.#sharedJobs || !client ||
+            typeof callback !== 'function' ||
+            typeof delay !== 'number') return;
+        const sharedJob = this.#sharedJobs.get(delay) ?? new SharedJob(() => this.#removeShared(delay));
+        sharedJob.addClient(client, callback);
+        this.#sharedJobs.set(delay, sharedJob);
+        this.#add(client, sharedJob);
     }
 
     /**
      * @param {*} client
      * @returns {boolean}
      */
-    hasClient(client) {
-        return this.#jobs?.has(client) ?? false;
+    has(client) {
+        return !!this.#jobs?.has(client);
+    }
+
+    /**
+     * @param {*} client
+     * @param {number} delay
+     * @returns {boolean}
+     */
+    hasShared(client, delay) {
+        return !!this.#sharedJobs?.get(delay)?.clients?.has(client);
+    }
+
+    /**
+     * @param {*} client
+     * @param {number} delay
+     */
+    removeShared(client, delay) {
+        const job = this.#sharedJobs?.get(delay);
+        if (!job) return;
+        this.#remove(client, job);
+        this.#sharedJobs?.get(delay)?.removeClient(client);
     }
 
     /**
@@ -174,7 +266,10 @@ export default class Jobs {
         const jobs = this.#jobs.get(client);
         if (!jobs) return this;
         this.#jobs.delete(client);
-        for (const job of jobs) job.destroy();
+        for (const job of jobs) {
+            if (job instanceof SharedJob) job.removeClient(client);
+            else job.destroy();
+        }
         return this;
     }
 
@@ -188,6 +283,18 @@ export default class Jobs {
         jobs.add(job);
         this.#jobs?.set(client, jobs);
         return job;
+    }
+
+    /**
+     * @param {number} delay
+     */
+    #removeShared(delay) {
+        const job = this.#sharedJobs?.get(delay);
+        if (!job) return;
+        this.#sharedJobs?.delete(delay);
+        const clients = job.clients;
+        if (!clients?.size) return;
+        for (const client of clients) this.#remove(client, job);
     }
 
     /**

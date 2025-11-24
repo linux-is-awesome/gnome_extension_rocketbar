@@ -166,7 +166,7 @@ export class Tooltip extends Component {
         const delay = shownTooltip && shownTooltip.#isVisible ?
                       Math.min(showDelay, this.#hideDelay) : showDelay;
         this.#fadeInJob = this.#job.reset(delay);
-        this.#fadeInJob.queue(() => this.hasAllocation ? this.#fadeIn() : Context.desktop.addOverlay(super.actor));
+        this.#fadeInJob.enqueue(() => this.hasAllocation ? this.#fadeIn() : Context.desktop.addOverlay(super.actor));
     }
 
     /**
@@ -180,13 +180,13 @@ export class Tooltip extends Component {
         this.#fadeInJob = null;
         this.#job?.reset(this.#hideDelay);
         if (!this.hasAllocation) return;
-        this.#job?.queue(() => this.#fadeOut());
+        this.#job?.enqueue(() => this.#fadeOut());
     }
 
     rerender() {
         if (this.#isHidden || !this.isValid) return;
         if (!this.#isShown) return this.#rerender();
-        this.#job?.reset(Delay.Redraw).queue(() => this.#updateTargetSize().#rerender());
+        this.#job?.reset(Delay.Redraw).enqueue(() => this.#updateTargetSize().#rerender());
     }
 
     lockSize() {
@@ -211,7 +211,7 @@ export class Tooltip extends Component {
 
     #handleMapped() {
         if (this.#isHidden || !this.hasAllocation) return;
-        this.#job?.reset(Delay.Redraw).queue(() => this.#fadeIn());
+        this.#job?.reset(Delay.Redraw).enqueue(() => this.#fadeIn());
     }
 
     #hover() {
@@ -222,7 +222,7 @@ export class Tooltip extends Component {
             return;
         }
         if (hasHover && this.#isVisible) return this.show();
-        if (!hasHover) this.#job?.reset(this.#hideDelay).queue(() => {
+        if (!hasHover) this.#job?.reset(this.#hideDelay).enqueue(() => {
             this.#isHidden = false;
             this.hide(true);
         });
@@ -282,7 +282,7 @@ export class Tooltip extends Component {
         actor.remove_all_transitions();
         this.#transformRect = {};
         this.#job?.reset(Delay.Redraw)
-                  .queue(() => this.#fadeInJob ? this.show() : Context.desktop.removeOverlay(actor));
+                  .enqueue(() => this.#fadeInJob ? this.show() : Context.desktop.removeOverlay(actor));
         this.setProps(defaultProps).setSize();
         this.#targetSize = null;
         if (Tooltip.#shownTooltip === this) {
@@ -297,7 +297,7 @@ export class Tooltip extends Component {
     #changeState(state = false) {
         const isReactive = !!this.#body?.track_hover;
         const changeReactive = state && isReactive && !this.#body?.reactive;
-        if (changeReactive) this.#job?.reset(Delay.Redraw).queue(() => this.#body?.set_reactive(isReactive));
+        if (changeReactive) this.#job?.reset(Delay.Redraw).enqueue(() => this.#body?.set_reactive(isReactive));
         if (this.#isShown === state) return;
         this.#isShown = state;
         if (!isReactive) return;

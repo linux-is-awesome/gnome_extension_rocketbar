@@ -229,7 +229,7 @@ class AppSoundVolumeService {
 
     #queueUpdate() {
         if (!this.#updateJob) return;
-        this.#updateJob.reset().queue(() => this.#update());
+        this.#updateJob.reset().enqueue(() => this.#update());
     }
 
     #update() {
@@ -482,7 +482,7 @@ export class AppSoundVolumeControl {
      * @param {() => void} [callback]
      */
     #toggleMute(streams, callback) {
-        if (!streams?.size || Context.jobs.hasClient(this)) return;
+        if (!streams?.size || Context.jobs.has(this)) return;
         const isMuted = this.#isMuted(streams);
         for (const stream of streams) {
             if (stream.isMuted !== isMuted) continue;
