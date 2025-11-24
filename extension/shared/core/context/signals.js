@@ -71,7 +71,7 @@ export default class Signals {
      * @param {*} client
      * @returns {boolean}
      */
-    hasClient(client) {
+    has(client) {
         return this.#connections?.has(client) ?? false;
     }
 

@@ -119,7 +119,7 @@ export class Icon extends Component {
         actor.visible = isVisible;
         this.notifySelf(IconEvent.TextureChanged);
         if (!isThemeControlled) Context.signals.removeAll(actor);
-        if (!isThemeControlled || Context.signals.hasClient(actor)) return;
+        if (!isThemeControlled || Context.signals.has(actor)) return;
         Context.signals.add(actor, [Context.desktop.settings, Event.IconThemeChanged, () =>
             Context.jobs.removeAll(actor).new(actor, Delay.Background).destroy(() => this.#rerender())]);
     }
