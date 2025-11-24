@@ -155,7 +155,7 @@ export default class NotificationCounter extends Component {
     /** @type {{[event: string]: () => *}?} */
     #events = {
         [ComponentEvent.Destroy]: () => this.#destroy(),
-        [ComponentEvent.Mapped]: () => Context.desktop.queueClient(this, () => this.#rerender()),
+        [ComponentEvent.Init]: () => Context.desktop.queueClient(this, () => this.#rerender()),
         [ComponentEvent.Scale]: () => this.#rerender(),
         [DateMenuEvent.DndChanged]: () => this.#updateStyle()
     };

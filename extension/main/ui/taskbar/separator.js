@@ -51,7 +51,7 @@ export class Separator extends Component {
     #events = {
         [ComponentEvent.Destroy]: () => this.#destroy(),
         [ComponentEvent.Scale]: () => this.#handleConfig(),
-        [ComponentEvent.Mapped]: () => (this.#updateStyle(), this.#handleState())
+        [ComponentEvent.Init]: () => (this.#updateStyle(), this.#handleState())
     };
 
     /** @type {boolean} */
@@ -124,7 +124,7 @@ export class Separator extends Component {
 
     #handleConfig() {
         this.#updateStyle();
-        if (this.#isVisible) this.notifyParents(ComponentEvent.Mapped);
+        if (this.#isVisible) this.notifyParents(ComponentEvent.Init);
     }
 
     #updateStyle() {
@@ -156,7 +156,7 @@ export class Separator extends Component {
             return;
         }
         const width = this.rect?.width ?? BODY_WIDTH;
-        this.notifyParents(ComponentEvent.Mapped);
+        this.notifyParents(ComponentEvent.Init);
         const isShown = await Animation(this, AnimationDuration.Default, { ...AnimationType.OpacityMax, width, mode });
         if (isShown) this.setSize();
     }

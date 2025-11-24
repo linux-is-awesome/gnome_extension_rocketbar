@@ -188,7 +188,7 @@ export default class Taskbar extends ScrollView {
     /** @type {{[event: string]: (...args) => *}?} */
     #events = {
         [ComponentEvent.Destroy]: data => (this.#handleDestroy(data?.sender), true),
-        [ComponentEvent.Mapped]: data => (this.#handleMapped(data?.sender), true),
+        [ComponentEvent.Init]: data => (this.#handleInit(data?.sender), true),
         [ComponentEvent.DragOver]: data => this.#handleDragOver(data?.target, data?.params),
         [ComponentEvent.AcceptDrop]: () => this.#handleDrop(),
         [AppButtonEvent.Reaction]: data => (this.#handleChildReaction(data?.sender), true)
@@ -283,7 +283,7 @@ export default class Taskbar extends ScrollView {
     /**
      * @param {Component} sender
      */
-    #handleMapped(sender) {
+    #handleInit(sender) {
         if (!this.isValid || !sender) return;
         if (sender === this) Context.desktop.queueClient(this, () => this.#rerender());
         else this.#allocation?.add(sender);

@@ -95,7 +95,7 @@ export class AppButton extends RuntimeButton {
     /** @type {{[event: string]: (...args) => *}?} */
     #events = {
         [ComponentEvent.Destroy]: () => this.#destroy(),
-        [ComponentEvent.Mapped]: () => this.#handleMapped(),
+        [ComponentEvent.Init]: () => this.#handleInit(),
         [ComponentEvent.DragActorRequest]: () => this.#appIcon?.dragActor,
         [ComponentEvent.DragActorSourceRequest]: () => this.#appIcon?.actor,
         [ComponentEvent.DragBegin]: () => this.#handleDragBegin(),
@@ -329,7 +329,7 @@ export class AppButton extends RuntimeButton {
         if (!this.#isDropCandidate) return;
         this.#isDropCandidate = false;
         this.actor.set_reactive(!this.#isDropCandidate);
-        this.#handleMapped();
+        this.#handleInit();
         this.#abortDestroy();
     }
 
@@ -424,7 +424,7 @@ export class AppButton extends RuntimeButton {
         this.#events = null;
     }
 
-    #handleMapped() {
+    #handleInit() {
         if (!this.isValid) return;
         this.#handleConfig();
         if (this.#isDropCandidate) return this.#handleRunningApp();
@@ -544,7 +544,7 @@ export class AppButton extends RuntimeButton {
         const { spacingAfter, roundness, width, height } = this.#config;
         const style = { spacingAfter, roundness, width, height };
         this.overrideStyle(style);
-        this.notifyParents(ComponentEvent.Mapped);
+        this.notifyParents(ComponentEvent.Init);
     }
 
     /**
@@ -609,7 +609,7 @@ export class AppButton extends RuntimeButton {
         this.#destroyJob.destroy();
         this.#destroyJob = null;
         this.actor.remove_all_transitions();
-        this.notifyParents(ComponentEvent.Mapped);
+        this.notifyParents(ComponentEvent.Init);
     }
 
     #queueFadeIn() {

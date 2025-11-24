@@ -7,24 +7,24 @@ import GObject from 'gi://GObject';
 import St from 'gi://St';
 import Mtk from 'gi://Mtk';
 import * as Dnd from 'resource:///org/gnome/shell/ui/dnd.js';
-import { MainLayout } from '../../core/shell.js';
-import { Event } from '../../../shared/core/enums.js';
+import Context from '../../../main/core/context.js';
+import { Event, Delay } from '../../../shared/core/enums.js';
 
-const DRAG_TIMEOUT_THRESHOLD = 200;
-const UI_SCALE_SETTINGS_KEY = 'text-scaling-factor';
+const DEFAULT_DRAG_THRESHOLD = 200;
+const RERENDER_DELAY = Delay.Background - 1;
 
 /** @type {{[param: string]: *}} */
 const DraggableParams = {
     manualMode: true,
-    timeoutThreshold: DRAG_TIMEOUT_THRESHOLD
+    timeoutThreshold: DEFAULT_DRAG_THRESHOLD
 };
 
 /** @enum {string} */
 export const ComponentEvent = {
     Notify: 'component::notify',
-    Mapped: 'component::mapped',
+    Init: 'component::init',
     Destroy: 'component::destroy',
-    Scale: 'component::scale',
+    Rerender: 'component::rerender',
     AcceptDrop: 'component::accept-drop',
     DragOver: 'component::drag-over',
     DragBegin: 'component::drag-begin',
@@ -35,18 +35,12 @@ export const ComponentEvent = {
     DragActorSourceRequest: 'component::drag-actor-source-request'
 };
 
-/** @enum {number} */
-export const ComponentLocation = {
-    Top: 0,
-    Bottom: 1
-};
-
 /**
  * @template {St.Widget} ComponentActor
  */
 export class Component {
 
-    /** @type {*} */
+    /** @type {{actor: ComponentActor}?} */
     #signalTracker = null;
 
     /** @type {boolean} */
@@ -73,12 +67,6 @@ export class Component {
     /** @type {*} */
     #dragMonitor = null;
 
-    /** @type {St.ThemeContext?} */
-    #themeContext = null;
-
-    /** @type {Gio.Settings?} */
-    #uiSettings = null;
-
     /** @type {boolean} */
     get isValid() {
         return this.#isValid && !!this.#actor;
@@ -87,6 +75,13 @@ export class Component {
     /** @type {boolean} */
     get isMapped() {
         return this.#isValid && !!this.#actor?.is_mapped();
+    }
+
+
+    /** @type {boolean} */
+    get isRerendering() {
+        if (!this.#isValid || !this.#signalTracker) return false;
+        return Context.jobs.hasShared(this.#signalTracker, RERENDER_DELAY);
     }
 
     /** @type {boolean} */
@@ -118,29 +113,6 @@ export class Component {
         return parent;
     }
 
-    /** @type {ComponentLocation} */
-    get location() {
-        const rect = this.rect;
-        const monitorRect = rect ? this.monitorRect : null;
-        if (!rect || !monitorRect ||
-            rect.y < (monitorRect.y + monitorRect.height) / 2) return ComponentLocation.Top;
-        return ComponentLocation.Bottom;
-    }
-
-    /** @type {Mtk.Rectangle?} */
-    get monitorRect() {
-        const monitorIndex = this.monitorIndex;
-        if (monitorIndex < 0) return null;
-        return global.display.get_monitor_geometry(monitorIndex);
-    }
-
-    /** @type {number} */
-    get monitorIndex() {
-        const rect = this.rect;
-        if (!rect) return -1;
-        return global.display.get_monitor_index_for_rect(rect);
-    }
-
     /** @type {Mtk.Rectangle?} */
     get rect() {
         if (!this.#isValid || !this.#actor) return null;
@@ -152,26 +124,6 @@ export class Component {
     /** @type {Mtk.Rectangle?} */
     get centerRect() {
         return this.rect;
-    }
-
-    /** @type {number} */
-    get globalScale() {
-        if (!this.#actor) return 0;
-        if (this.#themeContext) return this.#themeContext.scale_factor;
-        this.#themeContext = St.ThemeContext.get_for_stage(global.stage);
-        this.#themeContext.connectObject(Event.ScaleFactor, () =>
-            this.#notifySelf(ComponentEvent.Scale), this.#signalTracker);
-        return this.#themeContext.scale_factor;
-    }
-
-    /** @type {number} */
-    get uiScale() {
-        if (!this.#actor) return 0;
-        if (this.#uiSettings) return this.#uiSettings.get_double(UI_SCALE_SETTINGS_KEY);
-        this.#uiSettings = MainLayout._interfaceSettings ?? null;
-        this.#uiSettings?.connectObject(`${Event.Changed}::${UI_SCALE_SETTINGS_KEY}`, () =>
-            this.#notifySelf(ComponentEvent.Scale), this.#signalTracker);
-        return this.#uiSettings?.get_double(UI_SCALE_SETTINGS_KEY) ?? 0;
     }
 
     /** @param {number} value 0..999 */
@@ -237,7 +189,7 @@ export class Component {
         const isParentChanged = oldParent !== parent;
         if (isParentChanged) oldParent?.remove_child(this.#actor);
         if (parent instanceof St.Widget === false) return this;
-        if (isParentChanged) this.#setMappedHandler();
+        if (isParentChanged) this.#setInitHandler();
         if (parent instanceof St.Bin) {
             if (isParentChanged) parent.set_child(this.#actor);
             return this;
@@ -267,11 +219,11 @@ export class Component {
         if (!this.#actor ||
             typeof event !== 'string' ||
             typeof callback !== 'function') return null;
-        if (event === ComponentEvent.Notify && !this.#notifyCallback) {
-            this.#notifyCallback = callback;
+        if (event === ComponentEvent.Notify) {
+            this.#notifyCallback ??= callback;
             return event;
         }
-        return this.#actor.connect(event, callback) ?? null;
+        return this.#actor.connect(event, callback);
     }
 
     /**
@@ -372,27 +324,33 @@ export class Component {
         return this;
     }
 
+    /**
+     * @param {boolean} [isDeferred]
+     */
+    rerender(isDeferred = false) {
+        if (!this.#isValid || !this.#signalTracker) return;
+        if (!isDeferred) this.#notifySelf(ComponentEvent.Rerender);
+        else Context.jobs.shared(this.#signalTracker, () => this.#notifySelf(ComponentEvent.Rerender), RERENDER_DELAY);
+    }
+
     #destroy() {
         if (!this.#isValid || !this.#actor) return;
         this.#isValid = false;
+        Context.jobs.removeAll(this.#signalTracker);
         this.#actor.remove_all_transitions();
         this.#setDragEvents(false);
         this.#notifySelf(ComponentEvent.Destroy);
         this.#actor.disconnectObject(this.#signalTracker);
-        this.#themeContext?.disconnectObject(this.#signalTracker);
-        this.#uiSettings?.disconnectObject(this.#signalTracker);
-        this.#themeContext = null;
-        this.#uiSettings = null;
         this.#actor._delegate = null;
         this.#actor = null;
         this.#parent = null;
         this.#signalTracker = null;
     }
 
-    #setMappedHandler() {
+    #setInitHandler() {
         const handlerId = this.#actor?.connect(Event.Mapped, () => {
             if (handlerId) this.#actor?.disconnect(handlerId);
-            this.#notifySelf(ComponentEvent.Mapped);
+            this.#notifySelf(ComponentEvent.Init);
         });
     }
 
@@ -490,7 +448,7 @@ export class Component {
             const notifyParams = { event, target, params, sender };
             return this.#notifyCallback(notifyParams);
         } catch (e) {
-            console.error(`${this.constructor.name} notify failed for event ${event}.`, e);
+            Context.logError(`${this.constructor.name} failed to trigger event ${event}.`, e);
         }
         return null;
     }
