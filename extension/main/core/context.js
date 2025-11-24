@@ -5,6 +5,7 @@
 import SharedContext from '../../shared/core/context.js';
 import Desktop from './context/desktop.js';
 import Hooks from './context/hooks.js';
+import Monitors from './context/monitors.js';
 import Modules from '../services/modules.js';
 import LauncherApi from '../services/launcherApi.js';
 
@@ -36,6 +37,13 @@ export default class Context extends SharedContext {
         return instance.#hooks;
     }
 
+    /** @type {Monitors} */
+    static get monitors() {
+        const instance = this.instance;
+        instance.#monitors ??= new Monitors();
+        return instance.#monitors;
+    }
+
     /** @type {LauncherApi?} */
     static get launcherApi() {
         return this.instance.#launcherApi;
@@ -52,6 +60,9 @@ export default class Context extends SharedContext {
 
     /** @type {Hooks?} */
     #hooks = null;
+
+    /** @type {Monitors?} */
+    #monitors = null;
 
     /**
      * @param {Extension} extension
@@ -86,11 +97,13 @@ export default class Context extends SharedContext {
             this.#modules?.destroy();
             this.#launcherApi?.destroy();
             this.#desktop?.destroy();
+            this.#monitors?.destroy();
         } finally {
             this.#modules = null;
             this.#launcherApi = null;
             this.#desktop = null;
             this.#hooks = null;
+            this.#monitors = null;
         }
         return result;
     }

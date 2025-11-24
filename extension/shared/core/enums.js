@@ -121,6 +121,15 @@ export const Alignment = {
     BottomRight: 'bottom-right'
 };
 
+/** @enum {string} */
+export const Monitor = {
+    Primary: 'primary',
+    Left: 'left',
+    Right: 'right',
+    Above: 'above',
+    Below: 'below'
+};
+
 /**
  * @enum {string} Shell session modes
  */
