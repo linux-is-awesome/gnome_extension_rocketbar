@@ -87,7 +87,7 @@ export class NotificationBadge extends Component {
     #badge = new St.Label(BadgeProps);
 
     /** @type {Config?} */
-    #config = this.#configProvider.getConfig(this, () => this.#updateStyle());
+    #config = this.#configProvider.get(this, () => this.#updateStyle());
 
     /** @type {AppButton?} */
     #appButton = null;

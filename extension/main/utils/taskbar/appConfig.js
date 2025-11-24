@@ -13,7 +13,6 @@ const CONFIG_OVERRIDE_SETTINGS_KEY = SettingsKey.AppButtonConfigOverride;
 /** @enum {string} */
 export const ConfigField = {
     isolateWorkspaces: SettingsKey.IsolateWorkspaces,
-    showAllWindows: SettingsKey.ShowAllWindows,
     windowRouting: SettingsKey.WindowRouting,
     preferredMonitor: SettingsKey.PreferredMonitor,
     attentionBehavior: SettingsKey.AttentionBehavior,
@@ -101,7 +100,7 @@ export class AppConfig extends SharedConfig {
 
     /** @type {Config} */
     get defaultConfig() {
-        return super.getConfig() ?? {};
+        return super.get() ?? {};
     }
 
     constructor() {
@@ -121,9 +120,9 @@ export class AppConfig extends SharedConfig {
      * @returns {boolean}
      */
     destroy(app, client) {
-        if (!this.hasClient(app)) return super.destroy(app);
+        if (!this.has(app)) return super.destroy(app);
         /** @type {AppConfigDetails} */
-        const { clients } = this.getClientDetails(app) ?? {};
+        const { clients } = this.getDetails(app) ?? {};
         clients?.delete(client);
         if (clients?.size) return false;
         return super.destroy(app);
@@ -136,12 +135,12 @@ export class AppConfig extends SharedConfig {
      * @param {((settingsKey?: string?) => void)?} [callback]
      * @returns {Config?}
      */
-    getConfig(app, client, callback) {
+    get(app, client, callback) {
         if (!app?.id) return null;
-        if (this.hasClient(app) && !client) return this.getClientDetails(app)?.config ?? null;
+        if (this.has(app) && !client) return this.getDetails(app)?.config ?? null;
         if (!client) return null;
         /** @type {AppConfigDetails?} */
-        const appConfig = this.getClientDetails(app);
+        const appConfig = this.getDetails(app);
         if (!appConfig) return null;
         if (appConfig.config && appConfig.clients) {
             appConfig.clients.set(client, callback ?? null);
@@ -157,7 +156,7 @@ export class AppConfig extends SharedConfig {
      * @param {string} [key]
      * @returns {boolean}
      */
-    hasConfigOverride(app, key) {
+    hasOverride(app, key) {
         if (!app?.id) return false;
         const appConfig = this.#configOverride[app?.id];
         if (!appConfig) return false;
@@ -170,15 +169,15 @@ export class AppConfig extends SharedConfig {
      * @param {string} key
      * @param {*} value
      */
-    setConfigOverride(app, key, value) {
-        if (!app?.id || !this.hasClient(app)) return;
+    setOverride(app, key, value) {
+        if (!app?.id || !this.has(app)) return;
         if (!Object.keys(ConfigField).includes(key)) return;
         const configOverride = this.#configOverride[app.id] ?? {};
         const settingsKey = ConfigField[key];
         switch (settingsKey) {
             case ConfigField.iconSize:
                 if (typeof value !== 'number') return;
-                const defaultConfig = super.getConfig();
+                const defaultConfig = super.get();
                 value -= defaultConfig?.iconSize;
                 if (configOverride.iconSizeOffset === value) return;
                 configOverride.iconSizeOffset = value;
@@ -198,21 +197,21 @@ export class AppConfig extends SharedConfig {
                 if (!value) delete configOverride[key];
                 else configOverride[key] = value;
         }
-        if (!Object.keys(configOverride).length) return this.resetConfigOverride(app);
+        if (!Object.keys(configOverride).length) return this.resetOverride(app);
         this.#configOverride[app.id] = configOverride;
-        this.#saveConfigOverride();
-        this.#setAppConfig([app, this.getClientDetails(app)], settingsKey);
+        this.#saveOverride();
+        this.#setAppConfig([app, this.getDetails(app)], settingsKey);
     }
 
     /**
      * @param {Shell.App} app
      */
-    resetConfigOverride(app) {
-        if (!app?.id || !this.hasClient(app)) return;
+    resetOverride(app) {
+        if (!app?.id || !this.has(app)) return;
         if (!this.#configOverride[app.id]) return;
         delete this.#configOverride[app.id];
-        this.#saveConfigOverride();
-        this.#setAppConfig([app, this.getClientDetails(app)]);
+        this.#saveOverride();
+        this.#setAppConfig([app, this.getDetails(app)]);
     }
 
     /**
@@ -239,9 +238,9 @@ export class AppConfig extends SharedConfig {
      * @returns {Config?}
      */
     #getAppConfig(app) {
-        const defaultConfig = super.getConfig();
+        const defaultConfig = super.get();
         if (!app?.id || !defaultConfig) return null;
-        const configOverride = this.#getConfigOverride(app.id);
+        const configOverride = this.#getOverride(app.id);
         const { iconSizeOffset, iconPath, activateBehavior, preferredMonitor,
                 attentionBehavior, attentionNotificationsBehavior } = configOverride;
         let { iconSize, iconHPadding, iconVPadding } = defaultConfig;
@@ -260,18 +259,18 @@ export class AppConfig extends SharedConfig {
      * @param {string} appId
      * @returns {Config}
      */
-    #getConfigOverride(appId) {
+    #getOverride(appId) {
         const { activateBehavior,
                 preferredMonitor,
                 attentionBehavior,
-                attentionNotificationsBehavior } = super.getConfig() ?? {};
+                attentionNotificationsBehavior } = super.get() ?? {};
         const configOverride = this.#configOverride[appId] ?? {};
         const defaultConfig = { activateBehavior, preferredMonitor,
                                 attentionBehavior, attentionNotificationsBehavior };
         return { ...DefaultConfigOverride, ...defaultConfig, ...configOverride };
     }
 
-    #saveConfigOverride() {
+    #saveOverride() {
         Context.getSettings(ConfigOptions.path)?.set(CONFIG_OVERRIDE_SETTINGS_KEY, this.#configOverride);
     }
 

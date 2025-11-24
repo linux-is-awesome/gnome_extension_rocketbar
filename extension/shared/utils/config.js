@@ -103,7 +103,7 @@ export class SharedConfig {
      * @param {(settingsKey: string) => void} [callback]
      * @returns {Config?}
      */
-    getConfig(client, callback) {
+    get(client, callback) {
         if (client) this.#clients?.set(client, { callback });
         return this.#config;
     }
@@ -112,7 +112,7 @@ export class SharedConfig {
      * @param {*} client
      * @returns {{[key: string]: *}}
      */
-    getClientDetails(client) {
+    getDetails(client) {
         if (!client) return {};
         if (this.#clients && !this.#clients.has(client)) this.#clients.set(client, {});
         return this.#clients?.get(client) ?? {};
@@ -122,7 +122,7 @@ export class SharedConfig {
      * @param {*} client
      * @returns {boolean}
      */
-    hasClient(client) {
+    has(client) {
         return this.#clients?.has(client) ?? false;
     }
 

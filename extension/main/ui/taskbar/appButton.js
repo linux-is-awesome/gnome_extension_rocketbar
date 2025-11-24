@@ -310,7 +310,7 @@ export class AppButton extends RuntimeButton {
         this.#app = app;
         this.#isDropCandidate = isDropCandidate;
         this.actor.set_reactive(!isDropCandidate);
-        this.#config = this.configProvider.getConfig(app, this, settingsKey => this.#handleConfig(settingsKey));
+        this.#config = this.configProvider.get(app, this, settingsKey => this.#handleConfig(settingsKey));
         this.#appIcon = new AppIcon(app, this.#config?.iconPath).setParent(this.display);
         this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.(data?.params));
     }

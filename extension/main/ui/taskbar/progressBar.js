@@ -75,7 +75,7 @@ export class ProgressBar extends Component {
     #infiniteProgressJob = null;
 
     /** @type {Config?} */
-    #config = this.#configProvider.getConfig(this, () => this.actor.queue_repaint());
+    #config = this.#configProvider.get(this, () => this.actor.queue_repaint());
 
     /** @type {SharedConfig} */
     get #configProvider() {

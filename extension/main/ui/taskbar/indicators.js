@@ -413,7 +413,7 @@ export class Indicators extends Component {
     #count = 0;
 
     /** @type {Config?} */
-    #config = this.#configProvider.getConfig(this, () => this.rerender());
+    #config = this.#configProvider.get(this, () => this.rerender());
 
     /** @type {IndicatorsBackend?} */
     #backend = new IndicatorsBackend(this.actor);

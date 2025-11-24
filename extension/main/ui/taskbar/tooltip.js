@@ -316,7 +316,7 @@ export class Tooltip extends BaseTooltip {
     };
 
     /** @type {Config?} */
-    #config = this.#configProvider.getConfig(this, settingsKey => this.#handleConfig(settingsKey));
+    #config = this.#configProvider.get(this, settingsKey => this.#handleConfig(settingsKey));
 
     /** @type {AppButton?} */
     #appButton = null;
