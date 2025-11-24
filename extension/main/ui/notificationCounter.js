@@ -155,8 +155,8 @@ export default class NotificationCounter extends Component {
     /** @type {{[event: string]: () => *}?} */
     #events = {
         [ComponentEvent.Destroy]: () => this.#destroy(),
-        [ComponentEvent.Init]: () => Context.desktop.queueClient(this, () => this.#rerender()),
         [ComponentEvent.Scale]: () => this.#rerender(),
+        [ComponentEvent.Init]: () => this.rerender(true),
         [DateMenuEvent.DndChanged]: () => this.#updateStyle()
     };
 
@@ -188,7 +188,7 @@ export default class NotificationCounter extends Component {
         this.#createCounter();
         this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         Context.signals.add(this, [Context.desktop.settings, Event.FontNameChanged, () => this.#rerender()]);
-        Context.desktop.addClient(this, () => super.setParent(this.#dateMenu));
+        Context.desktop.connectInit(this, () => super.setParent(this.#dateMenu));
     }
 
     /**
@@ -201,7 +201,7 @@ export default class NotificationCounter extends Component {
     }
 
     #destroy() {
-        Context.desktop.removeClient(this);
+        Context.desktop.disconnect(this);
         Context.signals.removeAll(this);
         this.#counter?.remove_all_transitions();
         this.#dateMenu?.destroy();
@@ -260,7 +260,7 @@ export default class NotificationCounter extends Component {
     }
 
     async #rerender() {
-        if (!this.#counter || !this.hasAllocation || Context.desktop.isQueued(this)) return;
+        if (!this.#counter || !this.hasAllocation || this.isRerendering) return;
         const actor = this.actor;
         const counter = this.#counter;
         actor.disconnectObject(counter);

@@ -1,4 +1,5 @@
 /**
+ * @typedef {import('gi://Gio').Settings} Gio.Settings
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupMenu} PopupMenu
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupDummyMenu} PopupDummyMenu
  * @typedef {import('resource:///org/gnome/shell/ui/modalDialog.js').ModalDialog} ModalDialog
@@ -10,18 +11,29 @@ import Context from '../context.js';
 import { ModalDialog } from 'resource:///org/gnome/shell/ui/modalDialog.js';
 import { MainLayout, MainPanel, Session } from '../shell.js';
 import { Component } from '../../ui/base/component.js';
-import { Event, Delay, SessionMode } from '../../../shared/core/enums.js';
+import { Event, SessionMode } from '../../../shared/core/enums.js';
+
+const FONT_SCALE_SETTINGS_KEY = 'text-scaling-factor';
 
 export default class Desktop {
 
-    /** @type {Map<*, (() => void)?>?} */
-    #clients = new Map();
+    /** @type {Map<*, () => void>?} */
+    #initClients = new Map();
+
+    /** @type {Map<*, () => void>?} */
+    #scaleClients = new Map();
 
     /** @type {St.IconTheme?} */
     #iconTheme = null;
 
     /** @type {St.Settings?} */
     #settings = null;
+
+    /** @type {St.ThemeContext?} */
+    #themeContext = St.ThemeContext.get_for_stage(global.stage);
+
+    /** @type {Gio.Settings?} */
+    #uiSettings = MainLayout._interfaceSettings ?? null;
 
     /** @type {boolean} */
     get isReady() {
@@ -32,6 +44,16 @@ export default class Desktop {
     get isLocked() {
         return Session.currentMode === SessionMode.Locksreen ||
                MainLayout.screenShieldGroup?.visible === true;
+    }
+
+    /** @type {number} */
+    get globalScale() {
+        return this.#themeContext?.scale_factor ?? 0;
+    }
+
+    /** @type {number} */
+    get fontScale() {
+        return this.#uiSettings?.get_double(FONT_SCALE_SETTINGS_KEY) ?? 0;
     }
 
     /** @type {St.IconTheme} */
@@ -57,12 +79,15 @@ export default class Desktop {
     }
 
     destroy() {
-        Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
-        this.#clients?.clear();
-        this.#clients = null;
+        this.#initClients?.clear();
+        this.#scaleClients?.clear();
+        this.#initClients = null;
+        this.#scaleClients = null;
+        this.#themeContext = null;
         this.#iconTheme = null;
         this.#settings = null;
+        this.#uiSettings = null;
     }
 
     /**
@@ -95,12 +120,9 @@ export default class Desktop {
      * @param {Clutter.Actor|Component<St.Widget>} actor
      */
     addOverlay(actor) {
-        if (actor instanceof Component && MainLayout.uiGroup instanceof St.Widget) {
-            actor.setParent(MainLayout.uiGroup);
-            return;
-        }
-        if (actor instanceof Clutter.Actor === false) return;
-        MainLayout.uiGroup?.add_child(actor);
+        if (MainLayout.uiGroup instanceof St.Widget === false) return;
+        if (actor instanceof Component) actor.setParent(MainLayout.uiGroup);
+        else if (actor instanceof Clutter.Actor) MainLayout.uiGroup.add_child(actor);
     }
 
     /**
@@ -116,71 +138,55 @@ export default class Desktop {
 
     /**
      * @param {*} client
-     * @param {(() => void)?} [callback]
+     * @param {() => void} callback
      */
-    addClient(client, callback) {
-        if (!this.#clients || !client) return;
-        if (this.isReady) {
-            this.#clients.set(client, null);
-            if (typeof callback === 'function') callback();
-            return;
-        }
-        const isValidCallback = typeof callback === 'function';
-        this.#clients.set(client, isValidCallback ? callback : null);
-        if (!isValidCallback || Context.signals.hasClient(this)) return;
-        Context.signals.add(this, [MainLayout, Event.StartupComplete, () => this.#handleStartup()]);
+    connectInit(client, callback) {
+        if (!this.#initClients || !client ||
+            typeof callback !== 'function') return;
+        if (this.isReady) return callback();
+        if (!this.#initClients.size) Context.signals.add(this,
+            [MainLayout, Event.StartupComplete, () => this.#handleInit()]);
+        this.#initClients.set(client, callback);
     }
 
     /**
      * @param {*} client
      * @param {() => void} callback
      */
-    queueClient(client, callback) {
-        if (!client || typeof callback !== 'function' || !this.#clients?.has(client)) return;
-        if (!this.isReady) return Context.logError(`${this.constructor.name} is not ready to queue client requests.`);
-        this.#clients.set(client, callback);
-        Context.jobs.removeAll(this).new(this, Delay.Background).destroy(() => this.#notifyClients());
+    connectScale(client, callback) {
+        if (!this.#scaleClients || !client ||
+            !this.#themeContext || !this.#uiSettings ||
+            typeof callback !== 'function') return;
+        if (!this.#scaleClients.size) Context.signals.add(this,
+            [this.#themeContext, Event.ScaleFactor, () => this.#notifyClients(this.#scaleClients)],
+            [this.#uiSettings, `${Event.Changed}::${FONT_SCALE_SETTINGS_KEY}`, () => this.#notifyClients(this.#scaleClients)]);
+        this.#scaleClients.set(client, callback);
     }
 
     /**
      * @param {*} client
      */
-    removeClient(client) {
-        if (!client || !this.#clients?.has(client)) return;
-        this.#clients.delete(client);
-        if (this.#clients.size) return;
-        Context.jobs.removeAll(this);
+    disconnect(client) {
+        if (!client || !this.#initClients || !this.#scaleClients) return;
+        this.#initClients.delete(client);
+        this.#scaleClients.delete(client);
+        if (this.#initClients.size || this.#scaleClients.size) return;
         Context.signals.removeAll(this);
     }
 
-    /**
-     * @param {*} client
-     * @returns {boolean}
-     */
-    hasClient(client) {
-        return this.#clients?.has(client) ?? false;
+    #handleInit() {
+        if (!this.#initClients) return;
+        Context.signals.remove(this, MainLayout);
+        this.#notifyClients(this.#initClients);
+        this.#initClients.clear();
     }
 
     /**
-     * @param {*} client
-     * @returns {boolean}
+     * @param {Map<*, () => void>?} clients
      */
-    isQueued(client) {
-        return typeof this.#clients?.get(client) === 'function';
-    }
-
-    #handleStartup() {
-        Context.signals.removeAll(this);
-        this.#notifyClients();
-    }
-
-    #notifyClients() {
-        if (!this.#clients?.size) return;
-        for (const [client, callback] of this.#clients) {
-            if (typeof callback !== 'function') continue;
-            this.#clients.set(client, null);
-            callback();
-        }
+    #notifyClients(clients) {
+        if (!clients?.size) return;
+        for (const [_, callback] of clients) callback();
     }
 
 }

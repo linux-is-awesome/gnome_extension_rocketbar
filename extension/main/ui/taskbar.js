@@ -249,9 +249,7 @@ export default class Taskbar extends ScrollView {
      * @returns {this}
      */
     setParent(parent, position) {
-        const desktop = Context.desktop;
-        if (desktop.isReady && desktop.hasClient(this)) super.setParent(parent, position);
-        else desktop.addClient(this, () => super.setParent(parent, position));
+        Context.desktop.connectInit(this, () => super.setParent(parent, position));
         return this;
     }
 
@@ -285,7 +283,7 @@ export default class Taskbar extends ScrollView {
      */
     #handleInit(sender) {
         if (!this.isValid || !sender) return;
-        if (sender === this) Context.desktop.queueClient(this, () => this.#rerender());
+        if (sender === this) this.rerender(true);
         else this.#allocation?.add(sender);
     }
 
@@ -304,7 +302,7 @@ export default class Taskbar extends ScrollView {
     }
 
     #destroy() {
-        Context.desktop.removeClient(this);
+        Context.desktop.disconnect(this);
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
         this.#allocation?.destroy();
@@ -420,7 +418,7 @@ export default class Taskbar extends ScrollView {
 
     #rerender() {
         if (!this.#appButtons || !this.hasAllocation ||
-            !this.#allocation || !this.#service || Context.desktop.isQueued(this)) return;
+            !this.#allocation || !this.#service || this.isRerendering) return;
         this.#allocation.isWorkspaceChanged = this.#service.isWorkspaceChanged;
         const favoriteApps = this.#service.favorites?.apps;
         const runningApps = this.#getRunningApps();
