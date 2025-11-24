@@ -155,7 +155,6 @@ export default class NotificationCounter extends Component {
     /** @type {{[event: string]: () => *}?} */
     #events = {
         [ComponentEvent.Destroy]: () => this.#destroy(),
-        [ComponentEvent.Scale]: () => this.#rerender(),
         [ComponentEvent.Init]: () => this.rerender(true),
         [DateMenuEvent.DndChanged]: () => this.#updateStyle()
     };
@@ -188,13 +187,15 @@ export default class NotificationCounter extends Component {
         this.#createCounter();
         this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         Context.signals.add(this, [Context.desktop.settings, Event.FontNameChanged, () => this.#rerender()]);
-        Context.desktop.connectInit(this, () => super.setParent(this.#dateMenu));
+        Context.desktop.connectInit(this, () => super.setParent(this.#dateMenu))
+                       .connectScale(this, () => this.#rerender());
     }
 
     /**
      * Note: This component doesn't support changing the parent.
      *
      * @override
+     * @returns {this}
      */
     setParent() {
         return this;
@@ -293,26 +294,25 @@ export default class NotificationCounter extends Component {
         }
         const [width] = this.actor?.get_size() ?? [];
         if (!width) return;
-        parent.set_style(`margin-left: ${width / this.globalScale}px;`);
+        parent.set_style(`margin-left: ${width / Context.desktop.globalScale}px;`);
     }
 
     #updateStyle() {
         if (!this.#counter) return;
         const { borderColor, borderSize, backgroundColor, textColor, padding } = this.#getStyleValues();
         const { fontSize, roundness, offset } = this.#config;
-        const scale = this.uiScale;
-        const globalScale = this.globalScale;
+        const { fontScale, globalScale } = Context.desktop;
         this.#counter.set_style(
-            `font-size: ${fontSize * scale}px;` +
-            `padding: 0 ${padding * scale}px;` +
-            `border-width: ${borderSize * scale}px;` +
+            `font-size: ${fontSize * fontScale}px;` +
+            `padding: 0 ${padding * fontScale}px;` +
+            `border-width: ${borderSize * fontScale}px;` +
             `border-color: ${borderColor};` +
-            `border-radius: ${roundness * scale}px;` +
+            `border-radius: ${roundness * fontScale}px;` +
             `background-color: ${backgroundColor};` +
             `color: ${textColor};`
         );
         let [_, height] = this.#counter.get_size();
-        height = (height - Math.round(borderSize * scale * globalScale) * 4) / globalScale;
+        height = (height - Math.round(borderSize * fontScale * globalScale) * 4) / globalScale;
         this.#counter.style +=
             `height: ${height}px;` +
             `min-width: ${height}px;` +

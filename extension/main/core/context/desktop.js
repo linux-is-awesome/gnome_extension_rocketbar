@@ -139,28 +139,32 @@ export default class Desktop {
     /**
      * @param {*} client
      * @param {() => void} callback
+     * @returns {this}
      */
     connectInit(client, callback) {
         if (!this.#initClients || !client ||
-            typeof callback !== 'function') return;
-        if (this.isReady) return callback();
+            typeof callback !== 'function') return this;
+        if (this.isReady) return callback(), this;
         if (!this.#initClients.size) Context.signals.add(this,
             [MainLayout, Event.StartupComplete, () => this.#handleInit()]);
         this.#initClients.set(client, callback);
+        return this;
     }
 
     /**
      * @param {*} client
      * @param {() => void} callback
+     * @returns {this}
      */
     connectScale(client, callback) {
         if (!this.#scaleClients || !client ||
             !this.#themeContext || !this.#uiSettings ||
-            typeof callback !== 'function') return;
+            typeof callback !== 'function') return this;
         if (!this.#scaleClients.size) Context.signals.add(this,
             [this.#themeContext, Event.ScaleFactor, () => this.#notifyClients(this.#scaleClients)],
             [this.#uiSettings, `${Event.Changed}::${FONT_SCALE_SETTINGS_KEY}`, () => this.#notifyClients(this.#scaleClients)]);
         this.#scaleClients.set(client, callback);
+        return this;
     }
 
     /**

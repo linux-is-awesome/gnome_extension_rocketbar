@@ -58,8 +58,7 @@ export class ProgressBar extends Component {
 
     /** @type {{[event: string]: () => *}?} */
     #events = {
-        [ComponentEvent.Destroy]: () => this.#destroy(),
-        [ComponentEvent.Scale]: () => this.actor.queue_repaint()
+        [ComponentEvent.Destroy]: () => this.#destroy()
     };
 
     /** @type {AppButton?} */
@@ -87,8 +86,9 @@ export class ProgressBar extends Component {
     get #drawParams() {
         if (!this.#config) return null;
         const { width, height, offset, backgroundColor, fillColor, position } = this.#config;
+        const { fontScale, globalScale } = Context.desktop;
         const [canvasWidth, canvasHeight] = this.actor.get_surface_size();
-        const scale = this.uiScale * this.globalScale;
+        const scale = fontScale * globalScale;
         const isInfiniteProgress = this.#progress === Progress.Infinite;
         const progress = isInfiniteProgress ? Math.abs(this.#infiniteProgress) : this.#progress ?? Progress.Min;
         const angle = Math.PI / 2;
@@ -111,9 +111,11 @@ export class ProgressBar extends Component {
         this.#appButton = appButton;
         this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         this.connect(Event.Repaint, () => this.#draw());
+        Context.desktop.connectScale(this, () => this.actor.queue_repaint());
     }
 
     /**
+     * @override
      * @returns {Promise<void>}
      */
     async rerender() {
@@ -130,6 +132,7 @@ export class ProgressBar extends Component {
     }
 
     #destroy() {
+        Context.desktop.disconnect(this);
         this.#progress = Progress.Min;
         this.#toggleInfiniteProgress();
         this.#appButton = null;

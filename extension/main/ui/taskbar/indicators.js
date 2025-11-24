@@ -402,8 +402,7 @@ export class Indicators extends Component {
 
     /** @type {{[event: string]: () => *}?} */
     #events = {
-        [ComponentEvent.Destroy]: () => this.#destroy(),
-        [ComponentEvent.Scale]: () => this.rerender()
+        [ComponentEvent.Destroy]: () => this.#destroy()
     };
 
     /** @type {AppButton?} */
@@ -447,7 +446,8 @@ export class Indicators extends Component {
         const { limitActive, limitInactive, sizeActive, sizeInactive,
                 spacingActive, spacingInactive, weightActive, weightInactive,
                 offsetActive, offsetInactive, position } = this.#config;
-        const scale = this.uiScale * this.globalScale;
+        const { fontScale, globalScale } = Context.desktop;
+        const scale = fontScale * globalScale;
         const isActive = this.#isActive;
         const count = Math.min(this.#count, isActive ? limitActive : limitInactive);
         const color = count > 0 ? this.#color : null;
@@ -468,6 +468,9 @@ export class Indicators extends Component {
         this.connect(Event.Repaint, () => this.#backend?.rerender());
     }
 
+    /**
+     * @override
+     */
     rerender() {
         if (!this.hasAllocation || !this.#backend) return;
         const count = this.#appButton?.windowsCount ?? 0;

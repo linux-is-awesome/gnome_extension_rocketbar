@@ -50,7 +50,6 @@ export class Separator extends Component {
     /** @type {{[event: string]: () => *}?} */
     #events = {
         [ComponentEvent.Destroy]: () => this.#destroy(),
-        [ComponentEvent.Scale]: () => this.#handleConfig(),
         [ComponentEvent.Init]: () => (this.#updateStyle(), this.#handleState())
     };
 
@@ -83,7 +82,8 @@ export class Separator extends Component {
         const result = super.rect;
         if (!result) return null;
         const { spacingAfter } = this.#config;
-        result.width = Math.round((this.#width + spacingAfter) * this.uiScale * this.globalScale);
+        const { globalScale, fontScale } = Context.desktop;
+        result.width = Math.round((this.#width + spacingAfter) * fontScale * globalScale);
         return result;
     }
 
@@ -104,6 +104,7 @@ export class Separator extends Component {
         super(new St.Bin(DefaultProps));
         this.actor.set_child(this.#body);
         this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
+        Context.desktop.connectScale(this, () => this.#handleConfig());
     }
 
     /**
@@ -117,6 +118,7 @@ export class Separator extends Component {
     }
 
     #destroy() {
+        Context.desktop.disconnect(this);
         Context.signals.removeAll(this);
         this.#body = null;
         this.#events = null;
@@ -130,15 +132,15 @@ export class Separator extends Component {
     #updateStyle() {
         if (!this.isValid || !this.#body) return;
         const { iconSize, spacingAfter } = this.#config;
-        const scale = this.uiScale;
+        const { fontScale } = Context.desktop;
         this.actor.set_style(
-            `width: ${this.#width * scale}px;` +
-            `padding-right: ${spacingAfter * scale}px;`
+            `width: ${this.#width * fontScale}px;` +
+            `padding-right: ${spacingAfter * fontScale}px;`
         );
         this.#body.set_style(
-            `height: ${iconSize * scale}px;` +
-            `width: ${BODY_WIDTH * scale}px;` +
-            `border-radius: ${BODY_WIDTH * scale}px;` +
+            `height: ${iconSize * fontScale}px;` +
+            `width: ${BODY_WIDTH * fontScale}px;` +
+            `border-radius: ${BODY_WIDTH * fontScale}px;` +
             `background-color: ${BODY_COLOR};`
         );
     }

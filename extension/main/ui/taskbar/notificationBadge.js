@@ -5,6 +5,7 @@
 
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
+import Context from '../../core/context.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { SharedConfig } from '../../../shared/utils/config.js';
@@ -79,8 +80,7 @@ export class NotificationBadge extends Component {
 
     /** @type {{[event: string]: () => *}?} */
     #events = {
-        [ComponentEvent.Destroy]: () => this.#destroy(),
-        [ComponentEvent.Scale]: () => this.#updateStyle()
+        [ComponentEvent.Destroy]: () => this.#destroy()
     };
 
     /** @type {St.Label?} */
@@ -107,9 +107,11 @@ export class NotificationBadge extends Component {
         this.#badge?.set_pivot_point(0.5, 0.5);
         this.#appButton = appButton;
         this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
+        Context.desktop.connectScale(this, () => this.#updateStyle());
     }
 
     /**
+     * @override
      * @returns {Promise<void>}
      */
     async rerender() {
@@ -133,6 +135,7 @@ export class NotificationBadge extends Component {
     }
 
     #destroy() {
+        Context.desktop.disconnect(this);
         this.#badge?.remove_all_transitions();
         this.#badge = null;
         this.#appButton = null;
@@ -156,7 +159,7 @@ export class NotificationBadge extends Component {
     #updateStyle() {
         if (!this.#config || !this.#badge?.visible || !this.isValid) return;
         const { color, fontColor, borderColor, offset, size, roundness, position } = this.#config;
-        const scale = this.uiScale;
+        const scale = Context.desktop.fontScale;
         const fontSize = Math.max(size - BORDER_SIZE * 2, FONT_SIZE_MIN) * scale;
         const padding = this.#badge?.text?.length === 1 ? 0 : LONG_VALUE_PADDING * scale;
         const margins =
