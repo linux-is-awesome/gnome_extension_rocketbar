@@ -326,11 +326,12 @@ export class Component {
 
     /**
      * @param {boolean} [isDeferred]
+     * @param {number} [delay] only applies if `isDeferred` is True
      */
-    rerender(isDeferred = false) {
+    rerender(isDeferred = false, delay = RERENDER_DELAY) {
         if (!this.#isValid || !this.#signalTracker) return;
         if (!isDeferred) this.#notifySelf(ComponentEvent.Rerender);
-        else Context.jobs.shared(this.#signalTracker, () => this.#notifySelf(ComponentEvent.Rerender), RERENDER_DELAY);
+        else Context.jobs.shared(this.#signalTracker, () => this.#notifySelf(ComponentEvent.Rerender), delay);
     }
 
     #destroy() {
