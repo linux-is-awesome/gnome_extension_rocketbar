@@ -1,6 +1,6 @@
 /**
  * @typedef {{event?: string?, callback?: ((...args) => *)?, flag?: number?}} TargetConnection
- * @typedef {Map<string, number|string>} TargetConnections
+ * @typedef {Map<string, number>} TargetConnections
  */
 
 import GObject from 'gi://GObject';
@@ -135,7 +135,7 @@ export default class Signals {
                        target.connect_after(event, callback) :
                        typeof target.connect === 'function' ?
                        target.connect(event, callback) : null;
-            if (typeof id === 'number' || typeof id === 'string') connections.set(event, id);
+            if (typeof id === 'number') connections.set(event, id);
             else Context.logError(`${this.constructor.name} got invalid connection id (${id}) for event: ${event}.`);
         } catch (e) {
             Context.logError(`${this.constructor.name} failed to connect target.`, e);
