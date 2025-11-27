@@ -29,7 +29,7 @@ export default class Monitors {
     #job = Context.jobs.new(this, Delay.Queue);
 
     /** @type {MonitorInfo[]} */
-    get monitors() {
+    get list() {
         return MainLayout.monitors ?? [];
     }
 
@@ -53,27 +53,36 @@ export default class Monitors {
     }
 
     /**
-     * @param {Mtk.Rectangle} rect
+     * @param {Mtk.Rectangle?} rect
+     * @returns {MonitorInfo?}
+     */
+    getMonitorForRect(rect) {
+        const monitorIndex = this.getMonitorIndex(rect);
+        return this.list[monitorIndex] ?? null;
+    }
+
+    /**
+     * @param {Mtk.Rectangle?} rect
      * @returns {[x: Alignment, y: Alignment]}
      */
     getPositionOnMonitor(rect) {
         const monitorIndex = this.getMonitorIndex(rect);
-        const monitorInfo = this.monitors[monitorIndex];
-        if (!rect || !monitorInfo) return [Alignment.Top, Alignment.Left];
-        const x = rect.x < (monitorInfo.x + monitorInfo.width) / 2 ?
+        const monitor = this.list[monitorIndex];
+        if (!rect || !monitor) return [Alignment.Top, Alignment.Left];
+        const x = rect.x < (monitor.x + monitor.width) / 2 ?
                   Alignment.Left : Alignment.Right;
-        const y = rect.y < (monitorInfo.y + monitorInfo.height) / 2 ?
+        const y = rect.y < (monitor.y + monitor.height) / 2 ?
                   Alignment.Top : Alignment.Bottom;
         return [x, y];
     }
 
     /**
-     * @param {Mtk.Rectangle|Monitor} source
+     * @param {(Mtk.Rectangle|Monitor)?} source
      * @returns {number}
      */
     getMonitorIndex(source) {
         if (source instanceof Mtk.Rectangle) return global.display.get_monitor_index_for_rect(source);
-        return this.#monitors.get(source) ?? -1;
+        return source ? this.#monitors.get(source) ?? -1 : -1;
     }
 
     /**
