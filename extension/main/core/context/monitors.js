@@ -56,7 +56,7 @@ export default class Monitors {
      * @param {Mtk.Rectangle?} rect
      * @returns {MonitorInfo?}
      */
-    getMonitorForRect(rect) {
+    getMonitor(rect) {
         const monitorIndex = this.getMonitorIndex(rect);
         return this.list[monitorIndex] ?? null;
     }
@@ -65,7 +65,7 @@ export default class Monitors {
      * @param {Mtk.Rectangle?} rect
      * @returns {[x: Alignment, y: Alignment]}
      */
-    getPositionOnMonitor(rect) {
+    getAlignment(rect) {
         const monitorIndex = this.getMonitorIndex(rect);
         const monitor = this.list[monitorIndex];
         if (!rect || !monitor) return [Alignment.Top, Alignment.Left];
