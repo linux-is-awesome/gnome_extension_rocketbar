@@ -1,5 +1,4 @@
 /**
- * @typedef {import('gi://Gio').Settings} Gio.Settings
  * @typedef {import('gi://Clutter').Actor} Clutter.Actor
  */
 
@@ -8,10 +7,9 @@ import St from 'gi://St';
 import Mtk from 'gi://Mtk';
 import * as Dnd from 'resource:///org/gnome/shell/ui/dnd.js';
 import Context from '../../../main/core/context.js';
-import { Event, Delay } from '../../../shared/core/enums.js';
+import { Event } from '../../../shared/core/enums.js';
 
 const DEFAULT_DRAG_THRESHOLD = 200;
-const RERENDER_DELAY = Delay.Background - 1;
 
 /** @type {{[param: string]: *}} */
 const DraggableParams = {
@@ -21,10 +19,8 @@ const DraggableParams = {
 
 /** @enum {string} */
 export const ComponentEvent = {
-    Notify: 'component::notify',
     Init: 'component::init',
     Destroy: 'component::destroy',
-    Rerender: 'component::rerender',
     AcceptDrop: 'component::accept-drop',
     DragOver: 'component::drag-over',
     DragBegin: 'component::drag-begin',
@@ -58,7 +54,7 @@ export class Component {
     /** @type {Dnd._Draggable?} */
     #draggable = null;
 
-    /** @type {((args: { event: string, params: *, target: *, sender: * }) => *)?} */
+    /** @type {((data: {event: string, params: *, target: *, sender: *}) => *)?} */
     #notifyCallback = null;
 
     /** @type {boolean} */
@@ -75,13 +71,6 @@ export class Component {
     /** @type {boolean} */
     get isMapped() {
         return this.#isValid && !!this.#actor?.is_mapped();
-    }
-
-
-    /** @type {boolean} */
-    get isRerendering() {
-        if (!this.#isValid || !this.#signalTracker) return false;
-        return Context.jobs.hasShared(this.#signalTracker, RERENDER_DELAY);
     }
 
     /** @type {boolean} */
@@ -126,19 +115,24 @@ export class Component {
         return this.rect;
     }
 
-    /** @param {number} value 0..999 */
+    /** @param {number} value -1..0...999 */
     set position(value) {
         this.#setPosition(value);
     }
 
     /** @param {boolean} enabled */
-    set dropEvents(enabled) {
-        this.#dropEvents = enabled;
+    set dragEvents(enabled) {
+        this.#setDragEvents(enabled);
     }
 
     /** @param {boolean} enabled */
-    set dragEvents(enabled) {
-        this.#setDragEvents(enabled);
+    set dropEvents(enabled) {
+        this.#dropEvents = typeof enabled === 'boolean' ? enabled : false;
+    }
+
+    /** @param {((data: {event: string, params: *, target: *, sender: *}) => *)?} callback */
+    set notifyCallback(callback) {
+        this.#notifyCallback = typeof callback === 'function' ? callback : null;
     }
 
     /**
@@ -213,29 +207,21 @@ export class Component {
     /**
      * @param {string} event
      * @param {(...args) => *} callback
-     * @returns {number|string|null}
+     * @returns {number|null}
      */
     connect(event, callback) {
         if (!this.#actor ||
             typeof event !== 'string' ||
             typeof callback !== 'function') return null;
-        if (event === ComponentEvent.Notify) {
-            this.#notifyCallback ??= callback;
-            return event;
-        }
         return this.#actor.connect(event, callback);
     }
 
     /**
-     * @param {number|string} id
+     * @param {number} id
      * @returns {this}
      */
     disconnect(id) {
-        if (typeof id === 'number') {
-            this.#actor?.disconnect(id);
-        } else if (id === ComponentEvent.Notify) {
-            this.#notifyCallback = null;
-        }
+        this.#actor?.disconnect(id);
         return this;
     }
 
@@ -270,7 +256,7 @@ export class Component {
     }
 
     /**
-     * @param {string} event a custom event
+     * @param {string} event any custom event
      * @param {*} [params]
      * @returns {*}
      */
@@ -324,20 +310,9 @@ export class Component {
         return this;
     }
 
-    /**
-     * @param {boolean} [isDeferred]
-     * @param {number} [delay] only applies if `isDeferred` is True
-     */
-    rerender(isDeferred = false, delay = RERENDER_DELAY) {
-        if (!this.#isValid || !this.#signalTracker) return;
-        if (!isDeferred) this.#notifySelf(ComponentEvent.Rerender);
-        else Context.jobs.shared(this.#signalTracker, () => this.#notifySelf(ComponentEvent.Rerender), delay);
-    }
-
     #destroy() {
         if (!this.#isValid || !this.#actor) return;
         this.#isValid = false;
-        Context.jobs.removeAll(this.#signalTracker);
         this.#actor.remove_all_transitions();
         this.#setDragEvents(false);
         this.#notifySelf(ComponentEvent.Destroy);
@@ -346,6 +321,7 @@ export class Component {
         this.#actor = null;
         this.#parent = null;
         this.#signalTracker = null;
+        this.#notifyCallback = null;
     }
 
     #setInitHandler() {
@@ -421,7 +397,7 @@ export class Component {
     }
 
     /**
-     * @param {string} event a custom event
+     * @param {string} event any custom event
      * @param {*} [params]
      * @param {Component<St.Widget>} [sender]
      * @returns {this}
@@ -437,7 +413,7 @@ export class Component {
     }
 
     /**
-     * @param {string} event a custom event
+     * @param {string} event any custom event
      * @param {*} [target]
      * @param {*} [params]
      * @param {Component<St.Widget>} [sender]
@@ -449,7 +425,7 @@ export class Component {
             const notifyParams = { event, target, params, sender };
             return this.#notifyCallback(notifyParams);
         } catch (e) {
-            Context.logError(`${this.constructor.name} failed to trigger event ${event}.`, e);
+            Context.logError(`${this.constructor.name} failed to handle event ${event}.`, e);
         }
         return null;
     }
