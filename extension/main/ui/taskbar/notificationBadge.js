@@ -103,15 +103,14 @@ export class NotificationBadge extends Component {
      */
     constructor(appButton) {
         super(new St.Bin(DefaultProps));
-        this.actor.set_child(this.#badge);
-        this.#badge?.set_pivot_point(0.5, 0.5);
+        super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.#appButton = appButton;
-        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
+        this.#badge?.set_pivot_point(0.5, 0.5);
+        this.actor.set_child(this.#badge);
         Context.desktop.connectScale(this, () => this.#updateStyle());
     }
 
     /**
-     * @override
      * @returns {Promise<void>}
      */
     async rerender() {

@@ -102,12 +102,12 @@ class AppStatusItem extends Icon {
      */
     constructor(name, reactive = false) {
         super(name, `${AppStatusItemProps.name}-Icon`);
+        super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.#value = new St.Label(AppStatusItemValueProps);
         this.#actor = new St.BoxLayout({ ...AppStatusItemProps, reactive });
         this.#actor.add_child(super.actor);
         this.#actor.add_child(this.#value);
         this.#actor.set_pivot_point(0.5, 0.5);
-        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         if (!reactive) return;
         const clickAction = new Clutter.ClickAction();
         clickAction.connect(Event.Clicked, event => this.notifyParents(Event.Clicked, { name, event }));
@@ -183,7 +183,7 @@ class AppStatus extends Component {
      */
     constructor(appButton) {
         super(new St.BoxLayout(AppStatusProps));
-        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.(data?.params));
+        super.notifyCallback = data => this.#events?.[data?.event]?.(data?.params);
         this.#appButton = appButton;
         this.#items = new Map();
         for (const icon in AppStatusItemIcon) {
@@ -347,7 +347,8 @@ export class Tooltip extends BaseTooltip {
      */
     constructor(appButton) {
         super(appButton, MODULE_NAME);
-        this.trackHover = true;
+        super.notifyCallback = data => this.#events?.[data?.event]?.();
+        super.trackHover = true;
         this.#appButton = appButton;
         this.#layout = new St.BoxLayout(LayoutProps);
         this.#windowTitle = new St.Label(WindowTitleProps);
@@ -358,7 +359,6 @@ export class Tooltip extends BaseTooltip {
         this.#layout.add_child(this.#appName);
         this.#layout.add_child(this.#status.actor);
         this.actor.add_child(this.#layout);
-        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         this.connect(Event.Mapped, () => this.#handleMapped());
         this.#handleConfig();
     }

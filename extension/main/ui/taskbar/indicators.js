@@ -463,14 +463,12 @@ export class Indicators extends Component {
      */
     constructor(appButton) {
         super(new St.DrawingArea(DefaultProps));
+        super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.#appButton = appButton;
-        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         this.connect(Event.Repaint, () => this.#backend?.rerender());
+        Context.desktop.connectScale(this, () => this.rerender());
     }
 
-    /**
-     * @override
-     */
     rerender() {
         if (!this.hasAllocation || !this.#backend) return;
         const count = this.#appButton?.windowsCount ?? 0;
@@ -489,6 +487,7 @@ export class Indicators extends Component {
     }
 
     #destroy() {
+        Context.desktop.disconnect(this);
         this.#backend?.destroy();
         this.#backend = null;
         this.#appButton = null;

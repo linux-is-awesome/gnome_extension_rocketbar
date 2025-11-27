@@ -11,7 +11,7 @@ import { Component, ComponentEvent } from './base/component.js';
 import { Animation, AnimationDuration, AnimationType } from './base/animation.js';
 import { NotificationHandler } from '../services/notifications.js';
 import { Config } from '../../shared/utils/config.js';
-import { SettingsPath, SettingsKey, Event, Property } from '../../shared/core/enums.js';
+import { SettingsPath, SettingsKey, Event, Delay, Property } from '../../shared/core/enums.js';
 
 const MODULE_NAME = 'Rocketbar__NotificationCounter';
 const DND_SETTINGS_KEY = 'show-banners';
@@ -98,7 +98,7 @@ class DateMenu extends Component {
 
     constructor() {
         super(new St.BoxLayout({ name: `${MODULE_NAME}-${DateMenu.name}` }));
-        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
+        super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.#initialize();
     }
 
@@ -155,7 +155,7 @@ export default class NotificationCounter extends Component {
     /** @type {{[event: string]: () => *}?} */
     #events = {
         [ComponentEvent.Destroy]: () => this.#destroy(),
-        [ComponentEvent.Init]: () => this.rerender(true),
+        [ComponentEvent.Init]: () => Context.jobs.shared(this, () => this.#rerender(), Delay.Background),
         [DateMenuEvent.DndChanged]: () => this.#updateStyle()
     };
 
@@ -184,8 +184,8 @@ export default class NotificationCounter extends Component {
 
     constructor() {
         super(new St.BoxLayout({ name: MODULE_NAME }));
+        super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.#createCounter();
-        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         Context.signals.add(this, [Context.desktop.settings, Event.FontNameChanged, () => this.#rerender()]);
         Context.desktop.connectInit(this, () => super.setParent(this.#dateMenu))
                        .connectScale(this, () => this.#rerender());
@@ -261,7 +261,8 @@ export default class NotificationCounter extends Component {
     }
 
     async #rerender() {
-        if (!this.#counter || !this.hasAllocation || this.isRerendering) return;
+        if (!this.#counter || !this.hasAllocation ||
+            Context.jobs.hasShared(this, Delay.Background)) return;
         const actor = this.actor;
         const counter = this.#counter;
         actor.disconnectObject(counter);

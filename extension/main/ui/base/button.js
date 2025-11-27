@@ -7,10 +7,10 @@ import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import { PopupMenu, PopupDummyMenu } from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import Context from '../../core/context.js';
-import { Component, ComponentLocation } from './component.js';
+import { Component } from './component.js';
 import { LongPressAction } from './longPressAction.js';
 import { Tooltip, TooltipEvent } from './tooltip.js';
-import { Event, PseudoClass } from '../../../shared/core/enums.js';
+import { Event, PseudoClass, Alignment } from '../../../shared/core/enums.js';
 import { Animation, AnimationType, AnimationDuration } from './animation.js';
 import { Gradient } from '../../utils/gradient.js';
 
@@ -138,8 +138,8 @@ class ButtonMenuTrigger extends PopupDummyMenu {
         state &= Clutter.ModifierType.MODIFIER_MASK;
         if (state) return Clutter.EVENT_PROPAGATE;
         const keySymbol = event.get_key_symbol();
-        const key = this.#button.location === ComponentLocation.Top ? Clutter.KEY_Down :
-                                                                      Clutter.KEY_Up;
+        const [_, y] = Context.monitors.getAlignment(this.#button.rect);
+        const key = y === Alignment.Top ? Clutter.KEY_Down : Clutter.KEY_Up;
         if (keySymbol !== key) return Clutter.EVENT_PROPAGATE;
         const menu = this.#button?.menu;
         if (!menu) return Clutter.EVENT_PROPAGATE;
@@ -204,7 +204,8 @@ export class Button extends Component {
         if (!result || !this.#style) return result;
         const { width, spacingBefore, spacingAfter } = this.#style;
         if (!width) return result;
-        const scale = this.uiScale * this.globalScale;
+        const { fontScale, globalScale } = Context.desktop;
+        const scale = fontScale * globalScale;
         result.width = Math.round((spacingBefore + width + spacingAfter) * scale);
         return result;
     }
@@ -221,7 +222,8 @@ export class Button extends Component {
         if (!result || !this.#style) return result;
         const { width, height, spacingBefore, spacingAfter } = this.#style;
         if (!width && !spacingBefore && !spacingAfter) return result;
-        const scale = this.uiScale * this.globalScale;
+        const { fontScale, globalScale } = Context.desktop;
+        const scale = fontScale * globalScale;
         if (width) {
             result.width = Math.round(width * scale);
         } else {
@@ -373,7 +375,7 @@ export class Button extends Component {
     overrideStyle(style = DefaultStyle) {
         if (!this.#display || !style) return this;
         const actor = this.actor;
-        const scale = this.uiScale;
+        const scale = Context.desktop.fontScale;
         const css = new Map();
         const { spacingBefore, spacingAfter, roundness, height, width,
                 backlightColor, backlightIntensity, backlightRatio = DefaultStyle.backlightRatio } = style;

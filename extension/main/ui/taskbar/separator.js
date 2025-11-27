@@ -102,8 +102,8 @@ export class Separator extends Component {
 
     constructor() {
         super(new St.Bin(DefaultProps));
+        super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.actor.set_child(this.#body);
-        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         Context.desktop.connectScale(this, () => this.#handleConfig());
     }
 

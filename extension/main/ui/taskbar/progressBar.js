@@ -107,15 +107,14 @@ export class ProgressBar extends Component {
      */
     constructor(appButton) {
         super(new St.DrawingArea(DefaultProps));
-        this.actor.set_pivot_point(0.5, 0.5);
+        super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.#appButton = appButton;
-        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
+        this.actor.set_pivot_point(0.5, 0.5);
         this.connect(Event.Repaint, () => this.#draw());
         Context.desktop.connectScale(this, () => this.actor.queue_repaint());
     }
 
     /**
-     * @override
      * @returns {Promise<void>}
      */
     async rerender() {

@@ -6,9 +6,10 @@ import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import Context from '../../core/context.js';
 import { Overview } from '../../core/shell.js';
-import { ComponentEvent, ComponentLocation } from '../base/component.js';
+import { ComponentEvent } from '../base/component.js';
 import { Icon, IconEvent } from '../base/icon.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
+import { Alignment } from '../../../shared/core/enums.js';
 import { DominantColor } from '../../utils/dominantColor.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppIcon';
@@ -49,7 +50,6 @@ export class AppIcon extends Icon {
     /** @type {{[event: string]: () => *}?} */
     #events = {
         [ComponentEvent.Destroy]: () => this.#destroy(),
-        [ComponentEvent.Scale]: () => this.setSize(this.#size),
         [IconEvent.TextureChanged]: () => this.#handleIconTexture()
     };
 
@@ -77,7 +77,7 @@ export class AppIcon extends Icon {
     /** @type {St.Icon} */
     get dragActor() {
         const gicon = this.actor.get_gicon();
-        const size = Overview.dash?.iconSize || this.#size * this.uiScale;
+        const size = Overview.dash?.iconSize || this.#size * Context.desktop.fontScale;
         const actorProps = { name: `${MODULE_NAME}-DragActor`, icon_size: size, gicon };
         return new St.Icon(actorProps);
     }
@@ -102,8 +102,8 @@ export class AppIcon extends Icon {
         const iconTexture = app?.get_icon() ?? null;
         const icon = { iconTexture, iconPath };
         super(icon, MODULE_NAME);
+        super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.setProps(DefaultProps);
-        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
         this.#app = app;
         this.#highlight = new Clutter.BrightnessContrastEffect(HighlightProps);
         this.#highlight.set_brightness(HIGHLIGHT_BRIGHTNESS);
@@ -111,6 +111,7 @@ export class AppIcon extends Icon {
         const actor = this.actor;
         actor.set_pivot_point(0.5, 0.5);
         actor.add_effect(this.#highlight);
+        Context.desktop.connectScale(this, () => this.setSize(this.#size));
     }
 
     /**
@@ -121,7 +122,7 @@ export class AppIcon extends Icon {
     setSize(size) {
         if (typeof size !== 'number') return this;
         this.#size = size;
-        this.actor.set_icon_size(size * this.uiScale);
+        this.actor.set_icon_size(size * Context.desktop.fontScale);
         return this;
     }
 
@@ -141,8 +142,10 @@ export class AppIcon extends Icon {
             case AppIconAnimation.Deactivate:
                 if (!Context.desktop.settings.enable_animations) return true;
                 const mode = Clutter.AnimationMode.EASE_OUT_SINE;
-                const location = this.location === ComponentLocation.Top ? 1 : -1;
-                const translation_y = animation.translation_y * location * this.uiScale * this.globalScale;
+                const { fontScale, globalScale } = Context.desktop;
+                const [_, y] = Context.monitors.getAlignment(this.rect);
+                const location = y === Alignment.Top ? 1 : -1;
+                const translation_y = animation.translation_y * location * fontScale * globalScale;
                 if (!await Animation(this, duration, { translation_y, mode })) return false;
                 return Animation(this, duration, { ...AnimationType.TranslationReset, mode });
             default: return false;
@@ -150,6 +153,7 @@ export class AppIcon extends Icon {
     }
 
     #destroy() {
+        Context.desktop.disconnect(this);
         this.#app = null;
         this.#events = null;
         this.#highlight = null;

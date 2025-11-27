@@ -304,6 +304,7 @@ export class AppButton extends RuntimeButton {
      */
     constructor(app, isDropCandidate = false) {
         super(new St.Bin(), MODULE_NAME);
+        super.notifyCallback = data => this.#events?.[data?.event]?.(data?.params);
         this.#layout = new St.Widget({ ...LayoutProps, layout_manager: new Clutter.BinLayout() });
         this.#layout.add_child(this.display);
         this.actor.set_child(this.#layout);
@@ -312,7 +313,6 @@ export class AppButton extends RuntimeButton {
         this.actor.set_reactive(!isDropCandidate);
         this.#config = this.configProvider.get(app, this, settingsKey => this.#handleConfig(settingsKey));
         this.#appIcon = new AppIcon(app, this.#config?.iconPath).setParent(this.display);
-        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.(data?.params));
     }
 
     /**
@@ -379,8 +379,8 @@ export class AppButton extends RuntimeButton {
         if (!this.#appIcon ||
             typeof x !== 'number' ||
             typeof y !== 'number') return;
-        const monitorRect = this.monitorRect;
-        if (!monitorRect) return;
+        const monitor = Context.monitors.getMonitor(this.rect);
+        if (!monitor) return;
         const actor = this.#appIcon.dragActor;
         Context.desktop.addOverlay(actor);
         actor.set_position(x, y);
@@ -390,10 +390,10 @@ export class AppButton extends RuntimeButton {
         const scaledHeight = height * AnimationType.ScaleTriple.scale_y;
         const scaledX = x - (scaledWidth - width) / 2;
         const scaledY = y - (scaledHeight - height) / 2;
-        const originX = Math.min(Math.max(scaledX, monitorRect.x),
-                                 monitorRect.x + monitorRect.width - scaledWidth) - scaledX;
-        const originY = Math.min(Math.max(scaledY, monitorRect.y),
-                                 monitorRect.y + monitorRect.height - scaledHeight) - scaledY;
+        const originX = Math.min(Math.max(scaledX, monitor.x),
+                                 monitor.x + monitor.width - scaledWidth) - scaledX;
+        const originY = Math.min(Math.max(scaledY, monitor.y),
+                                 monitor.y + monitor.height - scaledHeight) - scaledY;
         const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
         const animationParams = { ...AnimationType.OpacityMin, ...AnimationType.ScaleTriple,
                                   translation_x: originX, translation_y: originY, mode };

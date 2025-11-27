@@ -5,8 +5,8 @@
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import Context from '../../core/context.js';
-import { Component, ComponentLocation } from './component.js';
-import { Event, Delay } from '../../../shared/core/enums.js';
+import { Component } from './component.js';
+import { Event, Delay, Alignment } from '../../../shared/core/enums.js';
 import { Animation, AnimationType, AnimationDuration } from './animation.js';
 
 const STYLE_CLASS = 'rocketbar__tooltip';
@@ -72,8 +72,8 @@ export class Tooltip extends Component {
     /** @type {number?} */
     #offset = null;
 
-    /** @type {ComponentLocation} */
-    #location = ComponentLocation.Top;
+    /** @type {Alignment} */
+    #location = Alignment.Top;
 
     /** @type {Job?} */
     #fadeInJob = null;
@@ -91,7 +91,7 @@ export class Tooltip extends Component {
     /** @type {{[param: string]: number}} */
     get #fadeParams() {
         const offset = this.#offset ?? 0;
-        const translation_y = offset * (this.#location === ComponentLocation.Top ? -1 : 1);
+        const translation_y = offset * (this.#location === Alignment.Top ? -1 : 1);
         const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
         return { translation_y, mode };
     }
@@ -237,10 +237,10 @@ export class Tooltip extends Component {
         if (!sourceActorRect) return true;
         const [_, y] = global.get_pointer();
         const yOffset = this.#offset / 2;
-        const yBound = this.#location === ComponentLocation.Top ?
+        const yBound = this.#location === Alignment.Top ?
                        sourceActorRect.y + sourceActorRect.height + yOffset :
                        sourceActorRect.y - yOffset;
-        return this.#location === ComponentLocation.Top ? y >= yBound : y <= yBound;
+        return this.#location === Alignment.Top ? y >= yBound : y <= yBound;
     }
 
     #fadeIn() {
@@ -307,7 +307,8 @@ export class Tooltip extends Component {
     #rerender() {
         if (!this.#sourceActor || this.#isHidden) return;
         this.#offset ??= (super.actor.get_theme_node().get_length(OFFSET_THEME_NODE) ?? 0) * 2;
-        this.#location = this.#sourceActor.location;
+        const [_, y] = Context.monitors.getAlignment(this.#sourceActor.rect);
+        this.#location = y;
         this.#moveAndResize();
     }
 
@@ -315,21 +316,22 @@ export class Tooltip extends Component {
         if (!this.#sourceActor || !this.hasAllocation) return;
         const actor = super.actor;
         const sourceActorRect = this.#sourceActor.rect;
+        if (!sourceActorRect) return;
+        const monitor = Context.monitors.getMonitor(sourceActorRect);
         const sourceActorCenterRect = this.#sourceActor.centerRect;
-        const monitorRect = this.#sourceActor.monitorRect;
-        if (!sourceActorRect || !sourceActorCenterRect || !monitorRect) return;
+        if (!sourceActorCenterRect || !monitor) return;
         let [width, height] = this.#targetSize ?? actor.get_size();
         const offset = this.#offset ?? 0;
-        const maxWidth = monitorRect.width - offset;
+        const maxWidth = monitor.width - offset;
         width = Math.min(maxWidth, width);
         const style = `max-width: ${maxWidth}px;`;
         const sourceCenter = Math.floor((sourceActorCenterRect.width - width) / 2);
-        let x = Math.max(monitorRect.x, sourceActorCenterRect.x + sourceCenter);
-        const xOverflow = monitorRect.width - (x + width);
-        if (x > monitorRect.x && xOverflow < 0) {
-            x = Math.max(monitorRect.x, x + xOverflow);
+        let x = Math.max(monitor.x, sourceActorCenterRect.x + sourceCenter);
+        const xOverflow = monitor.width - (x + width);
+        if (x > monitor.x && xOverflow < 0) {
+            x = Math.max(monitor.x, x + xOverflow);
         }
-        const y = this.#location === ComponentLocation.Top ?
+        const y = this.#location === Alignment.Top ?
                   sourceActorRect.y + sourceActorRect.height :
                   sourceActorRect.y - height;
         const targetRect = { x, y, width, height };

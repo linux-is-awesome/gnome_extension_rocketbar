@@ -52,7 +52,7 @@ export default class Panel extends Component {
 
     constructor() {
         super(MainPanel, true);
-        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.());
+        super.notifyCallback = data => this.#events?.[data?.event]?.();
         Context.signals.add(this, [
             this.actor,
             Event.ButtonPress, (_, event) => this.#handlePress(event),

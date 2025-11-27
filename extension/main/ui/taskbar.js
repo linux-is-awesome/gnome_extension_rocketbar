@@ -237,9 +237,9 @@ export default class Taskbar extends ScrollView {
     constructor() {
         super(MODULE_NAME);
         super.actor.add_child(this.actor);
-        this.dropEvents = true;
+        super.dropEvents = true;
+        super.notifyCallback = data => this.#events?.[data?.event]?.(data);
         this.#separator?.connect(Event.Hover, () => this.#handleChildReaction(this.#separator));
-        this.connect(ComponentEvent.Notify, data => this.#events?.[data?.event]?.(data));
     }
 
     /**
@@ -283,7 +283,7 @@ export default class Taskbar extends ScrollView {
      */
     #handleInit(sender) {
         if (!this.isValid || !sender) return;
-        if (sender === this) this.rerender(true);
+        if (sender === this) Context.jobs.shared(this, () => this.#rerender(), Delay.Background);
         else this.#allocation?.add(sender);
     }
 
@@ -417,8 +417,8 @@ export default class Taskbar extends ScrollView {
     }
 
     #rerender() {
-        if (!this.#appButtons || !this.hasAllocation ||
-            !this.#allocation || !this.#service || this.isRerendering) return;
+        if (!this.#appButtons || !this.#allocation || !this.#service ||
+            !this.hasAllocation || Context.jobs.hasShared(this, Delay.Background)) return;
         this.#allocation.isWorkspaceChanged = this.#service.isWorkspaceChanged;
         const favoriteApps = this.#service.favorites?.apps;
         const runningApps = this.#getRunningApps();

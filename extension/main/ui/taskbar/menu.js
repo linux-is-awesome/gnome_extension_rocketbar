@@ -15,7 +15,6 @@ import { AppMenu } from 'resource:///org/gnome/shell/ui/appMenu.js';
 import { PopupMenuSection,
          PopupSeparatorMenuItem } from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import Context from '../../core/context.js';
-import { ComponentLocation } from '../base/component.js';
 import { SliderMenuItem, CollapsibleGroup, ChildMenu } from '../base/menu.js';
 import { Icon } from '../base/icon.js';
 import { SharedConfig } from '../../../shared/utils/config.js';
@@ -24,7 +23,7 @@ import { AppIconSize, ActivateBehavior, PreferredMonitor,
          AttentionBehavior, AttentionNotificationsBehavior } from '../../utils/taskbar/appConfig.js';
 import { SoundVolumeIcon } from '../../utils/soundVolumeIcon.js';
 import { WindowProxy } from '../../utils/taskbar/windowProxy.js';
-import { SettingsPath, SettingsKey, Delay, Event } from '../../../shared/core/enums.js';
+import { SettingsPath, SettingsKey, Delay, Event, Alignment } from '../../../shared/core/enums.js';
 import { Label } from '../../../shared/core/labels.js';
 
 const UNWANTED_STYLE_CLASS = 'app-menu';
@@ -39,8 +38,8 @@ const DefaultProps = {
 
 /** @type {{[position: string]: number}} */
 const MenuPosition = {
-    [ComponentLocation.Top]: St.Side.TOP,
-    [ComponentLocation.Bottom]: St.Side.BOTTOM
+    [Alignment.Top]: St.Side.TOP,
+    [Alignment.Bottom]: St.Side.BOTTOM
 };
 
 /** @type {{[value: string]: string}} */
@@ -263,7 +262,7 @@ class CurrentWorkspaceSection extends PopupMenuSection {
         }
         const display = global.display;
         if (display.get_n_monitors() <= 1) return;
-        const currentMonitor = this.#appButton.monitorIndex;
+        const currentMonitor = Context.monitors.getMonitorIndex(this.#appButton.rect);
         const ignoredMonitors = new Set();
         for (const window of this.#windows) {
             const windowMonitor = window.get_monitor();
@@ -661,7 +660,8 @@ export class Menu extends AppMenu {
      */
     open(animation) {
         if (!this.#appButton || !this.#config) return;
-        this.actor._arrowSide = MenuPosition[this.#appButton.location];
+        const [_, y] = Context.monitors.getAlignment(this.#appButton.rect);
+        this.actor._arrowSide = MenuPosition[y];
         this.rerender();
         super.open(animation);
     }
