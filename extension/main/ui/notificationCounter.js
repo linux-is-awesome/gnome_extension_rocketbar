@@ -202,6 +202,7 @@ export default class NotificationCounter extends Component {
     }
 
     #destroy() {
+        Context.jobs.removeAll(this);
         Context.desktop.disconnect(this);
         Context.signals.removeAll(this);
         this.#counter?.remove_all_transitions();
