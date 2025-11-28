@@ -145,19 +145,6 @@ class SharedJob extends Job {
     }
 
     /**
-     * @override
-     * @param {(() => void)?} [callback]
-     * @returns {this}
-     */
-    destroy(callback) {
-        super.destroy(callback);
-        if (typeof callback === 'function') return this;
-        this.#clients?.clear();
-        this.#clients = null;
-        return this;
-    }
-
-    /**
      * @param {*} client
      * @param {() => void} callback
      */
@@ -165,7 +152,7 @@ class SharedJob extends Job {
         if (!this.#clients) return;
         if (this.#clients.size) this.reset();
         this.#clients.set(client, callback);
-        this.destroy(() => this.#triggerClientCallbacks());
+        this.enqueue(() => (this.#notifyClients(), this.destroy()));
     }
 
     /**
@@ -177,9 +164,23 @@ class SharedJob extends Job {
         if (!this.#clients.size) this.destroy();
     }
 
-    #triggerClientCallbacks() {
+    /**
+     * @override
+     * @returns {this}
+     */
+    destroy() {
+        super.destroy();
+        this.#clients?.clear();
+        this.#clients = null;
+        return this;
+    }
+
+    #notifyClients() {
         if (!this.#clients?.size) return;
-        for (const [_, callback] of this.#clients) callback();
+        for (const [client, callback] of this.#clients) {
+            this.#clients.delete(client);
+            callback();
+        }
     }
 
 }
