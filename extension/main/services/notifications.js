@@ -48,7 +48,7 @@ class NotificationService {
             MessageTray,
             Event.SourceAdded, (_, source) => this.#addNotification(source),
             Event.SourceRemoved, (_, source) => this.#removeNotification(source),
-            Event.QueueChanged, () => this.#queueUpdate()
+            Event.QueueChanged, () => this.#enqueueUpdate()
         ]);
     }
 
@@ -91,8 +91,8 @@ class NotificationService {
     #handleConfig() {
         if (!this.#config) return;
         if (!this.#config.enableLauncherApi) Context.launcherApi?.disconnect(this);
-        else Context.launcherApi?.connectNotifications(this, () => this.#queueUpdate());
-        this.#queueUpdate();
+        else Context.launcherApi?.connectNotifications(this, () => this.#enqueueUpdate());
+        this.#enqueueUpdate();
     }
 
     #loadNotifications() {
@@ -107,8 +107,8 @@ class NotificationService {
     #addNotification(source) {
         if (!source || !this.#notifications || this.#notifications.has(source)) return;
         this.#notifications.add(source);
-        Context.signals.add(this, [source, Event.CountChanged, () => this.#queueUpdate()]);
-        this.#queueUpdate();
+        Context.signals.add(this, [source, Event.CountChanged, () => this.#enqueueUpdate()]);
+        this.#enqueueUpdate();
     }
 
     /**
@@ -118,10 +118,10 @@ class NotificationService {
         if (!this.#notifications || !this.#notifications.has(source)) return;
         this.#notifications.delete(source);
         Context.signals.remove(this, source);
-        this.#queueUpdate();
+        this.#enqueueUpdate();
     }
 
-    #queueUpdate() {
+    #enqueueUpdate() {
         if (!this.#updateJob) return;
         this.#updateJob.reset().enqueue(() => this.#update());
     }

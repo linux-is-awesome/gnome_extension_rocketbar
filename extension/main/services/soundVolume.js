@@ -172,7 +172,7 @@ class AppSoundVolumeService {
     addControl(control, callback) {
         if (!this.#controls || this.#controls.has(control)) return;
         this.#controls.set(control, callback);
-        this.#queueUpdate();
+        this.#enqueueUpdate();
     }
 
     /**
@@ -184,7 +184,7 @@ class AppSoundVolumeService {
     }
 
     update() {
-        this.#queueUpdate();
+        this.#enqueueUpdate();
     }
 
     /**
@@ -213,7 +213,7 @@ class AppSoundVolumeService {
         const id = appStream.id;
         if (!id || !appStream.isValid) return;
         this.#streams.set(id, appStream);
-        this.#queueUpdate();
+        this.#enqueueUpdate();
     }
 
     /**
@@ -224,10 +224,10 @@ class AppSoundVolumeService {
         const stream = this.#streams.get(streamId);
         stream?.destroy();
         this.#streams.delete(streamId);
-        this.#queueUpdate();
+        this.#enqueueUpdate();
     }
 
-    #queueUpdate() {
+    #enqueueUpdate() {
         if (!this.#updateJob) return;
         this.#updateJob.reset().enqueue(() => this.#update());
     }
