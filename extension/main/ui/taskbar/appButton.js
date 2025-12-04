@@ -101,7 +101,6 @@ export class AppButton extends RuntimeButton {
         [ComponentEvent.DragBegin]: () => this.#handleDragBegin(),
         [ComponentEvent.DragCancelled]: () => this.#handleDragEnd(true),
         [ComponentEvent.DragEnd]: () => this.#handleDragEnd(),
-        [ComponentEvent.Scale]: () => this.#updateStyle(),
         [ButtonEvent.Press]: () => this.#press(),
         [ButtonEvent.Hover]: () => this.#hover(),
         [ButtonEvent.LongPress]: params => this.#longPress(params),
@@ -313,6 +312,7 @@ export class AppButton extends RuntimeButton {
         this.actor.set_reactive(!isDropCandidate);
         this.#config = this.configProvider.get(app, this, settingsKey => this.#handleConfig(settingsKey));
         this.#appIcon = new AppIcon(app, this.#config?.iconPath).setParent(this.display);
+        Context.desktop.connectScale(this, () => this.#updateStyle());
     }
 
     /**
@@ -322,7 +322,7 @@ export class AppButton extends RuntimeButton {
         if (!this.isValid) return;
         this.#service?.destroy();
         this.#service = null;
-        this.#queueDestroy();
+        this.#enqueueDestroy();
     }
 
     drop() {
@@ -379,7 +379,7 @@ export class AppButton extends RuntimeButton {
         if (!this.#appIcon ||
             typeof x !== 'number' ||
             typeof y !== 'number') return;
-        const monitor = Context.monitors.getMonitor(this.rect);
+        const monitor = Context.monitors.getMonitorInfo(this.rect);
         if (!monitor) return;
         const actor = this.#appIcon.dragActor;
         Context.desktop.addOverlay(actor);
@@ -402,6 +402,7 @@ export class AppButton extends RuntimeButton {
 
     #destroy() {
         this.#handleDragEnd(true);
+        Context.desktop.disconnect(this);
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
         Context.launcherApi?.disconnect(this);
@@ -599,7 +600,7 @@ export class AppButton extends RuntimeButton {
 
     #handleRunningApp() {
         this.#abortDestroy();
-        if (this.#isFadeInRequired) return this.#queueFadeIn();
+        if (this.#isFadeInRequired) return this.#enqueueFadeIn();
         this.#indicators?.rerender();
         this.#rerenderMenu();
     }
@@ -612,7 +613,7 @@ export class AppButton extends RuntimeButton {
         this.notifyParents(ComponentEvent.Init);
     }
 
-    #queueFadeIn() {
+    #enqueueFadeIn() {
         const isWorkspaceChanged = this.#service?.isWorkspaceChanged ?? false;
         Context.jobs.new(this).destroy(() => {
             const targetWidth = this.rect?.width ?? 0;
@@ -627,7 +628,7 @@ export class AppButton extends RuntimeButton {
         });
     }
 
-    #queueDestroy() {
+    #enqueueDestroy() {
         if (this.#destroyJob) return;
         this.#destroyJob = Context.jobs.removeAll(this).new(this).destroy(() => (
         this.fadeOut().then(isHidden => isHidden && super.destroy()),
@@ -650,13 +651,13 @@ export class AppButton extends RuntimeButton {
      * @param {Meta.Window} window
      */
     #handleWindowState(window) {
-        if (!this.isValid || !window || !this.#windows?.has(window)) return;
+        if (!window || !this.#windows?.has(window) || !this.isValid) return;
         const animation = window.minimized ? AppIconAnimation.Deactivate : AppIconAnimation.Activate;
         this.#appIcon?.animate(animation);
     }
 
     #handleWindows() {
-        if (!this.isValid || !this.#windows) return;
+        if (!this.#windows || !this.isValid) return;
         for (const window of this.#windows) {
             window.get_icon_geometry = () => this.#getWindowIconGeometry(window);
         }
