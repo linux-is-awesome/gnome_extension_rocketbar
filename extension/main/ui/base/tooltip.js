@@ -317,7 +317,7 @@ export class Tooltip extends Component {
         const actor = super.actor;
         const sourceActorRect = this.#sourceActor.rect;
         if (!sourceActorRect) return;
-        const monitor = Context.monitors.getMonitor(sourceActorRect);
+        const monitor = Context.monitors.getMonitorInfo(sourceActorRect);
         const sourceActorCenterRect = this.#sourceActor.centerRect;
         if (!sourceActorCenterRect || !monitor) return;
         let [width, height] = this.#targetSize ?? actor.get_size();

@@ -22,6 +22,9 @@ export default class Monitors {
     /** @type {Map<Monitor, number>} */
     #monitors = new Map();
 
+    /** @type {Map<number, Monitor>} */
+    #monitorsByIndex = new Map();
+
     /** @type {Map<*, () => void>?} */
     #clients = new Map();
 
@@ -53,10 +56,18 @@ export default class Monitors {
     }
 
     /**
+     * @param {number} index
+     * @returns {Monitor}
+     */
+    getMonitor(index) {
+        return this.#monitorsByIndex.get(index) ?? Monitor.Primary;
+    }
+
+    /**
      * @param {Mtk.Rectangle?} rect
      * @returns {MonitorInfo?}
      */
-    getMonitor(rect) {
+    getMonitorInfo(rect) {
         const monitorIndex = this.getMonitorIndex(rect);
         return this.list[monitorIndex] ?? null;
     }
@@ -109,15 +120,18 @@ export default class Monitors {
 
     #updateMonitors() {
         this.#monitors.clear();
+        this.#monitorsByIndex.clear();
         const display = global.display;
         const primaryMonitor = display.get_primary_monitor();
         this.#monitors.set(Monitor.Primary, primaryMonitor);
+        this.#monitorsByIndex.set(primaryMonitor, Monitor.Primary);
         if (display.get_n_monitors() <= 1) return;
         for (const monitor in MonitorDirection) {
             const direction = MonitorDirection[monitor];
             const index = display.get_monitor_neighbor_index(primaryMonitor, direction);
             if (index < 0) continue;
             this.#monitors.set(monitor, index);
+            this.#monitorsByIndex.set(index, monitor);
         }
     }
 
