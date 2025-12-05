@@ -6,7 +6,7 @@
 
 import Context from '../../core/context.js';
 import { SharedConfig, InnerConfig } from '../../../shared/utils/config.js';
-import { SettingsPath, SettingsKey } from '../../../shared/core/enums.js';
+import { SettingsPath, SettingsKey, Monitor } from '../../../shared/core/enums.js';
 
 const CONFIG_OVERRIDE_SETTINGS_KEY = SettingsKey.AppButtonConfigOverride;
 
@@ -64,12 +64,8 @@ export const AttentionNotificationsBehavior = {
 
 /** @enum {string} */
 export const PreferredMonitor = {
-    Default: 'default',
-    Primary: 'primary',
-    Left: 'left',
-    Right: 'right',
-    Above: 'above',
-    Below: 'below'
+    ...Monitor,
+    Default: 'default'
 };
 
 /** @enum {number} */
