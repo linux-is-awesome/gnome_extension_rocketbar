@@ -11,7 +11,8 @@ export default class {
 
     constructor() {
         Context.hooks.add(this, global.stage, global.stage.grab,
-            (_, actor) => actor instanceof SwitcherPopup ? FakePopupGrab() : undefined, true);
+            (_, actor) => actor instanceof SwitcherPopup &&
+                          !Context.desktop.activeModalDialog ? FakePopupGrab() : undefined, true);
     }
 
     destroy() {
