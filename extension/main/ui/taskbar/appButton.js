@@ -405,7 +405,7 @@ export class AppButton extends RuntimeButton {
         Context.desktop.disconnect(this);
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
-        Context.launcherApi?.disconnect(this);
+        Context.launcherApi.disconnect(this);
         if (AppButton.#sharedConfig?.destroy(this.#app, this)) {
             AppButton.#sharedConfig = null;
         }
@@ -678,7 +678,7 @@ export class AppButton extends RuntimeButton {
         if (!canHandleProgress && !this.#progress) return;
         const appId = this.#notificationHandler?.appId;
         const progress = canHandleProgress && appId ?
-                         Context.launcherApi?.progress?.get(appId) ?? Progress.Min :
+                         Context.launcherApi.progress?.get(appId) ?? Progress.Min :
                          Progress.Min;
         if (progress === this.#progress) return;
         this.#progress = progress;

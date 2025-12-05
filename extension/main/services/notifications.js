@@ -59,7 +59,7 @@ class NotificationService {
         if (this.#handlers?.size) return false;
         this.#updateJob?.destroy();
         Context.signals.removeAll(this);
-        Context.launcherApi?.disconnect(this);
+        Context.launcherApi.disconnect(this);
         this.#notifications?.clear();
         this.#notifications = null;
         this.#countByAppId = null;
@@ -90,8 +90,8 @@ class NotificationService {
 
     #handleConfig() {
         if (!this.#config) return;
-        if (!this.#config.enableLauncherApi) Context.launcherApi?.disconnect(this);
-        else Context.launcherApi?.connectNotifications(this, () => this.#enqueueUpdate());
+        if (!this.#config.enableLauncherApi) Context.launcherApi.disconnect(this);
+        else Context.launcherApi.connectNotifications(this, () => this.#enqueueUpdate());
         this.#enqueueUpdate();
     }
 
@@ -131,7 +131,7 @@ class NotificationService {
             !this.#countByAppId || !this.#config) return;
         const { enableLauncherApi, countAttentionSources } = this.#config;
         this.#totalCount = 0;
-        const launcherApiCount = enableLauncherApi ? Context.launcherApi?.notifications : null;
+        const launcherApiCount = enableLauncherApi ? Context.launcherApi.notifications : null;
         if (!launcherApiCount) this.#countByAppId.clear();
         else this.#countByAppId = new Map([...launcherApiCount]);
         for (const source of this.#notifications) {

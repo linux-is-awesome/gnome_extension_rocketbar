@@ -44,9 +44,11 @@ export default class Context extends SharedContext {
         return instance.#monitors;
     }
 
-    /** @type {LauncherApi?} */
+    /** @type {LauncherApi} */
     static get launcherApi() {
-        return this.instance.#launcherApi;
+        const result = this.instance.#launcherApi;
+        if (!result) throw new Error(`${this.name} has invalid ${LauncherApi.name} instance.`);
+        return result;
     }
 
     /** @type {Modules?} */
