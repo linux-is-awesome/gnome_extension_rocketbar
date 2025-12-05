@@ -24,9 +24,7 @@ const APP_ALLOCATION_THRESHOLD = 2;
 
 /** @enum {string} */
 const ConfigField = {
-    enableSeparator: SettingsKey.Separator,
-    showAllWindows: SettingsKey.ShowAllWindows,
-    isolateWorkspaces: SettingsKey.IsolateWorkspaces
+    enableSeparator: SettingsKey.Separator
 };
 
 /** @type {{[option: string]: *}} */
@@ -271,8 +269,6 @@ export default class Taskbar extends ScrollView {
     #handleConfig(settingsKey) {
         switch (settingsKey) {
             case ConfigField.enableSeparator:
-            case ConfigField.showAllWindows:
-            case ConfigField.isolateWorkspaces:
                 this.#rerender();
                 break;
         }
@@ -283,8 +279,8 @@ export default class Taskbar extends ScrollView {
      */
     #handleInit(sender) {
         if (!this.isValid || !sender) return;
-        if (sender === this) Context.jobs.shared(this, () => this.#rerender(), Delay.Background);
-        else this.#allocation?.add(sender);
+        if (sender !== this) return this.#allocation?.add(sender);
+        Context.jobs.shared(this, () => this.#rerender(), Delay.Background);
     }
 
     /**
@@ -302,8 +298,8 @@ export default class Taskbar extends ScrollView {
     }
 
     #destroy() {
-        Context.desktop.disconnect(this);
         Context.jobs.removeAll(this);
+        Context.desktop.disconnect(this);
         Context.signals.removeAll(this);
         this.#allocation?.destroy();
         this.#service?.destroy();
@@ -492,8 +488,7 @@ export default class Taskbar extends ScrollView {
     #getRunningApps() {
         const workspace = this.#service?.workspace;
         if (!this.#service || !workspace) return null;
-        const { isolateWorkspaces, showAllWindows } = this.#config;
-        let runningApps = this.#service.queryApps(isolateWorkspaces, showAllWindows);
+        let runningApps = this.#service.apps;
         if (!runningApps?.size) this.#runningApps.delete(workspace);
         else if (!this.#runningApps.has(workspace)) {
             this.#runningApps.set(workspace, runningApps);

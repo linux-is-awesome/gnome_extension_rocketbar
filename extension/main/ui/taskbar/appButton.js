@@ -12,7 +12,7 @@ import { activateWindow as FocusedWindow } from 'resource:///org/gnome/shell/ui/
 import { Overview } from '../../core/shell.js';
 import Context from '../../core/context.js';
 import { RuntimeButton, ButtonEvent } from '../base/button.js';
-import { TaskbarClient } from '../../services/taskbar.js';
+import { TaskbarEvent, TaskbarClient } from '../../services/taskbar.js';
 import { DragActor } from './appButton/dragActor.js';
 import { AppIcon, AppIconAnimation, AppIconEvent } from './appIcon.js';
 import { AppConfig, ConfigField, ActivateBehavior } from '../../utils/taskbar/appConfig.js';
@@ -108,7 +108,11 @@ export class AppButton extends RuntimeButton {
         [ButtonEvent.Focus]: () => this.notifyParents(AppButtonEvent.Reaction),
         [ButtonEvent.RequestMenu]: () => new Menu(this),
         [ButtonEvent.RequestTooltip]: () => new Tooltip(this),
-        [AppIconEvent.DominantColorChanged]: () => (this.#handleDominantColor(), true)
+        [AppIconEvent.DominantColorChanged]: () => (this.#handleDominantColor(), true),
+        [TaskbarEvent.Focus]: () => this.#handleAppFocus(),
+        [TaskbarEvent.Change]: () => this.#handleAppState(),
+        [TaskbarEvent.Minimize]: () => this.#appIcon?.animate(AppIconAnimation.Deactivate),
+        [TaskbarEvent.Unminimize]: () => this.#appIcon?.animate(AppIconAnimation.Activate)
     };
 
     /** @type {boolean} */
@@ -429,20 +433,12 @@ export class AppButton extends RuntimeButton {
         if (!this.isValid) return;
         this.#handleConfig();
         if (this.#isDropCandidate) return this.#handleRunningApp();
-        this.#service = new TaskbarClient(() => this.#handleAppState(), this.#app);
+        this.connect(Event.Scroll, (_, event) => this.#scroll(event));
+        this.#service = new TaskbarClient(event => this.#events?.[event]?.(), this.#app);
         this.#notificationHandler = new NotificationHandler(count => this.#handleNotifications(count), this.#app);
-        this.#connectSignals();
+        Context.launcherApi.connectProgress(this, () => this.#handleProgress());
         this.#handleProgress();
         this.#handleAppState();
-    }
-
-    #connectSignals() {
-        this.connect(Event.Scroll, (_, event) => this.#scroll(event));
-        Context.signals.add(this,
-            [global.display, Event.FocusWindow, () => this.#handleFocusedWindow()],
-            [global.window_manager, Event.Minimize, (_, actor) => this.#handleWindowState(actor?.meta_window),
-                                    Event.Unminimize, (_, actor) => this.#handleWindowState(actor?.meta_window)]);
-        Context.launcherApi?.connectProgress(this, () => this.#handleProgress());
     }
 
     /**
@@ -451,6 +447,7 @@ export class AppButton extends RuntimeButton {
     #handleConfig(settingsKey) {
         if (!this.#config || !this.#appIcon) return;
         switch (settingsKey) {
+            case ConfigField.isolateWorkspaces:
             case ConfigField.enableMinimizeAction:
             case ConfigField.activateBehavior:
             case ConfigField.windowRouting:
@@ -458,9 +455,6 @@ export class AppButton extends RuntimeButton {
             case ConfigField.attentionBehavior:
             case ConfigField.attentionNotificationsBehavior:
                 return;
-            case ConfigField.isolateWorkspaces:
-            case ConfigField.showAllWindows:
-                return this.#handleAppState();
             case ConfigField.enableIndicators:
             case ConfigField.enableSoundControl:
             case ConfigField.enableNotificationBadges:
@@ -585,17 +579,22 @@ export class AppButton extends RuntimeButton {
 
     #handleAppState() {
         if (!this.hasAllocation || !this.#service || !this.#config) return;
-        const { isolateWorkspaces, showAllWindows } = this.#config;
         const isFavorite = !!this.#app && !!this.#service.favorites?.apps?.has(this.#app);
-        this.#windows = this.#service.queryWindows(isolateWorkspaces, showAllWindows);
+        this.#windows = this.#service.windows;
         this.#windowsCount = this.#windows?.size ?? 0;
-        if (!isFavorite && !this.#windowsCount) return this.#queueDestroy();
+        this.#handleAppFocus();
+        if (!isFavorite && !this.#windowsCount) return this.#enqueueDestroy();
         this.#isFavorite = isFavorite;
         this.#soundVolumeControl?.update();
-        if (!this.#isActive || !this.#windowsCount) this.#handleFocusedWindow();
         if (this.#windowsCount) this.#handleWindows();
         else if (this.#progress) this.#handleProgress();
         this.#handleRunningApp();
+    }
+
+    #handleAppFocus() {
+        if (!this.hasAllocation || !this.#service) return;
+        this.isActive = this.#windowsCount ? this.#service.hasFocus : false;
+        if (this.#isActive) this.#rerenderTooltip();
     }
 
     #handleRunningApp() {
@@ -639,21 +638,6 @@ export class AppButton extends RuntimeButton {
         this.#indicators?.rerender();
         this.#notificationBadge?.rerender();
         this.#progressBar?.rerender();
-    }
-
-    #handleFocusedWindow() {
-        if (!this.hasAllocation || !this.#service) return;
-        this.isActive = this.#windowsCount ? this.#service.hasFocusedWindow : false;
-        if (this.#isActive) this.#rerenderTooltip();
-    }
-
-    /**
-     * @param {Meta.Window} window
-     */
-    #handleWindowState(window) {
-        if (!window || !this.#windows?.has(window) || !this.isValid) return;
-        const animation = window.minimized ? AppIconAnimation.Deactivate : AppIconAnimation.Activate;
-        this.#appIcon?.animate(animation);
     }
 
     #handleWindows() {
@@ -756,7 +740,7 @@ export class AppButton extends RuntimeButton {
      * @returns {boolean}
      */
     #click(params) {
-        if (this.#service?.isPending || !this.#config) return false;
+        if (this.#service?.hasChanges || !this.#config) return false;
         const { isSecondaryButton,
                 isMiddleButton,
                 isCtrlPressed } = this.#getClickDetails(params);
@@ -827,15 +811,12 @@ export class AppButton extends RuntimeButton {
     }
 
     #moveWindows() {
-        const windows = this.#service?.queryWindows(false, true);
-        if (!windows?.size) return;
         const workspace = this.#service?.workspace;
-        if (!workspace) return;
-        this.animateLaunch();
         const appWindows = this.#app?.get_windows();
-        for (const window of windows) window.change_workspace(workspace);
-        if (Overview.visible || !appWindows?.length) return;
-        FocusedWindow(appWindows[0]);
+        if (!workspace || !appWindows?.length) return;
+        this.animateLaunch();
+        for (const window of appWindows) window.change_workspace(workspace);
+        if (!Overview.visible) FocusedWindow(appWindows[0]);
     }
 
     /**
