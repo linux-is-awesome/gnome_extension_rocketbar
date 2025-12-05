@@ -149,17 +149,6 @@
             "problemMatcher": []
         },
         {
-            "label": "nested-shell",
-            "type": "shell",
-            "command": "env MUTTER_DEBUG_DUMMY_MODE_SPECS='1600x900@60.0' dbus-run-session -- gnome-shell --nested --wayland",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            },
-            "problemMatcher": []
-        },
-        {
             "label": "update-dconf-default",
             "type": "shell",
             "command": "cd scripts && ./update-dconf default",
