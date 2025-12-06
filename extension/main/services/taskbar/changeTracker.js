@@ -184,10 +184,10 @@ export default class ChangeTracker {
         if (hasChangedApps) this.#callback(hasChangedApps);
         for (const client of clients) {
             const app = client.app ?? null;
-            const event = !app ? hasChangedApps ? TaskbarEvent.Change : null :
-                          apps ? apps.get(app) : TaskbarEvent.Change;
+            const event = app && apps ? apps.get(app) : TaskbarEvent.Change;
+            if (!event) continue;
             const callback = this.#clients?.get(client);
-            if (callback && event) callback(event);
+            if (callback) callback(event);
         }
     }
 
