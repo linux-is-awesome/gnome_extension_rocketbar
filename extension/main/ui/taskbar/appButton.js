@@ -334,7 +334,6 @@ export class AppButton extends RuntimeButton {
         this.#isDropCandidate = false;
         this.actor.set_reactive(!this.#isDropCandidate);
         this.#handleInit();
-        this.#abortDestroy();
     }
 
     /**
@@ -351,6 +350,7 @@ export class AppButton extends RuntimeButton {
      * @param {ActivateBehavior?} [activateBehavior]
      */
     activate(activateBehavior) {
+        this.#abortDestroy();
         switch (activateBehavior) {
             case ActivateBehavior.MoveWindows:
                 this.#moveWindows();
@@ -419,7 +419,6 @@ export class AppButton extends RuntimeButton {
         this.#soundVolumeControl = null;
         this.#notificationHandler?.destroy();
         this.#notificationHandler = null;
-        this.#windows?.clear();
         this.#windows = null;
         this.#layout = null;
         this.#appIcon = null;
@@ -740,7 +739,8 @@ export class AppButton extends RuntimeButton {
      * @returns {boolean}
      */
     #click(params) {
-        if (this.#service?.hasChanges || !this.#config) return false;
+        if (!this.#config || this.#isFadeInRequired ||
+            !this.#service || this.#service.hasChanges) return false;
         const { isSecondaryButton,
                 isMiddleButton,
                 isCtrlPressed } = this.#getClickDetails(params);
