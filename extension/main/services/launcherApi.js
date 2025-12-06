@@ -97,11 +97,10 @@ class LauncherApiService {
         const appId = appUri?.replace(APPID_REGEXP_STRING, '');
         if (!appId || !props) return;
         const count = props[LAUNCHER_ENTRY_COUNT_KEY]?.get_int64() ?? 0;
-        const progress = props[LAUNCHER_ENTRY_PROGRESS_KEY]?.get_double() ??
-                         props[LAUNCHER_ENTRY_PROGRESS_VISIBLE_KEY]?.get_boolean() ?
-                         Progress.Infinite : Progress.Min;
+        const progress = props[LAUNCHER_ENTRY_PROGRESS_KEY]?.get_double() ?? null;
+        const progressVisibility = props[LAUNCHER_ENTRY_PROGRESS_VISIBLE_KEY]?.get_boolean() ?? null;
         this.#handleNotifications(appId, count);
-        this.#handleProgress(appId, progress);
+        this.#handleProgress(appId, progress, progressVisibility);
     }
 
     /**
@@ -117,18 +116,27 @@ class LauncherApiService {
 
     /**
      * @param {string} appId
-     * @param {number} value
+     * @param {number?} value
+     * @param {boolean?} visibility
      */
-    #handleProgress(appId, value) {
-        value = value === Progress.Infinite ? value :
-                Math.max(Progress.Min,
-                Math.min(Progress.Max, +parseFloat(`${value}`).toFixed(PROGRESS_VALUE_DECIMAL_PLACES)));
-        const oldValue = this.#progress.get(appId) ?? 0;
-        if (value === oldValue || (value === Progress.Max && !this.#progress.has(appId))) return;
-        if (value) this.#progress.set(appId, value);
-        else if (!this.#progress.has(appId)) return;
-        else this.#progress.delete(appId);
-        if (typeof this.#callback === 'function') this.#callback(LauncherApiNotify.Progress);
+    #handleProgress(appId, value, visibility) {
+        const oldValue = this.#progress.get(appId);
+        const hasOldValue = typeof oldValue === 'number';
+        if (!visibility && !hasOldValue) return;
+        const isVisibilityDefined = typeof visibility === 'boolean';
+        const newValue = typeof value !== 'number' || value < Progress.Min ?
+                         Progress.Infinite :
+                         Math.max(Progress.Min,
+                         Math.min(Progress.Max, +parseFloat(`${value}`).toFixed(PROGRESS_VALUE_DECIMAL_PLACES)));
+        if (!isVisibilityDefined || visibility) {
+            if (oldValue === newValue) return;
+            this.#progress.set(appId, newValue);
+        } else {
+            if (!hasOldValue) return;
+            this.#progress.delete(appId);
+        }
+        if (typeof this.#callback !== 'function') return;
+        this.#callback(LauncherApiNotify.Progress);
     }
 
 }
