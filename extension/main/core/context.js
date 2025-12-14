@@ -14,6 +14,9 @@ export default class Context extends SharedContext {
     /** @type {Context?} store another context instance in this class to optimize the call path */
     static #instance = null;
 
+    /** @type {boolean} */
+    static #isNew = true;
+
     /**
      * @override
      * @type {Context}
@@ -49,6 +52,11 @@ export default class Context extends SharedContext {
         const result = this.instance.#launcherApi;
         if (!result) throw new Error(`${this.name} has invalid ${LauncherApi.name} instance.`);
         return result;
+    }
+
+    /** @type {boolean} */
+    static get isNew() {
+        return Context.#isNew;
     }
 
     /** @type {Modules?} */
@@ -93,7 +101,7 @@ export default class Context extends SharedContext {
      * @returns {boolean}
      */
     #destroy() {
-        const result = !Context.desktop.isLocked;
+        Context.#isNew = !Context.desktop.isLocked;
         try {
             this.#hooks?.destroy();
             this.#modules?.destroy();
@@ -107,7 +115,7 @@ export default class Context extends SharedContext {
             this.#hooks = null;
             this.#monitors = null;
         }
-        return result;
+        return Context.#isNew;
     }
 
 }
