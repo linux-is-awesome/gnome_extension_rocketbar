@@ -19,6 +19,9 @@ const MonitorDirection = {
 
 export default class Monitors {
 
+    /** @type {boolean} */
+    #isUpdating = false;
+
     /** @type {Map<Monitor, number>} */
     #monitors = new Map();
 
@@ -39,6 +42,11 @@ export default class Monitors {
     /** @type {boolean} */
     get hasMultipleMonitors() {
         return this.#monitors.size > 1;
+    }
+
+    /** @type {boolean} */
+    get isUpdating() {
+        return this.#isUpdating;
     }
 
     constructor() {
@@ -92,8 +100,9 @@ export default class Monitors {
      * @returns {number}
      */
     getMonitorIndex(source) {
+        if (!source) return -1;
         if (source instanceof Mtk.Rectangle) return global.display.get_monitor_index_for_rect(source);
-        return source ? this.#monitors.get(source) ?? -1 : -1;
+        return this.#monitors.get(source) ?? -1;
     }
 
     /**
@@ -113,9 +122,21 @@ export default class Monitors {
         this.#clients?.delete(client);
     }
 
+    /**
+     * @param {*} client
+     * @returns {boolean}
+     */
+    has(client) {
+        return !!this.#clients?.has(client);
+    }
+
     #handleMonitors() {
         if (!this.#job) return;
-        this.#job.reset().enqueue(() => (this.#updateMonitors(), this.#notifyClients()));
+        this.#isUpdating = true;
+        this.#job.reset().enqueue(() => (
+            this.#updateMonitors(),
+            this.#notifyClients(),
+            this.#finishUpdate()));
     }
 
     #updateMonitors() {
@@ -138,6 +159,10 @@ export default class Monitors {
     #notifyClients() {
         if (!this.#clients?.size) return;
         for (const [_, callback] of this.#clients) callback();
+    }
+
+    #finishUpdate() {
+        this.#isUpdating = false;
     }
 
 }
