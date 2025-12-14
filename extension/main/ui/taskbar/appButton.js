@@ -739,8 +739,7 @@ export class AppButton extends RuntimeButton {
      * @returns {boolean}
      */
     #click(params) {
-        if (!this.#config || this.#isFadeInRequired ||
-            !this.#service || this.#service.hasChanges) return false;
+        if (!this.#config || !this.#service || this.#isFadeInRequired) return true;
         const { isSecondaryButton,
                 isMiddleButton,
                 isCtrlPressed } = this.#getClickDetails(params);
