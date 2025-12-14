@@ -7,7 +7,7 @@ import { AppIcon as AppDisplayIcon } from 'resource:///org/gnome/shell/ui/appDis
 import { DragMotionResult } from 'resource:///org/gnome/shell/ui/dnd.js';
 import { Overview } from '../../../core/shell.js';
 
-export class DragActor {
+export default class DragActor {
 
     /** @type {AppButton?} */
     #appButton = null;
