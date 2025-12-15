@@ -40,7 +40,6 @@ export const Label = {
     RightOfPrimaryMonitor: _('Right of Primary'),
     AbovePrimaryMonitor: _('Above Primary'),
     BelowPrimaryMonitor: _('Below Primary'),
-    PleaseWait: _('Please Wait...'),
     SystemDefault: _('System Default'),
     Disable: _('Disable'),
     AlwaysHide: _('Always Hide'),
