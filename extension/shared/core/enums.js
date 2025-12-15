@@ -63,7 +63,8 @@ export const Event = {
     WindowDemandsAttention: 'window-demands-attention',
     WindowMapped: 'map',
     WindowMarkedUrgent: 'window-marked-urgent',
-    WindowRemoved: 'window_removed'
+    WindowRemoved: 'window_removed',
+    WindowEnteredMonitor: 'window-entered-monitor'
 };
 
 /**
@@ -173,6 +174,7 @@ export const SettingsKey = {
     ShowAllWindows: 'show-all-windows',
     Separator: 'separator',
     WindowRouting: 'window-routing',
+    WindowRoutnigWatchdog: 'window-routing-watchdog',
     PreferredMonitor: 'preferred-monitor',
     AttentionBehavior: 'attention-behavior',
     AttentionNotificationsBehavior: 'attention-notifications-behavior',
