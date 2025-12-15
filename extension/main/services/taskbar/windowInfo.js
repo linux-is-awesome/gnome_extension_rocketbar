@@ -9,7 +9,13 @@ import Context from '../../core/context.js';
 export default class WindowInfo {
 
     /** @type {number} */
+    #workspace;
+
+    /** @type {number} */
     #oldWorkspace;
+
+    /** @type {string?} */
+    #monitor = null;
 
     /** @type {number?} */
     #targetWorkspace = null;
@@ -23,12 +29,6 @@ export default class WindowInfo {
     /** @type {Shell.App} */
     app;
 
-    /** @type {number} */
-    workspace;
-
-    /** @type {string?} */
-    monitor = null;
-
     /** @type {boolean} */
     get isValid() {
         const workspace = this.window.get_workspace()?.index() ?? -1;
@@ -38,7 +38,7 @@ export default class WindowInfo {
 
     /** @type {boolean} */
     get isWorkspaceChanged() {
-        return this.workspace !== this.#oldWorkspace;
+        return this.#workspace !== this.#oldWorkspace;
     }
 
     /** @type {boolean} */
@@ -54,8 +54,8 @@ export default class WindowInfo {
     constructor(window, app) {
         this.window = window;
         this.app = app;
-        this.workspace = window.get_workspace()?.index() ?? -1;
-        this.#oldWorkspace = this.workspace;
+        this.#workspace = window.get_workspace()?.index() ?? -1;
+        this.#oldWorkspace = this.#workspace;
     }
 
     /**
@@ -68,11 +68,11 @@ export default class WindowInfo {
         if (windowMonitor < 0 || windowWorkspace < 0) return false;
         const monitors = Context.monitors;
         const preferredMonitor = monitors.getMonitorIndex(monitor);
-        const windowLastMonitor = this.monitor ? monitors.getMonitorIndex(this.monitor) : -1;
+        const windowLastMonitor = this.#monitor ? monitors.getMonitorIndex(this.#monitor) : -1;
         const targetMonitor = windowLastMonitor >= 0 ? windowLastMonitor :
                               preferredMonitor >= 0 ? preferredMonitor : windowMonitor;
-        const targetWorkspace = this.workspace >= 0 &&
-                                this.workspace !== windowWorkspace ? this.workspace : windowWorkspace;
+        const targetWorkspace = this.#workspace >= 0 &&
+                                this.#workspace !== windowWorkspace ? this.#workspace : windowWorkspace;
         this.#targetMonitor = windowMonitor !== targetMonitor ? monitors.getMonitor(targetMonitor) : null;
         this.#targetWorkspace = windowWorkspace !== targetWorkspace ? targetWorkspace : null;
         return typeof this.#targetMonitor === 'string' ||
@@ -101,10 +101,13 @@ export default class WindowInfo {
     }
 
     /**
+     * @param {boolean} [isMonitorUpdateRequired]
      * @returns {this}
      */
-    update() {
+    update(isMonitorUpdateRequired = true) {
         this.updateWorkspace();
+        if (!this.#monitor &&
+            !isMonitorUpdateRequired) return this;
         this.updateMonitor();
         return this;
     }
@@ -113,8 +116,8 @@ export default class WindowInfo {
      * @returns {this}
      */
     updateWorkspace() {
-        this.#oldWorkspace = this.workspace;
-        this.workspace = this.window.get_workspace()?.index() ?? -1;
+        this.#oldWorkspace = this.#workspace;
+        this.#workspace = this.window.get_workspace()?.index() ?? -1;
         return this;
     }
 
@@ -126,7 +129,7 @@ export default class WindowInfo {
         const monitors = Context.monitors;
         if (!monitors.hasMultipleMonitors) return this;
         monitor ??= this.window.get_monitor();
-        this.monitor = monitors.getMonitor(monitor);
+        this.#monitor = monitors.getMonitor(monitor);
         return this;
     }
 

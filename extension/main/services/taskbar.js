@@ -445,8 +445,7 @@ class TaskbarService {
     #updateWindowInfo(windowInfo) {
         if (this.isRouting) return this.#scheduleWindowRouting();
         if (windowInfo.isRouting) return;
-        if (windowInfo.monitor) windowInfo.updateMonitor();
-        windowInfo.updateWorkspace();
+        windowInfo.update(false);
         if (!windowInfo.isWorkspaceChanged) return;
         this.tracker?.trackAppChange(windowInfo.app);
     }
