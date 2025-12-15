@@ -260,9 +260,9 @@ class CurrentWorkspaceSection extends PopupMenuSection {
             for (const menuItem of menuItems) menuItem?.destroy();
             this.#actions.clear();
         }
-        const display = global.display;
-        if (display.get_n_monitors() <= 1) return;
-        const currentMonitor = Context.monitors.getMonitorIndex(this.#appButton.rect);
+        const monitors = Context.monitors;
+        if (!monitors.hasMultipleMonitors) return;
+        const currentMonitor = monitors.getMonitorIndex(this.#appButton.rect);
         const ignoredMonitors = new Set();
         for (const window of this.#windows) {
             const windowMonitor = window.get_monitor();
@@ -273,7 +273,7 @@ class CurrentWorkspaceSection extends PopupMenuSection {
         for (const monitor in MonitorDirection) {
             const direction = MonitorDirection[monitor];
             const index = direction === MonitorDirection.CurrentMonitor ? currentMonitor :
-                          display.get_monitor_neighbor_index(currentMonitor, direction);
+                          monitors.getMonitorIndex(direction, currentMonitor);
             if (index < 0 || ignoredMonitors.has(index)) continue;
             const actionLabel = `${Label.MoveTo} ${Label[monitor]}`;
             this.#actions.set(index, this.addAction(actionLabel, () => this.#moveToMonitor(index)));
