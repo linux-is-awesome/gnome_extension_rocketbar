@@ -1,5 +1,7 @@
 declare module 'gi://Meta' {
 
+    import GObject from 'gi://GObject';
+
     /**
      * Function a window button can have.
      * 

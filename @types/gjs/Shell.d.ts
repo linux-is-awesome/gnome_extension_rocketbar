@@ -2,6 +2,8 @@ declare module 'gi://Shell' {
 
     import type GObject from 'gi://GObject';
     import type Meta from 'gi://Meta';
+    import type Clutter from 'gi://Clutter';
+    import type St from 'gi://St';
 
     enum AppLaunchGpu {
         APP_PREF,
@@ -846,7 +848,7 @@ declare module 'gi://Shell' {
         readonly session_mode: string | null
         readonly sessionMode: string | null
         readonly settings: Gio.Settings
-        readonly stage: Clutter.Actor
+        readonly stage: Clutter.Stage
         readonly switcheroo_control: Gio.DBusProxy
         readonly switcherooControl: Gio.DBusProxy
         readonly top_window_group: Clutter.Actor
