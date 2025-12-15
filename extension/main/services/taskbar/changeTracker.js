@@ -172,7 +172,6 @@ export default class ChangeTracker {
      */
     #notifyClients(clients = this.#trackedClients, apps = this.#trackedApps, hasChangedApps = this.#hasChangedApps) {
         if (!clients?.size || !this.#callback) return;
-        console.log('NOTIFY CLIENTS - has changed apps', hasChangedApps);
         if (hasChangedApps) this.#callback(hasChangedApps);
         for (const client of clients) {
             const app = client.app ?? null;
