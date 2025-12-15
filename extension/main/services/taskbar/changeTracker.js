@@ -102,15 +102,6 @@ export default class ChangeTracker {
     }
 
     /**
-     * @param {Shell.App?} [app]
-     * @returns {boolean}
-     */
-    hasChanges(app) {
-        if (!app || !this.#trackedApps) return false;
-        return this.#trackedApps.get(app) === TaskbarEvent.Change;
-    }
-
-    /**
      * @param {number} [delay]
      * @param {boolean} [hasChangedApps]
      */
@@ -181,6 +172,7 @@ export default class ChangeTracker {
      */
     #notifyClients(clients = this.#trackedClients, apps = this.#trackedApps, hasChangedApps = this.#hasChangedApps) {
         if (!clients?.size || !this.#callback) return;
+        console.log('NOTIFY CLIENTS - has changed apps', hasChangedApps);
         if (hasChangedApps) this.#callback(hasChangedApps);
         for (const client of clients) {
             const app = client.app ?? null;
