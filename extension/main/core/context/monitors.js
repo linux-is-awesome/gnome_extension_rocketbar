@@ -96,13 +96,16 @@ export default class Monitors {
     }
 
     /**
-     * @param {(Mtk.Rectangle|Monitor)?} source
+     * @param {(Mtk.Rectangle|Meta.DisplayDirection|Monitor)?} target
+     * @param {number} [source]
      * @returns {number}
      */
-    getMonitorIndex(source) {
-        if (!source) return -1;
-        if (source instanceof Mtk.Rectangle) return global.display.get_monitor_index_for_rect(source);
-        return this.#monitors.get(source) ?? -1;
+    getMonitorIndex(target, source) {
+        if (target instanceof Mtk.Rectangle) return global.display.get_monitor_index_for_rect(target);
+        if (typeof target === 'string') return this.#monitors.get(target) ?? -1;
+        if (typeof target !== 'number') return -1;
+        source ??= global.display.get_primary_monitor();
+        return global.display.get_monitor_neighbor_index(source, target);
     }
 
     /**
