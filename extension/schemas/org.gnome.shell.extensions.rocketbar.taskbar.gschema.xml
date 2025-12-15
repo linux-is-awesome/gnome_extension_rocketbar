@@ -17,6 +17,9 @@
         <key type="b" name="window-routing">
             <default>false</default>
         </key>
+        <key type="b" name="window-routing-watchdog">
+            <default>false</default>
+        </key>
         <key type="s" name="preferred-monitor">
             <default>'default'</default>
         </key>
