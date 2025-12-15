@@ -38,20 +38,10 @@ class LauncherApiService {
     #callback = null;
 
     /** @type {Map<string, number>} */
-    #notifications = new Map();
+    notifications = new Map();
 
     /** @type {Map<string, number>} */
-    #progress = new Map();
-
-    /** @type {Map<string, number>} */
-    get notifications() {
-        return this.#notifications;
-    }
-
-    /** @type {Map<string, number>} */
-    get progress() {
-        return this.#progress;
-    }
+    progress = new Map();
 
     constructor() {
         this.#dbusId = Gio.DBus.session.own_name(
@@ -91,7 +81,7 @@ class LauncherApiService {
      * @param {GLib.Variant} params
      */
     #update(params) {
-        if (!this.#notifications || !params) return;
+        if (!this.notifications || !params) return;
         /** @type {[appUri: string, props: {[key: string]: GLib.Variant}]} */
         const [appUri, props] = params.deepUnpack();
         const appId = appUri?.replace(APPID_REGEXP_STRING, '');
@@ -108,9 +98,9 @@ class LauncherApiService {
      * @param {number} count
      */
     #handleNotifications(appId, count) {
-        if (count) this.#notifications.set(appId, count);
-        else if (!this.#notifications.has(appId)) return;
-        else this.#notifications.delete(appId);
+        if (count) this.notifications.set(appId, count);
+        else if (!this.notifications.has(appId)) return;
+        else this.notifications.delete(appId);
         if (typeof this.#callback === 'function') this.#callback(LauncherApiNotify.Notifications);
     }
 
@@ -120,7 +110,7 @@ class LauncherApiService {
      * @param {boolean?} visibility
      */
     #handleProgress(appId, value, visibility) {
-        const oldValue = this.#progress.get(appId);
+        const oldValue = this.progress.get(appId);
         const hasOldValue = typeof oldValue === 'number';
         if (!visibility && !hasOldValue) return;
         const isVisibilityDefined = typeof visibility === 'boolean';
@@ -130,10 +120,10 @@ class LauncherApiService {
                          Math.min(Progress.Max, +parseFloat(`${value}`).toFixed(PROGRESS_VALUE_DECIMAL_PLACES)));
         if (!isVisibilityDefined || visibility) {
             if (oldValue === newValue) return;
-            this.#progress.set(appId, newValue);
+            this.progress.set(appId, newValue);
         } else {
             if (!hasOldValue) return;
-            this.#progress.delete(appId);
+            this.progress.delete(appId);
         }
         if (typeof this.#callback !== 'function') return;
         this.#callback(LauncherApiNotify.Progress);

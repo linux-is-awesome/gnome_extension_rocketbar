@@ -95,19 +95,10 @@ class SoundStream {
 class AppSoundStream extends SoundStream {
 
     /** @type {boolean} */
-    #isInput = false;
+    isInput = false;
 
     /** @type {string?} */
-    #appId = null;
-
-    get appId() {
-        return this.#appId;
-    }
-
-    /** @type {boolean} */
-    get isInput() {
-        return this.#isInput;
-    }
+    appId = null;
 
     /**
      * @param {Gvc.MixerStream} stream
@@ -115,8 +106,8 @@ class AppSoundStream extends SoundStream {
     constructor(stream) {
         super(stream instanceof Gvc.MixerSinkInput ||
               stream instanceof Gvc.MixerSourceOutput ? stream : null);
-        this.#appId = stream.get_application_id() ?? null;
-        this.#isInput = stream instanceof Gvc.MixerSourceOutput;
+        this.appId = stream.get_application_id() ?? null;
+        this.isInput = stream instanceof Gvc.MixerSourceOutput;
     }
 
 }

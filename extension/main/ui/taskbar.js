@@ -41,18 +41,6 @@ const AllocationProps = {
 
 class TaskbarAllocation {
 
-    /** @type {boolean} */
-    #isDragMode = false;
-
-    /** @type {boolean} */
-    #isUpdating = false;
-
-    /** @type {boolean} */
-    #isWorkspaceChanged = false;
-
-    /** @type {St.BoxLayout?} */
-    #actor = new St.BoxLayout(AllocationProps);
-
     /** @type {Map<Component, number>?} */
     #allocation = new Map();
 
@@ -61,6 +49,18 @@ class TaskbarAllocation {
 
     /** @type {Taskbar?} */
     #taskbar = null;
+
+    /** @type {boolean} */
+    isDragMode = false;
+
+    /** @type {boolean} */
+    isUpdating = false;
+
+    /** @type {boolean} */
+    isWorkspaceChanged = false;
+
+    /** @type {St.BoxLayout?} */
+    actor = new St.BoxLayout(AllocationProps);
 
     /** @type {number} */
     get #allocationSize() {
@@ -80,27 +80,6 @@ class TaskbarAllocation {
         return result;
     }
 
-    /** @type {St.BoxLayout} */
-    get actor() {
-        if (!this.#actor) throw new Error(`${this.constructor.name} is invalid.`);
-        return this.#actor;
-    }
-
-    /** @type {boolean} */
-    get isUpdating() {
-        return this.#isUpdating;
-    }
-
-    /** @param {boolean} value */
-    set isDragMode(value) {
-        this.#isDragMode = value;
-    }
-
-    /** @param {boolean} value */
-    set isWorkspaceChanged(value) {
-        this.#isWorkspaceChanged = value;
-    }
-
     /**
      * @param {Taskbar} taskbar
      */
@@ -109,13 +88,13 @@ class TaskbarAllocation {
     }
 
     destroy() {
-        this.#actor?.remove_all_transitions();
+        this.actor?.remove_all_transitions();
         this.#job?.destroy();
         this.#job = null;
         this.#taskbar = null;
         this.#allocation?.clear();
         this.#allocation = null;
-        this.#actor = null;
+        this.actor = null;
     }
 
     /**
@@ -128,7 +107,7 @@ class TaskbarAllocation {
         const { width } = source.rect;
         this.#allocation.set(source, width);
         this.#job?.reset(Delay.Redraw);
-        if (this.#isWorkspaceChanged) this.update();
+        if (this.isWorkspaceChanged) this.update();
         else this.#job?.enqueue(() => this.update());
     }
 
@@ -138,29 +117,29 @@ class TaskbarAllocation {
     remove(source) {
         if (!source || !this.#allocation?.has(source)) return;
         this.#allocation.delete(source);
-        const delay = this.#isDragMode ? Delay.Scheduled : Delay.Redraw;
+        const delay = this.isDragMode ? Delay.Scheduled : Delay.Redraw;
         this.#job?.reset(delay).enqueue(() => this.update());
     }
 
     async update() {
-        if (!this.#allocation || !this.#actor || !this.#taskbar) return;
-        this.#actor.remove_all_transitions();
-        this.#isUpdating = false;
+        if (!this.#allocation || !this.actor || !this.#taskbar) return;
+        this.actor.remove_all_transitions();
+        this.isUpdating = false;
         const { pageSize, scrollSize, scrollPosition } = this.#taskbar;
         const width = this.#allocationSize;
         const scrollOffset = Math.max(0, width - pageSize);
         const duration = width >= scrollSize ?
-                         this.#isDragMode ? AnimationDuration.Disabled :
+                         this.isDragMode ? AnimationDuration.Disabled :
                          AnimationDuration.Faster : AnimationDuration.Slower;
         const delay = width >= scrollSize ? 0 : Delay.Queue;
         this.#taskbar.scrollLimit = scrollOffset;
         const scrollJob = scrollOffset > scrollPosition ? null :
                           this.#taskbar.scrollToPosition(scrollOffset, true);
         if (!scrollJob) return this.#allocate(duration, delay, width);
-        this.#isUpdating = true;
+        this.isUpdating = true;
         const scrollJobResult = await scrollJob;
-        if (!scrollJobResult || !this.#isUpdating) return;
-        this.#isUpdating = false;
+        if (!scrollJobResult || !this.isUpdating) return;
+        this.isUpdating = false;
         this.#allocate(duration, delay, width);
     }
 
@@ -171,12 +150,12 @@ class TaskbarAllocation {
      * @returns {Promise<void>}
      */
     async #allocate(duration, delay, width) {
-        if (!this.#actor) return;
+        if (!this.actor) return;
         const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
         const animationParams = { width, mode, delay };
-        const isFinished = await Animation(this.#actor, duration, animationParams);
+        const isFinished = await Animation(this.actor, duration, animationParams);
         if (!isFinished) return;
-        this.#isWorkspaceChanged = false;
+        this.isWorkspaceChanged = false;
     }
 
 }
