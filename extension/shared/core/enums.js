@@ -10,6 +10,7 @@ export const Event = {
     Changed: 'changed',
     Checked: 'notify::checked',
     Clicked: 'clicked',
+    Activated: 'activated',
     Closed: 'closed',
     CloseRequest: 'close-request',
     CountChanged: 'notify::count',
@@ -122,7 +123,9 @@ export const Alignment = {
     BottomRight: 'bottom-right'
 };
 
-/** @enum {string} */
+/**
+ * @enum {string}
+ */
 export const Monitor = {
     Primary: 'primary',
     Left: 'left',
@@ -261,4 +264,16 @@ export const Module = {
     Panel: 'ui/panel',
     NotificationCounter: 'ui/notificationCounter',
     Taskbar: 'ui/taskbar'
+};
+
+/**
+ * @enum {string}
+ */
+export const PreferencesPage = {
+    About: 'about',
+    Panel: 'panel',
+    Tweaks: 'tweaks',
+    Misc: 'misc',
+    NotificationCounter: 'notificationCounter',
+    Taskbar: 'taskbar'
 };
