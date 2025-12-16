@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ "$1" = "new-window" ]; then
-    x-terminal-emulator -c "sh -c 'journalctl -f -o cat /usr/bin/gjs'"
+    x-terminal-emulator --command="sh -c 'journalctl -f -o cat /usr/bin/gjs'"
     exit 0
 fi
 
