@@ -8,6 +8,7 @@
 import Gdk from 'gi://Gdk';
 import SharedContext from '../../shared/core/context.js';
 import BasePage from '../pages/base/page.js';
+import { PreferencesPage } from '../../shared/core/enums.js';
 
 const DEFAULT_WINDOW_WIDTH = 700;
 const DEFAULT_WINDOW_HEGIHT = 800;
@@ -15,14 +16,6 @@ const WINDOW_SIZE_THRESHOLD = 0.9;
 
 const PAGE_ROOT_PATH = '../pages/';
 const PAGE_FILE_TYPE = '.js';
-
-/** @enum {string} */
-const Page = {
-    About: 'about',
-    Panel: 'panel',
-    Misc: 'misc',
-    Tweaks: 'tweaks'
-};
 
 export default class Context extends SharedContext {
 
@@ -38,10 +31,17 @@ export default class Context extends SharedContext {
         return this.#instance;
     }
 
+    /**
+     * @param {PreferencesPage} targetPage
+     */
+    static navigateToPage(targetPage) {
+        this.instance.#navigateToPage(targetPage);
+    }
+
     /** @type {PreferencesWindow?} */
     #window = null;
 
-    /** @type {Map<Page, Promise|BasePage>} */
+    /** @type {Map<PreferencesPage, Promise|BasePage>} */
     #pages = new Map();
 
     /**
@@ -99,7 +99,8 @@ export default class Context extends SharedContext {
         if (!this.#window) return;
         this.#window._showErrorPage = () => {};
         try {
-            for (const page in Page) this.#pages.set(page, this.#loadPage(page));
+            const pages = Object.values(PreferencesPage);
+            for (const page of pages) this.#pages.set(page, this.#loadPage(page));
             await Promise.all([...this.#pages.values()]);
             for (const [_, page] of this.#pages) {
                 if (page instanceof BasePage === false) continue;
@@ -111,17 +112,27 @@ export default class Context extends SharedContext {
     }
 
     /**
-     * @param {Page} page
+     * @param {PreferencesPage} page
      */
     async #loadPage(page) {
         try {
-            const pageModule = await import(`${PAGE_ROOT_PATH}${Page[page]}${PAGE_FILE_TYPE}`);
+            const pageModule = await import(`${PAGE_ROOT_PATH}${page}${PAGE_FILE_TYPE}`);
             if (!this.#window) return;
             this.#pages.set(page, new pageModule.default());
         } catch (e) {
             Context.logError(`unable to load page: ${page}.`, e);
             throw e;
         }
+    }
+
+    /**
+     * @param {PreferencesPage} targetPage
+     */
+    #navigateToPage(targetPage) {
+        if (!this.#window) return;
+        const page = this.#pages.get(targetPage);
+        if (page instanceof BasePage === false) return;
+        page.show(this.#window);
     }
 
 }
