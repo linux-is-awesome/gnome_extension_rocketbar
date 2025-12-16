@@ -5,13 +5,13 @@
  * @typedef {import('gi://Adw').ComboRow} Adw.ComboRow
  * @typedef {import('gi://Adw').SpinRow} Adw.SpinRow
  * @typedef {[alignment: Alignment, position: number]} ItemConfig
- * @typedef {{isCustomizable: boolean, isMovable: boolean, defaultConfig: ItemConfig?}} ItemOptions
+ * @typedef {{customizePage?: PreferencesPage?, isMovable: boolean, defaultConfig: ItemConfig?}} ItemOptions
  */
 
 import Page from './base/page.js';
 import Context from '../core/context.js';
 import { Config, InnerConfig } from '../../shared/utils/config.js';
-import { SettingsPath, SettingsKey, Event, Module, Alignment } from '../../shared/core/enums.js';
+import { SettingsPath, SettingsKey, Event, Module, Alignment, PreferencesPage } from '../../shared/core/enums.js';
 
 const PAGE_NAME = 'panel';
 const ROOT_MODULE = Module.Panel;
@@ -44,21 +44,21 @@ const ItemControl = {
 };
 
 /**
- * @param {boolean} [isCustomizable]
+ * @param {PreferencesPage?} [customizePage]
  * @param {boolean} [isMovable]
  * @param {ItemConfig?} [defaultConfig]
  * @returns {ItemOptions}
  */
-const ItemOptions = (isCustomizable = false, isMovable = false, defaultConfig = null) => ({
-    isCustomizable,
+const ItemOptions = (customizePage = null, isMovable = false, defaultConfig = null) => ({
+    customizePage,
     isMovable,
     defaultConfig
 });
 
 /** @type {{[item: string]: ItemOptions}} */
 const ManagedItems = {
-    [Module.Taskbar]: ItemOptions(true, true, [Alignment.Left, 1]),
-    [Module.NotificationCounter]: ItemOptions(true)
+    [Module.Taskbar]: ItemOptions(PreferencesPage.Taskbar, true, [Alignment.Left, 1]),
+    [Module.NotificationCounter]: ItemOptions(PreferencesPage.NotificationCounter)
 };
 
 /** @enum {string} */
@@ -220,7 +220,9 @@ export default class extends Page {
         stateControl.connect(Event.Active, () => this.#setItemState(item, stateControl.get_active()));
         alignmentControl?.connect(Event.SelectedItemChanged, () => this.#setItemAlignment(item, alignmentControl.get_selected()));
         positionControl?.connect(Event.ValueChanged, () => this.#setItemPosition(item, positionControl.get_value()));
-        customizeControl?.get_activatable_widget()?.connect(Event.Clicked, () => {});
+        const { customizePage } = itemOptions;
+        if (!customizePage) return;
+        customizeControl?.connect(Event.Activated, () => Context.navigateToPage(customizePage));
     }
 
     /**
@@ -229,11 +231,11 @@ export default class extends Page {
      * @returns {[Gtk.Switch, ?Adw.ComboRow, ?Adw.SpinRow, ?Adw.ActionRow]}
      */
     #getItemControls(item, itemOptions) {
-        const { isCustomizable, isMovable } = itemOptions;
+        const { customizePage, isMovable } = itemOptions;
         const stateControl = this.getSwitch(`${item}${ItemControl.State}`);
         const alignmentControl = isMovable ? this.getComboRow(`${item}${ItemControl.Alignment}`) : null;
         const positionControl = isMovable ? this.getSpinRow(`${item}${ItemControl.Position}`) : null;
-        const customizeControl = isCustomizable ? this.getRow(`${item}${ItemControl.Customize}`) : null;
+        const customizeControl = customizePage ? this.getActionRow(`${item}${ItemControl.Customize}`) : null;
         return [stateControl, alignmentControl, positionControl, customizeControl];
     }
 

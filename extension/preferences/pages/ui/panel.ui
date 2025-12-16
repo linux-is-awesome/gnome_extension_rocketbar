@@ -65,11 +65,11 @@
                     <object class="AdwActionRow" id="ui/taskbar-customize">
                         <property name="title" translatable="yes">Customize</property>
                         <property name="sensitive">false</property>
-                        <property name="activatable-widget">ui/taskbar-customize-button</property>
+                        <property name="activatable">true</property>
                         <child>
-                            <object class="GtkButton" id="ui/taskbar-customize-button">
-                                <property name="has-frame">false</property>
+                            <object class="GtkImage">
                                 <property name="icon-name">go-next-symbolic</property>
+                                <property name="accessible-role">presentation</property>
                             </object>
                         </child>
                     </object>
@@ -89,11 +89,11 @@
                     <object class="AdwActionRow" id="ui/notificationCounter-customize">
                         <property name="title" translatable="yes">Customize</property>
                         <property name="sensitive">false</property>
-                        <property name="activatable-widget">ui/notificationCounter-customize-button</property>
+                        <property name="activatable">true</property>
                         <child>
-                            <object class="GtkButton" id="ui/notificationCounter-customize-button">
-                                <property name="has-frame">false</property>
+                            <object class="GtkImage">
                                 <property name="icon-name">go-next-symbolic</property>
+                                <property name="accessible-role">presentation</property>
                             </object>
                         </child>
                     </object>
