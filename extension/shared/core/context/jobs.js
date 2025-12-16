@@ -105,7 +105,7 @@ class Job {
         const delay = this.#delay ?? Delay.Idle;
         const isLaterType = Laters && typeof LaterType[delay] === 'number';
         this.#id = isLaterType ? Laters.add(LaterType[delay], () => this.#finish()) :
-                   GLib.timeout_add(GLib.PRIORITY_DEFAULT_IDLE, Math.abs(delay), () => this.#finish());
+                   GLib.timeout_add(GLib.PRIORITY_DEFAULT_IDLE, Math.max(0, delay), () => this.#finish());
     }
 
     #abort() {
