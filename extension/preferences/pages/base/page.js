@@ -15,6 +15,9 @@ export default class Page {
     /** @type {Adw.PreferencesPage?} */
     #instance = null;
 
+    /** @type {Adw.NavigationPage?} */
+    #wrapper = null;
+
     /** @type {Gtk.Builder} */
     #template = new Gtk.Builder();
 
@@ -30,29 +33,33 @@ export default class Page {
      */
     constructor(name, callback) {
         this.#template.add_from_file(`${Context.path}${UI_PATH}${name}${UI_FILE_TYPE}`);
-        const instance = this.#template.get_object(name);
+        let instance = this.#template.get_object(name);
+        if (instance instanceof Adw.NavigationPage) {
+            this.#wrapper = instance;
+            instance = this.#template.get_object(`${name}-page`);
+        }
         if (instance instanceof Adw.PreferencesPage === false) return;
         this.#instance = instance;
         this.#callback = callback;
     }
 
     /**
-     * @param {Adw.PreferencesPage?} visiblePage
+     * @param {PreferencesWindow} window
      */
-    #initialize(visiblePage) {
-        if (visiblePage !== this.#instance) return;
-        if (this.#isInitialized) return;
-        this.#isInitialized = true;
-        if (typeof this.#callback === 'function') this.#callback();
+    setParent(window) {
+        if (!window || !this.#instance || this.#isInitialized || this.#wrapper) return;
+        window.connect(Event.VisiblePageChanged, () => this.#initialize(window.get_visible_page()));
+        window.add(this.#instance);
     }
 
     /**
      * @param {PreferencesWindow} window
      */
-    setParent(window) {
-        if (!window || !this.#instance || this.#isInitialized) return;
-        window.connect(Event.VisiblePageChanged, () => this.#initialize(window.get_visible_page()));
-        window.add(this.#instance);
+    show(window) {
+        if (!window || !this.#instance) return;
+        if (!this.#wrapper) return window.set_visible_page(this.#instance);
+        window.push_subpage(this.#wrapper);
+        this.#initialize(this.#instance);
     }
 
     /**
@@ -69,7 +76,7 @@ export default class Page {
      * @param {string} id
      * @returns {Adw.ActionRow}
      */
-    getRow(id) {
+    getActionRow(id) {
         const result = this.#template.get_object(id);
         if (result instanceof Adw.ActionRow) return result;
         throw new Error(`${id} is not an instane of Adw.ActionRow.`);
@@ -143,6 +150,16 @@ export default class Page {
         const result = this.#template.get_object(id);
         if (result instanceof Gtk.Switch) return result;
         throw new Error(`${id} is not an instane of Gtk.Switch.`);
+    }
+
+    /**
+     * @param {Adw.PreferencesPage?} visiblePage
+     */
+    #initialize(visiblePage) {
+        if (visiblePage !== this.#instance) return;
+        if (this.#isInitialized) return;
+        this.#isInitialized = true;
+        if (typeof this.#callback === 'function') this.#callback();
     }
 
 }
