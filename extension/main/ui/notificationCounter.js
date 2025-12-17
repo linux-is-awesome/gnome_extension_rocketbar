@@ -11,7 +11,8 @@ import { Component, ComponentEvent } from './base/component.js';
 import { Animation, AnimationDuration, AnimationType } from './base/animation.js';
 import { NotificationHandler } from '../services/notifications.js';
 import { Config } from '../../shared/utils/config.js';
-import { SettingsPath, SettingsKey, Event, Delay, Property } from '../../shared/core/enums.js';
+import { Event, Delay, Property } from '../../shared/core/enums.js';
+import { ConfigOptions, ConfigField } from '../../shared/enums/notificationCounter.js';
 
 const MODULE_NAME = 'Rocketbar__NotificationCounter';
 const DND_SETTINGS_KEY = 'show-banners';
@@ -27,27 +28,6 @@ const COUNTER_DEFAULT_TEXT = '0';
 /** @enum {string} */
 const DateMenuEvent = {
     DndChanged: 'datemenu::dnd-changed'
-};
-
-/** @enum {string} */
-const ConfigField = {
-    hideEmpty: SettingsKey.HideEhenEmpty,
-    centerClock: SettingsKey.CenterClockPosition,
-    maxCount: SettingsKey.MaxCount,
-    fontSize: SettingsKey.FontSize,
-    roundness: SettingsKey.Roundness,
-    offset: SettingsKey.VerticalOffset,
-    colorEmpty: SettingsKey.ColorWhenEmpty,
-    colorNotEmpty: SettingsKey.ColorWhenNotEmpty,
-    textColor: SettingsKey.TextColor,
-    colorEmptyDnd: SettingsKey.ColorWhenEmptyDnd,
-    colorNotEmptyDnd: SettingsKey.ColorWhenNotEmptyDnd,
-    textColorDnd: SettingsKey.TextColorDnd
-};
-
-/** @type {{[option: string]: *}} */
-const ConfigOptions = {
-    path: SettingsPath.NotificationCounter
 };
 
 /** @type {{[prop: string]: *}} */
