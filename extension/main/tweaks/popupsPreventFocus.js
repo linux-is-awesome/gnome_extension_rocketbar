@@ -10,9 +10,16 @@ const FakePopupGrab = () => ({
 export default class {
 
     constructor() {
-        Context.hooks.add(this, global.stage, global.stage.grab,
-            (_, actor) => actor instanceof SwitcherPopup &&
-                          !Context.desktop.activeModalDialog ? FakePopupGrab() : undefined, true);
+        Context.hooks.add(this, global.stage, global.stage.grab, (_, actor) => {
+            if (actor instanceof SwitcherPopup) {
+                const oldFocus = global.stage.get_key_focus() ?? null;
+                global.stage.set_key_focus(actor);
+                const hasFocus = actor.has_key_focus();
+                global.stage.set_key_focus(oldFocus);
+                if (hasFocus) return FakePopupGrab();
+            }
+            return undefined;
+        }, true);
     }
 
     destroy() {
