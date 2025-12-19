@@ -7,7 +7,7 @@ import Adw from 'gi://Adw';
 import Context from '../../core/context.js';
 import { Event } from '../../../shared/core/enums.js';
 
-const UI_PATH = '/preferences/pages/ui/';
+const UI_PATH = '/preferences/ui/';
 const UI_FILE_TYPE = '.ui';
 
 export default class Page {

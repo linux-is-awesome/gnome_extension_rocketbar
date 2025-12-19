@@ -11,12 +11,13 @@
             </object>
         </child>
         <child>
-            <object class="AdwPreferencesGroup" id="version">
+            <object class="AdwPreferencesGroup">
+                <property name="title" translatable="yes">Version</property>
                 <child>
                     <object class="AdwActionRow">
-                        <property name="title" translatable="yes">Current Version</property>
+                        <property name="title" translatable="yes">Release Version</property>
                         <child>
-                            <object class="GtkLabel" id="version-name"></object>
+                            <object class="GtkLabel" id="release-version"></object>
                         </child>
                     </object>
                 </child>
