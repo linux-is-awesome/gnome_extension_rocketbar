@@ -58,8 +58,8 @@ export default class Page {
     show(window) {
         if (!window || !this.#instance) return;
         if (!this.#wrapper) return window.set_visible_page(this.#instance);
+        if (!this.#isInitialized) this.#initialize(this.#instance);
         window.push_subpage(this.#wrapper);
-        this.#initialize(this.#instance);
     }
 
     /**
@@ -150,6 +150,16 @@ export default class Page {
         const result = this.#template.get_object(id);
         if (result instanceof Gtk.Switch) return result;
         throw new Error(`${id} is not an instane of Gtk.Switch.`);
+    }
+
+    /**
+     * @param {string} id
+     * @returns {Gtk.ColorDialogButton}
+     */
+    getColorButton(id) {
+        const result = this.#template.get_object(id);
+        if (result instanceof Gtk.ColorDialogButton) return result;
+        throw new Error(`${id} is not an instane of Gtk.ColorDialogButton.`);
     }
 
     /**
