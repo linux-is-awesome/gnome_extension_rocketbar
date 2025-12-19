@@ -6,7 +6,12 @@
         <child>
             <object class="AdwPreferencesGroup">
                 <child>
-                    <object class="GtkPicture" id="logo"></object>
+                    <object class="GtkPicture" id="logo">
+                        <property name="content-fit">2</property>
+                        <style>
+                            <class name="logo"/>
+                        </style>
+                    </object>
                 </child>
             </object>
         </child>
