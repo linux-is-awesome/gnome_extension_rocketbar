@@ -6,16 +6,18 @@
  */
 
 import Gdk from 'gi://Gdk';
+import Gtk from 'gi://Gtk';
 import SharedContext from '../../shared/core/context.js';
 import BasePage from '../pages/base/page.js';
 import { PreferencesPage } from '../../shared/core/enums.js';
 
-const DEFAULT_WINDOW_WIDTH = 700;
+const DEFAULT_WINDOW_WIDTH = 600;
 const DEFAULT_WINDOW_HEGIHT = 800;
 const WINDOW_SIZE_THRESHOLD = 0.9;
 
 const PAGE_ROOT_PATH = '../pages/';
 const PAGE_FILE_TYPE = '.js';
+const STYLES_PATH = '/assets/css/preferences.css';
 
 export default class Context extends SharedContext {
 
@@ -52,7 +54,18 @@ export default class Context extends SharedContext {
         super(extension, () => this.#destroy());
         this.#window = window;
         Context.#instance = this;
-        this.#initialize();
+    }
+
+    /**
+     * @returns {Promise<this>}
+     */
+    async initialize() {
+        if (!this.#window) return this;
+        this.#window.set_search_enabled(true);
+        this.#setWindowSize(this.#window);
+        this.#loadStyles();
+        await this.#loadPages();
+        return this;
     }
 
     /**
@@ -72,13 +85,6 @@ export default class Context extends SharedContext {
         return true;
     }
 
-    #initialize() {
-        if (!this.#window) return;
-        this.#window.set_search_enabled(true);
-        this.#setWindowSize(this.#window);
-        this.#loadPages();
-    }
-
     /**
      * @param {PreferencesWindow} window
      */
@@ -95,19 +101,26 @@ export default class Context extends SharedContext {
         window.set_default_size(windowWidth, windowHeight);
     }
 
+    #loadStyles() {
+        try {
+            const display = Gdk.Display.get_default();
+            const provider = new Gtk.CssProvider();
+            const priority = Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION;
+            provider.load_from_path(`${Context.path}${STYLES_PATH}`);
+            Gtk.StyleContext.add_provider_for_display(display, provider, priority);
+        } catch (e) {
+            Context.logError('unable to load styles.', e);
+        }
+    }
+
     async #loadPages() {
         if (!this.#window) return;
-        this.#window._showErrorPage = () => {};
-        try {
-            const pages = Object.values(PreferencesPage);
-            for (const page of pages) this.#pages.set(page, this.#loadPage(page));
-            await Promise.all([...this.#pages.values()]);
-            for (const [_, page] of this.#pages) {
-                if (page instanceof BasePage === false) continue;
-                page.setParent(this.#window);
-            }
-        } catch (e) {
-            this.#window.constructor.prototype._showErrorPage.call(this.#window, e);
+        const pages = Object.values(PreferencesPage);
+        for (const page of pages) this.#pages.set(page, this.#loadPage(page));
+        await Promise.all([...this.#pages.values()]);
+        for (const [_, page] of this.#pages) {
+            if (page instanceof BasePage === false) continue;
+            page.setParent(this.#window);
         }
     }
 
@@ -121,7 +134,7 @@ export default class Context extends SharedContext {
             this.#pages.set(page, new pageModule.default());
         } catch (e) {
             Context.logError(`unable to load page: ${page}.`, e);
-            throw e;
+            this.#pages.delete(page);
         }
     }
 

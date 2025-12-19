@@ -5,7 +5,7 @@
  */
 
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-import { Event } from './shared/core/enums.js';
+import { Event } from './shared/enums/general.js';
 import Context from './preferences/core/context.js';
 
 export default class extends ExtensionPreferences {
@@ -14,8 +14,8 @@ export default class extends ExtensionPreferences {
      * @override
      * @param {PreferencesWindow} window
      */
-    fillPreferencesWindow(window) {
-        const runtime = new Context(this, window);
+    async fillPreferencesWindow(window) {
+        const runtime = await new Context(this, window).initialize();
         window.connect(Event.CloseRequest, () => runtime.destroy());
     }
 
