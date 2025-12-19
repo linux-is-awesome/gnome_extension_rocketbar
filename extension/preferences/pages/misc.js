@@ -1,11 +1,6 @@
-/**
- * @typedef {import('gi://Adw').SwitchRow} Adw.SwitchRow
- */
-
-import Page from './base/page.js';
-import Context from '../core/context.js';
+import SettingsPage from './base/settingsPage.js';
 import { Config } from '../../shared/utils/config.js';
-import { Event, SettingsKey } from '../../shared/core/enums.js';
+import { SettingsKey } from '../../shared/enums/settings.js';
 
 const PAGE_NAME = 'misc';
 
@@ -16,7 +11,7 @@ const ConfigField = {
     notificationsCountAttentionSources: SettingsKey.NotificationsCountAttentionSources
 };
 
-export default class extends Page {
+export default class extends SettingsPage {
 
     /** @type {Config} */
     #config = Config(this, ConfigField, (settingsKey, value) => this.#handleConfig(settingsKey, value));
@@ -26,30 +21,23 @@ export default class extends Page {
     }
 
     #initialize() {
-        const settings = Context.getSettings();
-        if (!settings) return;
         for (const key in ConfigField) {
             const settingsKey = ConfigField[key];
-            const widget = this.getSwitchRow(settingsKey);
-            this.#handleConfig(settingsKey, this.#config[key], widget);
-            widget.connect(Event.Active, () => settings.set(settingsKey, widget.get_active()));
+            this.#handleConfig(settingsKey, this.#config[key]);
         }
     }
 
     /**
      * @param {string} settingsKey
      * @param {*} value
-     * @param {Adw.SwitchRow} [widget]
      */
-    #handleConfig(settingsKey, value, widget) {
+    #handleConfig(settingsKey, value) {
         value ??= false;
         switch (settingsKey) {
             case ConfigField.launcherApi:
                 this.getSwitchRow(ConfigField.notificationsLauncherApi).set_sensitive(value);
             default:
-                widget ??= this.getSwitchRow(settingsKey);
-                if (widget.get_active() === value) return;
-                widget.set_active(value);
+                this.setBoolean(settingsKey, value);
         }
     }
 
