@@ -15,6 +15,12 @@ export default class SettingsPage extends Page {
     /** @type {Settings?} */
     #settings = null;
 
+    /** @type {Settings} */
+    get settings() {
+        if (!this.#settings) throw new Error(`${this.constructor.name} is invalid.`);
+        return this.#settings;
+    }
+
     /**
      * @param {string} name
      * @param {() => void} callback
