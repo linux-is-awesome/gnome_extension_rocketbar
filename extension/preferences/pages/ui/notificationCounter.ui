@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <object class="AdwNavigationPage" id="notificationCounter">
+        <property name="title" translatable="yes">Notification Counter</property>
+        <property name="child">
+            <object class="AdwToolbarView">
+                <child type="top">
+                    <object class="AdwHeaderBar">
+                    </object>
+                </child>
+                <property name="content">
+                    <object class="GtkColorDialog" id="color-dialog"/>
+                    <object class="AdwPreferencesPage" id="notificationCounter-page">
+                        <child>
+                            <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">General</property>
+                                <child>
+                                    <object class="AdwSwitchRow" id="hide-when-empty">
+                                        <property name="title" translatable="yes">Hide Empty Counter</property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwSwitchRow" id="center-clock-position">
+                                        <property name="title" translatable="yes">Center Clock Position</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">Appearance</property>
+                                <child>
+                                    <object class="AdwSpinRow" id="max-count">
+                                        <property name="title" translatable="yes">Max Count To Display</property>
+                                        <property name="adjustment">
+                                            <object class="GtkAdjustment">
+                                                <property name="lower">1</property>
+                                                <property name="upper">999</property>
+                                                <property name="value">99</property>
+                                                <property name="step-increment">1</property>
+                                            </object>
+                                        </property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwSpinRow" id="font-size">
+                                        <property name="title" translatable="yes">Font Size</property>
+                                        <property name="adjustment">
+                                            <object class="GtkAdjustment">
+                                                <property name="lower">8</property>
+                                                <property name="upper">16</property>
+                                                <property name="value">10</property>
+                                                <property name="step-increment">1</property>
+                                            </object>
+                                        </property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwSpinRow" id="vertical-offset">
+                                        <property name="title" translatable="yes">Vertical Centering</property>
+                                        <property name="adjustment">
+                                            <object class="GtkAdjustment">
+                                                <property name="lower">-10</property>
+                                                <property name="upper">10</property>
+                                                <property name="value">0</property>
+                                                <property name="step-increment">1</property>
+                                            </object>
+                                        </property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwSpinRow" id="roundness">
+                                        <property name="title" translatable="yes">Roundness</property>
+                                        <property name="adjustment">
+                                            <object class="GtkAdjustment">
+                                                <property name="lower">0</property>
+                                                <property name="upper">16</property>
+                                                <property name="value">10</property>
+                                                <property name="step-increment">1</property>
+                                            </object>
+                                        </property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">Colors</property>
+                                <child>
+                                    <object class="AdwActionRow">
+                                        <property name="title" translatable="yes">Border Color</property>
+                                        <property name="activatable-widget">color-when-empty</property>
+                                        <child>
+                                            <object class="GtkColorDialogButton" id="color-when-empty">
+                                                <property name="valign">center</property>
+                                                <property name="dialog">color-dialog</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwActionRow">
+                                        <property name="title" translatable="yes">Background Color</property>
+                                        <property name="activatable-widget">color-when-not-empty</property>
+                                        <child>
+                                            <object class="GtkColorDialogButton" id="color-when-not-empty">
+                                                <property name="valign">center</property>
+                                                <property name="dialog">color-dialog</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwActionRow">
+                                        <property name="title" translatable="yes">Text Color</property>
+                                        <property name="activatable-widget">text-color</property>
+                                        <child>
+                                            <object class="GtkColorDialogButton" id="text-color">
+                                                <property name="valign">center</property>
+                                                <property name="dialog">color-dialog</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">Colors (Do Not Disturb)</property>
+                                <child>
+                                    <object class="AdwActionRow">
+                                        <property name="title" translatable="yes">Border Color</property>
+                                        <property name="activatable-widget">color-when-empty-dnd</property>
+                                        <child>
+                                            <object class="GtkColorDialogButton" id="color-when-empty-dnd">
+                                                <property name="valign">center</property>
+                                                <property name="dialog">color-dialog</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwActionRow">
+                                        <property name="title" translatable="yes">Background Color</property>
+                                        <property name="activatable-widget">color-when-not-empty-dnd</property>
+                                        <child>
+                                            <object class="GtkColorDialogButton" id="color-when-not-empty-dnd">
+                                                <property name="valign">center</property>
+                                                <property name="dialog">color-dialog</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwActionRow">
+                                        <property name="title" translatable="yes">Text Color</property>
+                                        <property name="activatable-widget">text-color-dnd</property>
+                                        <child>
+                                            <object class="GtkColorDialogButton" id="text-color-dnd">
+                                                <property name="valign">center</property>
+                                                <property name="dialog">color-dialog</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                    </object>
+                </property>
+            </object>
+        </property>
+    </object>
+</interface>
