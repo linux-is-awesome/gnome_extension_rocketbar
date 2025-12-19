@@ -1,6 +1,6 @@
 import Context from '../core/context.js';
 import Page from './base/page.js';
-import { MetadataField } from '../../shared/core/enums.js';
+import { MetadataField } from '../../shared/enums/general.js';
 
 const PAGE_NAME = 'about';
 const LOGO_PATH = '/assets/images/';
