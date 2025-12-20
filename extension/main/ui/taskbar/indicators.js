@@ -12,44 +12,16 @@ import Context from '../../core/context.js';
 import { Overview } from '../../core/shell.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Animation, AnimationType } from '../base/animation.js';
-import { SettingsPath, SettingsKey, Event } from '../../../shared/core/enums.js';
 import { SharedConfig } from '../../../shared/utils/config.js';
+import { Event, Alignment } from '../../../shared/enums/general.js';
+import { IndicatorsConfigField as ConfigField,
+         ConfigOptions } from '../../../shared/enums/taskbar.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_Indicators';
 const ANIMATION_FRAMES = 15;
 const ANIMATION_INTERVAL = 10;
 const ANIMATION_STEP_MIN = 0.1;
 const ANIMATION_DURATION = ANIMATION_FRAMES * ANIMATION_INTERVAL;
-
-/** @enum {string} */
-const IndicatorsPosition = {
-    Top: 'top',
-    Bottom: 'bottom'
-};
-
-/** @enum {string} */
-const ConfigField = {
-    limitInactive: SettingsKey.IndicatorLimitInactive,
-    limitActive: SettingsKey.IndicatorLimitActive,
-    colorInactive: SettingsKey.IndicatorColorInactive,
-    colorActive: SettingsKey.IndicatorColorActive,
-    dominantColorInactive: SettingsKey.IndicatorDominantColorInactive,
-    dominantColorActive: SettingsKey.IndicatorDominantColorActive,
-    sizeInactive: SettingsKey.IndicatorSizeInactive,
-    sizeActive: SettingsKey.IndicatorSizeActive,
-    spacingInactive: SettingsKey.IndicatorSpacingActive,
-    spacingActive: SettingsKey.IndicatorSpacingActive,
-    weightInactive: SettingsKey.IndicatorWeightInactive,
-    weightActive: SettingsKey.IndicatorWeightActive,
-    offsetInactive: SettingsKey.IndicatorOffsetInactive,
-    offsetActive: SettingsKey.IndicatorOffsetActive,
-    position: SettingsKey.IndicatorPosition
-};
-
-/** @type {{[option: string]: *}} */
-const ConfigOptions = {
-    path: SettingsPath.Taskbar
-};
 
 /** @type {{[prop: string]: *}} */
 const DefaultProps = {
@@ -70,7 +42,7 @@ const BackendParams = {
     weight: 2,
     spacing: 0,
     offset: 0,
-    position: IndicatorsPosition.Top
+    position: Alignment.Top
 };
 
 class IndicatorBase {
@@ -331,7 +303,7 @@ class IndicatorsBackend {
         const [canvasWidth, canvasHeight] = this.#actor.get_surface_size();
         let x = canvasWidth / 2;
         let y = offset;
-        if (position === IndicatorsPosition.Bottom) {
+        if (position === Alignment.Bottom) {
             y = canvasHeight - weight - offset;
         }
         for (let i = 0, l = this.#indicators.length; i < l; ++i) {

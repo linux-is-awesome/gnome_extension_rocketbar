@@ -19,12 +19,14 @@ import { SliderMenuItem, CollapsibleGroup, ChildMenu } from '../base/menu.js';
 import { Icon } from '../base/icon.js';
 import { SharedConfig } from '../../../shared/utils/config.js';
 import { FileSelector } from '../../utils/zenity.js';
-import { AppIconSize, ActivateBehavior, PreferredMonitor,
-         AttentionBehavior, AttentionNotificationsBehavior } from '../../utils/taskbar/appConfig.js';
 import { SoundVolumeIcon } from '../../utils/soundVolumeIcon.js';
 import { WindowProxy } from '../../utils/taskbar/windowProxy.js';
-import { SettingsPath, SettingsKey, Delay, Event, Alignment } from '../../../shared/core/enums.js';
-import { Label } from '../../../shared/core/labels.js';
+import { Delay, Event, Alignment } from '../../../shared/enums/general.js';
+import { SettingsKey } from '../../../shared/enums/settings.js';
+import { Label } from '../../../shared/enums/labels.js';
+import { ConfigOptions, ConfigKey,
+         PreferredMonitor, AppIconSize, ActivateBehavior,
+         AttentionBehavior, AttentionNotificationsBehavior } from '../../../shared/enums/taskbar.js';
 
 const UNWANTED_STYLE_CLASS = 'app-menu';
 const STYLE_CLASS = 'rocketbar__popup-menu';
@@ -86,25 +88,9 @@ const MonitorDirection = {
 };
 
 /** @enum {string} */
-const ConfigKey = {
-    IconSize: 'iconSize',
-    IconPath: 'iconPath',
-    IconSizeOffset: 'iconSizeOffset',
-    ActivateBehavior: 'activateBehavior',
-    AttentionBehavior: 'attentionBehavior',
-    AttentionNotificationsBehavior: 'attentionNotificationsBehavior',
-    PreferredMonitor: 'preferredMonitor'
-};
-
-/** @enum {string} */
 const ConfigField = {
     isolateWorkspaces: SettingsKey.IsolateWorkspaces,
     showFavorites: SettingsKey.ShowFavorites
-};
-
-/** @type {{[option: string]: *}} */
-const ConfigOptions = {
-    path: SettingsPath.Taskbar
 };
 
 class SoundVolumeControlGroup extends CollapsibleGroup {

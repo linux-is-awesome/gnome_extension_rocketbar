@@ -9,7 +9,9 @@ import Context from '../../core/context.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { SharedConfig } from '../../../shared/utils/config.js';
-import { SettingsPath, SettingsKey } from '../../../shared/core/enums.js';
+import { Alignment } from '../../../shared/enums/general.js';
+import { NotificationBadgeConfigField as ConfigField,
+         ConfigOptions } from '../../../shared/enums/taskbar.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_NotificationBadge';
 const STYLE_CLASS = 'rocketbar__notification-badge';
@@ -19,36 +21,11 @@ const FONT_SIZE_MIN = 0;
 const LONG_VALUE_PADDING = 2;
 const BLINK_DURATION = 2;
 
-/** @enum {string} */
-const BadgePosition = {
-    TopLeft: 'top_left',
-    TopRight: 'top_right',
-    BottomLeft: 'bottom_left',
-    BottomRight: 'bottom_right'
-};
-
 /** @enum {{[animation: string]: *}} */
 const BadgeAnimation = {
     Show: { ...AnimationType.OpacityMax, ...AnimationType.ScaleNormal },
     Hide: { ...AnimationType.OpacityMin, ...AnimationType.ScaleMin, mode: Clutter.AnimationMode.EASE_OUT_QUAD },
     Blink: { ...AnimationType.OpacityDown, mode: Clutter.AnimationMode.EASE_OUT_QUAD }
-};
-
-/** @enum {string} */
-const ConfigField = {
-    color: SettingsKey.NotificationBadgeColor,
-    fontColor: SettingsKey.NotificationBadgeFontColor,
-    borderColor: SettingsKey.NotificationBadgeBorderColor,
-    position: SettingsKey.NotificationBadgePosition,
-    size: SettingsKey.NotificationBadgeSize,
-    offset: SettingsKey.NotificationBadgeOffset,
-    roundness: SettingsKey.NotificationBadgeRoundness,
-    maxCount: SettingsKey.NotificationBadgeMaxCount
-};
-
-/** @type {{[option: string]: *}} */
-const ConfigOptions = {
-    path: SettingsPath.Taskbar
 };
 
 /** @type {{[prop: string]: *}} */
@@ -162,13 +139,13 @@ export class NotificationBadge extends Component {
         const fontSize = Math.max(size - BORDER_SIZE * 2, FONT_SIZE_MIN) * scale;
         const padding = this.#badge?.text?.length === 1 ? 0 : LONG_VALUE_PADDING * scale;
         const margins =
-            position === BadgePosition.TopLeft ?
+            position === Alignment.TopLeft ?
             `margin-top: ${offset * scale}px; margin-left: ${offset * scale}px;` :
-            position === BadgePosition.TopRight ?
+            position === Alignment.TopRight ?
             `margin-top: ${offset * scale}px; margin-right: ${offset * scale}px;` :
-            position === BadgePosition.BottomLeft ?
+            position === Alignment.BottomLeft ?
             `margin-bottom: ${offset * scale}px; margin-left: ${offset * scale}px;` :
-            position === BadgePosition.BottomRight ?
+            position === Alignment.BottomRight ?
             `margin-bottom: ${offset * scale}px; margin-right: ${offset * scale}px;` : '';
         this.#badge.set_style(
             `background-color: ${color};` +
@@ -187,12 +164,12 @@ export class NotificationBadge extends Component {
     #updateAlignment() {
         if (!this.#config) return;
         const { position } = this.#config;
-        const x_align = position === BadgePosition.TopLeft ||
-                        position === BadgePosition.BottomLeft ?
+        const x_align = position === Alignment.TopLeft ||
+                        position === Alignment.BottomLeft ?
                         Clutter.ActorAlign.START :
                         Clutter.ActorAlign.END;
-        const y_align = position === BadgePosition.TopLeft ||
-                        position === BadgePosition.TopRight ?
+        const y_align = position === Alignment.TopLeft ||
+                        position === Alignment.TopRight ?
                         Clutter.ActorAlign.START :
                         Clutter.ActorAlign.END;
         this.#badge?.set({ x_align, y_align });

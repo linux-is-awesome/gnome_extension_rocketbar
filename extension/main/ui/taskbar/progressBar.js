@@ -10,34 +10,15 @@ import Clutter from 'gi://Clutter';
 import Cogl from 'gi://Cogl';
 import Context from '../../core/context.js';
 import { Component, ComponentEvent } from '../base/component.js';
-import { SettingsPath, SettingsKey, Event, Progress } from '../../../shared/core/enums.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { SharedConfig } from '../../../shared/utils/config.js';
+import { Event, Progress, Alignment } from '../../../shared/enums/general.js';
+import { ProgressBarConfigField as ConfigField,
+         ConfigOptions } from '../../../shared/enums/taskbar.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_ProgressBar';
 const INFINITE_PROGRESS_STEP = 0.01;
 const INFINITE_PROGRESS_DELAY = 15;
-
-/** @enum {string} */
-const ProgressBarPosition = {
-    Top: 'top',
-    Bottom: 'bottom'
-};
-
-/** @enum {string} */
-const ConfigField = {
-    position: SettingsKey.ProgressBarPosition,
-    width: SettingsKey.ProgressBarWidth,
-    height: SettingsKey.ProgressBarHeight,
-    offset: SettingsKey.ProgressBarOffset,
-    backgroundColor: SettingsKey.ProgressBarBackgroundColor,
-    fillColor: SettingsKey.ProgressBarFillColor
-};
-
-/** @type {{[option: string]: *}} */
-const ConfigOptions = {
-    path: SettingsPath.Taskbar
-};
 
 /** @type {{[prop: string]: *}} */
 const DefaultProps = {
@@ -95,7 +76,7 @@ export class ProgressBar extends Component {
         const radius = height / 2 * scale;
         const drawWidth = (width - height) * scale;
         const x = (canvasWidth - drawWidth) / 2;
-        const y = position === ProgressBarPosition.Bottom ? canvasHeight - (height + offset) * scale : offset * scale;
+        const y = position === Alignment.Bottom ? canvasHeight - (height + offset) * scale : offset * scale;
         const drawHeight = y + radius;
         const progressWidth = drawWidth * progress - radius * (Progress.Max - progress);
         const progressX = x + (isInfiniteProgress && this.#infiniteProgress < 0 ? drawWidth - progressWidth : 0);

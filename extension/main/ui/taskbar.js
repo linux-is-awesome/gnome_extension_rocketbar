@@ -16,22 +16,12 @@ import { Separator } from './taskbar/separator.js';
 import { AppButton, AppButtonEvent } from './taskbar/appButton.js';
 import { DragAndDropHandler } from './taskbar/dndHandler.js';
 import { Animation, AnimationDuration } from './base/animation.js';
-import { SettingsPath, SettingsKey, Event, Delay } from '../../shared/core/enums.js';
 import { Config } from '../../shared/utils/config.js';
+import { Event, Delay } from '../../shared/enums/general.js';
+import { ConfigField, ConfigOptions} from '../../shared/enums/taskbar.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar';
 const APP_ALLOCATION_THRESHOLD = 2;
-
-/** @enum {string} */
-const ConfigField = {
-    enableSeparator: SettingsKey.Separator
-};
-
-/** @type {{[option: string]: *}} */
-const ConfigOptions = {
-    path: SettingsPath.Taskbar,
-    isAfter: true
-};
 
 /** @type {{[prop: string]: *}} */
 const AllocationProps = {

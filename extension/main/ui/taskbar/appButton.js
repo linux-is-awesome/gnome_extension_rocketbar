@@ -15,7 +15,6 @@ import DragActor from './appButton/dragActor.js';
 import { RuntimeButton, ButtonEvent } from '../base/button.js';
 import { TaskbarEvent, TaskbarClient } from '../../services/taskbar.js';
 import { AppIcon, AppIconAnimation, AppIconEvent } from './appIcon.js';
-import { AppConfig, ConfigField, ActivateBehavior } from '../../utils/taskbar/appConfig.js';
 import { Menu } from './menu.js';
 import { NotificationBadge } from './notificationBadge.js';
 import { ProgressBar } from './progressBar.js';
@@ -25,7 +24,9 @@ import { NotificationHandler } from '../../services/notifications.js';
 import { AppSoundVolumeControl } from '../../services/soundVolume.js';
 import { ComponentEvent } from '../base/component.js';
 import { Animation, AnimationDuration, AnimationType } from '../base/animation.js';
-import { Event, Delay, Progress } from '../../../shared/core/enums.js';
+import { AppConfig } from '../../utils/taskbar/appConfig.js';
+import { Event, Delay, Progress } from '../../../shared/enums/general.js';
+import { AppConfigField as ConfigField, ActivateBehavior } from '../../../shared/enums/taskbar.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
 
@@ -577,7 +578,7 @@ export class AppButton extends RuntimeButton {
     }
 
     #handleAppState() {
-        if (!this.hasAllocation || !this.#service || !this.#config) return;
+        if (!this.#service || !this.#config || !this.hasAllocation) return;
         const isFavorite = !!this.#app && !!this.#service.favorites?.apps?.has(this.#app);
         this.#windows = this.#service.windows;
         this.#windowsCount = this.#windows?.size ?? 0;
@@ -591,7 +592,7 @@ export class AppButton extends RuntimeButton {
     }
 
     #handleAppFocus() {
-        if (!this.hasAllocation || !this.#service) return;
+        if (!this.#service || !this.hasAllocation) return;
         this.isActive = this.#windowsCount ? this.#service.hasFocus : false;
         if (this.#isActive) this.#rerenderTooltip();
     }

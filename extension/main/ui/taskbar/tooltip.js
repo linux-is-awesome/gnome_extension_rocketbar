@@ -10,9 +10,10 @@ import { Animation, AnimationType, AnimationDuration } from '../base/animation.j
 import { Icon } from '../base/icon.js';
 import { Tooltip as BaseTooltip } from '../base/tooltip.js';
 import { SharedConfig } from '../../../shared/utils/config.js';
-import { SettingsPath, SettingsKey, Event } from '../../../shared/core/enums.js';
 import { SoundVolumeIcon, SoundInputIcon, SoundOutputIcon } from '../../utils/soundVolumeIcon.js';
 import { WindowProxy } from '../../utils/taskbar/windowProxy.js';
+import { Event } from '../../../shared/enums/general.js';
+import { TooltipConfigField as ConfigField, ConfigOptions } from '../../../shared/enums/taskbar.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_Tooltip';
 const LAYOUT_STYLE_CLASS = 'rocketbar__tooltip_layout';
@@ -20,19 +21,6 @@ const WINDOW_TITLE_STYLE_CLASS = 'rocketbar__tooltip_window-title';
 const APP_STATUS_STYLE_CLASS = 'rocketbar__tooltip_app-status';
 const APP_STATUS_ITEM_STYLE_CLASS = 'rocketbar__tooltip_app-status_item';
 const SOUND_VOLUME_CHANGE_STEP = 5;
-
-/** @enum {string} */
-const ConfigField = {
-    showDelay: SettingsKey.TooltipShowDelay,
-    hideDelay: SettingsKey.TooltipHideDelay,
-    shrinkWindowTitles: SettingsKey.TooltipShrinkWindowTitles,
-    enableWindowPreviews: SettingsKey.TooltipWindowPreviews
-};
-
-/** @type {{[option: string]: *}} */
-const ConfigOptions = {
-    path: SettingsPath.Taskbar
-};
 
 /** @enum {string} */
 const AppStatusItemIcon = {

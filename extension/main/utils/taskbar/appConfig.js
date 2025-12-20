@@ -6,78 +6,14 @@
 
 import Context from '../../core/context.js';
 import { SharedConfig, InnerConfig } from '../../../shared/utils/config.js';
-import { SettingsPath, SettingsKey, Monitor } from '../../../shared/core/enums.js';
-
-const CONFIG_OVERRIDE_SETTINGS_KEY = SettingsKey.AppButtonConfigOverride;
-
-/** @enum {string} */
-export const ConfigField = {
-    isolateWorkspaces: SettingsKey.IsolateWorkspaces,
-    windowRouting: SettingsKey.WindowRouting,
-    preferredMonitor: SettingsKey.PreferredMonitor,
-    attentionBehavior: SettingsKey.AttentionBehavior,
-    attentionNotificationsBehavior: SettingsKey.AttentionNotificationsBehavior,
-    activateBehavior: SettingsKey.AppButtonActivateBehavior,
-    enableIndicators: SettingsKey.AppButtonIndicators,
-    enableMenus: SettingsKey.AppButtonMenus,
-    enableTooltips: SettingsKey.AppButtonTooltips,
-    enableNotificationBadges: SettingsKey.AppButtonNotificationBadges,
-    enableProgressBars: SettingsKey.AppButtonProgressBars,
-    enableSoundControl: SettingsKey.AppButtonSoundVolumeControl,
-    enableMinimizeAction: SettingsKey.AppButtonMinimizeAction,
-    enableDragAndDrop: SettingsKey.AppButtonDragAndDrop,
-    enableScroll: SettingsKey.AppButtonScroll,
-    iconSize: SettingsKey.AppButtonIconSize,
-    iconPath: SettingsKey.AppButtonIconPath,
-    iconHPadding: SettingsKey.AppButtonIconHPadding,
-    iconVPadding: SettingsKey.AppButtonIconVPadding,
-    spacingAfter: SettingsKey.AppButtonSpacing,
-    roundness: SettingsKey.AppButtonRoundness,
-    backlightColor: SettingsKey.AppButtonBacklightColor,
-    backlightIntensity: SettingsKey.AppButtonBacklightIntensity,
-    backlightDominantColor: SettingsKey.AppButtonBacklightDominantColor
-};
-
-/** @enum {string} */
-export const ActivateBehavior = {
-    NewWindow: 'new_window',
-    FindWindow: 'find_window',
-    MoveWindows: 'move_windows'
-};
-
-/** @enum {string} */
-export const AttentionBehavior = {
-    Default: 'default',
-    FocusActive: 'focus_active',
-    FocusWorkspace: 'focus_workspace',
-    FocusAll: 'focus_all'
-};
-
-/** @enum {string} */
-export const AttentionNotificationsBehavior = {
-    Default: 'default',
-    Disable: 'disable',
-    Hide: 'hide',
-    Show: 'show',
-    Critical: 'critical'
-};
-
-/** @enum {string} */
-export const PreferredMonitor = {
-    ...Monitor,
-    Default: 'default'
-};
-
-/** @enum {number} */
-export const AppIconSize = {
-    Min: 16,
-    Max: 64
-};
-
-/** @type {{[option: string]: *}} */
-const ConfigOptions = {
-    path: SettingsPath.Taskbar
-};
+import { SettingsKey } from '../../../shared/enums/settings.js';
+import { AppConfigField as ConfigField,
+         ConfigOptions,
+         AppIconSize,
+         ActivateBehavior,
+         AttentionBehavior,
+         AttentionNotificationsBehavior,
+         PreferredMonitor } from '../../../shared/enums/taskbar.js';
 
 /** @type {Config}*/
 const DefaultConfigOverride = {
@@ -104,7 +40,7 @@ export class AppConfig extends SharedConfig {
         this.configHandler = this.#setAppConfig;
         const settings = Context.getSettings(ConfigOptions.path);
         if (!settings) return;
-        const configOverride = InnerConfig(settings, CONFIG_OVERRIDE_SETTINGS_KEY);
+        const configOverride = InnerConfig(settings, SettingsKey.AppButtonConfigOverride);
         if (!configOverride || Array.isArray(configOverride)) return;
         this.#configOverride = configOverride;
     }
@@ -267,7 +203,8 @@ export class AppConfig extends SharedConfig {
     }
 
     #saveOverride() {
-        Context.getSettings(ConfigOptions.path)?.set(CONFIG_OVERRIDE_SETTINGS_KEY, this.#configOverride);
+        const settings = Context.getSettings(ConfigOptions.path);
+        settings?.set(SettingsKey.AppButtonConfigOverride, this.#configOverride);
     }
 
 }
