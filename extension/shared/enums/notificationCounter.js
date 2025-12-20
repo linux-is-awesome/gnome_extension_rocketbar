@@ -1,6 +1,6 @@
 import { SettingsPath, SettingsKey } from './settings.js';
 
-/** @type {{[option: string]: *}} */
+/** @type {{path: string}} */
 export const ConfigOptions = {
     path: SettingsPath.NotificationCounter
 };

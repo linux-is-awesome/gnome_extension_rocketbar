@@ -1,6 +1,6 @@
 import { SettingsKey, SettingsPath } from './settings.js';
 
-/** @type {{[option: string]: *}} */
+/** @type {{path: string}} */
 export const ConfigOptions = {
     path: SettingsPath.Panel
 };
