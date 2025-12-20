@@ -141,7 +141,7 @@
             <default>'rgb(70, 70, 70)'</default>
         </key>
         <key type="s" name="notification-badge-position">
-            <default>'bottom_right'</default>
+            <default>'bottom-right'</default>
         </key>
         <key type="i" name="notification-badge-size">
             <default>10</default>
