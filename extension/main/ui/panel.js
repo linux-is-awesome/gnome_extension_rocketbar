@@ -3,22 +3,9 @@ import { MainPanel, Overview } from '../core/shell.js';
 import Context from '../core/context.js';
 import { ModuleManager } from '../services/modules.js';
 import { Component, ComponentEvent } from './base/component.js';
-import { SettingsPath, SettingsKey, Event, Module, Alignment } from '../../shared/core/enums.js';
 import { Config, InnerConfig } from '../../shared/utils/config.js';
-
-const CONFIG_KEY_ITEMS = 'items';
-
-/** @enum {string} */
-const ConfigField = {
-    [CONFIG_KEY_ITEMS]: SettingsKey.Items,
-    soundVolumeControl: SettingsKey.SoundVolumeControl,
-    clickHideOverview: SettingsKey.ClickToHideOverview
-};
-
-/** @type {{[option: string]: *}} */
-const ConfigOptions = {
-    path: SettingsPath.Panel
-};
+import { Event, Module, Alignment } from '../../shared/enums/general.js';
+import { ConfigOptions, ConfigKey, ConfigField } from '../../shared/enums/panel.js';
 
 /**
  * @augments Component<MainPanel>
@@ -86,7 +73,7 @@ export default class Panel extends Component {
         const items = new Map();
         const modules = [];
         const updatedItems = [];
-        const configItems = InnerConfig(this.#config, CONFIG_KEY_ITEMS) ?? {};
+        const configItems = InnerConfig(this.#config, ConfigKey.Items) ?? {};
         for (const id in configItems) {
             const itemConfig = configItems[id];
             if (!Array.isArray(itemConfig)) continue;
