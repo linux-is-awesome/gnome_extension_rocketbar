@@ -1,8 +1,7 @@
 import Context from '../core/context.js';
 import Page from './base/page.js';
-import { MetadataField } from '../../shared/enums/general.js';
+import { PreferencesPage, MetadataField } from '../../shared/enums/general.js';
 
-const PAGE_NAME = 'about';
 const LOGO_PATH = '/assets/images/';
 const RELEASE_NOTES_URL_PATH = '/releases';
 const SUPPORT_URL_PATH = '/issues/new?template=';
@@ -36,7 +35,7 @@ const Logo = {
 export default class extends Page {
 
     constructor() {
-        super(PAGE_NAME, () => this.#initialize());
+        super(PreferencesPage.About, () => this.#initialize());
     }
 
     #initialize() {

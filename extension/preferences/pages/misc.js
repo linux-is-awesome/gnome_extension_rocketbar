@@ -1,8 +1,7 @@
 import SettingsPage from './base/settingsPage.js';
 import { Config } from '../../shared/utils/config.js';
+import { PreferencesPage } from '../../shared/enums/general.js';
 import { SettingsKey } from '../../shared/enums/settings.js';
-
-const PAGE_NAME = 'misc';
 
 /** @enum {string} */
 const ConfigField = {
@@ -17,7 +16,7 @@ export default class extends SettingsPage {
     #config = Config(this, ConfigField, (settingsKey, value) => this.#handleConfig(settingsKey, value));
 
     constructor() {
-        super(PAGE_NAME, () => this.#initialize());
+        super(PreferencesPage.Misc, () => this.#initialize());
     }
 
     #initialize() {

@@ -1,10 +1,9 @@
 import Page from './base/page.js';
 import Context from '../core/context.js';
 import { Config, InnerConfig } from '../../shared/utils/config.js';
-import { Event, Module } from '../../shared/enums/general.js';
+import { PreferencesPage, Event, Module } from '../../shared/enums/general.js';
 import { SettingsKey } from '../../shared/enums/settings.js';
 
-const PAGE_NAME = 'tweaks';
 const CONFIG_KEY_MODULES = 'modules';
 
 const MANAGED_MODULES = [
@@ -37,7 +36,7 @@ export default class extends Page {
     }
 
     constructor() {
-        super(PAGE_NAME, () => this.#handleConfig());
+        super(PreferencesPage.Tweaks, () => this.#handleConfig());
     }
 
     /**

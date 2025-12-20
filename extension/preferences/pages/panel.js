@@ -14,7 +14,6 @@ import { Event, Module, Alignment, PreferencesPage } from '../../shared/enums/ge
 import { SettingsKey } from '../../shared/enums/settings.js';
 import { ConfigOptions, ConfigKey, ConfigField } from '../../shared/enums/panel.js';
 
-const PAGE_NAME = 'panel';
 const ROOT_MODULE = Module.Panel;
 const PAGE_GROUP_ACTIONS = 'actions';
 const CONFIG_KEY_MODULES = 'modules';
@@ -88,7 +87,7 @@ export default class extends SettingsPage {
     }
 
     constructor() {
-        super(PAGE_NAME, () => this.#initialize(), ConfigOptions.path);
+        super(PreferencesPage.Panel, () => this.#initialize(), ConfigOptions.path);
     }
 
     #initialize() {

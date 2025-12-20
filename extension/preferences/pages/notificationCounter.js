@@ -1,8 +1,7 @@
 import SettingsPage from './base/settingsPage.js';
 import { Config } from '../../shared/utils/config.js';
+import { PreferencesPage } from '../../shared/enums/general.js';
 import { ConfigOptions, ConfigField } from '../../shared/enums/notificationCounter.js';
-
-const PAGE_NAME = 'notificationCounter';
 
 export default class extends SettingsPage {
 
@@ -10,7 +9,7 @@ export default class extends SettingsPage {
     #config = Config(this, ConfigField, (settingsKey, value) => this.#handleConfig(settingsKey, value), ConfigOptions);
 
     constructor() {
-        super(PAGE_NAME, () => this.#initialize(), ConfigOptions.path);
+        super(PreferencesPage.NotificationCounter, () => this.#initialize(), ConfigOptions.path);
     }
 
     #initialize() {
