@@ -1,7 +1,8 @@
 import Page from './base/page.js';
 import Context from '../core/context.js';
 import { Config, InnerConfig } from '../../shared/utils/config.js';
-import { Event, Module, SettingsKey } from '../../shared/core/enums.js';
+import { Event, Module } from '../../shared/enums/general.js';
+import { SettingsKey } from '../../shared/enums/settings.js';
 
 const PAGE_NAME = 'tweaks';
 const CONFIG_KEY_MODULES = 'modules';
