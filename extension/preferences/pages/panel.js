@@ -1,23 +1,23 @@
 /**
  * @typedef {import('gi://Gtk').Switch} Gtk.Switch
  * @typedef {import('gi://Adw').ActionRow} Adw.ActionRow
- * @typedef {import('gi://Adw').SwitchRow} Adw.SwitchRow
  * @typedef {import('gi://Adw').ComboRow} Adw.ComboRow
  * @typedef {import('gi://Adw').SpinRow} Adw.SpinRow
  * @typedef {[alignment: Alignment, position: number]} ItemConfig
  * @typedef {{customizePage?: PreferencesPage?, isMovable: boolean, defaultConfig: ItemConfig?}} ItemOptions
  */
 
-import Page from './base/page.js';
+import SettingsPage from './base/settingsPage.js';
 import Context from '../core/context.js';
 import { Config, InnerConfig } from '../../shared/utils/config.js';
-import { SettingsPath, SettingsKey, Event, Module, Alignment, PreferencesPage } from '../../shared/core/enums.js';
+import { Event, Module, Alignment, PreferencesPage } from '../../shared/enums/general.js';
+import { SettingsKey } from '../../shared/enums/settings.js';
+import { ConfigOptions, ConfigKey, ConfigField } from '../../shared/enums/panel.js';
 
 const PAGE_NAME = 'panel';
 const ROOT_MODULE = Module.Panel;
 const PAGE_GROUP_ACTIONS = 'actions';
 const CONFIG_KEY_MODULES = 'modules';
-const CONFIG_KEY_ITEMS = 'items';
 
 const MANAGED_MODULES = [
     Module.Taskbar,
@@ -66,19 +66,7 @@ const RootConfigField = {
     [CONFIG_KEY_MODULES]: SettingsKey.Modules
 };
 
-/** @enum {string} */
-const ConfigField = {
-    [CONFIG_KEY_ITEMS]: SettingsKey.Items,
-    soundVolumeControl: SettingsKey.SoundVolumeControl,
-    clickToHideOverview: SettingsKey.ClickToHideOverview
-};
-
-/** @type {{[option: string]: *}} */
-const ConfigOptions = {
-    path: SettingsPath.Panel
-};
-
-export default class extends Page {
+export default class extends SettingsPage {
 
     /** @type {Config} */
     #rootConfig = Config(this, RootConfigField, () => this.#handleRootConfig());
@@ -100,17 +88,14 @@ export default class extends Page {
     }
 
     constructor() {
-        super(PAGE_NAME, () => this.#initialize());
+        super(PAGE_NAME, () => this.#initialize(), ConfigOptions.path);
     }
 
     #initialize() {
-        const settings = Context.getSettings(SettingsPath.Panel);
         for (const key in ConfigField) {
-            if (key === CONFIG_KEY_ITEMS) continue;
+            if (key === ConfigKey.Items) continue;
             const settingsKey = ConfigField[key];
-            const widget = this.getSwitchRow(settingsKey);
-            this.#handleConfig(settingsKey, this.#config[key], widget);
-            widget.connect(Event.Active, () => settings?.set(settingsKey, widget.get_active()));
+            this.#handleConfig(settingsKey, this.#config[key]);
         }
         const managedModules = new Set(MANAGED_MODULES);
         for (const name in Module) {
@@ -154,18 +139,15 @@ export default class extends Page {
     /**
      * @param {string} settingsKey
      * @param {*} value
-     * @param {Adw.SwitchRow} [widget]
      */
-    #handleConfig(settingsKey, value, widget) {
+    #handleConfig(settingsKey, value) {
         switch (settingsKey) {
             case ConfigField.items:
                 this.#handleItems();
                 break;
             default:
                 if (typeof value !== 'boolean') return;
-                widget ??= this.getSwitchRow(settingsKey);
-                if (widget.get_active() === value) return;
-                widget.set_active(value);
+                this.setBoolean(settingsKey, value);
         }
     }
 
@@ -177,7 +159,7 @@ export default class extends Page {
      */
     #handleItems(isInitial = false) {
         this.#items.clear();
-        const configItems = InnerConfig(this.#config, CONFIG_KEY_ITEMS);
+        const configItems = InnerConfig(this.#config, ConfigKey.Items);
         if (Array.isArray(configItems)) return;
         for (const index in configItems) {
             const item = configItems[index];
@@ -300,15 +282,13 @@ export default class extends Page {
     }
 
     #saveItems() {
-        const settings = Context.getSettings(SettingsPath.Panel);
-        if (!settings) return;
         const items = {};
         let id = 0;
         for (const [itemName, itemConfig] of this.#items) {
             items[id] = [itemName, ...itemConfig ?? []];
             id++;
         }
-        settings.set(ConfigField.items, items);
+        this.settings.set(ConfigField.items, items);
     }
 
 }
