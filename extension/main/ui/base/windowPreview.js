@@ -5,7 +5,7 @@
 import Clutter from 'gi://Clutter';
 import Shell from 'gi://Shell';
 import { Component } from './component.js';
-import { Event } from '../../../shared/core/enums.js';
+import { Event } from '../../../shared/enums/general.js';
 
 /**
  * @augments Component<Shell.WindowPreview>

@@ -7,7 +7,7 @@ import Meta from 'gi://Meta';
 import Mtk from 'gi://Mtk';
 import Context from '../context.js';
 import { MainLayout } from '../../core/shell.js';
-import { Monitor, Alignment, Event, Delay } from '../../../shared/core/enums.js';
+import { Monitor, Alignment, Event, Delay } from '../../../shared/enums/general.js';
 
 /** @type {{[monitor: string]: number}} */
 const MonitorDirection = {

@@ -5,7 +5,7 @@
 
 import Clutter from 'gi://Clutter';
 import { Overview } from '../core/shell.js';
-import { Event } from '../../shared/core/enums.js';
+import { Event } from '../../shared/enums/general.js';
 
 export default class {
 

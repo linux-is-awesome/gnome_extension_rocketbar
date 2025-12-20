@@ -11,7 +11,7 @@ import Context from '../context.js';
 import { ModalDialog } from 'resource:///org/gnome/shell/ui/modalDialog.js';
 import { MainLayout, MainPanel, Session } from '../shell.js';
 import { Component } from '../../ui/base/component.js';
-import { Event, SessionMode } from '../../../shared/core/enums.js';
+import { Event, SessionMode } from '../../../shared/enums/general.js';
 
 const FONT_SCALE_SETTINGS_KEY = 'text-scaling-factor';
 

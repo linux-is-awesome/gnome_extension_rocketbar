@@ -2,7 +2,7 @@ import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import Context from '../../core/context.js';
 import { Component } from './component.js';
-import { Event } from '../../../shared/core/enums.js';
+import { Event } from '../../../shared/enums/general.js';
 
 const DEFAULT_LONG_PRESS_DELAY = 600;
 

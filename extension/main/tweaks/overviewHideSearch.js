@@ -8,7 +8,7 @@ import St from 'gi://St';
 import { ThumbnailsBox, MAX_THUMBNAIL_SCALE } from 'resource:///org/gnome/shell/ui/workspaceThumbnail.js';
 import { Overview } from '../core/shell.js';
 import Context from '../core/context.js';
-import { Event } from '../../shared/core/enums.js';
+import { Event } from '../../shared/enums/general.js';
 import { Animation, AnimationDuration, AnimationType } from '../ui/base/animation.js';
 
 const WORKSPACE_THUMBNAIL_SCALE = 0.1;

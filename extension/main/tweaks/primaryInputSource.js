@@ -6,7 +6,7 @@ import St from 'gi://St';
 import { getInputSourceManager as InputSourceManager } from 'resource:///org/gnome/shell/ui/status/keyboard.js';
 import { Overview } from '../core/shell.js';
 import Context from '../core/context.js';
-import { Event } from '../../shared/core/enums.js';
+import { Event } from '../../shared/enums/general.js';
 
 const PRIMARY_INPUT_SOURCE = '0';
 

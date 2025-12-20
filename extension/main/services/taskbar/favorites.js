@@ -6,7 +6,7 @@
 import Shell from 'gi://Shell';
 import { getAppFavorites as AppFavorites } from 'resource:///org/gnome/shell/ui/appFavorites.js';
 import Context from '../../core/context.js';
-import { Event } from '../../../shared/core/enums.js';
+import { Event } from '../../../shared/enums/general.js';
 
 export default class Favorites {
 

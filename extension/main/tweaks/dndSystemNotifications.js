@@ -1,6 +1,6 @@
 import { Source, Urgency } from 'resource:///org/gnome/shell/ui/messageTray.js';
 import Context from '../core/context.js';
-import { Property } from '../../shared/core/enums.js';
+import { Property } from '../../shared/enums/general.js';
 
 /** @type {{[key: string]: *}} */
 const PropertyDescriptor = {

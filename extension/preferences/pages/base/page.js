@@ -5,7 +5,7 @@
 import Gtk from 'gi://Gtk';
 import Adw from 'gi://Adw';
 import Context from '../../core/context.js';
-import { Event } from '../../../shared/core/enums.js';
+import { Event } from '../../../shared/enums/general.js';
 
 const UI_PATH = '/preferences/ui/';
 const UI_FILE_TYPE = '.ui';

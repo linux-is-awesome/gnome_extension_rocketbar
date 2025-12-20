@@ -1,5 +1,5 @@
 import Context from '../context.js';
-import { Property } from '../../../shared/core/enums.js';
+import { Property } from '../../../shared/enums/general.js';
 
 class Hook {
 

@@ -1,7 +1,8 @@
 import Context from '../core/context.js';
 import { Session } from '../core/shell.js';
-import { SessionMode, Module, SettingsKey, Event } from '../../shared/core/enums.js';
 import { Config, InnerConfig } from '../../shared/utils/config.js';
+import { SessionMode, Module, Event } from '../../shared/enums/general.js';
+import { SettingsKey } from '../../shared/enums/settings.js';
 
 const MODULE_ROOT_PATH = '../';
 const MODULE_FILE_TYPE = '.js';

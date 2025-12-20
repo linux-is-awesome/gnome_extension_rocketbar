@@ -5,7 +5,7 @@
 import Jobs from './context/jobs.js';
 import Signals from './context/signals.js';
 import Settings from '../utils/settings.js';
-import { MetadataField } from './enums.js';
+import { MetadataField } from '../enums/general.js';
 
 /** @type {Context?} */
 let _instance = null;

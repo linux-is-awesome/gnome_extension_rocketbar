@@ -3,7 +3,7 @@ import St from 'gi://St';
 import Gio from 'gi://Gio';
 import Context from '../../core/context.js';
 import { Component } from './component.js';
-import { Delay, Event } from '../../../shared/core/enums.js';
+import { Delay, Event } from '../../../shared/enums/general.js';
 
 const ASSETS_ICONS_PATH = `${Context.path}/assets/icons/`;
 const ASSETS_ICON_FILE_TYPE = '.svg';

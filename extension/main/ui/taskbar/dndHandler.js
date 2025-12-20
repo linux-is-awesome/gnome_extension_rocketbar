@@ -10,7 +10,7 @@ import Shell from 'gi://Shell';
 import Context from '../../core/context.js';
 import { AppButton } from './appButton.js';
 import { Animation, AnimationDuration, AnimationType } from '../base/animation.js';
-import { Event, Delay } from '../../../shared/core/enums.js';
+import { Event, Delay } from '../../../shared/enums/general.js';
 
 /**
  * @param {Component} competitor

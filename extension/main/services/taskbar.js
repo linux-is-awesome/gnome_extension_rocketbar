@@ -13,11 +13,13 @@ import WindowInfo from './taskbar/windowInfo.js';
 import ChangeTracker from './taskbar/changeTracker.js';
 import Favorites from './taskbar/favorites.js';
 import { WindowPreview } from '../ui/base/windowPreview.js';
-import { AttentionBehavior, AttentionNotificationsBehavior } from '../utils/taskbar/appConfig.js';
-import { SettingsPath, SettingsKey, Event, Delay, Property } from '../../shared/core/enums.js';
 import { Config, InnerConfig } from '../../shared/utils/config.js';
+import { Event, Delay, Property } from '../../shared/enums/general.js';
+import { ServiceConfigField as ConfigField,
+         ConfigOptions, ConfigKey,
+         AttentionBehavior,
+         AttentionNotificationsBehavior } from '../../shared/enums/taskbar.js';
 
-const CONFIG_KEY_APP_CONFIG = 'appConfig';
 const WINDOW_ATTENTION_SOURCE_CLASS = 'WindowAttentionSource';
 const DEFAULT_ROUTING_DELAY = Delay.Background;
 
@@ -26,24 +28,6 @@ const SUPPORTED_WINDOW_TYPES = [
     Meta.WindowType.DIALOG,
     Meta.WindowType.MODAL_DIALOG
 ];
-
-/** @enum {string} */
-const ConfigField = {
-    favorites: SettingsKey.ShowFavorites,
-    windowRouting: SettingsKey.WindowRouting,
-    windowRoutingWatchdog: SettingsKey.WindowRoutnigWatchdog,
-    showAllWindows: SettingsKey.ShowAllWindows,
-    isolateWorkspaces: SettingsKey.IsolateWorkspaces,
-    preferredMonitor: SettingsKey.PreferredMonitor,
-    attentionBehavior: SettingsKey.AttentionBehavior,
-    attentionNotificationsBehavior: SettingsKey.AttentionNotificationsBehavior,
-    [CONFIG_KEY_APP_CONFIG]: SettingsKey.AppButtonConfigOverride
-};
-
-/** @type {{[option: string]: *}} */
-const ConfigOptions = {
-    path: SettingsPath.Taskbar
-};
 
 /** @type {{[prop: string]: *}} */
 const RoutingHelperProps = {
@@ -204,7 +188,7 @@ class TaskbarService {
             this.favorites = new Favorites(() => this.tracker?.trackAll(Delay.Queue, false));
         }
         if (!this.#appConfig || settingsKey === ConfigField.appConfig) {
-            const appConfig = InnerConfig(this.#config, CONFIG_KEY_APP_CONFIG);
+            const appConfig = InnerConfig(this.#config, ConfigKey.AppConfig);
             this.#appConfig = appConfig && !Array.isArray(appConfig) ? appConfig : {};
         }
         if (!windowRouting || !windowRoutingWatchdog) Context.monitors.disconnect(this);

@@ -6,7 +6,7 @@
 
 import Context from '../../core/context.js';
 import { TaskbarEvent } from '../taskbar.js';
-import { Delay } from '../../../shared/core/enums.js';
+import { Delay } from '../../../shared/enums/general.js';
 
 export default class ChangeTracker {
 

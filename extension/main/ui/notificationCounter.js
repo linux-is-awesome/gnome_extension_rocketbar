@@ -11,7 +11,7 @@ import { Component, ComponentEvent } from './base/component.js';
 import { Animation, AnimationDuration, AnimationType } from './base/animation.js';
 import { NotificationHandler } from '../services/notifications.js';
 import { Config } from '../../shared/utils/config.js';
-import { Event, Delay, Property } from '../../shared/core/enums.js';
+import { Event, Delay, Property } from '../../shared/enums/general.js';
 import { ConfigOptions, ConfigField } from '../../shared/enums/notificationCounter.js';
 
 const MODULE_NAME = 'Rocketbar__NotificationCounter';

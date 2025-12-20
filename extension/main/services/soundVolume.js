@@ -7,7 +7,7 @@ import Gvc from 'gi://Gvc';
 import Shell from 'gi://Shell';
 import { getMixerControl as MixerControl } from 'resource:///org/gnome/shell/ui/status/volume.js';
 import Context from '../core/context.js';
-import { Delay } from '../../shared/core/enums.js';
+import { Delay } from '../../shared/enums/general.js';
 
 const SOUND_STREAM_MIN_VOLUME = 0;
 const SOUND_STREAM_MAX_VOLUME = 1;

@@ -5,7 +5,7 @@
 
 import GLib from 'gi://GLib';
 import Context from '../context.js';
-import { Delay } from '../enums.js';
+import { Delay } from '../../enums/general.js';
 
 const LATER_TYPE_BEFORE_REDRAW = 1;
 const LATER_TYPE_IDLE = 2;

@@ -6,8 +6,8 @@ import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import Context from '../../core/context.js';
 import { Component } from './component.js';
-import { Event, Delay, Alignment } from '../../../shared/core/enums.js';
 import { Animation, AnimationType, AnimationDuration } from './animation.js';
+import { Event, Delay, Alignment } from '../../../shared/enums/general.js';
 
 const STYLE_CLASS = 'rocketbar__tooltip';
 const BODY_STYLE_CLASS = 'dash-label';

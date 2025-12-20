@@ -9,7 +9,7 @@ import Gdk from 'gi://Gdk';
 import Gtk from 'gi://Gtk';
 import SharedContext from '../../shared/core/context.js';
 import BasePage from '../pages/base/page.js';
-import { PreferencesPage } from '../../shared/core/enums.js';
+import { PreferencesPage } from '../../shared/enums/general.js';
 
 const DEFAULT_WINDOW_WIDTH = 600;
 const DEFAULT_WINDOW_HEGIHT = 800;

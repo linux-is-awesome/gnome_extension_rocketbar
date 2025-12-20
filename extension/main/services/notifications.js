@@ -6,8 +6,9 @@ import Shell from 'gi://Shell';
 import Meta from 'gi://Meta';
 import Context from '../core/context.js';
 import { MessageTray } from '../core/shell.js';
-import { SettingsKey, Event, Delay } from '../../shared/core/enums.js';
 import { Config } from '../../shared/utils/config.js';
+import { Event, Delay } from '../../shared/enums/general.js';
+import { SettingsKey } from '../../shared/enums/settings.js';
 
 const APPID_REGEXP_STRING = /.desktop/g;
 const WINDOW_ATTENTION_SOURCE_CLASS = 'WindowAttentionSource';

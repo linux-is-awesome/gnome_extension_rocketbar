@@ -9,8 +9,8 @@ import { Overview } from '../../core/shell.js';
 import { ComponentEvent } from '../base/component.js';
 import { Icon, IconEvent } from '../base/icon.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
-import { Alignment } from '../../../shared/core/enums.js';
 import { DominantColor } from '../../utils/dominantColor.js';
+import { Alignment } from '../../../shared/enums/general.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppIcon';
 const FALLBACK_ICON_NAME = 'application-x-executable';

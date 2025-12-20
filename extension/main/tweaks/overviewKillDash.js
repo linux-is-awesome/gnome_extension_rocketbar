@@ -7,8 +7,8 @@ import St from 'gi://St';
 import { initializeDeferredWork as DeferredWork } from 'resource:///org/gnome/shell/ui/main.js';
 import { Overview } from '../core/shell.js';
 import Context from '../core/context.js';
-import { Event } from '../../shared/core/enums.js';
 import { Animation, AnimationDuration, AnimationType } from '../ui/base/animation.js';
+import { Event } from '../../shared/enums/general.js';
 
 const MODULE_NAME = 'Rocketbar__Tweak_OverviewKillDash';
 const STYLE_CLASS = 'rocketbar__tweak_overview-kill-dash';

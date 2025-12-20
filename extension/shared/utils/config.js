@@ -6,7 +6,7 @@
 import GObject from 'gi://GObject';
 import Context from '../core/context.js';
 import Settings from './settings.js';
-import { Event } from '../core/enums.js';
+import { Event } from '../enums/general.js';
 
 const DUMMY_FIELD_PREFIX = '~';
 const JSON_OBJECT_MIN_LENGTH = 2;

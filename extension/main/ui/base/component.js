@@ -7,7 +7,7 @@ import St from 'gi://St';
 import Mtk from 'gi://Mtk';
 import * as Dnd from 'resource:///org/gnome/shell/ui/dnd.js';
 import Context from '../../../main/core/context.js';
-import { Event } from '../../../shared/core/enums.js';
+import { Event } from '../../../shared/enums/general.js';
 
 const DEFAULT_DRAG_THRESHOLD = 200;
 

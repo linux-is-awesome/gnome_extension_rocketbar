@@ -6,8 +6,8 @@ import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Context from '../../core/context.js';
 import { Component } from './component.js';
-import { Event, Delay } from '../../../shared/core/enums.js';
 import { Animation, AnimationDuration } from './animation.js';
+import { Event, Delay } from '../../../shared/enums/general.js';
 
 const FADE_EFFECT_NAME = 'fade';
 const SCROLL_SPEED_MAX = AnimationDuration.Slower;

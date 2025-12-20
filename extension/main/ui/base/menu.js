@@ -17,9 +17,9 @@ import { arrowIcon as ArrowIcon,
          PopupSeparatorMenuItem,
          PopupBaseMenuItem,
          PopupMenuSection } from 'resource:///org/gnome/shell/ui/popupMenu.js';
-import { Event, PseudoClass } from '../../../shared/core/enums.js';
 import { Icon } from './icon.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
+import { Event, PseudoClass } from '../../../shared/enums/general.js';
 
 const SLIDER_ICON_STYLE_CLASS = 'popup-menu-icon';
 const THEME_NODE_ARROW_RISE = '-arrow-rise';

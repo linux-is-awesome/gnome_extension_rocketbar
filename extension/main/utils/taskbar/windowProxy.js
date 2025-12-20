@@ -4,7 +4,7 @@
 
 import { activateWindow as FocusedWindow } from 'resource:///org/gnome/shell/ui/main.js';
 import Context from '../../core/context.js';
-import { Event } from '../../../shared/core/enums.js';
+import { Event } from '../../../shared/enums/general.js';
 
 /**
  * @param {string?} [title]

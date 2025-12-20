@@ -10,9 +10,9 @@ import Context from '../../core/context.js';
 import { Component } from './component.js';
 import { LongPressAction } from './longPressAction.js';
 import { Tooltip, TooltipEvent } from './tooltip.js';
-import { Event, PseudoClass, Alignment } from '../../../shared/core/enums.js';
 import { Animation, AnimationType, AnimationDuration } from './animation.js';
 import { Gradient } from '../../utils/gradient.js';
+import { Event, PseudoClass, Alignment } from '../../../shared/enums/general.js';
 
 const STYLE_CLASS = 'panel-button rocketbar__button';
 const MENU_TRIGGER_NAME = 'Rocketbar__Button_MenuTrigger';

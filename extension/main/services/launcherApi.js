@@ -5,7 +5,8 @@
 import Gio from 'gi://Gio';
 import Context from '../core/context.js';
 import { Config } from '../../shared/utils/config.js';
-import { SettingsKey, Progress } from '../../shared/core/enums.js';
+import { Progress } from '../../shared/enums/general.js';
+import { SettingsKey } from '../../shared/enums/settings.js';
 
 const DBUS_NAME = 'com.canonical.Unity';
 const DBUS_SIGNAL_SOURCE = 'com.canonical.Unity.LauncherEntry';
