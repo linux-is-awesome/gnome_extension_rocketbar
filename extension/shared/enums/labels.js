@@ -20,7 +20,7 @@ export const Label = {
     FindWindow: _('Find Window'),
     MoveWindows: _('Move Windows'),
     FocusActive: _('Set Focus When Active'),
-    FocusWorkspace: _('Set Focus On Current Workspace'),
+    FocusWorkspace: _('Set Focus On Active Workspace'),
     FocusAll: _('Always Set Focus'),
     SelectIcon: _('Select Icon'),
     Icon: _('Icon'),
