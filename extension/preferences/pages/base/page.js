@@ -1,4 +1,5 @@
 /**
+ * @typedef {import('gi://GObject').Object} GObject.Object
  * @typedef {import('../../core/context.js').PreferencesWindow} PreferencesWindow
  */
 
@@ -124,6 +125,16 @@ export default class Page {
 
     /**
      * @param {string} id
+     * @returns {Gtk.Image}
+     */
+    getImage(id) {
+        const result = this.#template.get_object(id);
+        if (result instanceof Gtk.Image) return result;
+        throw new Error(`${id} is not an instane of Gtk.Image.`);
+    }
+
+    /**
+     * @param {string} id
      * @returns {Gtk.Label}
      */
     getLabel(id) {
@@ -160,6 +171,14 @@ export default class Page {
         const result = this.#template.get_object(id);
         if (result instanceof Gtk.ColorDialogButton) return result;
         throw new Error(`${id} is not an instane of Gtk.ColorDialogButton.`);
+    }
+
+    /**
+     * @param {string} id
+     * @returns {GObject.Object?}
+     */
+    getObject(id) {
+        return this.#template.get_object(id);
     }
 
     /**
