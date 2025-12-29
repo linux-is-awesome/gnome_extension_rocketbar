@@ -2,7 +2,7 @@
  * @enum {string} Standard GObject, Shell and GTK events to handle
  */
 export const Event = {
-    Active: 'notify::active',
+    ActiveChanged: 'notify::active',
     Activated: 'activated',
     AppStateChanged: 'app-state-changed',
     ButtonPress: 'button-press-event',
@@ -18,6 +18,7 @@ export const Event = {
     DragBegin: 'drag-begin',
     DragCancelled: 'drag-cancelled',
     DragEnd: 'drag-end',
+    EnableExpansionChanged: 'notify::enable-expansion',
     FocusIn: 'key-focus-in',
     FocusOut: 'key-focus-out',
     FocusWindow: 'notify::focus-window',
@@ -180,5 +181,10 @@ export const PreferencesPage = {
     Tweaks: 'tweaks',
     Misc: 'misc',
     NotificationCounter: 'notificationCounter',
-    Taskbar: 'taskbar'
+    Taskbar: 'taskbar',
+    TaskbarAppButton: 'taskbar/appButton',
+    TaskbarIndicators: 'taskbar/indicators',
+    TaskbarNotificationBadges: 'taskbar/notificationBadges',
+    TaskbarProgressBars: 'taskbar/progressBars',
+    TaskbarTooltips: 'taskbar/tooltips'
 };
