@@ -49,7 +49,7 @@ export default class extends Page {
             const isModuleActive = !!modules?.has(module);
             if (widget.get_active() !== isModuleActive) widget.set_active(isModuleActive);
             if (settingKey) continue;
-            widget.connect(Event.Active, () => this.#toggleModule(module, widget.get_active()));
+            widget.connect(Event.ActiveChanged, () => this.#toggleModule(module, widget.get_active()));
         }
     }
 

@@ -120,7 +120,7 @@ export default class extends SettingsPage {
         const rootSwitch = this.getSwitchRow(ROOT_MODULE);
         if (rootSwitch.get_active() !== isActive) rootSwitch.set_active(isActive);
         if (!isInitial) return;
-        rootSwitch.connect(Event.Active, () => this.#setRootModuleState(rootSwitch.get_active()));
+        rootSwitch.connect(Event.ActiveChanged, () => this.#setRootModuleState(rootSwitch.get_active()));
     }
 
     /**
@@ -198,7 +198,7 @@ export default class extends SettingsPage {
                 positionControl.get_value() !== position) positionControl.set_value(position);
         }
         if (!isInitial) return;
-        stateControl.connect(Event.Active, () => this.#setItemState(item, stateControl.get_active()));
+        stateControl.connect(Event.ActiveChanged, () => this.#setItemState(item, stateControl.get_active()));
         alignmentControl?.connect(Event.SelectedItemChanged, () => this.#setItemAlignment(item, alignmentControl.get_selected()));
         positionControl?.connect(Event.ValueChanged, () => this.#setItemPosition(item, positionControl.get_value()));
         const { customizePage } = itemOptions;
