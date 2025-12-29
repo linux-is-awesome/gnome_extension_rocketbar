@@ -3,3 +3,16 @@
     border-radius: 12px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
+.navigation-row-switch {
+    margin-right: 3px;
+}
+.child-page-title .title {
+    font-size: smaller;
+    font-weight: normal;
+    opacity: 0.5;
+}
+.child-page-title .subtitle {
+    font-size: inherit;
+    font-weight: bold;
+    opacity: 1;
+}
