@@ -46,14 +46,14 @@ const MenuPosition = {
 
 /** @type {{[value: string]: string}} */
 const ActivateBehaviorRadioGroup = {
-    [ActivateBehavior.NewWindow]: Label.NewWindow,
+    [ActivateBehavior.Default]: Label.Default,
     [ActivateBehavior.FindWindow]: Label.FindWindow,
     [ActivateBehavior.MoveWindows]: Label.MoveWindows
 };
 
 /** @type {{[value: string]: string}} */
 const AttentionBehaviorRadioGroup = {
-    [AttentionBehavior.Default]: Label.AppDefault,
+    [AttentionBehavior.Default]: Label.Default,
     [AttentionBehavior.FocusActive]: Label.FocusActive,
     [AttentionBehavior.FocusWorkspace]: Label.FocusWorkspace,
     [AttentionBehavior.FocusAll]: Label.FocusAll
@@ -61,7 +61,7 @@ const AttentionBehaviorRadioGroup = {
 
 /** @type {{[value: string]: string}} */
 const AttentionNotificationsBehaviorRadioGroup = {
-    [AttentionNotificationsBehavior.Default]: Label.SystemDefault,
+    [AttentionNotificationsBehavior.Default]: Label.Default,
     [AttentionNotificationsBehavior.Disable]: Label.Disable,
     [AttentionNotificationsBehavior.Hide]: Label.AlwaysHide,
     [AttentionNotificationsBehavior.Show]: Label.AlwaysShow,
@@ -70,7 +70,7 @@ const AttentionNotificationsBehaviorRadioGroup = {
 
 /** @type {{[value: string]: string}} */
 const PreferredMonitorRadioGroup = {
-    [PreferredMonitor.Default]: Label.AppDefault,
+    [PreferredMonitor.Default]: Label.Default,
     [PreferredMonitor.Primary]: Label.PrimaryMonitor,
     [PreferredMonitor.Left]: Label.LeftOfPrimaryMonitor,
     [PreferredMonitor.Right]: Label.RightOfPrimaryMonitor,
@@ -400,7 +400,7 @@ class CustomizeChildMenu extends ChildMenu {
      */
     #addCustomIconGroup() {
         const separator = this.addSeparator(Label.CustomIcon);
-        const collapsible = this.addCollapsibleGroup(Label.AppDefault);
+        const collapsible = this.addCollapsibleGroup(Label.Default);
         const collapsibleMenu = collapsible.menu;
         collapsibleMenu.itemActivated = () => {};
         collapsibleMenu.addAction(Label.SelectIcon, () => this.#selectIcon());
@@ -412,7 +412,7 @@ class CustomizeChildMenu extends ChildMenu {
         const resetIconItem = collapsibleMenu.addAction(Label.ResetToDefault, () => this.#setCustomIcon());
         return iconPath => {
             const isEmptyIconPath = typeof iconPath !== 'string' || !iconPath.trim();
-            collapsible.title = isEmptyIconPath ? Label.AppDefault :
+            collapsible.title = isEmptyIconPath ? Label.Default :
                                 iconPath.split(ICON_PATH_SEPARATOR).pop() ?? iconPath;
             this.setChangedIndicator(separator, !isEmptyIconPath);
             this.setItemActiveState(resetIconItem, !isEmptyIconPath);
