@@ -27,6 +27,7 @@ export default class extends SettingsPage {
         switch (settingsKey) {
             case ConfigField.centerClock:
             case ConfigField.hideEmpty:
+            case ConfigField.colorsDnd:
                 this.setBoolean(settingsKey, value);
                 break;
             case ConfigField.fontSize:
