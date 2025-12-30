@@ -91,5 +91,6 @@ export const SettingsKey = {
     ColorWhenEmptyDnd: 'color-when-empty-dnd',
     ColorWhenNotEmptyDnd: 'color-when-not-empty-dnd',
     TextColor: 'text-color',
-    TextColorDnd: 'text-color-dnd'
+    TextColorDnd: 'text-color-dnd',
+    ColorsDnd: 'colors-dnd'
 };

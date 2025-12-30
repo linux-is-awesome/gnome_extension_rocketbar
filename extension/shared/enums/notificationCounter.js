@@ -16,7 +16,8 @@ export const ConfigField = {
     colorEmpty: SettingsKey.ColorWhenEmpty,
     colorNotEmpty: SettingsKey.ColorWhenNotEmpty,
     textColor: SettingsKey.TextColor,
+    colorsDnd: SettingsKey.ColorsDnd,
+    textColorDnd: SettingsKey.TextColorDnd,
     colorEmptyDnd: SettingsKey.ColorWhenEmptyDnd,
-    colorNotEmptyDnd: SettingsKey.ColorWhenNotEmptyDnd,
-    textColorDnd: SettingsKey.TextColorDnd
+    colorNotEmptyDnd: SettingsKey.ColorWhenNotEmptyDnd
 };

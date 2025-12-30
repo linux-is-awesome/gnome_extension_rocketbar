@@ -136,7 +136,7 @@ export default class NotificationCounter extends Component {
     #events = {
         [ComponentEvent.Destroy]: () => this.#destroy(),
         [ComponentEvent.Init]: () => Context.jobs.shared(this, () => this.#rerender(), Delay.Background),
-        [DateMenuEvent.DndChanged]: () => this.#updateStyle()
+        [DateMenuEvent.DndChanged]: () => (this.#config?.colorsDnd && this.#updateStyle(), true)
     };
 
     /** @type {St.Label?} */
@@ -148,10 +148,10 @@ export default class NotificationCounter extends Component {
     /** @type {number} */
     #totalCount = 0;
 
-    /** @type {Config} */
+    /** @type {Config?} */
     #config = Config(this, ConfigField, settingsKey => this.#handleConfig(settingsKey), ConfigOptions);
 
-    /** @type {DateMenu} */
+    /** @type {DateMenu?} */
     #dateMenu = new DateMenu();
 
     /** @type {NotificationHandler} */
@@ -159,7 +159,7 @@ export default class NotificationCounter extends Component {
 
     /** @type {boolean} */
     get #isVisible() {
-        return this.#count > 0 || !this.#config.hideEmpty;
+        return this.#count > 0 || !this.#config?.hideEmpty;
     }
 
     constructor() {
@@ -189,7 +189,9 @@ export default class NotificationCounter extends Component {
         this.#dateMenu?.destroy();
         this.#notificationHandler?.destroy();
         this.#counter = null;
+        this.#dateMenu = null;
         this.#events = null;
+        this.#config = null;
     }
 
     #createCounter() {
@@ -231,11 +233,10 @@ export default class NotificationCounter extends Component {
      * @param {number} count
      */
     #setCount(count) {
-        if (!this.isValid) return;
+        if (!this.isValid || !this.#config) return;
+        const { maxCount } = this.#config;
         this.#totalCount = count;
-        if (count > this.#config.maxCount) {
-            count = this.#config.maxCount;
-        }
+        count = Math.min(count, maxCount);
         if (this.#count === count) return;
         this.#count = count;
         this.#rerender();
@@ -270,7 +271,7 @@ export default class NotificationCounter extends Component {
     #updateClockMargin() {
         const parent = this.parentActor;
         if (!parent) return;
-        if (!this.#config.centerClock || !this.#isVisible) {
+        if (!this.#config?.centerClock || !this.#isVisible) {
             parent.set_style(null);
             return;
         }
@@ -280,8 +281,8 @@ export default class NotificationCounter extends Component {
     }
 
     #updateStyle() {
-        if (!this.#counter) return;
-        const { borderColor, borderSize, backgroundColor, textColor, padding } = this.#getStyleValues();
+        if (!this.#counter || !this.#config) return;
+        const { borderColor, borderSize, backgroundColor, fontColor, padding } = this.#getStyleValues();
         const { fontSize, roundness, offset } = this.#config;
         const { fontScale, globalScale } = Context.desktop;
         this.#counter.set_style(
@@ -291,7 +292,7 @@ export default class NotificationCounter extends Component {
             `border-color: ${borderColor};` +
             `border-radius: ${roundness * fontScale}px;` +
             `background-color: ${backgroundColor};` +
-            `color: ${textColor};`
+            `color: ${fontColor};`
         );
         let [_, height] = this.#counter.get_size();
         height = (height - Math.round(borderSize * fontScale * globalScale) * 4) / globalScale;
@@ -301,17 +302,22 @@ export default class NotificationCounter extends Component {
             `${offset > 0 ? 'margin-top' : 'margin-bottom'}: ${Math.abs(offset)}px;`;
     }
 
+    /**
+     * @returns {{borderColor: string, backgroundColor: string, fontColor: string, borderSize: number, padding: number}}
+     */
     #getStyleValues() {
-        const isDnd = this.#dateMenu?.isDndEnabled;
+        const { colorsDnd, colorEmptyDnd, colorEmpty,
+                colorNotEmptyDnd, colorNotEmpty, textColorDnd, textColor } = this.#config ?? {};
+        const isDnd = !!colorsDnd && !!this.#dateMenu?.isDndEnabled;
         const isEmpty = !this.#count;
         const padding = `${this.#count}`.length === 1 ? 0 : COUNTER_LONG_VALUE_PADDING;
-        const borderColor = isDnd ? this.#config.colorEmptyDnd : this.#config.colorEmpty;
+        const borderColor = isDnd ? colorEmptyDnd : colorEmpty;
         const borderSize = isEmpty ? COUNTER_EMPTY_BORDER_SIZE : 0;
         const backgroundColor = isEmpty ? COUNTER_EMPTY_COLOR :
-                                isDnd ? this.#config.colorNotEmptyDnd : this.#config.colorNotEmpty;
-        const textColor = isEmpty ? COUNTER_EMPTY_COLOR :
-                          isDnd ? this.#config.textColorDnd : this.#config.textColor;
-        return { borderColor, borderSize, backgroundColor, textColor, padding };
+                                isDnd ? colorNotEmptyDnd : colorNotEmpty;
+        const fontColor = isEmpty ? COUNTER_EMPTY_COLOR :
+                          isDnd ? textColorDnd : textColor;
+        return { borderColor, backgroundColor, fontColor, borderSize, padding };
     }
 
 }
