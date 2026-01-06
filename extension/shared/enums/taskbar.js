@@ -11,7 +11,7 @@ export const ConfigKey = {
     IconSize: 'iconSize',
     IconPath: 'iconPath',
     IconSizeOffset: 'iconSizeOffset',
-    ActivateBehavior: 'activateBehavior',
+    ActivationBehavior: 'activationBehavior',
     AttentionBehavior: 'attentionBehavior',
     AttentionNotificationsBehavior: 'attentionNotificationsBehavior',
     PreferredMonitor: 'preferredMonitor',
@@ -31,9 +31,10 @@ export const ServiceConfigField = {
     showAllWindows: SettingsKey.ShowAllWindows,
     isolateWorkspaces: SettingsKey.IsolateWorkspaces,
     preferredMonitor: SettingsKey.PreferredMonitor,
+    activationBehavior: SettingsKey.ActivationBehavior,
     attentionBehavior: SettingsKey.AttentionBehavior,
     attentionNotificationsBehavior: SettingsKey.AttentionNotificationsBehavior,
-    [ConfigKey.AppConfig]: SettingsKey.AppButtonConfigOverride
+    appConfig: SettingsKey.AppButtonConfigOverride
 };
 
 /** @enum {string} */
@@ -43,12 +44,16 @@ export const AppConfigField = {
     preferredMonitor: SettingsKey.PreferredMonitor,
     attentionBehavior: SettingsKey.AttentionBehavior,
     attentionNotificationsBehavior: SettingsKey.AttentionNotificationsBehavior,
-    activateBehavior: SettingsKey.AppButtonActivateBehavior,
+    activationBehavior: SettingsKey.ActivationBehavior
+};
+
+/** @enum {string} */
+export const AppButtonConfigField = {
     enableIndicators: SettingsKey.AppButtonIndicators,
-    enableMenus: SettingsKey.AppButtonMenus,
     enableTooltips: SettingsKey.AppButtonTooltips,
     enableNotificationBadges: SettingsKey.AppButtonNotificationBadges,
     enableProgressBars: SettingsKey.AppButtonProgressBars,
+    enableMenus: SettingsKey.AppButtonMenus,
     enableSoundControl: SettingsKey.AppButtonSoundVolumeControl,
     enableMinimizeAction: SettingsKey.AppButtonMinimizeAction,
     enableDragAndDrop: SettingsKey.AppButtonDragAndDrop,
@@ -114,18 +119,18 @@ export const TooltipConfigField = {
 };
 
 /** @enum {string} */
-export const ActivateBehavior = {
-    NewWindow: 'new_window',
-    FindWindow: 'find_window',
-    MoveWindows: 'move_windows'
+export const ActivationBehavior = {
+    Default: 'default',
+    FindWindow: 'find-window',
+    MoveWindows: 'move-windows'
 };
 
 /** @enum {string} */
 export const AttentionBehavior = {
     Default: 'default',
-    FocusActive: 'focus_active',
-    FocusWorkspace: 'focus_workspace',
-    FocusAll: 'focus_all'
+    FocusActive: 'focus-active',
+    FocusWorkspace: 'focus-workspace',
+    FocusAll: 'focus-all'
 };
 
 /** @enum {string} */
@@ -139,8 +144,8 @@ export const AttentionNotificationsBehavior = {
 
 /** @enum {string} */
 export const PreferredMonitor = {
-    ...Monitor,
-    Default: 'default'
+    Default: 'default',
+    ...Monitor
 };
 
 /** @enum {number} */
@@ -148,3 +153,17 @@ export const AppIconSize = {
     Min: 16,
     Max: 64
 };
+
+/** @enum {string} */
+export const ColorType = {
+    Static: 'static',
+    Dominant: 'dominant'
+};
+
+/** @enum {string} */
+export const ScrollAction = {
+    None: 'none',
+    CycleWindows: 'cycle-windows',
+    SoundVolume: 'sound-volume'
+};
+
