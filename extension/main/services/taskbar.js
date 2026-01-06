@@ -14,14 +14,16 @@ import ChangeTracker from './taskbar/changeTracker.js';
 import Favorites from './taskbar/favorites.js';
 import { WindowPreview } from '../ui/base/windowPreview.js';
 import { Config, InnerConfig } from '../../shared/utils/config.js';
+import { AppConfigValue } from '../utils/taskbar/appConfig.js';
 import { Event, Delay, Property } from '../../shared/enums/general.js';
 import { ServiceConfigField as ConfigField,
          ConfigOptions, ConfigKey,
+         ActivationBehavior,
          AttentionBehavior,
          AttentionNotificationsBehavior } from '../../shared/enums/taskbar.js';
 
 const WINDOW_ATTENTION_SOURCE_CLASS = 'WindowAttentionSource';
-const DEFAULT_ROUTING_DELAY = Delay.Background;
+const DEFAULT_ROUTING_DELAY = Delay.Scheduled;
 
 const SUPPORTED_WINDOW_TYPES = [
     Meta.WindowType.NORMAL,
@@ -72,7 +74,7 @@ class TaskbarService {
     /** @type {Config?} */
     #config = Config(this, ConfigField, settingsKey => this.#handleConfig(settingsKey), ConfigOptions);
 
-    /** @type {{[appId: string]: {[key: string]: *}}?} */
+    /** @type {{[appId: string]: Config}?} */
     #appConfig = null;
 
     /** @type {ChangeTracker?} */
@@ -143,6 +145,31 @@ class TaskbarService {
         this.clientApps = null;
         this.clientAppWindows = null;
         return true;
+    }
+
+    /**
+     * @param {Shell.App} app
+     * @param {ActivationBehavior?} [behavior]
+     */
+    activate(app, behavior = null) {
+        const appWindows = app.get_windows();
+        behavior ??= !this.#config || !appWindows.length ? ActivationBehavior.Default :
+                     AppConfigValue(app, this.#appConfig, this.#config, ConfigKey.ActivationBehavior);
+        switch (behavior) {
+            case ActivationBehavior.MoveWindows:
+                if (!appWindows.length || !this.workspace) return;
+                for (const window of appWindows) window.change_workspace(this.workspace);
+                appWindows[0].activate(global.get_current_time());
+                break;
+            case ActivationBehavior.FindWindow:
+                if (appWindows.length) FocusedWindow(appWindows[0]);
+                break;
+            case ActivationBehavior.Default:
+            default:
+                const canOpenNewWindow = !!appWindows.length && app.can_open_new_window();
+                if (canOpenNewWindow) app.open_new_window(-1);
+                else app.activate();
+        }
     }
 
     #initialize() {
@@ -296,7 +323,7 @@ class TaskbarService {
             const windowInfo = this.#windows.get(window);
             if (!windowInfo) continue;
             if (windowInfo.app !== app && this.#apps.has(windowInfo.app)) continue;
-            this.#windows.delete(window);
+            this.#removeWindowInfo(window);
         }
         this.tracker?.trackAppChange(app);
     }
@@ -321,10 +348,10 @@ class TaskbarService {
         if (!this.#windows || !this.#windowTracker) return;
         const old = this.#focusedWindowInfo;
         const oldWindow = old?.window;
-        const window = global.display.get_focus_window();
+        const focusedWindow = global.display.get_focus_window();
+        const window = focusedWindow instanceof Meta.Window ? focusedWindow : null;
         if ((!window && !oldWindow) ||
-            (window && window === oldWindow) ||
-            !this.#isValidWindow(window)) return;
+            (window && window === oldWindow)) return;
         if (!window && oldWindow) {
             const isOldWindowFocused = !oldWindow.minimized && !!oldWindow.get_pid() &&
                                        oldWindow.get_workspace() === this.workspace &&
@@ -337,7 +364,6 @@ class TaskbarService {
         if (this.isWorkspaceChanged) return;
         this.tracker?.trackAppFocus(app, old?.app);
     }
-
 
     /**
      * @param {Meta.Window} window
@@ -415,12 +441,22 @@ class TaskbarService {
         if (!windowInfo) return;
         const { app, isValid } = windowInfo;
         if (isValid) return this.#updateWindowInfo(windowInfo);
-        this.#windows.delete(window);
+        this.#removeWindowInfo(window);
         if (!this.#apps?.has(app)) return;
         const windows = this.#apps.get(app);
         windows?.delete(window);
         if (!windows?.size) this.#apps.delete(app);
         this.tracker?.trackAppChange(app);
+    }
+
+    /**
+     * @param {Meta.Window} window
+     */
+    #removeWindowInfo(window) {
+        if (!this.#windows) return;
+        this.#windows.delete(window);
+        if (this.#focusedWindowInfo?.window !== window) return;
+        this.#focusedWindowInfo = null;
     }
 
     /**
@@ -441,9 +477,8 @@ class TaskbarService {
         if (!this.#windowTracker || !this.#config ||
             window instanceof Meta.Window === false || window.has_focus()) return;
         const app = this.#windowTracker.get_window_app(window);
-        if (!app?.id) return;
-        const appConfig = this.#appConfig?.[app.id] ?? null;
-        const behavior = appConfig?.attentionBehavior || this.#config.attentionBehavior;
+        if (!app) return;
+        const behavior = AppConfigValue(app, this.#appConfig, this.#config, ConfigKey.AttentionBehavior);
         switch (behavior) {
             case AttentionBehavior.FocusActive:
                 const focusedWindow = global.display.get_focus_window();
@@ -462,19 +497,18 @@ class TaskbarService {
      * @param {*} notification
      */
     #handleWindowAttentionNotification(source, notification) {
-        if (!this.#windowTracker || !this.#config || !notification ||
+        if (!this.#windowTracker || !this.#config ||
+            !notification || source._inDestruction ||
             source?.constructor?.name !== WINDOW_ATTENTION_SOURCE_CLASS) return;
         const window = source._window;
         if (window instanceof Meta.Window === false) return;
         const app = this.#windowTracker.get_window_app(window);
-        if (!app?.id) return;
-        const appConfig = this.#appConfig?.[app.id] ?? null;
-        const behavior = appConfig?.attentionNotificationsBehavior ??
-                         this.#config.attentionNotificationsBehavior;
+        if (!app) return;
+        const behavior = AppConfigValue(app, this.#appConfig, this.#config, ConfigKey.AttentionNotificationsBehavior);
         switch (behavior) {
             case AttentionNotificationsBehavior.Disable:
-                Context.jobs.removeAll(source).new(source).destroy(() => (
-                    notification.destroy(), source.destroy()));
+                Context.jobs.removeAll(source).new(source).destroy(() =>
+                !source._inDestruction && source.destroy());
                 return;
             case AttentionNotificationsBehavior.Hide:
             case AttentionNotificationsBehavior.Show:
@@ -572,12 +606,10 @@ class TaskbarService {
      * @returns {boolean}
      */
     #routeWindow(windowInfo) {
-        if (!this.#config || !this.#appConfig) return false;
-        const { windowRouting, preferredMonitor } = this.#config;
-        if (!windowRouting) return false;
-        const appId = windowInfo.app.id;
-        if (!appId) return false;
-        const targetMonitor = this.#appConfig[appId]?.preferredMonitor || preferredMonitor;
+        if (!this.#config?.windowRouting) return false;
+        const { app } = windowInfo;
+        const targetMonitor = AppConfigValue(app, this.#appConfig, this.#config, ConfigKey.PreferredMonitor);
+        if (typeof targetMonitor !== 'string') return false;
         const isRouting = windowInfo.startRouting(targetMonitor);
         if (!isRouting) return false;
         const monitor = windowInfo.routeToMonitor();
@@ -662,6 +694,14 @@ export class TaskbarClient {
         this.#app = null;
         if (!TaskbarClient.#service?.destroy()) return;
         TaskbarClient.#service = null;
+    }
+
+    /**
+     * @param {ActivationBehavior?} [behavior]
+     */
+    activate(behavior = null) {
+        if (!this.#app || !TaskbarClient.#service) return;
+        TaskbarClient.#service.activate(this.#app, behavior);
     }
 
 }
