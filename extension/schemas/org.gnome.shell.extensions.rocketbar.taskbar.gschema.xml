@@ -23,6 +23,9 @@
         <key type="s" name="preferred-monitor">
             <default>'default'</default>
         </key>
+        <key type="s" name="activation-behavior">
+            <default>'default'</default>
+        </key>
         <key type="s" name="attention-behavior">
             <default>'default'</default>
         </key>
@@ -82,9 +85,6 @@
         </key>
         <key type="i" name="appbutton-backlight-intensity">
             <default>1</default>
-        </key>
-        <key type="s" name="appbutton-activate-behavior">
-            <default>'new_window'</default>
         </key>
         <key type="b" name="indicator-dominant-color-active">
             <default>false</default>
