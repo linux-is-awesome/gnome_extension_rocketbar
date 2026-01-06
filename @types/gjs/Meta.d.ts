@@ -6212,7 +6212,7 @@ declare module 'gi://Meta' {
          */
         move_to_monitor(monitor: number): void
         raise(): void
-        raise_and_make_recent(): void
+        raise_and_make_recent_on_workspace(workspace: Meta.Workspace): void
         set_compositor_private(priv: GObject.Object): void
         set_demands_attention(): void
         /**
