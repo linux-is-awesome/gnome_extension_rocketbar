@@ -25,7 +25,7 @@ import { Delay, Event, Alignment } from '../../../shared/enums/general.js';
 import { SettingsKey } from '../../../shared/enums/settings.js';
 import { Label } from '../../../shared/enums/labels.js';
 import { ConfigOptions, ConfigKey,
-         PreferredMonitor, AppIconSize, ActivateBehavior,
+         PreferredMonitor, AppIconSize, ActivationBehavior,
          AttentionBehavior, AttentionNotificationsBehavior } from '../../../shared/enums/taskbar.js';
 
 const UNWANTED_STYLE_CLASS = 'app-menu';
@@ -46,9 +46,9 @@ const MenuPosition = {
 
 /** @type {{[value: string]: string}} */
 const ActivateBehaviorRadioGroup = {
-    [ActivateBehavior.Default]: Label.Default,
-    [ActivateBehavior.FindWindow]: Label.FindWindow,
-    [ActivateBehavior.MoveWindows]: Label.MoveWindows
+    [ActivationBehavior.Default]: Label.Default,
+    [ActivationBehavior.FindWindow]: Label.FindWindow,
+    [ActivationBehavior.MoveWindows]: Label.MoveWindows
 };
 
 /** @type {{[value: string]: string}} */
@@ -204,6 +204,9 @@ class CurrentWorkspaceSection extends PopupMenuSection {
     /** @type {Map<number, PopupMenuItem?>?} */
     #actions = new Map();
 
+    /** @type {PopupBaseMenuItem?} */
+    #minimizeAllItem = null;
+
     /** @param {Meta.Window[]} windows */
     set windows(windows) {
         if (!this.actor) return;
@@ -228,7 +231,9 @@ class CurrentWorkspaceSection extends PopupMenuSection {
         this.actor.connect(Event.Destroy, () => this.#destroy());
         this.#title = new PopupSeparatorMenuItem(Label.CurrentWorkspace);
         this.addMenuItem(this.#title);
-        this.addAction(Label.CloseAll, () => this.#closeAll());
+        this.#minimizeAllItem = this.addAction(Label.MinimizeAll, () => appButton.windows?.minimize());
+        this.addAction(Label.RaiseAll, () => appButton.windows?.raise());
+        this.addAction(Label.CloseAll, () => appButton.windows?.close(true));
     }
 
     #destroy() {
@@ -236,11 +241,14 @@ class CurrentWorkspaceSection extends PopupMenuSection {
         this.#actions = null;
         this.#windows = null;
         this.#title = null;
+        this.#minimizeAllItem = null;
         this.#appButton = null;
     }
 
     #update() {
-        if (!this.#appButton || !this.#actions || !this.#windows) return;
+        if (!this.#appButton || !this.#actions ||
+            !this.#minimizeAllItem || !this.#windows) return;
+        this.#minimizeAllItem.visible = !!this.#windows.find(window => !window.minimized);
         if (this.#actions.size) {
             const menuItems = this.#actions.values();
             for (const menuItem of menuItems) menuItem?.destroy();
@@ -263,14 +271,6 @@ class CurrentWorkspaceSection extends PopupMenuSection {
             if (index < 0 || ignoredMonitors.has(index)) continue;
             const actionLabel = `${Label.MoveTo} ${Label[monitor]}`;
             this.#actions.set(index, this.addAction(actionLabel, () => this.#moveToMonitor(index)));
-        }
-    }
-
-    #closeAll() {
-        if (!this.#windows) return;
-        const timestamp = global.get_current_time();
-        for (let i = 0, l = this.#windows.length; i < l; ++i) {
-            this.#windows[i].delete(timestamp + i);
         }
     }
 
@@ -299,8 +299,8 @@ class OtherWorkspacesSection extends PopupMenuSection {
         super();
         this.actor.hide();
         this.addMenuItem(new PopupSeparatorMenuItem(Label.OtherWorkspaces));
-        this.addAction(Label.FindWindow, () => appButton?.activate(ActivateBehavior.FindWindow));
-        this.addAction(Label.MoveWindows, () => appButton?.activate(ActivateBehavior.MoveWindows));
+        this.addAction(Label.FindWindow, () => appButton?.activate(ActivationBehavior.FindWindow));
+        this.addAction(Label.MoveWindows, () => appButton?.activate(ActivationBehavior.MoveWindows));
     }
 
 }
@@ -378,7 +378,7 @@ class CustomizeChildMenu extends ChildMenu {
 
     #createMenuItems() {
         this.#activateBehavior = this.addRadioGroup(
-            Label.ActivateBehavior, ActivateBehaviorRadioGroup,
+            Label.ActivationBehavior, ActivateBehaviorRadioGroup,
             (...args) => this.#setRadioGroupValue(...args), true);
         this.#attentionBehavior = this.addRadioGroup(
             Label.AttentionBehavior, AttentionBehaviorRadioGroup,
@@ -467,8 +467,8 @@ class CustomizeChildMenu extends ChildMenu {
         const preferredMonitorVisibilityHandler = item => {
             item.visible = config.windowRouting ?? false;
         };
-        this.#activateBehavior(config[ConfigKey.ActivateBehavior],
-            !configProvider.hasOverride(app, ConfigKey.ActivateBehavior))
+        this.#activateBehavior(config[ConfigKey.ActivationBehavior],
+            !configProvider.hasOverride(app, ConfigKey.ActivationBehavior))
             .forEach(activateBehaviorVisibilityHandler);
         this.#attentionBehavior(config[ConfigKey.AttentionBehavior],
             !configProvider.hasOverride(app, ConfigKey.AttentionBehavior));
@@ -504,7 +504,7 @@ class CustomizeChildMenu extends ChildMenu {
         let key = null;
         switch (group) {
             case ActivateBehaviorRadioGroup:
-                key = ConfigKey.ActivateBehavior;
+                key = ConfigKey.ActivationBehavior;
                 break;
             case AttentionBehaviorRadioGroup:
                 key = ConfigKey.AttentionBehavior;
@@ -612,6 +612,7 @@ export class Menu extends AppMenu {
         const app = appButton?.app;
         this.#hasValidAppId = app?.id ? !!this._appSystem?.lookup_app(app.id) : false;
         this.#createMenuItems();
+        this.#destroySeparator(this._detailsItem);
         if (app) this.setApp(app);
         this._app?.disconnectObject(this);
         this._updateDetailsVisibility();
@@ -704,6 +705,18 @@ export class Menu extends AppMenu {
         this.box.set_child_above_sibling(section.actor, sibling.actor);
     }
 
+    /**
+     * @param {PopupBaseMenuItem} menuItem
+     */
+    #destroySeparator(menuItem) {
+        const menuItems = this.box.get_children();
+        const itemIndex = menuItems.indexOf(menuItem?.actor);
+        if (itemIndex < 0) return;
+        const detailsSeparator = menuItems[itemIndex - 1];
+        if (detailsSeparator instanceof PopupSeparatorMenuItem === false) return;
+        detailsSeparator.destroy();
+    }
+
     #updateSeparators() {
         if (!this.isOpen) return;
         this.emit(Event.OpenStateChanged, true);
@@ -718,7 +731,7 @@ export class Menu extends AppMenu {
         const appName = this._app.get_name();
         const appWindows = this._app.get_windows();
         const currentWorkspace = global.workspace_manager.get_active_workspace();
-        const taskbarWindows = this.#appButton.windows;
+        const taskbarWindows = this.#appButton.windows?.list;
         const workspaceWindows = [];
         for (const window of appWindows) {
             if (window.get_workspace() === currentWorkspace) workspaceWindows.push(window);
@@ -808,7 +821,7 @@ export class Menu extends AppMenu {
      * @override
      */
     _updateDetailsVisibility() {
-        if (!this._app) return;
+        if (!this._app || !this._detailsItem) return;
         const appInfo = this._app.get_app_info();
         const isValidApp = this.#hasValidAppId && appInfo && !appInfo.get_nodisplay();
         if (isValidApp) super._updateDetailsVisibility();
