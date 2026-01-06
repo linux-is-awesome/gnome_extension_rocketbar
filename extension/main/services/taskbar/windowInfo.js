@@ -1,7 +1,7 @@
 /**
  * @typedef {import('gi://Meta').Window} Meta.Window
  * @typedef {import('gi://Shell').App} Shell.App
- * @typedef {import('../../utils/taskbar/appConfig.js').PreferredMonitor} PreferredMonitor
+ * @typedef {import('../../../shared/enums/taskbar.js').PreferredMonitor} PreferredMonitor
  */
 
 import Context from '../../core/context.js';
