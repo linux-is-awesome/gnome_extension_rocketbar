@@ -258,8 +258,8 @@ class AppStatus extends Component {
         let value = -1;
         switch (icon) {
             case AppStatusItemIcon.Windows:
-                const windowsCount = this.#appButton?.windowsCount ?? 0;
-                value = windowsCount > 1 ? windowsCount : value;
+                const windowCount = this.#appButton?.windows?.size ?? 0;
+                value = windowCount > 1 ? windowCount : value;
                 break;
             case AppStatusItemIcon.Notifications:
                 const notificationsCount = this.#appButton?.notificationsCount;
@@ -401,15 +401,7 @@ export class Tooltip extends BaseTooltip {
 
     #handleActiveWindow() {
         if (!this.#windowTitle || !this.#appButton || !this.#config) return;
-        const app = this.#appButton.app;
-        const windows = this.#appButton.windows;
-        const appWindows = app?.get_windows() ?? [];
-        let activeWindow = null;
-        for (const window of appWindows) {
-            if (!windows?.has(window)) continue;
-            activeWindow = window;
-            break;
-        }
+        const activeWindow = this.#appButton.windows?.activeWindow;
         const isActiveWindowChanged = !activeWindow || this.#activeWindow?.source !== activeWindow;
         if (isActiveWindowChanged && this.#activeWindow) this.#releaseActiveWindow();
         if (activeWindow && !this.#activeWindow) {
