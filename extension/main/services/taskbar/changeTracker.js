@@ -131,11 +131,10 @@ export default class ChangeTracker {
      * @param {Shell.App?} [oldApp]
      */
     trackAppFocus(app = null, oldApp = null) {
-        if (!this.#isActive || !this.#appClients ||
-            !this.#trackedApps || app === oldApp) return;
+        if (!this.#isActive || !this.#appClients || !this.#trackedApps) return;
         const appClients = app && !this.#trackedApps.has(app) ? this.#appClients.get(app) : null;
-        const oldAppClients = oldApp && !this.#trackedApps.has(oldApp) ? this.#appClients.get(oldApp) : null;
         if (app && appClients) this.#trackedApps.set(app, TaskbarEvent.Focus);
+        const oldAppClients = oldApp && !this.#trackedApps.has(oldApp) ? this.#appClients.get(oldApp) : null;
         if (oldApp && oldAppClients) this.#trackedApps.set(oldApp, TaskbarEvent.Focus);
         if (!appClients && !oldAppClients) return;
         const clients = [...appClients ?? [], ...oldAppClients ?? []];
