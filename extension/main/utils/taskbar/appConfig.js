@@ -7,22 +7,41 @@
 import Context from '../../core/context.js';
 import { SharedConfig, InnerConfig } from '../../../shared/utils/config.js';
 import { SettingsKey } from '../../../shared/enums/settings.js';
-import { AppConfigField as ConfigField,
+import { AppButtonConfigField,
+         AppConfigField,
          ConfigOptions,
          AppIconSize,
-         ActivateBehavior,
+         ActivationBehavior,
          AttentionBehavior,
          AttentionNotificationsBehavior,
          PreferredMonitor } from '../../../shared/enums/taskbar.js';
+
+/** @enum {string} */
+export const ConfigField = {
+    ...AppButtonConfigField,
+    ...AppConfigField
+};
 
 /** @type {Config}*/
 const DefaultConfigOverride = {
     iconSizeOffset: 0,
     iconPath: null,
-    activateBehavior: ActivateBehavior.NewWindow,
+    activationBehavior: ActivationBehavior.Default,
     preferredMonitor: PreferredMonitor.Default,
     attentionBehavior: AttentionBehavior.Default,
     attentionNotificationsBehavior: AttentionNotificationsBehavior.Default
+};
+
+/**
+ * @param {Shell.App} app
+ * @param {{[appId: string]: Config}?} appConfig
+ * @param {Config} defaultConfig
+ * @param {string} configKey
+ * @returns {* & (boolean|number|string|null)}
+ */
+export const AppConfigValue = (app, appConfig, defaultConfig, configKey) => {
+    return (app?.id && appConfig ? appConfig[app.id]?.[configKey] : null) ??
+           defaultConfig[configKey] ?? null;
 };
 
 export class AppConfig extends SharedConfig {
@@ -114,12 +133,12 @@ export class AppConfig extends SharedConfig {
                 if (configOverride.iconSizeOffset === value) return;
                 configOverride.iconSizeOffset = value;
                 break;
-            case ConfigField.activateBehavior:
+            case ConfigField.activationBehavior:
             case ConfigField.attentionBehavior:
             case ConfigField.attentionNotificationsBehavior:
             case ConfigField.preferredMonitor:
                 if (!Object.values({
-                    [ConfigField.activateBehavior]: ActivateBehavior,
+                    [ConfigField.activationBehavior]: ActivationBehavior,
                     [ConfigField.preferredMonitor]: PreferredMonitor,
                     [ConfigField.attentionBehavior]: AttentionBehavior,
                     [ConfigField.attentionNotificationsBehavior]: AttentionNotificationsBehavior
@@ -173,7 +192,7 @@ export class AppConfig extends SharedConfig {
         const defaultConfig = super.get();
         if (!app?.id || !defaultConfig) return null;
         const configOverride = this.#getOverride(app.id);
-        const { iconSizeOffset, iconPath, activateBehavior, preferredMonitor,
+        const { iconSizeOffset, iconPath, activationBehavior, preferredMonitor,
                 attentionBehavior, attentionNotificationsBehavior } = configOverride;
         let { iconSize, iconHPadding, iconVPadding } = defaultConfig;
         const width = iconSize + iconHPadding * 2;
@@ -182,7 +201,7 @@ export class AppConfig extends SharedConfig {
         iconSize = Math.max(iconSize, AppIconSize.Min);
         iconSize = Math.min(iconSize, AppIconSize.Max);
         const overrideResult = { iconSize, iconPath, width, height,
-                                 activateBehavior, preferredMonitor,
+                                 activationBehavior, preferredMonitor,
                                  attentionBehavior, attentionNotificationsBehavior };
         return { ...defaultConfig, ...overrideResult };
     }
@@ -192,12 +211,12 @@ export class AppConfig extends SharedConfig {
      * @returns {Config}
      */
     #getOverride(appId) {
-        const { activateBehavior,
+        const { activationBehavior,
                 preferredMonitor,
                 attentionBehavior,
                 attentionNotificationsBehavior } = super.get() ?? {};
         const configOverride = this.#configOverride[appId] ?? {};
-        const defaultConfig = { activateBehavior, preferredMonitor,
+        const defaultConfig = { activationBehavior, preferredMonitor,
                                 attentionBehavior, attentionNotificationsBehavior };
         return { ...DefaultConfigOverride, ...defaultConfig, ...configOverride };
     }
