@@ -6,7 +6,7 @@
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import { ThumbnailsBox, MAX_THUMBNAIL_SCALE } from 'resource:///org/gnome/shell/ui/workspaceThumbnail.js';
-import { Overview } from '../core/shell.js';
+import { Overview, CtrlAltTabManager } from '../core/shell.js';
 import Context from '../core/context.js';
 import { Event } from '../../shared/enums/general.js';
 import { Animation, AnimationDuration, AnimationType } from '../ui/base/animation.js';
@@ -24,6 +24,9 @@ export default class {
     /** @type {ThumbnailsBox?} */
     #workspaceThumbnails = Overview._overview?._controls?._thumbnailsBox ?? null;
 
+    /** @type {{[field: string]: *}?} */
+    #ctrlAltTabItem = null;
+
     constructor() {
         if (!this.#searchController || !this.#searchContainer || !this.#workspaceThumbnails) return;
         Context.signals.add(this,
@@ -39,6 +42,7 @@ export default class {
         if (!this.#searchContainer || !this.#searchController || !this.#workspaceThumbnails) return;
         Context.signals.removeAll(this);
         Context.hooks.removeAll(this);
+        this.#restoreCtrlAltTabItem();
         this.#setWorkspaceThumbnailsScale(this.#workspaceThumbnails, MAX_THUMBNAIL_SCALE);
         this.#searchContainer.set({ ...AnimationType.OpacityMax, height: -1 });
         this.#searchContainer = null;
@@ -58,6 +62,7 @@ export default class {
 
     async #showSearch() {
         if (this.#searchContainer instanceof St.Widget === false) return;
+        this.#restoreCtrlAltTabItem();
         const searchContainer = this.#searchContainer;
         searchContainer.set_height(-1);
         const height = searchContainer.get_height();
@@ -72,6 +77,7 @@ export default class {
 
     #hideSearch() {
         if (this.#searchContainer instanceof St.Widget === false) return;
+        this.#hideCtrlAltTabItem();
         this.#searchContainer.remove_all_transitions();
         this.#searchContainer.set({ ...AnimationType.OpacityMin, height: 0 });
     }
@@ -83,6 +89,22 @@ export default class {
     #setWorkspaceThumbnailsScale(target, scale) {
         if (!target) return;
         target._maxThumbnailScale = scale;
+    }
+
+    #hideCtrlAltTabItem() {
+        const searchEntry = this.#searchController?._entry;
+        if (!searchEntry || !CtrlAltTabManager._items?.length) return;
+        this.#ctrlAltTabItem = CtrlAltTabManager._items.find(item => item.root === searchEntry) ?? null;
+        if (!this.#ctrlAltTabItem) return;
+        const ctrlAltTabItems = new Set(CtrlAltTabManager._items);
+        ctrlAltTabItems.delete(this.#ctrlAltTabItem);
+        CtrlAltTabManager._items = [...ctrlAltTabItems];
+    }
+
+    #restoreCtrlAltTabItem() {
+        if (!this.#ctrlAltTabItem) return;
+        CtrlAltTabManager._items?.push(this.#ctrlAltTabItem);
+        this.#ctrlAltTabItem = null;
     }
 
 }
