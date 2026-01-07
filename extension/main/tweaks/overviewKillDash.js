@@ -5,7 +5,7 @@
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import { initializeDeferredWork as DeferredWork } from 'resource:///org/gnome/shell/ui/main.js';
-import { Overview } from '../core/shell.js';
+import { Overview, CtrlAltTabManager } from '../core/shell.js';
 import Context from '../core/context.js';
 import { Animation, AnimationDuration, AnimationType } from '../ui/base/animation.js';
 import { Event } from '../../shared/enums/general.js';
@@ -16,6 +16,7 @@ const SHOW_APPS_BUTTON_STYLE_CLASS = 'page-navigation-arrow';
 const ACTOR_ICON_NAME = 'carousel-arrow-next-symbolic';
 const ACTOR_ROTATION_DEFAULT = -90;
 const ACTOR_ROTATION_CHECKED = 90;
+const CTRL_ALT_TAB_ITEM_POSITION = 1;
 
 /** @type {{[prop: string]: *}} */
 const ActorProps = {
@@ -41,9 +42,13 @@ export default class {
     /** @type {SearchController?} */
     #searchController = null;
 
+    /** @type {{[field: string]: *}?} */
+    #ctrlAltTabItem = null;
+
     constructor() {
         const dash = Overview.dash;
         if (!dash) return;
+        this.#hideCtrlAltTabItem();
         this.#actor = new St.Icon(ActorProps);
         this.#actor.set_pivot_point(0.5, 0.5);
         this.#dashWorkId = dash._workId ?? null;
@@ -78,6 +83,7 @@ export default class {
 
     destroy() {
         Context.signals.removeAll(this);
+        this.#restoreCtrlAltTabItem();
         this.#actor?.destroy();
         this.#actor = null;
         const dash = Overview.dash;
@@ -123,6 +129,22 @@ export default class {
         const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
         const animationParams = { rotation_angle_z, mode };
         Animation(this.#actor, AnimationDuration.Slower, animationParams);
+    }
+
+    #hideCtrlAltTabItem() {
+        const dash = Overview.dash;
+        if (!dash || !CtrlAltTabManager._items?.length) return;
+        this.#ctrlAltTabItem = CtrlAltTabManager._items.find(item => item.root === dash) ?? null;
+        if (!this.#ctrlAltTabItem) return;
+        const ctrlAltTabItems = new Set(CtrlAltTabManager._items);
+        ctrlAltTabItems.delete(this.#ctrlAltTabItem);
+        CtrlAltTabManager._items = [...ctrlAltTabItems];
+    }
+
+    #restoreCtrlAltTabItem() {
+        if (!this.#ctrlAltTabItem) return;
+        CtrlAltTabManager._items?.splice(CTRL_ALT_TAB_ITEM_POSITION, 0, this.#ctrlAltTabItem);
+        this.#ctrlAltTabItem = null;
     }
 
 }
