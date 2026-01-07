@@ -1,14 +1,13 @@
 /**
  * @typedef {import('gi://Meta').Window} Meta.Window
  * @typedef {import('gi://St').Widget} St.Widget
- *
  * @typedef {import('resource:///org/gnome/shell/ui/sessionMode').SessionMode} SessionMode
  * @typedef {import('resource:///org/gnome/shell/ui/layout.js').LayoutManager & {uiGroup: St.Widget}} LayoutManager
  * @typedef {import('resource:///org/gnome/shell/ui/panel.js').Panel & St.Widget} Panel
  * @typedef {import('resource:///org/gnome/shell/ui/overview.js').Overview} Overview
  * @typedef {import('resource:///org/gnome/shell/ui/messageTray').MessageTray} MessageTray
  * @typedef {import('resource:///org/gnome/shell/ui/osdWindow').OsdWindowManager} OsdWindowManager
- *
+ * @typedef {import('resource:///org/gnome/shell/ui/ctrlAltTab').CtrlAltTabManager} CtrlAltTabManager
  * @typedef {SessionMode} Session
  * @typedef {LayoutManager} MainLayout
  * @typedef {Panel} MainPanel
@@ -24,7 +23,8 @@ import { sessionMode,
          panel,
          overview,
          messageTray,
-         osdWindowManager } from 'resource:///org/gnome/shell/ui/main.js';
+         osdWindowManager,
+         ctrlAltTabManager } from 'resource:///org/gnome/shell/ui/main.js';
 
 if (!sessionMode) throw new Error('SessionMode instance is not available.');
 if (!layoutManager) throw new Error('LayoutManager instance is not available.');
@@ -32,6 +32,7 @@ if (!panel) throw new Error('Panel instance is not available.');
 if (!overview) throw new Error('Overview instance is not available.');
 if (!messageTray) throw new Error('MessageTray instance is not available.');
 if (!osdWindowManager) throw new Error('OsdWindowManager instance is not available.');
+if (!ctrlAltTabManager) throw new Error('CtrlAltTabManager instance is not available.');
 
 /** @type {SessionMode} */
 export const Session = sessionMode;
@@ -50,3 +51,6 @@ export const MessageTray = messageTray;
 
 /** @type {OsdWindowManager} */
 export const OsdWindowManager = osdWindowManager;
+
+/** @type {CtrlAltTabManager} */
+export const CtrlAltTabManager = ctrlAltTabManager;
