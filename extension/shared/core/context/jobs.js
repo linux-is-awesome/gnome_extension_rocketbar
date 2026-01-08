@@ -224,7 +224,7 @@ export default class Jobs {
         if (!this.#sharedJobs || !client ||
             typeof callback !== 'function' ||
             typeof delay !== 'number') return;
-        const sharedJob = this.#sharedJobs.get(delay) ?? new SharedJob(() => this.#removeShared(delay));
+        const sharedJob = this.#sharedJobs.get(delay) ?? new SharedJob(() => this.#removeShared(delay), delay);
         sharedJob.addClient(client, callback);
         this.#sharedJobs.set(delay, sharedJob);
         this.#add(client, sharedJob);
