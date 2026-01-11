@@ -190,7 +190,7 @@ export class DragAndDropHandler {
     handleDrag(params) {
         if (!params || !this.#slots || !this.#parent) return null;
         const { target, actor } = params;
-        this.#watchDragActor(actor);
+        this.#watchDragTarget(target, actor);
         const x = this.#parentRect.x + params.x;
         const slots = [];
         for (let i = 0, l = this.#slots.length; i < l; ++i) {
@@ -253,12 +253,14 @@ export class DragAndDropHandler {
     }
 
     /**
+     * @param {*} target
      * @param {Clutter.Actor} actor
      */
-    #watchDragActor(actor) {
+    #watchDragTarget(target, actor) {
         if (this.#dragActor) return;
         this.#dragActor = new DragActor(actor);
-        Context.signals.add(this, [actor, Event.Destroy, () => this.destroy(),
+        Context.signals.add(this, [target, Event.Destroy, () => this.destroy()],
+                                  [actor, Event.Destroy, () => this.destroy(),
                                           Event.MoveX, () => this.#handleDragActorPosition(),
                                           Event.MoveY, () => this.#handleDragActorPosition()]);
     }
