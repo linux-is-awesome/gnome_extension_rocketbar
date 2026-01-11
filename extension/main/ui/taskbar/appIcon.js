@@ -10,7 +10,7 @@ import { ComponentEvent } from '../base/component.js';
 import { Icon, IconEvent } from '../base/icon.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { DominantColor } from '../../utils/dominantColor.js';
-import { Alignment } from '../../../shared/enums/general.js';
+import { Event, Alignment } from '../../../shared/enums/general.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppIcon';
 const FALLBACK_ICON_NAME = 'application-x-executable';
@@ -56,6 +56,9 @@ export class AppIcon extends Icon {
     /** @type {Shell.App?} */
     #app = null;
 
+     /** @type {St.Icon?} */
+    #dragActor = null;
+
     /** @type {number} */
     #size = DEFAULT_SIZE;
 
@@ -76,10 +79,18 @@ export class AppIcon extends Icon {
 
     /** @type {St.Icon} */
     get dragActor() {
+        const oldDragActor = this.#dragActor;
         const gicon = this.actor.get_gicon();
         const size = Overview.dash?.iconSize || this.#size * Context.desktop.fontScale;
         const actorProps = { name: `${MODULE_NAME}-DragActor`, icon_size: size, gicon };
-        return new St.Icon(actorProps);
+        const dragActor = new St.Icon(actorProps);
+        dragActor.connect(Event.Destroy, () => {
+            if (this.#dragActor !== dragActor) return;
+            this.#dragActor = null;
+        });
+        this.#dragActor = dragActor;
+        oldDragActor?.destroy();
+        return this.#dragActor;
     }
 
     /** @type {string?} */
@@ -154,9 +165,11 @@ export class AppIcon extends Icon {
 
     #destroy() {
         Context.desktop.disconnect(this);
+        this.#dragActor?.destroy();
         this.#app = null;
         this.#events = null;
         this.#highlight = null;
+        this.#dragActor = null;
     }
 
     #handleIconTexture() {
