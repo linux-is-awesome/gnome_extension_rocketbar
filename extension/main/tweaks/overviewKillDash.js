@@ -123,8 +123,7 @@ export default class {
 
     #updateActorRotation() {
         if (!this.#actor || !this.#showAppsButton) return;
-        const showAppsButton = this.#showAppsButton;
-        const rotation_angle_z = showAppsButton.checked ? ACTOR_ROTATION_CHECKED : ACTOR_ROTATION_DEFAULT;
+        const rotation_angle_z = this.#showAppsButton.checked ? ACTOR_ROTATION_CHECKED : ACTOR_ROTATION_DEFAULT;
         if (this.#actor.rotation_angle_z === rotation_angle_z) return;
         const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
         const animationParams = { rotation_angle_z, mode };
