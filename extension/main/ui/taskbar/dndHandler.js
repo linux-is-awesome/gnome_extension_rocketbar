@@ -14,17 +14,12 @@ import { Event, Delay } from '../../../shared/enums/general.js';
 
 /**
  * @param {Component} competitor
- * @param {Mtk.Rectangle} [xyRect]
+ * @param {number} offset
  * @returns {{competitor: Component, rect: Mtk.Rectangle}}
  */
-const DropCompetitor = (competitor, xyRect) => {
+const DropCompetitor = (competitor, offset) => {
     const rect = competitor.rect ?? new Mtk.Rectangle();
-    if (xyRect) {
-        [rect.x, rect.y] = [xyRect.x, xyRect.y];
-    } else {
-        const allocation = competitor.actor.get_allocation_box();
-        [rect.x, rect.y] = [allocation.x1, allocation.y1];
-    }
+    rect.x = offset;
     return { competitor, rect };
 };
 
@@ -161,14 +156,21 @@ export class DragAndDropHandler {
      * @param {() => void} destroyCallback
      */
     constructor(parent, competitors, destroyCallback) {
-        if (!parent || !competitors) return;
+        if (!parent || !competitors || !this.#slots) return;
         this.#parent = parent;
+        this.#destroyCallback = destroyCallback;
+        let slot = null;
         for (const competitor of competitors) {
             if (!competitor.isValid) continue;
-            this.#slots?.push(DropCompetitor(competitor));
+            const offset = slot ? slot.rect.x + slot.rect.width : 0;
+            slot = DropCompetitor(competitor, offset);
+            this.#slots.push(slot);
         }
-        if (typeof destroyCallback !== 'function') return;
-        this.#destroyCallback = destroyCallback;
+    }
+
+    abort() {
+        this.#dragActor?.show();
+        this.destroy();
     }
 
     destroy() {
@@ -232,7 +234,7 @@ export class DragAndDropHandler {
         this.#candidatePosition = position;
         this.#candidate = new AppButton(target.app, true).setParent(this.#parent, position);
         this.#dragActor?.hide(this.#candidate);
-        if (slotRect) this.#slots.splice(position, 0, DropCompetitor(this.#candidate, slotRect));
+        if (slotRect) this.#slots.splice(position, 0, DropCompetitor(this.#candidate, slotRect.x));
         return competitorAtPosition;
     }
 
