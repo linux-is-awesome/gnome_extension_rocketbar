@@ -570,7 +570,7 @@ class TaskbarService {
      * Note: To correctly process monitor and workspace changes,
      *       all windows must be visible on the screen.
      *       Otherwise, some events may not be triggered.
-     *       This feature creates invisible window clones
+     *       This function creates invisible window clones
      *       to ensure that all events are triggered.
      */
     #createRoutingHelper() {
