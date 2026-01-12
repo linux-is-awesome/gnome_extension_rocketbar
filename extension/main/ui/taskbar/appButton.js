@@ -9,7 +9,7 @@ import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import { Overview } from '../../core/shell.js';
 import Context from '../../core/context.js';
-import DragActor from './appButton/dragActor.js';
+import AppGridDragActor from './appButton/appGridDragActor.js';
 import { RuntimeButton, ButtonEvent } from '../base/button.js';
 import { TaskbarEvent, TaskbarClient } from '../../services/taskbar.js';
 import { AppIcon, AppIconAnimation, AppIconEvent } from './appIcon.js';
@@ -28,6 +28,7 @@ import { Event, Delay, Progress } from '../../../shared/enums/general.js';
 import { ActivationBehavior } from '../../../shared/enums/taskbar.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
+const SCHEDULED_DESTOY_DELAY = Delay.Scheduled * 5;
 
 /** @type {{[prop: string]: *}} */
 const LayoutProps = {
@@ -93,8 +94,8 @@ export class AppButton extends RuntimeButton {
     /** @type {AppIcon?} */
     #appIcon = null;
 
-    /** @type {DragActor?} */
-    #dragActor = null;
+    /** @type {AppGridDragActor?} */
+    #appGridDragActor = null;
 
     /** @type {St.Widget?} */
     #layout = null;
@@ -106,7 +107,7 @@ export class AppButton extends RuntimeButton {
     #windows = null;
 
     /** @type {boolean} */
-    #hasWindows = false;
+    #isRunning = false;
 
     /** @type {number} */
     #notificationsCount = 0;
@@ -183,6 +184,11 @@ export class AppButton extends RuntimeButton {
         return this.#isFavorite;
     }
 
+    /** @type {boolean} */
+    get isRunning() {
+        return this.#isRunning;
+    }
+
     /**
      * @override
      * @type {boolean}
@@ -252,8 +258,9 @@ export class AppButton extends RuntimeButton {
     drop() {
         if (!this.#isDropCandidate) return;
         this.#isDropCandidate = false;
-        this.actor.set_reactive(!this.#isDropCandidate);
+        this.actor.set_reactive(true);
         this.#handleInit();
+        this.#abortDestroy(true);
     }
 
     /**
@@ -261,7 +268,7 @@ export class AppButton extends RuntimeButton {
      */
     activate(activationBehavior = null) {
         if (!this.#service) return;
-        this.#abortDestroy();
+        this.#abortDestroy(true);
         this.animateLaunch();
         if (!activationBehavior) Overview.hide();
         this.#service.activate(activationBehavior);
@@ -468,15 +475,15 @@ export class AppButton extends RuntimeButton {
         if (!this.#isFavorite || !this.#appIcon || !this.isValid) return;
         const isAppGridVisible = Overview.visible && !!Overview.dash?.showAppsButton?.checked;
         if (!isAppGridVisible) return;
-        this.#dragActor ??= new DragActor(this, this.#appIcon);
+        this.#appGridDragActor ??= new AppGridDragActor(this, this.#appIcon);
     }
 
     /**
      * @param {boolean} [isDragCancelled]
      */
     #handleDragEnd(isDragCancelled = false) {
-        this.#dragActor?.destroy(isDragCancelled);
-        this.#dragActor = null;
+        this.#appGridDragActor?.destroy(isDragCancelled);
+        this.#appGridDragActor = null;
     }
 
     #handleDominantColor() {
@@ -500,18 +507,18 @@ export class AppButton extends RuntimeButton {
         if (!this.#service || !this.#windows || !this.hasAllocation) return;
         const isFavorite = !!this.#app && !!this.#service.favorites?.apps?.has(this.#app);
         this.#windows.update();
-        this.#hasWindows = !!this.#windows.size;
+        this.#isRunning = !!this.#windows.size;
         this.#handleAppFocus();
-        if (!isFavorite && !this.#hasWindows) return this.#enqueueDestroy();
+        if (!isFavorite && !this.#isRunning) return this.#enqueueDestroy();
         this.#isFavorite = isFavorite;
         this.#soundVolumeControl?.update();
-        if (!this.#hasWindows && this.#progress) this.#handleProgress();
+        if (!this.#isRunning && this.#progress) this.#handleProgress();
         this.#handleRunningApp();
     }
 
     #handleAppFocus() {
         if (!this.#service || !this.#windows || !this.hasAllocation) return;
-        this.isActive = this.#hasWindows ? this.#service.hasFocus : false;
+        this.isActive = this.#isRunning ? this.#service.hasFocus : false;
         this.#windows.hasFocus = this.#isActive;
         this.#rerenderTooltip();
     }
@@ -523,12 +530,17 @@ export class AppButton extends RuntimeButton {
         this.#rerenderMenu();
     }
 
-    #abortDestroy() {
+    /**
+     * @param {boolean} [isRescheduling]
+     */
+    #abortDestroy(isRescheduling = false) {
         if (!this.#destroyJob) return;
         this.#destroyJob.destroy();
         this.#destroyJob = null;
         this.actor.remove_all_transitions();
         this.notifyParents(ComponentEvent.Init);
+        if (!isRescheduling) return;
+        this.#enqueueDestroy(SCHEDULED_DESTOY_DELAY);
     }
 
     #enqueueFadeIn() {
@@ -546,9 +558,12 @@ export class AppButton extends RuntimeButton {
         });
     }
 
-    #enqueueDestroy() {
-        if (this.#destroyJob) return;
-        this.#destroyJob = Context.jobs.removeAll(this).new(this).destroy(() => (
+    /**
+     * @param {number} delay
+     */
+    #enqueueDestroy(delay = Delay.Idle) {
+        if (this.#destroyJob && this.#service) return;
+        this.#destroyJob = Context.jobs.removeAll(this).new(this, delay).destroy(() => (
         this.fadeOut().then(isHidden => isHidden && super.destroy()),
         this.notifyParents(ComponentEvent.Destroy)));
     }
@@ -642,7 +657,7 @@ export class AppButton extends RuntimeButton {
         const scrollDirection = event?.get_scroll_direction();
         if (scrollDirection !== Clutter.ScrollDirection.UP &&
             scrollDirection !== Clutter.ScrollDirection.DOWN) return Clutter.EVENT_PROPAGATE;
-        if (!this.#hasWindows || Context.jobs.has(this)) return Clutter.EVENT_STOP;
+        if (!this.#isRunning || Context.jobs.has(this)) return Clutter.EVENT_STOP;
         if (Overview.visible) Overview.hide();
         Context.jobs.new(this, Delay.Sleep).destroy(() => null);
         this.#windows.cycle(false, scrollDirection === Clutter.ScrollDirection.UP);
@@ -664,7 +679,7 @@ export class AppButton extends RuntimeButton {
         if (isSecondaryButton) return false;
         const isPrimaryAction = !isCtrlPressed && !isMiddleButton;
         if (isMiddleButton && isCtrlPressed) this.#windows.close();
-        else if (this.#hasWindows && isPrimaryAction) this.#windows.cycle(this.#config.enableMinimizeAction);
+        else if (this.#isRunning && isPrimaryAction) this.#windows.cycle(this.#config.enableMinimizeAction);
         else this.activate(isPrimaryAction ? null : ActivationBehavior.Default);
         return true;
     }

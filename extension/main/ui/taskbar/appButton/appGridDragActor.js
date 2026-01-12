@@ -7,7 +7,7 @@ import { AppIcon as AppDisplayIcon } from 'resource:///org/gnome/shell/ui/appDis
 import { DragMotionResult } from 'resource:///org/gnome/shell/ui/dnd.js';
 import { Overview } from '../../../core/shell.js';
 
-export default class DragActor {
+export default class AppGridDragActor {
 
     /** @type {AppButton?} */
     #appButton = null;
@@ -20,9 +20,6 @@ export default class DragActor {
         this.#appButton = appButton;
         const appDisplayIcon = new AppDisplayIcon(appButton.app);
         appDisplayIcon.getDragActorSource = () => appIcon.actor;
-        appDisplayIcon.getDragActor = () => appIcon.dragActor;
-        appDisplayIcon.activate = () => appButton.activate();
-        appDisplayIcon.animateLaunchAtPos = (x, y) => appButton.animateLaunchAtPos(x, y);
         appDisplayIcon._delegate = appButton;
         appButton.actor._delegate = appDisplayIcon;
         this.#patchAppDisplay();
