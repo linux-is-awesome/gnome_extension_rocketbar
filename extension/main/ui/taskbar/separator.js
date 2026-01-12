@@ -50,10 +50,10 @@ export class Separator extends Component {
     };
 
     /** @type {boolean} */
-    #isToggled = false;
-
-    /** @type {boolean} */
     #isVisible = false;
+
+    /** @type {number} */
+    #lockCounter = 0;
 
     /** @type {St.Widget?} */
     #body = new St.Widget(BodyProps);
@@ -90,8 +90,7 @@ export class Separator extends Component {
      */
     set isVisible(value) {
         if (typeof value !== 'boolean') return;
-        this.#isToggled = false;
-        if (value === this.#isVisible) return;
+        this.#lockCounter = 0;
         this.#isVisible = value;
         this.#handleState();
     }
@@ -103,14 +102,15 @@ export class Separator extends Component {
         Context.desktop.connectScale(this, () => this.#handleConfig());
     }
 
-    /**
-     * Note: Unlike isVisible property, this function should be called to show Separator temporary
-     *       and then called again to restore previous visibility state.
-     */
-    toggle() {
-        if (this.#isVisible && !this.#isToggled) return;
-        this.isVisible = !this.#isVisible;
-        this.#isToggled = true;
+    lock() {
+        this.#lockCounter++;
+        this.#handleState();
+    }
+
+    unlock() {
+        if (!this.#lockCounter) return;
+        this.#lockCounter--;
+        this.#handleState();
     }
 
     #destroy() {
@@ -122,7 +122,8 @@ export class Separator extends Component {
 
     #handleConfig() {
         this.#updateStyle();
-        if (this.#isVisible) this.notifyParents(ComponentEvent.Init);
+        if (!this.#isVisible && !this.#lockCounter) return;
+        this.notifyParents(ComponentEvent.Init);
     }
 
     #updateStyle() {
@@ -143,12 +144,15 @@ export class Separator extends Component {
 
     async #handleState() {
         if (!this.hasAllocation) return;
-        const opacity = this.actor?.opacity ?? 0;
-        if (this.#isVisible && opacity === AnimationType.OpacityMax.opacity) return;
-        if (!this.#isVisible && opacity === AnimationType.OpacityMin.opacity) return;
-        this.actor.remove_all_transitions();
+        const actor = this.actor;
+        const opacity = actor.opacity ?? 0;
+        const isVisible = this.#isVisible || !!this.#lockCounter;
+        if (isVisible && opacity === AnimationType.OpacityMax.opacity) return;
+        if (!isVisible && opacity === AnimationType.OpacityMin.opacity) return;
+        actor.remove_all_transitions();
         const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
-        if (!this.#isVisible) {
+        if (!isVisible) {
+            actor.opacity--;
             Animation(this, AnimationDuration.Slow, { ...DefaultProps, mode });
             this.notifyParents(ComponentEvent.Destroy);
             return;

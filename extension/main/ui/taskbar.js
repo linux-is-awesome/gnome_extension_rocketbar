@@ -8,6 +8,7 @@ import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Shell from 'gi://Shell';
 import { DragMotionResult } from 'resource:///org/gnome/shell/ui/dnd.js';
+import { Overview } from '../core/shell.js';
 import Context from '../core/context.js';
 import { ComponentEvent } from './base/component.js';
 import { TaskbarClient } from '../services/taskbar.js';
@@ -18,7 +19,7 @@ import { DragAndDropHandler } from './taskbar/dndHandler.js';
 import { Animation, AnimationDuration } from './base/animation.js';
 import { Config } from '../../shared/utils/config.js';
 import { Event, Delay } from '../../shared/enums/general.js';
-import { ConfigField, ConfigOptions} from '../../shared/enums/taskbar.js';
+import { ConfigField, ConfigOptions, ActivationBehavior } from '../../shared/enums/taskbar.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar';
 const APP_ALLOCATION_THRESHOLD = 2;
@@ -161,14 +162,20 @@ export default class Taskbar extends ScrollView {
         [AppButtonEvent.Reaction]: data => (this.#handleChildReaction(data?.sender), true)
     };
 
+    /** @type {boolean} */
+    #isRerendering = true;
+
     /** @type {TaskbarAllocation?} */
     #allocation = new TaskbarAllocation(this);
 
-    /** @type {Config} */
+    /** @type {Config?} */
     #config = Config(this, ConfigField, settingsKey => this.#handleConfig(settingsKey), ConfigOptions);
 
     /** @type {Map<Meta.Workspace, Set<Shell.App>>} */
     #runningApps = Context.getStorage(this.constructor.name);
+
+    /** @type {Map<AppButton, Shell.App>?} */
+    #activatedApps = new Map();
 
     /** @type {Map<Shell.App, AppButton>?} */
     #appButtons = new Map();
@@ -264,6 +271,10 @@ export default class Taskbar extends ScrollView {
             this.#scrollLock = null;
         }
         this.#allocation?.remove(sender);
+        if (sender instanceof AppButton && this.#activatedApps?.has(sender)) {
+            this.#activatedApps.delete(sender);
+            this.#rerender();
+        }
     }
 
     #destroy() {
@@ -275,12 +286,15 @@ export default class Taskbar extends ScrollView {
         this.#dndHandler?.destroy();
         this.#service = null;
         this.#appButtons?.clear();
+        this.#activatedApps?.clear();
         this.#appButtons = null;
+        this.#activatedApps = null;
         this.#dndHandler = null;
         this.#separator = null;
         this.#allocation = null;
         this.#activeAppButton = null;
         this.#scrollLock = null;
+        this.#config = null;
         this.#events = null;
     }
 
@@ -290,8 +304,9 @@ export default class Taskbar extends ScrollView {
      * @returns {DragMotionResult}
      */
     #handleDragOver(target, params) {
-        if (!this.isValid || !this.#allocation ||
-            !this.#appButtons || !this.#separator || !params) return DragMotionResult.NO_DROP;
+        if (this.#isRerendering || !this.isValid ||
+            !this.#allocation || !this.#appButtons ||
+            !this.#separator || !target || !params?.actor) return DragMotionResult.NO_DROP;
         const isAppButton = target instanceof AppButton;
         const isAppContainer = isAppButton || target?.app instanceof Shell.App;
         if (!isAppContainer || (isAppButton && !target.isValid)) return DragMotionResult.NO_DROP;
@@ -304,9 +319,10 @@ export default class Taskbar extends ScrollView {
             this.#allocation.isDragMode = true;
             /** @type {(AppButton|Separator)[]} */
             const competitors = [...this.#appButtons.values()];
-            if (this.#service?.favorites && this.#separatorPosition >= 0) {
-                this.#separator.toggle();
-                competitors.splice(this.#separatorPosition, 0, this.#separator);
+            if (this.#service?.favorites) {
+                this.#separator.lock();
+                if (this.#separatorPosition < 0) competitors.push(this.#separator);
+                else competitors.splice(this.#separatorPosition, 0, this.#separator);
             }
             this.#dndHandler = new DragAndDropHandler(this, competitors, () => this.#handleDragEnd());
         }
@@ -350,48 +366,64 @@ export default class Taskbar extends ScrollView {
             apps.add(app);
             appButtons.set(app, actor);
         }
-        const isFavorite = candidatePosition < separatorPosition;
-        if (isFavorite && !favorites?.canAdd(candidateApp)) {
+        const isFavorite = candidatePosition < separatorPosition && !!favorites;
+        if (isFavorite && !favorites.canAdd(candidateApp)) {
             candidate.destroy();
             return true;
         }
         this.#runningApps.set(workspace, apps);
         this.#appButtons = appButtons;
-        if (oldAppButton && separatorPosition > 0) {
-            this.#dndHandler = null;
-        }
         oldAppButton?.destroy();
+        if (separatorPosition > 0 &&
+            separatorPosition < apps.size &&
+            this.#config?.enableSeparator) this.#separator?.lock();
         if (isFavorite) {
             const favoritePosition = [...apps].indexOf(candidateApp);
-            favorites?.add(candidateApp, favoritePosition);
-        } else {
-            favorites?.remove(candidateApp);
+            favorites.add(candidateApp, favoritePosition);
+            candidate.drop();
+            return true;
+        }
+        if (!isFavorite && !!favorites && favorites.apps.has(candidateApp)) {
+            favorites.remove(candidateApp);
+            candidate.drop();
+            if (!candidate.isRunning) candidate.destroy();
+            return true;
         }
         candidate.drop();
-        if (isFavorite) return true;
-        if (!oldAppButton?.isValid) candidate.activate();
+        if (!oldAppButton?.isValid) {
+            Overview.hide();
+            candidate.activate(ActivationBehavior.Default);
+        }
+        if (oldAppButton) this.#activatedApps?.delete(oldAppButton);
+        this.#activatedApps?.set(candidate, candidateApp);
         return true;
     }
 
     #handleDragEnd() {
         if (!this.isValid || !this.#allocation) return;
         this.#allocation.isDragMode = false;
-        if (!this.#dndHandler) return;
         this.#dndHandler = null;
-        if (this.#service?.favorites) this.#separator?.toggle();
+        this.#separator?.unlock();
     }
 
     #rerender() {
         if (!this.#appButtons || !this.#allocation || !this.#service ||
             !this.hasAllocation || Context.jobs.hasShared(this, Delay.Background)) return;
+        this.#isRerendering = true;
+        this.#dndHandler?.abort();
         this.#allocation.isWorkspaceChanged = this.#service.isWorkspaceChanged;
         const favoriteApps = this.#service.favorites?.apps;
         const runningApps = this.#getRunningApps();
         const apps = favoriteApps && runningApps ? new Set([...favoriteApps, ...runningApps]) :
-                                                   !favoriteApps ? runningApps :
-                                                   !runningApps ? favoriteApps : null;
+                     !favoriteApps && runningApps ? runningApps :
+                     !runningApps && favoriteApps ? favoriteApps : null;
         const appsSize = apps?.size;
-        if (!appsSize) return;
+        if (!appsSize) {
+            this.#separatorPosition = -1;
+            this.#updateSeparator();
+            this.#isRerendering = false;
+            return;
+        }
         const hasFavoritesApps = !!favoriteApps;
         const favoriteAppsSize = favoriteApps?.size ?? 0;
         const appButtons = new Map();
@@ -444,11 +476,21 @@ export default class Taskbar extends ScrollView {
         for (let i = 0, l = sortedAppButtons.length; i < l; ++i) {
             sortedAppButtons[i].setParent(this, i);
         }
+        const isSeparatorVisible = !!this.#config?.enableSeparator &&
+                                   favoriteAppsSize > 0 &&
+                                   appsSize > favoriteAppsSize;
+        this.#updateSeparator(separatorPosition, isSeparatorVisible);
+        this.#isRerendering = false;
+    }
+
+    /**
+     * @param {number} [position]
+     * @param {boolean} [isVisible]
+     */
+    #updateSeparator(position = this.#separatorPosition, isVisible = false) {
         if (!this.#separator) return;
-        this.#separator.setParent(this, separatorPosition);
-        const { enableSeparator } = this.#config;
-        const isSeparatorRequired = favoriteAppsSize > 0 && appsSize > favoriteAppsSize;
-        this.#separator.isVisible = enableSeparator && isSeparatorRequired;
+        this.#separator.setParent(this, position);
+        this.#separator.isVisible = isVisible;
     }
 
     /**
@@ -458,10 +500,16 @@ export default class Taskbar extends ScrollView {
         const workspace = this.#service?.workspace;
         if (!this.#service || !workspace) return null;
         let runningApps = this.#service.apps;
+        if (this.#activatedApps?.size) {
+            runningApps = runningApps ? new Set([...runningApps]) : new Set();
+            for (const [appButton, app] of this.#activatedApps) {
+                if (!runningApps.has(app) && appButton.isValid) runningApps.add(app);
+                else this.#activatedApps.delete(appButton);
+            }
+        }
         if (!runningApps?.size) this.#runningApps.delete(workspace);
-        else if (!this.#runningApps.has(workspace)) {
-            this.#runningApps.set(workspace, runningApps);
-        } else {
+        else if (!this.#runningApps.has(workspace)) this.#runningApps.set(workspace, runningApps);
+        else {
             const oldRunningApps = this.#runningApps.get(workspace) ?? new Set();
             const newRunningApps = new Set();
             for (const app of oldRunningApps) {
