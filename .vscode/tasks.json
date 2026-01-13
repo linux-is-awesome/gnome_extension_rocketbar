@@ -13,31 +13,9 @@
             "problemMatcher": []
         },
         {
-            "label": "build-dev",
-            "type": "shell",
-            "command": "cd scripts && ./build dev",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            },
-            "problemMatcher": []
-        },
-        {
             "label": "install",
             "type": "shell",
             "command": "cd scripts && ./install",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "install-dev",
-            "type": "shell",
-            "command": "cd scripts && ./install dev",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -57,9 +35,9 @@
             "problemMatcher": []
         },
         {
-            "label": "restart-dev",
+            "label": "uninstall",
             "type": "shell",
-            "command": "cd scripts && ./restart dev",
+            "command": "cd scripts && ./uninstall",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -68,9 +46,31 @@
             "problemMatcher": []
         },
         {
-            "label": "uninstall",
+            "label": "build-dev",
             "type": "shell",
-            "command": "cd scripts && ./uninstall",
+            "command": "cd scripts && ./build dev",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "install-dev",
+            "type": "shell",
+            "command": "cd scripts && ./install dev",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "restart-dev",
+            "type": "shell",
+            "command": "cd scripts && ./restart dev",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -90,54 +90,6 @@
             "problemMatcher": []
         },
         {
-            "label": "open-preferences",
-            "type": "shell",
-            "command": "cd scripts && ./open-preferences",
-            "group": "build",
-            "presentation": {
-                "reveal": "silent",
-                "revealProblems": "onProblem",
-                "close": true
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "open-preferences-dev",
-            "type": "shell",
-            "command": "cd scripts && ./open-preferences dev",
-            "group": "build",
-            "presentation": {
-                "reveal": "silent",
-                "revealProblems": "onProblem",
-                "close": true
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "debug",
-            "type": "shell",
-            "command": "nohup ./scripts/debug new-window >/dev/null 2>&1",
-            "group": "build",
-            "presentation": {
-                "reveal": "silent",
-                "revealProblems": "onProblem",
-                "close": true
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "debug-prefs",
-            "type": "shell",
-            "command": "nohup ./scripts/debug-prefs new-window >/dev/null 2>&1",
-            "group": "build",
-            "presentation": {
-                "reveal": "silent",
-                "revealProblems": "onProblem",
-                "close": true
-            },
-            "problemMatcher": []
-        },
-        {
             "label": "update-pot",
             "type": "shell",
             "command": "cd scripts && ./update-pot",
@@ -149,21 +101,58 @@
             "problemMatcher": []
         },
         {
-            "label": "update-dconf-default",
+            "label": "debug-extension",
             "type": "shell",
-            "command": "cd scripts && ./update-dconf default",
-            "group": "build",
+            "command": "nohup ./scripts/debug new-window >/dev/null 2>&1",
+            "group": "test",
             "presentation": {
-                "reveal": "always",
-                "panel": "shared"
+                "reveal": "silent",
+                "revealProblems": "onProblem",
+                "close": true
             },
             "problemMatcher": []
         },
         {
-            "label": "reset-dconf",
+            "label": "debug-preferences",
             "type": "shell",
-            "command": "cd scripts && ./reset-dconf",
-            "group": "build",
+            "command": "nohup ./scripts/debug-preferences new-window >/dev/null 2>&1",
+            "group": "test",
+            "presentation": {
+                "reveal": "silent",
+                "revealProblems": "onProblem",
+                "close": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "open-preferences",
+            "type": "shell",
+            "command": "cd scripts && ./open-preferences",
+            "group": "test",
+            "presentation": {
+                "reveal": "silent",
+                "revealProblems": "onProblem",
+                "close": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "open-preferences-dev",
+            "type": "shell",
+            "command": "cd scripts && ./open-preferences dev",
+            "group": "test",
+            "presentation": {
+                "reveal": "silent",
+                "revealProblems": "onProblem",
+                "close": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "update-dconf-default",
+            "type": "shell",
+            "command": "cd scripts && ./update-dconf default",
+            "group": "test",
             "presentation": {
                 "reveal": "always",
                 "panel": "shared"
@@ -174,7 +163,18 @@
             "label": "update-dconf-custom",
             "type": "shell",
             "command": "cd scripts && ./update-dconf custom",
-            "group": "build",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "reset-dconf",
+            "type": "shell",
+            "command": "cd scripts && ./reset-dconf",
+            "group": "test",
             "presentation": {
                 "reveal": "always",
                 "panel": "shared"
