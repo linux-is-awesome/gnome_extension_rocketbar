@@ -3,15 +3,14 @@
  */
 
 import Shell from 'gi://Shell';
-import Meta from 'gi://Meta';
 import Context from '../core/context.js';
 import { MessageTray } from '../core/shell.js';
 import { Config } from '../../shared/utils/config.js';
+import { NotificationSourceInfo } from '../utils/notificationSourceInfo.js';
 import { Event, Delay } from '../../shared/enums/general.js';
 import { SettingsKey } from '../../shared/enums/settings.js';
 
 const APPID_REGEXP_STRING = /.desktop/g;
-const WINDOW_ATTENTION_SOURCE_CLASS = 'WindowAttentionSource';
 
 /** @enum {string} */
 const ConfigField = {
@@ -139,26 +138,16 @@ class NotificationService {
             const sourceCount = source.count ?? 0;
             if (!sourceCount) continue;
             this.#totalCount += sourceCount;
-            const isWindowAttentionSource = source.constructor?.name === WINDOW_ATTENTION_SOURCE_CLASS;
-            if (isWindowAttentionSource && !countAttentionSources) continue;
-            const sourceAppId = source.app?.id ?? source._appId ?? this.#getWindowAppId(source._window);
-            if (!sourceAppId || typeof sourceAppId !== 'string') continue;
+            const { app, isAttentionSource } = NotificationSourceInfo(source, this.#windowTracker);
+            const sourceAppId = app?.id;
+            if (typeof sourceAppId !== 'string' ||
+                (isAttentionSource && !countAttentionSources)) continue;
             const appId = sourceAppId.replace(APPID_REGEXP_STRING, '');
-            if (!isWindowAttentionSource && launcherApiCount?.has(appId)) continue;
+            if (!isAttentionSource && launcherApiCount?.has(appId)) continue;
             const oldCount = this.#countByAppId.get(appId) ?? 0;
             this.#countByAppId.set(appId, oldCount + sourceCount);
         }
         for (const [handler, callback] of this.#handlers) this.#triggerHandler(handler, callback);
-    }
-
-    /**
-     * @param {Meta.Window?} [window]
-     * @returns {string?}
-     */
-    #getWindowAppId(window) {
-        return window instanceof Meta.Window ?
-               this.#windowTracker?.get_window_app(window)?.id ?? null :
-               null;
     }
 
     /**
