@@ -186,7 +186,7 @@ export default class Panel extends Component {
      * @returns {boolean}
      */
     #hideOverview() {
-        const canCloseOverview = Overview.visible && !!this.#config?.clickHideOverview;
+        const canCloseOverview = Overview.visible && !!this.#config?.clickToHideOverview;
         if (!canCloseOverview) return Clutter.EVENT_PROPAGATE;
         Overview.hide();
         return Clutter.EVENT_STOP;
