@@ -15,14 +15,14 @@ import Favorites from './taskbar/favorites.js';
 import { WindowPreview } from '../ui/base/windowPreview.js';
 import { Config, InnerConfig } from '../../shared/utils/config.js';
 import { AppConfigValue } from '../utils/taskbar/appConfig.js';
+import { NotificationSourceInfo } from '../utils/notificationSourceInfo.js';
 import { Event, Delay, Property } from '../../shared/enums/general.js';
 import { ServiceConfigField as ConfigField,
          ConfigOptions, ConfigKey,
          ActivationBehavior,
          AttentionBehavior,
-         AttentionNotificationsBehavior } from '../../shared/enums/taskbar.js';
+         NotificationsBehavior } from '../../shared/enums/taskbar.js';
 
-const WINDOW_ATTENTION_SOURCE_CLASS = 'WindowAttentionSource';
 const DEFAULT_ROUTING_DELAY = Delay.Scheduled;
 
 const SUPPORTED_WINDOW_TYPES = [
@@ -154,7 +154,7 @@ class TaskbarService {
     activate(app, behavior = null) {
         const appWindows = app.get_windows();
         behavior ??= !this.#config || !appWindows.length ? ActivationBehavior.Default :
-                     AppConfigValue(app, this.#appConfig, this.#config, ConfigKey.ActivationBehavior);
+                     AppConfigValue(app.id, this.#appConfig, this.#config, ConfigKey.ActivationBehavior);
         switch (behavior) {
             case ActivationBehavior.MoveWindows:
                 if (!appWindows.length || !this.workspace) return;
@@ -190,7 +190,7 @@ class TaskbarService {
                              Event.WindowMarkedUrgent, (_, window) => this.#handleWindowAttention(window),
                              Event.WindowEnteredMonitor, (_, __, window) => this.#handleWindowMonitor(window)]);
         Context.hooks.add(this, MessageTraySource.prototype, MessageTraySource.prototype.addNotification,
-            (source, notification) => this.#handleWindowAttentionNotification(source, notification), true);
+            (source, notification) => this.#handleAppNotification(source, notification), true);
     }
 
     /**
@@ -202,6 +202,7 @@ class TaskbarService {
             case ConfigField.preferredMonitor:
             case ConfigField.attentionBehavior:
             case ConfigField.attentionNotificationsBehavior:
+            case ConfigField.notificationsBehavior:
                 return;
             case ConfigField.isolateWorkspaces:
             case ConfigField.showAllWindows:
@@ -478,7 +479,7 @@ class TaskbarService {
             window instanceof Meta.Window === false || window.has_focus()) return;
         const app = this.#windowTracker.get_window_app(window);
         if (!app) return;
-        const behavior = AppConfigValue(app, this.#appConfig, this.#config, ConfigKey.AttentionBehavior);
+        const behavior = AppConfigValue(app.id, this.#appConfig, this.#config, ConfigKey.AttentionBehavior);
         switch (behavior) {
             case AttentionBehavior.FocusActive:
                 const focusedWindow = global.display.get_focus_window();
@@ -489,36 +490,6 @@ class TaskbarService {
                 if (window.get_workspace() !== this.workspace) return;
             case AttentionBehavior.FocusAll:
                 FocusedWindow(window);
-        }
-    }
-
-    /**
-     * @param {MessageTraySource} source
-     * @param {*} notification
-     */
-    #handleWindowAttentionNotification(source, notification) {
-        if (!this.#windowTracker || !this.#config ||
-            !notification || source._inDestruction ||
-            source?.constructor?.name !== WINDOW_ATTENTION_SOURCE_CLASS) return;
-        const window = source._window;
-        if (window instanceof Meta.Window === false) return;
-        const app = this.#windowTracker.get_window_app(window);
-        if (!app) return;
-        const behavior = AppConfigValue(app, this.#appConfig, this.#config, ConfigKey.AttentionNotificationsBehavior);
-        switch (behavior) {
-            case AttentionNotificationsBehavior.Disable:
-                Context.jobs.removeAll(source).new(source).destroy(() =>
-                !source._inDestruction && source.destroy());
-                return;
-            case AttentionNotificationsBehavior.Hide:
-            case AttentionNotificationsBehavior.Show:
-            case AttentionNotificationsBehavior.Critical:
-                const value = behavior !== AttentionNotificationsBehavior.Hide;
-                if (source.policy.showBanners === value) return;
-                const propertyDescriptor = { value, writable: true };
-                Object.defineProperty(source.policy, Property.ShowBanners, propertyDescriptor);
-                if (behavior !== AttentionNotificationsBehavior.Critical) return;
-                notification.urgency = Urgency.CRITICAL;
         }
     }
 
@@ -534,6 +505,35 @@ class TaskbarService {
         if (!app) return;
         const event = window.minimized ? TaskbarEvent.Minimize : TaskbarEvent.Unminimize;
         this.tracker.routeAppEvent(app, event);
+    }
+
+    /**
+     * @param {MessageTraySource} source
+     * @param {*} notification
+     */
+    #handleAppNotification(source, notification) {
+        if (!this.#config || !source || source._inDestruction) return;
+        const { app, isAttentionSource } = NotificationSourceInfo(source, this.#windowTracker);
+        const appId = app?.id;
+        if (typeof appId !== 'string') return;
+        const configKey = isAttentionSource ? ConfigKey.AttentionNotificationsBehavior :
+                                              ConfigKey.NotificationsBehavior;
+        const behavior = AppConfigValue(appId, this.#appConfig, this.#config, configKey);
+        switch (behavior) {
+            case NotificationsBehavior.Disable:
+                Context.jobs.removeAll(source).new(source).destroy(() =>
+                !source._inDestruction && source.destroy());
+                return;
+            case NotificationsBehavior.Hide:
+            case NotificationsBehavior.Show:
+            case NotificationsBehavior.Critical:
+                const value = behavior !== NotificationsBehavior.Hide;
+                if (source.policy.showBanners === value) return;
+                const propertyDescriptor = { value, writable: true };
+                Object.defineProperty(source.policy, Property.ShowBanners, propertyDescriptor);
+                if (!notification || behavior !== NotificationsBehavior.Critical) return;
+                notification.urgency = Urgency.CRITICAL;
+        }
     }
 
     #updateClientAppsAndWindows() {
@@ -608,7 +608,7 @@ class TaskbarService {
     #routeWindow(windowInfo) {
         if (!this.#config?.windowRouting) return false;
         const { app } = windowInfo;
-        const targetMonitor = AppConfigValue(app, this.#appConfig, this.#config, ConfigKey.PreferredMonitor);
+        const targetMonitor = AppConfigValue(app.id, this.#appConfig, this.#config, ConfigKey.PreferredMonitor);
         if (typeof targetMonitor !== 'string') return false;
         const isRouting = windowInfo.startRouting(targetMonitor);
         if (!isRouting) return false;

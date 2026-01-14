@@ -13,7 +13,7 @@ import { AppButtonConfigField,
          AppIconSize,
          ActivationBehavior,
          AttentionBehavior,
-         AttentionNotificationsBehavior,
+         NotificationsBehavior,
          PreferredMonitor } from '../../../shared/enums/taskbar.js';
 
 /** @enum {string} */
@@ -29,18 +29,19 @@ const DefaultConfigOverride = {
     activationBehavior: ActivationBehavior.Default,
     preferredMonitor: PreferredMonitor.Default,
     attentionBehavior: AttentionBehavior.Default,
-    attentionNotificationsBehavior: AttentionNotificationsBehavior.Default
+    attentionNotificationsBehavior: NotificationsBehavior.Default,
+    notificationsBehavior: NotificationsBehavior.Default
 };
 
 /**
- * @param {Shell.App} app
+ * @param {string?} appId
  * @param {{[appId: string]: Config}?} appConfig
  * @param {Config} defaultConfig
  * @param {string} configKey
  * @returns {* & (boolean|number|string|null)}
  */
-export const AppConfigValue = (app, appConfig, defaultConfig, configKey) => {
-    return (app?.id && appConfig ? appConfig[app.id]?.[configKey] : null) ??
+export const AppConfigValue = (appId, appConfig, defaultConfig, configKey) => {
+    return (appId && appConfig ? appConfig[appId]?.[configKey] : null) ??
            defaultConfig[configKey] ?? null;
 };
 
@@ -136,12 +137,14 @@ export class AppConfig extends SharedConfig {
             case ConfigField.activationBehavior:
             case ConfigField.attentionBehavior:
             case ConfigField.attentionNotificationsBehavior:
+            case ConfigField.notificationsBehavior:
             case ConfigField.preferredMonitor:
                 if (!Object.values({
                     [ConfigField.activationBehavior]: ActivationBehavior,
                     [ConfigField.preferredMonitor]: PreferredMonitor,
                     [ConfigField.attentionBehavior]: AttentionBehavior,
-                    [ConfigField.attentionNotificationsBehavior]: AttentionNotificationsBehavior
+                    [ConfigField.attentionNotificationsBehavior]: NotificationsBehavior,
+                    [ConfigField.notificationsBehavior]: NotificationsBehavior
                 }[settingsKey]).includes(value)) return;
             default:
                 if (configOverride[key] === value) return;
@@ -192,8 +195,9 @@ export class AppConfig extends SharedConfig {
         const defaultConfig = super.get();
         if (!app?.id || !defaultConfig) return null;
         const configOverride = this.#getOverride(app.id);
-        const { iconSizeOffset, iconPath, activationBehavior, preferredMonitor,
-                attentionBehavior, attentionNotificationsBehavior } = configOverride;
+        const { iconSizeOffset, iconPath, activationBehavior,
+                preferredMonitor, attentionBehavior,
+                attentionNotificationsBehavior, notificationsBehavior } = configOverride;
         let { iconSize, iconHPadding, iconVPadding } = defaultConfig;
         const width = iconSize + iconHPadding * 2;
         const height = iconSize + iconVPadding * 2;
@@ -202,7 +206,8 @@ export class AppConfig extends SharedConfig {
         iconSize = Math.min(iconSize, AppIconSize.Max);
         const overrideResult = { iconSize, iconPath, width, height,
                                  activationBehavior, preferredMonitor,
-                                 attentionBehavior, attentionNotificationsBehavior };
+                                 attentionBehavior, attentionNotificationsBehavior,
+                                 notificationsBehavior };
         return { ...defaultConfig, ...overrideResult };
     }
 
@@ -214,10 +219,11 @@ export class AppConfig extends SharedConfig {
         const { activationBehavior,
                 preferredMonitor,
                 attentionBehavior,
-                attentionNotificationsBehavior } = super.get() ?? {};
+                attentionNotificationsBehavior,
+                notificationsBehavior } = super.get() ?? {};
         const configOverride = this.#configOverride[appId] ?? {};
-        const defaultConfig = { activationBehavior, preferredMonitor,
-                                attentionBehavior, attentionNotificationsBehavior };
+        const defaultConfig = { activationBehavior, preferredMonitor, attentionBehavior,
+                                attentionNotificationsBehavior, notificationsBehavior };
         return { ...DefaultConfigOverride, ...defaultConfig, ...configOverride };
     }
 

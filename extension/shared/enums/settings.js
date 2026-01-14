@@ -28,6 +28,7 @@ export const SettingsKey = {
     ActivationBehavior: 'activation-behavior',
     AttentionBehavior: 'attention-behavior',
     AttentionNotificationsBehavior: 'attention-notifications-behavior',
+    NotificationsBehavior: 'notifications-behavior',
     AppButtonMenus: 'appbutton-menus',
     AppButtonTooltips: 'appbutton-tooltips',
     AppButtonIndicators: 'appbutton-indicators',

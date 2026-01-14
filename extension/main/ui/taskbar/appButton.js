@@ -380,6 +380,7 @@ export class AppButton extends RuntimeButton {
             case ConfigField.preferredMonitor:
             case ConfigField.attentionBehavior:
             case ConfigField.attentionNotificationsBehavior:
+            case ConfigField.notificationsBehavior:
                 return;
             case ConfigField.enableIndicators:
             case ConfigField.enableSoundControl:

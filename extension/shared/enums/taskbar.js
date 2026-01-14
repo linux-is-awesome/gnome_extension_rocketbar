@@ -14,6 +14,7 @@ export const ConfigKey = {
     ActivationBehavior: 'activationBehavior',
     AttentionBehavior: 'attentionBehavior',
     AttentionNotificationsBehavior: 'attentionNotificationsBehavior',
+    NotificationsBehavior: 'notificationsBehavior',
     PreferredMonitor: 'preferredMonitor',
     AppConfig: 'appConfig'
 };
@@ -34,6 +35,7 @@ export const ServiceConfigField = {
     activationBehavior: SettingsKey.ActivationBehavior,
     attentionBehavior: SettingsKey.AttentionBehavior,
     attentionNotificationsBehavior: SettingsKey.AttentionNotificationsBehavior,
+    notificationsBehavior: SettingsKey.NotificationsBehavior,
     appConfig: SettingsKey.AppButtonConfigOverride
 };
 
@@ -44,6 +46,7 @@ export const AppConfigField = {
     preferredMonitor: SettingsKey.PreferredMonitor,
     attentionBehavior: SettingsKey.AttentionBehavior,
     attentionNotificationsBehavior: SettingsKey.AttentionNotificationsBehavior,
+    notificationsBehavior: SettingsKey.NotificationsBehavior,
     activationBehavior: SettingsKey.ActivationBehavior
 };
 
@@ -134,7 +137,7 @@ export const AttentionBehavior = {
 };
 
 /** @enum {string} */
-export const AttentionNotificationsBehavior = {
+export const NotificationsBehavior = {
     Default: 'default',
     Disable: 'disable',
     Hide: 'hide',

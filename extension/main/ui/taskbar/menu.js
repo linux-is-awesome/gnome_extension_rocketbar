@@ -26,7 +26,7 @@ import { SettingsKey } from '../../../shared/enums/settings.js';
 import { Label } from '../../../shared/enums/labels.js';
 import { ConfigOptions, ConfigKey,
          PreferredMonitor, AppIconSize, ActivationBehavior,
-         AttentionBehavior, AttentionNotificationsBehavior } from '../../../shared/enums/taskbar.js';
+         AttentionBehavior, NotificationsBehavior } from '../../../shared/enums/taskbar.js';
 
 const UNWANTED_STYLE_CLASS = 'app-menu';
 const STYLE_CLASS = 'rocketbar__popup-menu';
@@ -60,12 +60,17 @@ const AttentionBehaviorRadioGroup = {
 };
 
 /** @type {{[value: string]: string}} */
+const NotificationsBehaviorRadioGroup = {
+    [NotificationsBehavior.Default]: Label.Default,
+    [NotificationsBehavior.Disable]: Label.Disable,
+    [NotificationsBehavior.Hide]: Label.AlwaysHide,
+    [NotificationsBehavior.Show]: Label.AlwaysShow,
+    [NotificationsBehavior.Critical]: Label.Critical
+};
+
+/** @type {{[value: string]: string}} */
 const AttentionNotificationsBehaviorRadioGroup = {
-    [AttentionNotificationsBehavior.Default]: Label.Default,
-    [AttentionNotificationsBehavior.Disable]: Label.Disable,
-    [AttentionNotificationsBehavior.Hide]: Label.AlwaysHide,
-    [AttentionNotificationsBehavior.Show]: Label.AlwaysShow,
-    [AttentionNotificationsBehavior.Critical]: Label.Critical
+    ...NotificationsBehaviorRadioGroup
 };
 
 /** @type {{[value: string]: string}} */
@@ -320,6 +325,9 @@ class CustomizeChildMenu extends ChildMenu {
     #attentionNotificationsBehavior = null;
 
     /** @type {RadioGroup?} */
+    #notificationsBehavior = null;
+
+    /** @type {RadioGroup?} */
     #preferredMonitor = null;
 
     /** @type {((iconSize: number, defaultIconSize: number, isDefault: boolean) => void)?} */
@@ -369,6 +377,7 @@ class CustomizeChildMenu extends ChildMenu {
         this.#activateBehavior = null;
         this.#attentionBehavior = null;
         this.#attentionNotificationsBehavior = null;
+        this.#notificationsBehavior = null;
         this.#preferredMonitor = null;
         this.#iconSize = null;
         this.#customIcon = null;
@@ -384,7 +393,10 @@ class CustomizeChildMenu extends ChildMenu {
             Label.AttentionBehavior, AttentionBehaviorRadioGroup,
             (...args) => this.#setRadioGroupValue(...args), true);
         this.#attentionNotificationsBehavior = this.addRadioGroup(
-            Label.AttentionNotifcations, AttentionNotificationsBehaviorRadioGroup,
+            Label.AttentionNotifications, AttentionNotificationsBehaviorRadioGroup,
+            (...args) => this.#setRadioGroupValue(...args), true);
+        this.#notificationsBehavior = this.addRadioGroup(
+            Label.StandardNotifications, NotificationsBehaviorRadioGroup,
             (...args) => this.#setRadioGroupValue(...args), true);
         this.#preferredMonitor = this.addRadioGroup(
             Label.PreferredMonitor, PreferredMonitorRadioGroup,
@@ -450,6 +462,7 @@ class CustomizeChildMenu extends ChildMenu {
             typeof this.#activateBehavior !== 'function' ||
             typeof this.#attentionBehavior !== 'function' ||
             typeof this.#attentionNotificationsBehavior !== 'function' ||
+            typeof this.#notificationsBehavior !== 'function' ||
             typeof this.#preferredMonitor !== 'function' ||
             typeof this.#iconSize !== 'function' ||
             typeof this.#customIcon !== 'function') return;
@@ -474,6 +487,8 @@ class CustomizeChildMenu extends ChildMenu {
             !configProvider.hasOverride(app, ConfigKey.AttentionBehavior));
         this.#attentionNotificationsBehavior(config[ConfigKey.AttentionNotificationsBehavior],
             !configProvider.hasOverride(app, ConfigKey.AttentionNotificationsBehavior));
+        this.#notificationsBehavior(config[ConfigKey.NotificationsBehavior],
+            !configProvider.hasOverride(app, ConfigKey.NotificationsBehavior));
         this.#preferredMonitor(config[ConfigKey.PreferredMonitor],
             !configProvider.hasOverride(app, ConfigKey.PreferredMonitor))
             .forEach(preferredMonitorVisibilityHandler);
@@ -511,6 +526,9 @@ class CustomizeChildMenu extends ChildMenu {
                 break;
             case AttentionNotificationsBehaviorRadioGroup:
                 key = ConfigKey.AttentionNotificationsBehavior;
+                break;
+            case NotificationsBehaviorRadioGroup:
+                key = ConfigKey.NotificationsBehavior;
                 break;
             case PreferredMonitorRadioGroup:
                 key = ConfigKey.PreferredMonitor;

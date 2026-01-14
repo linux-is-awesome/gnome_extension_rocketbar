@@ -32,6 +32,9 @@
         <key type="s" name="attention-notifications-behavior">
             <default>'default'</default>
         </key>
+        <key type="s" name="notifications-behavior">
+            <default>'default'</default>
+        </key>
         <key type="s" name="appbutton-config-override">
             <default>'{}'</default>
         </key>
