@@ -47,4 +47,37 @@ declare module 'gi://St' {
 
 }
 
+declare module 'resource:///org/gnome/shell/misc/signals.js' {
+
+    interface EventEmitter {
+
+        emit(event: string, ...args): void
+
+        connect(event: string, callback: function): number
+
+        disconnect(event: string): void
+    }
+
+}
+
+declare module 'resource:///org/gnome/shell/ui/dnd.js' {
+
+    interface _Draggable {
+
+        fakeRelease(): void
+
+        disconnectAll(): void
+
+        connect(event: string, callback: function): number
+
+        _onButtonPress(actor: Clutter.Actor, event: Clutter.Event): void
+
+        _onTouchEvent(actor: Clutter.Actor, event: Clutter.Event): void
+
+    }
+
+    function makeDraggable(actor: Clutter.Actor, params?: Object): _Draggable
+
+}
+
 globalThis.global = Shell.Global.get();
