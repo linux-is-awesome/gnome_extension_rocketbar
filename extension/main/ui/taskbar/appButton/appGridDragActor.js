@@ -3,7 +3,8 @@
  * @typedef {import('../appIcon.js').AppIcon} AppIcon
  */
 
-import { AppIcon as AppDisplayIcon } from 'resource:///org/gnome/shell/ui/appDisplay.js';
+import Context from '../../../core/context.js';
+import { AppIcon as AppGridIcon } from 'resource:///org/gnome/shell/ui/appDisplay.js';
 import { DragMotionResult } from 'resource:///org/gnome/shell/ui/dnd.js';
 import { Overview } from '../../../core/shell.js';
 
@@ -13,17 +14,25 @@ export default class AppGridDragActor {
     #appButton = null;
 
     /**
+     * Note: `getDragActor` must return the `appIcon.dragActor` to ensure the correct icon.
+     *       `getDragActorSource` must return the `appIcon.actor` to ensure the correct drag cancel animation.
+     *
      * @param {AppButton} appButton
      * @param {AppIcon} appIcon
      */
     constructor(appButton, appIcon) {
         this.#appButton = appButton;
-        const appDisplayIcon = new AppDisplayIcon(appButton.app);
-        appDisplayIcon.getDragActorSource = () => appIcon.actor;
-        appDisplayIcon._delegate = appButton;
-        appButton.actor._delegate = appDisplayIcon;
-        this.#patchAppDisplay();
-        Overview.beginItemDrag(appDisplayIcon);
+        /** @type {*} */
+        const app = appButton.app;
+        const appGridIcon = new AppGridIcon(app);
+        appGridIcon.getDragActor = () => appIcon.dragActor;
+        /** @type {() => *} */
+        appGridIcon.getDragActorSource = () => appIcon.actor;
+        appGridIcon.animateLaunchAtPos = (x, y) => appButton.animateLaunchAtPos(x, y);
+        appGridIcon._delegate = appButton;
+        appButton.actor._delegate = appGridIcon;
+        this.#patchAppGrid();
+        Overview.beginItemDrag(appGridIcon);
 
     }
 
@@ -33,36 +42,25 @@ export default class AppGridDragActor {
     destroy(isDragCancelled = false) {
         if (!this.#appButton) return;
         const appButtonActor = this.#appButton.actor;
-        if (appButtonActor._delegate instanceof AppDisplayIcon) {
-            const appDisplayIcon = appButtonActor._delegate;
-            if (isDragCancelled) Overview.cancelledItemDrag(appDisplayIcon);
-            Overview.endItemDrag(appDisplayIcon);
-            if (!isDragCancelled) Overview.cancelledItemDrag(appDisplayIcon);
-            appDisplayIcon._delegate = null;
-            appDisplayIcon.destroy();
+        if (appButtonActor._delegate instanceof AppGridIcon) {
+            const appGridIcon = appButtonActor._delegate;
+            if (isDragCancelled) Overview.cancelledItemDrag(appGridIcon);
+            Overview.endItemDrag(appGridIcon);
+            if (!isDragCancelled) Overview.cancelledItemDrag(appGridIcon);
+            appGridIcon._delegate = null;
+            appGridIcon.destroy();
         }
         appButtonActor._delegate = this.#appButton;
         this.#appButton = null;
-        this.#revertAppDisplayChanges();
+        Context.hooks.removeAll(this);
     }
 
-    #patchAppDisplay() {
-        const appDisplay = Overview._overview?._controls?._appDisplay;
-        if (!appDisplay) return;
-        const appDisplayDragOverHandler = appDisplay.constructor.prototype.handleDragOver;
-        if (typeof appDisplayDragOverHandler !== 'function') return;
-        appDisplay.handleDragOver = source => {
-            const result = appDisplayDragOverHandler.call(appDisplay, source);
-            const isDropAccepted = source === this.#appButton?.actor?._delegate &&
-                                   result === DragMotionResult.MOVE_DROP;
-            return isDropAccepted ? DragMotionResult.COPY_DROP : result;
-        };
-    }
-
-    #revertAppDisplayChanges() {
-        const appDisplay = Overview._overview?._controls?._appDisplay;
-        if (!appDisplay) return;
-        appDisplay.handleDragOver = appDisplay.constructor.prototype.handleDragOver;
+    #patchAppGrid() {
+        const appGrid = Overview._overview?._controls?._appDisplay;
+        if (!appGrid) return;
+        Context.hooks.add(this, appGrid, appGrid.handleDragOver, (_, result, source) =>
+            source === this.#appButton?.actor?._delegate &&
+            result === DragMotionResult.MOVE_DROP ? DragMotionResult.COPY_DROP : result);
     }
 
 }
