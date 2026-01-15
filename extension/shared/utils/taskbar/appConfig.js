@@ -1,12 +1,11 @@
 /**
- * @typedef {import('gi://Shell').App} Shell.App
- * @typedef {import('../../../shared/utils/config.js').Config} Config
+ * @typedef {import('../config.js').Config} Config
  * @typedef {{config?: Config?, clients?: Map<*, ((settingsKey?: string?) => void)?>}} AppConfigDetails
  */
 
 import Context from '../../core/context.js';
-import { SharedConfig, InnerConfig } from '../../../shared/utils/config.js';
-import { SettingsKey } from '../../../shared/enums/settings.js';
+import { SharedConfig, InnerConfig } from '../config.js';
+import { SettingsKey } from '../../enums/settings.js';
 import { AppButtonConfigField,
          AppConfigField,
          ConfigOptions,
@@ -14,7 +13,7 @@ import { AppButtonConfigField,
          ActivationBehavior,
          AttentionBehavior,
          NotificationsBehavior,
-         PreferredMonitor } from '../../../shared/enums/taskbar.js';
+         PreferredMonitor } from '../../enums/taskbar.js';
 
 /** @enum {string} */
 export const ConfigField = {
@@ -67,64 +66,64 @@ export class AppConfig extends SharedConfig {
 
     /**
      * @override
-     * @param {Shell.App?} app
+     * @param {string?} [appId]
      * @param {*} [client]
      * @returns {boolean}
      */
-    destroy(app, client) {
-        if (!this.has(app)) return super.destroy(app);
+    destroy(appId, client) {
+        if (!this.has(appId)) return super.destroy(appId);
         /** @type {AppConfigDetails} */
-        const { clients } = this.getDetails(app) ?? {};
+        const { clients } = this.getDetails(appId) ?? {};
         clients?.delete(client);
         if (clients?.size) return false;
-        return super.destroy(app);
+        return super.destroy(appId);
     }
 
     /**
      * @override
-     * @param {Shell.App} app
+     * @param {string?} appId
      * @param {*} [client]
      * @param {((settingsKey?: string?) => void)?} [callback]
      * @returns {Config?}
      */
-    get(app, client, callback) {
-        if (!app?.id) return null;
-        if (this.has(app) && !client) return this.getDetails(app)?.config ?? null;
+    get(appId, client, callback) {
+        if (!appId) return null;
+        if (this.has(appId) && !client) return this.getDetails(appId)?.config ?? null;
         if (!client) return null;
         /** @type {AppConfigDetails?} */
-        const appConfig = this.getDetails(app);
+        const appConfig = this.getDetails(appId);
         if (!appConfig) return null;
         if (appConfig.config && appConfig.clients) {
             appConfig.clients.set(client, callback ?? null);
             return appConfig.config;
         }
-        appConfig.config = this.#getAppConfig(app);
+        appConfig.config = this.#getAppConfig(appId);
         appConfig.clients = new Map([[client, callback ?? null]]);
         return appConfig.config;
     }
 
     /**
-     * @param {Shell.App} app
+     * @param {string?} appId
      * @param {string} [key]
      * @returns {boolean}
      */
-    hasOverride(app, key) {
-        if (!app?.id) return false;
-        const appConfig = this.#configOverride[app?.id];
+    hasOverride(appId, key) {
+        if (!appId) return false;
+        const appConfig = this.#configOverride[appId];
         if (!appConfig) return false;
         if (key) return new Set(Object.keys(appConfig)).has(key);
         return true;
     }
 
     /**
-     * @param {Shell.App} app
+     * @param {string?} appId
      * @param {string} key
      * @param {*} value
      */
-    setOverride(app, key, value) {
-        if (!app?.id || !this.has(app)) return;
+    setOverride(appId, key, value) {
+        if (!appId || !this.has(appId)) return;
         if (!Object.keys(ConfigField).includes(key)) return;
-        const configOverride = this.#configOverride[app.id] ?? {};
+        const configOverride = this.#configOverride[appId] ?? {};
         const settingsKey = ConfigField[key];
         switch (settingsKey) {
             case ConfigField.iconSize:
@@ -151,31 +150,31 @@ export class AppConfig extends SharedConfig {
                 if (!value) delete configOverride[key];
                 else configOverride[key] = value;
         }
-        if (!Object.keys(configOverride).length) return this.resetOverride(app);
-        this.#configOverride[app.id] = configOverride;
+        if (!Object.keys(configOverride).length) return this.resetOverride(appId);
+        this.#configOverride[appId] = configOverride;
         this.#saveOverride();
-        this.#setAppConfig([app, this.getDetails(app)], settingsKey);
+        this.#setAppConfig([appId, this.getDetails(appId)], settingsKey);
     }
 
     /**
-     * @param {Shell.App} app
+     * @param {string?} appId
      */
-    resetOverride(app) {
-        if (!app?.id || !this.has(app)) return;
-        if (!this.#configOverride[app.id]) return;
-        delete this.#configOverride[app.id];
+    resetOverride(appId) {
+        if (!appId || !this.has(appId)) return;
+        if (!this.#configOverride[appId]) return;
+        delete this.#configOverride[appId];
         this.#saveOverride();
-        this.#setAppConfig([app, this.getDetails(app)]);
+        this.#setAppConfig([appId, this.getDetails(appId)]);
     }
 
     /**
-     * @param {[Shell.App, AppConfigDetails]} appConfig
+     * @param {[appId: string, AppConfigDetails]} appConfig
      * @param {string?} [settingsKey]
      */
-    #setAppConfig([app, details], settingsKey) {
+    #setAppConfig([appId, details], settingsKey) {
         const { config, clients } = details;
         if (!config) return;
-        const newConfig = this.#getAppConfig(app);
+        const newConfig = this.#getAppConfig(appId);
         for (const key in newConfig) {
             config[key] = newConfig[key];
         }
@@ -188,13 +187,13 @@ export class AppConfig extends SharedConfig {
     }
 
     /**
-     * @param {Shell.App} app
+     * @param {string} appId
      * @returns {Config?}
      */
-    #getAppConfig(app) {
+    #getAppConfig(appId) {
         const defaultConfig = super.get();
-        if (!app?.id || !defaultConfig) return null;
-        const configOverride = this.#getOverride(app.id);
+        if (!appId || !defaultConfig) return null;
+        const configOverride = this.#getOverride(appId);
         const { iconSizeOffset, iconPath, activationBehavior,
                 preferredMonitor, attentionBehavior,
                 attentionNotificationsBehavior, notificationsBehavior } = configOverride;
