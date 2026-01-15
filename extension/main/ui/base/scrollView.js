@@ -22,15 +22,20 @@ const DefaultProps = {
 };
 
 /**
- * @augments Component<St.ScrollView>
+ * Note: This component uses `St.ScrollView` behind the scenes, providing a scrollable layout.
+ *
+ * @augments Component<St.BoxLayout>
  */
 export class ScrollView extends Component {
 
     /** @type {St.BoxLayout?} */
-    #layout = null;
+    #actor = null;
+
+    /** @type {St.ScrollView?} */
+    #container = null;
 
     /** @type {St.Adjustment?} */
-    #scroll = super.actor?.hadjustment;
+    #scroll = null;
 
     /** @type {number} */
     #scrollPosition = 0;
@@ -39,23 +44,24 @@ export class ScrollView extends Component {
     #scrollLimit = -1;
 
     /** @type {Job?} */
-    #handleScrollJob = Context.jobs.new(super.actor, Delay.Redraw);
+    #handleScrollJob = null;
 
     /**
      * @override
      * @type {St.BoxLayout}
      */
     get actor() {
-        if (!this.#layout) throw new Error(`${this.constructor.name} is invalid.`);
-        return this.#layout;
+        if (!this.#actor) throw new Error(`${this.constructor.name} is invalid.`);
+        return this.#actor;
     }
 
     /** @type {St.ScrollView} */
-    get area() {
-        return super.actor;
+    get container() {
+        if (!this.#container) throw new Error(`${this.constructor.name} is invalid.`);
+        return this.#container;
     }
 
-    /** @type {number} 0...scrollSize - pageSize */
+    /** @type {number} 0...`scrollSize` - `pageSize` */
     get scrollPosition() {
         const scrollValue = this.#scroll?.value ?? 0;
         return Math.max(scrollValue, this.#scrollPosition);
@@ -71,7 +77,7 @@ export class ScrollView extends Component {
         return this.#scroll?.upper ?? 0;
     }
 
-    /** @param {number} value -1...0...scrollSize - pageSize */
+    /** @param {number} value -1...0...`scrollSize` - `pageSize` */
     set scrollLimit(value) {
         if (typeof value !== 'number') return;
         this.#scrollLimit = value;
@@ -81,14 +87,19 @@ export class ScrollView extends Component {
      * @param {string?} [name]
      */
     constructor(name = null) {
-        super(new St.ScrollView({ name, ...DefaultProps }));
-        this.#layout = new St.BoxLayout();
-        super.actor.add_child(this.#layout);
-        super.actor.connect(Event.Destroy, () => this.#destroy());
-        this.#scroll?.connect(Event.Changed, () => this.#handleScrollJob?.reset().enqueue(() =>
-                                                   this.#handleScrollSize()));
+        const container = new St.ScrollView(DefaultProps);
+        // @ts-ignore
+        super(container);
+        this.#actor = new St.BoxLayout({ name });
+        this.#container = container;
+        this.#scroll = container.hadjustment;
+        this.#handleScrollJob = Context.jobs.new(this.#scroll, Delay.Redraw);
+        container.add_child(this.#actor);
+        container.connect(Event.Destroy, () => this.#destroy());
+        this.#scroll.connect(Event.Changed, () =>
+            this.#handleScrollJob?.reset().enqueue(() => this.#handleScrollSize()));
         if (typeof name !== 'string') return;
-        this.#layout.set_name(`${name}-Layout`);
+        container.set_name(`${name}-Container`);
     }
 
     /**
@@ -97,14 +108,14 @@ export class ScrollView extends Component {
      * @returns {Promise<boolean>?}
      */
     scrollToActor(actor, deceleration = false) {
-        if (!this.hasAllocation || !this.#scroll) return null;
+        if (!this.#container || !this.#scroll || !this.hasAllocation) return null;
         if (actor instanceof Component && actor.isValid) {
             actor = actor.actor;
         }
         if (actor instanceof Clutter.Actor === false) return null;
         let { value, pageSize, upper } = this.#scroll;
         if (pageSize >= ~~upper) return null;
-        const fadeEffect = super.actor.get_effect(FADE_EFFECT_NAME);
+        const fadeEffect = this.#container.get_effect(FADE_EFFECT_NAME);
         const allocation = actor.get_allocation_box();
         const { x1, x2 } = allocation;
         const offset = fadeEffect instanceof St.ScrollViewFade ?
@@ -118,7 +129,7 @@ export class ScrollView extends Component {
     }
 
     /**
-     * @param {number} value positive value 0...scrollSize - pageSize
+     * @param {number} value 0...`scrollSize` - `pageSize`
      * @param {boolean} [deceleration]
      * @returns {Promise<boolean>?}
      */
@@ -142,23 +153,23 @@ export class ScrollView extends Component {
     #destroy() {
         this.#handleScrollJob?.destroy();
         this.#handleScrollJob = null;
-        this.#layout = null;
+        this.#container = null;
+        this.#actor = null;
         this.#scroll = null;
     }
 
     /**
-     * Note: Calling update_fade_effect to remove fade effect from the scroll view.
-     *       It's not implemented in C++ code for some reason.
+     * Note: Calling `update_fade_effect` to remove fade effect from the scroll view.
+     *       It's not implemented in native code for some reason.
      */
     #handleScrollSize() {
-        if (!this.isValid || !this.#scroll) return;
-        const area = super.actor;
+        if (!this.#container || !this.#scroll || !this.isValid) return;
         const className = `h${FADE_EFFECT_NAME}`;
         const { pageSize, upper } = this.#scroll;
-        if (pageSize < ~~upper) return area.add_style_class_name(className);
-        if (!area.has_style_class_name(className)) return;
-        area.remove_style_class_name(className);
-        area.update_fade_effect(new Clutter.Margin());
+        if (pageSize < ~~upper) return this.#container.add_style_class_name(className);
+        if (!this.#container.has_style_class_name(className)) return;
+        this.#container.remove_style_class_name(className);
+        this.#container.update_fade_effect(new Clutter.Margin());
     }
 
 }
