@@ -14,7 +14,7 @@ import ChangeTracker from './taskbar/changeTracker.js';
 import Favorites from './taskbar/favorites.js';
 import { WindowPreview } from '../ui/base/windowPreview.js';
 import { Config, InnerConfig } from '../../shared/utils/config.js';
-import { AppConfigValue } from '../utils/taskbar/appConfig.js';
+import { AppConfigValue } from '../../shared/utils/taskbar/appConfig.js';
 import { NotificationSourceInfo } from '../utils/notificationSourceInfo.js';
 import { Event, Delay, Property } from '../../shared/enums/general.js';
 import { ServiceConfigField as ConfigField,
