@@ -103,15 +103,16 @@ class Job {
     #start(resolver) {
         this.#resolver = resolver;
         const delay = this.#delay ?? Delay.Idle;
-        const isLaterType = Laters && typeof LaterType[delay] === 'number';
+        const isLaterType = !!Laters && typeof LaterType[delay] === 'number';
         this.#id = isLaterType ? Laters.add(LaterType[delay], () => this.#finish()) :
                    GLib.timeout_add(GLib.PRIORITY_DEFAULT_IDLE, Math.max(0, delay), () => this.#finish());
     }
 
     #abort() {
         if (this.#id) {
-            const isLaterType = typeof this.#delay === 'number' &&
-                                typeof LaterType[this.#delay] === 'number' && Laters;
+            const isLaterType = !!Laters &&
+                                typeof this.#delay === 'number' &&
+                                typeof LaterType[this.#delay] === 'number';
             if (isLaterType) Laters.remove(this.#id);
             else GLib.source_remove(this.#id);
         }
