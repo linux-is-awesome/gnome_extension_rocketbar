@@ -23,7 +23,7 @@ import { AppSoundVolumeControl } from '../../services/soundVolume.js';
 import { ComponentEvent } from '../base/component.js';
 import { Animation, AnimationDuration, AnimationType } from '../base/animation.js';
 import { WindowManager } from '../../utils/taskbar/windowManager.js';
-import { AppConfig, ConfigField } from '../../utils/taskbar/appConfig.js';
+import { AppConfig, ConfigField } from '../../../shared/utils/taskbar/appConfig.js';
 import { Event, Delay, Progress } from '../../../shared/enums/general.js';
 import { ActivationBehavior } from '../../../shared/enums/taskbar.js';
 
@@ -241,7 +241,7 @@ export class AppButton extends RuntimeButton {
         this.#app = app;
         this.#isDropCandidate = isDropCandidate;
         this.actor.set_reactive(!isDropCandidate);
-        this.#config = this.configProvider.get(app, this, settingsKey => this.#handleConfig(settingsKey));
+        this.#config = this.configProvider.get(app.id, this, settingsKey => this.#handleConfig(settingsKey));
         this.#appIcon = new AppIcon(app, this.#config?.iconPath).setParent(this.display);
         Context.desktop.connectScale(this, () => this.#updateStyle());
     }
@@ -328,7 +328,7 @@ export class AppButton extends RuntimeButton {
         Context.jobs.removeAll(this);
         Context.signals.removeAll(this);
         Context.launcherApi.disconnect(this);
-        if (AppButton.#sharedConfig?.destroy(this.#app, this)) {
+        if (AppButton.#sharedConfig?.destroy(this.#app?.id, this)) {
             AppButton.#sharedConfig = null;
         }
         this.#destroyService();
