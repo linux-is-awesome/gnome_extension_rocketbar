@@ -33,9 +33,10 @@ const STYLE_CLASS = 'rocketbar__popup-menu';
 const ICON_PATH_SEPARATOR = '/';
 const ICON_FILE_TYPE_FILTER = `${Label.Icon} | *.svg *.png`;
 
-/** @type {{[prop: string]: boolean}} */
+/** @type {{favoritesSection: boolean, showSingleWindow: boolean}} */
 const DefaultProps = {
-    favoritesSection: true
+    favoritesSection: true,
+    showSingleWindow: true
 };
 
 /** @type {{[position: string]: number}} */
@@ -234,7 +235,9 @@ class CurrentWorkspaceSection extends PopupMenuSection {
         this.#appButton = appButton;
         this.actor.hide();
         this.actor.connect(Event.Destroy, () => this.#destroy());
-        this.#title = new PopupSeparatorMenuItem(Label.CurrentWorkspace);
+        /** @type {*} */
+        const params = Label.CurrentWorkspace;
+        this.#title = new PopupSeparatorMenuItem(params);
         this.addMenuItem(this.#title);
         this.#minimizeAllItem = this.addAction(Label.MinimizeAll, () => appButton.windows?.minimize());
         this.addAction(Label.RaiseAll, () => appButton.windows?.raise());
@@ -303,7 +306,9 @@ class OtherWorkspacesSection extends PopupMenuSection {
     constructor(appButton) {
         super();
         this.actor.hide();
-        this.addMenuItem(new PopupSeparatorMenuItem(Label.OtherWorkspaces));
+        /** @type {*} */
+        const params = Label.OtherWorkspaces;
+        this.addMenuItem(new PopupSeparatorMenuItem(params));
         this.addAction(Label.FindWindow, () => appButton?.activate(ActivationBehavior.FindWindow));
         this.addAction(Label.MoveWindows, () => appButton?.activate(ActivationBehavior.MoveWindows));
     }
@@ -451,9 +456,9 @@ class CustomizeChildMenu extends ChildMenu {
     }
 
     #resetAll() {
-        const app = this.#appButton?.app;
-        if (!app) return;
-        this.#appButton?.configProvider?.resetOverride(app);
+        const appId = this.#appButton?.app?.id;
+        if (!appId) return;
+        this.#appButton?.configProvider?.resetOverride(appId);
         this.#sync();
     }
 
@@ -466,10 +471,10 @@ class CustomizeChildMenu extends ChildMenu {
             typeof this.#preferredMonitor !== 'function' ||
             typeof this.#iconSize !== 'function' ||
             typeof this.#customIcon !== 'function') return;
-        const app = this.#appButton?.app;
+        const appId = this.#appButton?.app?.id;
         const configProvider = this.#appButton?.configProvider;
-        if (!configProvider || !app) return;
-        this.#config ??= configProvider.get(app);
+        if (!configProvider || !appId) return;
+        this.#config ??= configProvider.get(appId);
         if (!this.#config) return;
         this.#isSyncing = true;
         const config = this.#config;
@@ -481,21 +486,21 @@ class CustomizeChildMenu extends ChildMenu {
             item.visible = config.windowRouting ?? false;
         };
         this.#activateBehavior(config[ConfigKey.ActivationBehavior],
-            !configProvider.hasOverride(app, ConfigKey.ActivationBehavior))
+            !configProvider.hasOverride(appId, ConfigKey.ActivationBehavior))
             .forEach(activateBehaviorVisibilityHandler);
         this.#attentionBehavior(config[ConfigKey.AttentionBehavior],
-            !configProvider.hasOverride(app, ConfigKey.AttentionBehavior));
+            !configProvider.hasOverride(appId, ConfigKey.AttentionBehavior));
         this.#attentionNotificationsBehavior(config[ConfigKey.AttentionNotificationsBehavior],
-            !configProvider.hasOverride(app, ConfigKey.AttentionNotificationsBehavior));
+            !configProvider.hasOverride(appId, ConfigKey.AttentionNotificationsBehavior));
         this.#notificationsBehavior(config[ConfigKey.NotificationsBehavior],
-            !configProvider.hasOverride(app, ConfigKey.NotificationsBehavior));
+            !configProvider.hasOverride(appId, ConfigKey.NotificationsBehavior));
         this.#preferredMonitor(config[ConfigKey.PreferredMonitor],
-            !configProvider.hasOverride(app, ConfigKey.PreferredMonitor))
+            !configProvider.hasOverride(appId, ConfigKey.PreferredMonitor))
             .forEach(preferredMonitorVisibilityHandler);
         this.#iconSize(config[ConfigKey.IconSize], defaultConfig[ConfigKey.IconSize],
-            !configProvider.hasOverride(app, ConfigKey.IconSizeOffset));
+            !configProvider.hasOverride(appId, ConfigKey.IconSizeOffset));
         this.#customIcon(config[ConfigKey.IconPath]);
-        this.setItemActiveState(this.#resetAllItem, configProvider.hasOverride(app));
+        this.setItemActiveState(this.#resetAllItem, configProvider.hasOverride(appId));
         this.#scanClipboard();
         this.#isSyncing = false;
     }
@@ -572,10 +577,10 @@ class CustomizeChildMenu extends ChildMenu {
      * @param {string|number|boolean|null} value
      */
     #setConfigOverride(key, value) {
-        const app = this.#appButton?.app;
+        const appId = this.#appButton?.app?.id;
         const configProvider = this.#appButton?.configProvider;
-        if (!app || !configProvider) return;
-        configProvider.setOverride(app, key, value);
+        if (!appId || !configProvider) return;
+        configProvider.setOverride(appId, key, value);
         this.setItemActiveState(this.#resetAllItem);
     }
 
