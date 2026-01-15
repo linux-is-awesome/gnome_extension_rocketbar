@@ -94,7 +94,9 @@ export class SliderMenuItem {
      */
     constructor(callback, icon, value) {
         this.#actor = new PopupBaseMenuItem(SliderMenuItemProps);
-        this.#slider = new Slider(0);
+        /** @type {*} */
+        const defaultValue = 0;
+        this.#slider = new Slider(defaultValue);
         this.#value = new St.Label(SliderValueProps);
         this.#icon = new Icon(icon);
         this.#icon.setProps(SliderIconProps);
@@ -162,7 +164,9 @@ export class CollapsibleGroup {
      * @param {string?} [title]
      */
     constructor(title) {
-        this.#actor = new PopupSubMenuMenuItem(title);
+        /** @type {*} */
+        const params = title;
+        this.#actor = new PopupSubMenuMenuItem(params);
         this.#actor.connect(Event.Destroy, () => this.#destroy());
     }
 
@@ -338,7 +342,9 @@ export class ChildMenu extends PopupMenuSection {
      * @returns {PopupSeparatorMenuItem}
      */
     addSeparator(title = null) {
-        const result = new PopupSeparatorMenuItem(title);
+        /** @type {*} */
+        const params = title;
+        const result = new PopupSeparatorMenuItem(params);
         this.#menu?.addMenuItem(result);
         return result;
     }
