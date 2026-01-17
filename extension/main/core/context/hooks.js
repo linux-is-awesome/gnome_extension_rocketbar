@@ -36,8 +36,8 @@ class Hook {
             [result, args] = beforeClientsCallback(this, args);
             if (typeof result !== 'undefined') return result;
             result = originFunction.call(this, ...args);
-            result = afterClientsCallback(this, result, args) ?? result;
-            return result;
+            const afterResult = afterClientsCallback(this, result, args);
+            return typeof afterResult !== 'undefined' ? afterResult : result;
         };
         Object.defineProperty(this.#target[functionName], Property.Name, { value: functionName });
     }
@@ -112,7 +112,9 @@ class Hook {
         if (!this.#originFunction || !this.#afterClients) return result;
         for (const [_, callback] of this.#afterClients) {
             try {
-                result = callback(sender, originResult, ...args) ?? result;
+                const callbackResult = callback(sender, originResult, ...args);
+                if (typeof callbackResult === 'undefined') continue;
+                result = callbackResult;
             } catch (e) {
                 Context.logError(`${Hook.name}:after failed for function: ${this.#originFunction.name}.`, e);
             }
