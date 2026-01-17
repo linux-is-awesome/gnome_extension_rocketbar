@@ -7,6 +7,7 @@ import St from 'gi://St';
 import Context from '../../core/context.js';
 import { Component } from './component.js';
 import { Animation, AnimationType, AnimationDuration } from './animation.js';
+import { MaxLengthBounds, MaxLengthCalculator } from '../../utils/maxLengthCalculator.js';
 import { Event, Delay, Alignment } from '../../../shared/enums/general.js';
 
 const STYLE_CLASS = 'rocketbar__tooltip';
@@ -75,6 +76,9 @@ export class Tooltip extends Component {
     /** @type {Alignment} */
     #location = Alignment.Top;
 
+    /** @type {number} */
+    #maxLength = MaxLengthBounds.Max;
+
     /** @type {Job?} */
     #fadeInJob = null;
 
@@ -136,6 +140,13 @@ export class Tooltip extends Component {
     set hideDelay(value) {
         if (typeof value !== 'number') return;
         this.#hideDelay = Math.max(value, DEFAULT_HIDE_DELAY);
+    }
+
+    /** @param {number} value */
+    set maxLength(value) {
+        if (typeof value !== 'number' || !this.isValid) return;
+        this.#maxLength = value;
+        super.actor.set_style(null);
     }
 
     /**
@@ -322,7 +333,7 @@ export class Tooltip extends Component {
         if (!sourceActorCenterRect || !monitor) return;
         let [width, height] = this.#targetSize ?? actor.get_size();
         const offset = this.#offset ?? 0;
-        const maxWidth = monitor.width - offset;
+        const maxWidth = MaxLengthCalculator(monitor.width - offset, this.#maxLength);
         width = Math.min(maxWidth, width);
         const style = `max-width: ${maxWidth}px;`;
         const sourceCenter = Math.floor((sourceActorCenterRect.width - width) / 2);
