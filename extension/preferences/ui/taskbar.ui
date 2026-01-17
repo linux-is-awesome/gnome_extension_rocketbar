@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <object class="AdwNavigationPage" id="taskbar">
+        <property name="title" translatable="yes">Taskbar</property>
+        <property name="child">
+            <object class="AdwToolbarView">
+                <child type="top">
+                    <object class="AdwHeaderBar">
+                    </object>
+                </child>
+                <property name="content">
+                    <object class="AdwPreferencesPage" id="taskbar-page">
+                        <child>
+                            <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">General</property>
+                                <child>
+                                    <object class="AdwSwitchRow" id="isolate-workspaces">
+                                        <property name="title" translatable="yes">Isolate Workspaces</property>
+                                        <property name="subtitle" translatable="yes">Show applications from the current workspace only</property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwSwitchRow" id="show-all-windows">
+                                        <property name="title" translatable="yes">Include All Windows</property>
+                                        <property name="subtitle" translatable="yes">Enable management of windows marked to skip the taskbar</property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwExpanderRow" id="show-favorites">
+                                        <property name="title" translatable="yes">Show Pinned Applications</property>
+                                        <property name="subtitle" translatable="yes">Always show pinned applications on the taskbar, even if they are not running</property>
+                                        <property name="show-enable-switch">true</property>
+                                        <property name="enable-expansion">false</property>
+                                        <property name="expanded">false</property>
+                                        <child>
+                                            <object class="AdwSwitchRow" id="separator">
+                                                <property name="title" translatable="yes">Always Show Separator</property>
+                                                <property name="subtitle" translatable="yes">Make the separator between pinned and running applications always visible</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwExpanderRow" id="window-routing">
+                                        <property name="title" translatable="yes">Multi-Monitor Window Routing</property>
+                                        <property name="subtitle" translatable="yes">Enable preferred monitor selection for each application and automatically route all newly opened windows there</property>
+                                        <property name="show-enable-switch">true</property>
+                                        <property name="enable-expansion">false</property>
+                                        <property name="expanded">false</property>
+                                        <child>
+                                            <object class="AdwSwitchRow" id="window-routing-watchdog">
+                                                <property name="title" translatable="yes">Handle Monitor Changes</property>
+                                                <property name="subtitle" translatable="yes">Automatically attempt to restore window positions after monitor changes</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">Applications</property>
+                                <child>
+                                    <object class="AdwExpanderRow">
+                                        <property name="title" translatable="yes">Default Settings</property>
+                                        <property name="show-enable-switch">false</property>
+                                        <property name="enable-expansion">true</property>
+                                        <property name="expanded">false</property>
+                                        <child>
+                                            <object class="AdwComboRow" id="preferred-monitor">
+                                                <property name="title" translatable="yes">Preferred Monitor</property>
+                                                <property name="model">preferred-monitor-options</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwComboRow" id="activation-behavior">
+                                                <property name="title" translatable="yes">Activation Behavior</property>
+                                                <property name="model">activate-behavior-options</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwComboRow" id="attention-behavior">
+                                                <property name="title" translatable="yes">Focus Demanding Attention Windows</property>
+                                                <property name="model">attention-behavior-options</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwComboRow" id="attention-notifications-behavior">
+                                                <property name="title" translatable="yes">Attention Notifications</property>
+                                                <property name="model">notifications-behavior-options</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwComboRow" id="notifications-behavior">
+                                                <property name="title" translatable="yes">Standard Notifications</property>
+                                                <property name="model">notifications-behavior-options</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">Layout</property>
+                                <child>
+                                    <object class="AdwSpinRow" id="max-length">
+                                        <property name="title" translatable="yes">Max Length (% of Monitor)</property>
+                                        <property name="subtitle" translatable="yes">Limit the taskbar length to a percentage of the monitor size</property>
+                                        <property name="adjustment">
+                                            <object class="GtkAdjustment">
+                                                <property name="lower">10</property>
+                                                <property name="upper">100</property>
+                                                <property name="value">100</property>
+                                                <property name="step-increment">5</property>
+                                            </object>
+                                        </property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">Components</property>
+                                <child>
+                                    <object class="AdwActionRow" id="appbutton-row">
+                                        <property name="title" translatable="yes">Application Buttons</property>
+                                        <property name="activatable">true</property>
+                                        <child>
+                                            <object class="GtkImage">
+                                                <property name="icon-name">go-next-symbolic</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwActionRow" id="appbutton-indicators-row">
+                                        <property name="title" translatable="yes">Indicators</property>
+                                        <property name="activatable">false</property>
+                                        <child>
+                                            <object class="GtkSwitch" id="appbutton-indicators">
+                                                <property name="valign">center</property>
+                                                <style>
+                                                    <class name="navigation-row-switch" />
+                                                </style>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkImage" id="appbutton-indicators-row-arrow">
+                                                <property name="icon-name">go-next-symbolic</property>
+                                                <property name="sensitive">false</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwActionRow" id="appbutton-notification-badges-row">
+                                        <property name="title" translatable="yes">Notification Badges</property>
+                                        <property name="activatable">false</property>
+                                        <child>
+                                            <object class="GtkSwitch" id="appbutton-notification-badges">
+                                                <property name="valign">center</property>
+                                                <style>
+                                                    <class name="navigation-row-switch" />
+                                                </style>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkImage" id="appbutton-notification-badges-row-arrow">
+                                                <property name="icon-name">go-next-symbolic</property>
+                                                <property name="sensitive">false</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwActionRow" id="appbutton-progress-bars-row">
+                                        <property name="title" translatable="yes">Progress Bars</property>
+                                        <property name="activatable">false</property>
+                                        <child>
+                                            <object class="GtkSwitch" id="appbutton-progress-bars">
+                                                <property name="valign">center</property>
+                                                <style>
+                                                    <class name="navigation-row-switch" />
+                                                </style>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkImage" id="appbutton-progress-bars-row-arrow">
+                                                <property name="icon-name">go-next-symbolic</property>
+                                                <property name="sensitive">false</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwActionRow" id="appbutton-tooltips-row">
+                                        <property name="title" translatable="yes">Tooltips</property>
+                                        <property name="activatable">false</property>
+                                        <child>
+                                            <object class="GtkSwitch" id="appbutton-tooltips">
+                                                <property name="valign">center</property>
+                                                <style>
+                                                    <class name="navigation-row-switch" />
+                                                </style>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkImage" id="appbutton-tooltips-row-arrow">
+                                                <property name="icon-name">go-next-symbolic</property>
+                                                <property name="sensitive">false</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                    </object>
+                </property>
+            </object>
+        </property>
+    </object>
+    <object class="GtkStringList" id="preferred-monitor-options">
+        <items>
+            <item translatable="yes">Default</item>
+            <item translatable="yes">Primary</item>
+            <item translatable="yes">Left of Primary</item>
+            <item translatable="yes">Right of Primary</item>
+            <item translatable="yes">Above Primary</item>
+            <item translatable="yes">Below Primary</item>
+        </items>
+    </object>
+    <object class="GtkStringList" id="activate-behavior-options">
+        <items>
+            <item translatable="yes">Default</item>
+            <item translatable="yes">Find Windows</item>
+            <item translatable="yes">Move Windows</item>
+        </items>
+    </object>
+    <object class="GtkStringList" id="attention-behavior-options">
+        <items>
+            <item translatable="yes">Default</item>
+            <item translatable="yes">When Active</item>
+            <item translatable="yes">On Active Workspace</item>
+            <item translatable="yes">Always</item>
+        </items>
+    </object>
+    <object class="GtkStringList" id="notifications-behavior-options">
+        <items>
+            <item translatable="yes">Default</item>
+            <item translatable="yes">Disable</item>
+            <item translatable="yes">Always Hide</item>
+            <item translatable="yes">Always Show</item>
+            <item translatable="yes">Always Show as Critical</item>
+        </items>
+    </object>
+</interface>
