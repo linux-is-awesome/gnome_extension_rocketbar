@@ -130,7 +130,7 @@
                                 <child>
                                     <object class="AdwExpanderRow" id="colors-dnd">
                                         <property name="title" translatable="yes">Do Not Disturb</property>
-                                        <property name="subtitle" translatable="yes">Use a separate set of colors while "Do Not Disturb" mode is active</property>
+                                        <property name="subtitle" translatable="yes">Use a separate set of colors while Do Not Disturb mode is active</property>
                                         <property name="expanded">false</property>
                                         <property name="enable-expansion">false</property>
                                         <property name="show-enable-switch">true</property>
