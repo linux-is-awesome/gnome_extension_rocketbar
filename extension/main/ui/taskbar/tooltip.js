@@ -393,9 +393,10 @@ export class Tooltip extends BaseTooltip {
                 this.#releaseActiveWindow();
                 break;
             default:
-                const { showDelay, hideDelay } = this.#config;
+                const { showDelay, hideDelay, maxLength } = this.#config;
                 this.showDelay = showDelay;
                 this.hideDelay = hideDelay;
+                this.maxLength = maxLength;
         }
     }
 
