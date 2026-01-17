@@ -9,19 +9,19 @@
                 <child>
                     <object class="AdwSwitchRow" id="tweaks/overviewHideSearch">
                         <property name="title" translatable="yes">Hide Search</property>
-                        <property name="subtitle" translatable="yes">Hide search input and enlarge workspace thumbnails</property>
+                        <property name="subtitle" translatable="yes">Hide the search input and increase size of the workspace thumbnails</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwSwitchRow" id="tweaks/overviewKillDash">
+                        <property name="title" translatable="yes">Hide Dash</property>
+                        <property name="subtitle" translatable="yes">Hide the Dash and prevent it from rendering behind the scene. The Show Apps button will remain visible</property>
                     </object>
                 </child>
                 <child>
                     <object class="AdwSwitchRow" id="tweaks/overviewClicks">
                         <property name="title" translatable="yes">Empty Space Clicks</property>
                         <property name="subtitle" translatable="yes">Primary button click hides the Overview, secondary button click toggles the App Grid</property>
-                    </object>
-                </child>
-                <child>
-                    <object class="AdwSwitchRow" id="tweaks/overviewKillDash">
-                        <property name="title" translatable="yes">Kill Dash</property>
-                        <property name="subtitle" translatable="yes">Hide the Dash and prevent it from rendering behind the scene. An arrow button to toggle the App Grid will be displayed instead</property>
                     </object>
                 </child>
             </object>
@@ -31,14 +31,14 @@
                 <property name="title" translatable="yes">Popups</property>
                 <child>
                     <object class="AdwSwitchRow" id="tweaks/popupsNoDelay">
-                        <property name="title" translatable="yes">Eliminate Display Delay</property>
+                        <property name="title" translatable="yes">Remove Display Delay</property>
                         <property name="subtitle" translatable="yes">Instantly display all popups for better recognition</property>
                     </object>
                 </child>
                 <child>
                     <object class="AdwSwitchRow" id="tweaks/popupsPreventFocus">
-                        <property name="title" translatable="yes">Prevent Key Focus Grabbing</property>
-                        <property name="subtitle" translatable="yes">Useful on X11 and for XWayland windows to prevent focus loss when switching input language</property>
+                        <property name="title" translatable="yes">Prevent Focus Grabbing</property>
+                        <property name="subtitle" translatable="yes">Prevent window focus from being lost when switching applications or input languages</property>
                     </object>
                 </child>
             </object>
