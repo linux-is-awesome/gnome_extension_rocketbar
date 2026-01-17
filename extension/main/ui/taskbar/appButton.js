@@ -686,7 +686,7 @@ export class AppButton extends RuntimeButton {
     }
 
     /**
-     * @param {{event: Clutter.Event, button: number}} [params]
+     * @param {{event: Clutter.Event, button?: number?}} [params]
      * @returns {{[key: string]: boolean}}
      */
     #getClickDetails(params) {

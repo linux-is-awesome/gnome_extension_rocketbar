@@ -8,12 +8,13 @@ import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Shell from 'gi://Shell';
 import { DragMotionResult } from 'resource:///org/gnome/shell/ui/dnd.js';
-import { Overview } from '../core/shell.js';
+import { Overview, WindowManager } from '../core/shell.js';
 import Context from '../core/context.js';
 import { ComponentEvent } from './base/component.js';
 import { TaskbarClient } from '../services/taskbar.js';
 import { ScrollView } from './base/scrollView.js';
 import { Separator } from './taskbar/separator.js';
+import { ButtonEvent } from './base/button.js';
 import { AppButton, AppButtonEvent } from './taskbar/appButton.js';
 import { DragAndDropHandler } from './taskbar/dndHandler.js';
 import { Animation, AnimationDuration } from './base/animation.js';
@@ -214,6 +215,8 @@ export default class Taskbar extends ScrollView {
         super.dropEvents = true;
         super.notifyCallback = data => this.#events?.[data?.event]?.(data);
         this.#separator?.connect(Event.Hover, () => this.#handleChildReaction(this.#separator));
+        Context.hooks.add(this, WindowManager, WindowManager._getNthFavoriteApp,
+            (_, __, appIndex) => (this.#handleAppActivationShortcut(appIndex), null));
     }
 
     /**
@@ -280,6 +283,7 @@ export default class Taskbar extends ScrollView {
     #destroy() {
         Context.jobs.removeAll(this);
         Context.desktop.disconnect(this);
+        Context.hooks.removeAll(this);
         Context.signals.removeAll(this);
         this.#allocation?.destroy();
         this.#service?.destroy();
@@ -549,6 +553,18 @@ export default class Taskbar extends ScrollView {
         if (this.#scrollLock && this.#scrollLock !== child) return;
         if (!isActive && !hasHover && !hasFocus) return;
         this.scrollToActor(child, !hasHover);
+    }
+
+    /**
+     * @param {number} appIndex
+     */
+    #handleAppActivationShortcut(appIndex) {
+        if (typeof appIndex !== 'number' || !this.#appButtons?.size) return;
+        const appButtons = [...this.#appButtons.values()].filter(appButton => appButton.isValid);
+        const appButton = appButtons[appIndex];
+        const event = Clutter.get_current_event();
+        if (!appButton || !event) return;
+        appButton.notifySelf(ButtonEvent.Click, { event });
     }
 
 }
