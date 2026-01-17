@@ -21,7 +21,8 @@ export const ConfigKey = {
 
 /** @enum {string} */
 export const ConfigField = {
-    enableSeparator: SettingsKey.Separator
+    enableSeparator: SettingsKey.Separator,
+    maxLength: SettingsKey.MaxLength
 };
 
 /** @enum {string} */
@@ -117,6 +118,7 @@ export const ProgressBarConfigField = {
 export const TooltipConfigField = {
     showDelay: SettingsKey.TooltipShowDelay,
     hideDelay: SettingsKey.TooltipHideDelay,
+    maxLength: SettingsKey.TooltipMaxLength,
     shrinkWindowTitles: SettingsKey.TooltipShrinkWindowTitles,
     enableWindowPreviews: SettingsKey.TooltipWindowPreviews
 };

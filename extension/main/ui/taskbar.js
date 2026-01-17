@@ -19,6 +19,7 @@ import { AppButton, AppButtonEvent } from './taskbar/appButton.js';
 import { DragAndDropHandler } from './taskbar/dndHandler.js';
 import { Animation, AnimationDuration } from './base/animation.js';
 import { Config } from '../../shared/utils/config.js';
+import { MaxLengthBounds, MaxLengthCalculator } from '../utils/maxLengthCalculator.js';
 import { Event, Delay } from '../../shared/enums/general.js';
 import { ConfigField, ConfigOptions, ActivationBehavior } from '../../shared/enums/taskbar.js';
 
@@ -250,6 +251,9 @@ export default class Taskbar extends ScrollView {
             case ConfigField.enableSeparator:
                 this.#rerender();
                 break;
+            case ConfigField.maxLength:
+                this.#updateMaxLength();
+                break;
         }
     }
 
@@ -259,6 +263,7 @@ export default class Taskbar extends ScrollView {
     #handleInit(sender) {
         if (!this.isValid || !sender) return;
         if (sender !== this) return this.#allocation?.add(sender);
+        this.#updateMaxLength();
         Context.jobs.shared(this, () => this.#rerender(), Delay.Background);
     }
 
@@ -283,6 +288,7 @@ export default class Taskbar extends ScrollView {
     #destroy() {
         Context.jobs.removeAll(this);
         Context.desktop.disconnect(this);
+        Context.monitors.disconnect(this);
         Context.hooks.removeAll(this);
         Context.signals.removeAll(this);
         this.#allocation?.destroy();
@@ -565,6 +571,22 @@ export default class Taskbar extends ScrollView {
         const event = Clutter.get_current_event();
         if (!appButton || !event) return;
         appButton.notifySelf(ButtonEvent.Click, { event });
+    }
+
+    #updateMaxLength() {
+        if (!this.#config || !this.isValid) return;
+        const { maxLength } = this.#config;
+        if (maxLength >= MaxLengthBounds.Max) {
+            this.container.set_style(null);
+            Context.monitors.disconnect(this);
+            return;
+        }
+        const monitorInfo = Context.monitors.getMonitorInfo(this.rect);
+        if (!monitorInfo) return;
+        const length = MaxLengthCalculator(monitorInfo.width, maxLength);
+        this.container.set_style(`max-width: ${length}px;`);
+        if (Context.monitors.has(this)) return;
+        Context.monitors.connect(this, () => this.#updateMaxLength());
     }
 
 }
