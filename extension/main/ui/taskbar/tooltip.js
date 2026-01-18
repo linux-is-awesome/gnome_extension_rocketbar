@@ -20,7 +20,6 @@ const LAYOUT_STYLE_CLASS = 'rocketbar__tooltip_layout';
 const WINDOW_TITLE_STYLE_CLASS = 'rocketbar__tooltip_window-title';
 const APP_STATUS_STYLE_CLASS = 'rocketbar__tooltip_app-status';
 const APP_STATUS_ITEM_STYLE_CLASS = 'rocketbar__tooltip_app-status_item';
-const SOUND_VOLUME_CHANGE_STEP = 5;
 
 /** @enum {string} */
 const AppStatusItemIcon = {
@@ -230,17 +229,16 @@ class AppStatus extends Component {
         if (!name || !event) return;
         const item = this.#items?.get(name);
         const scrollDirection = event.get_scroll_direction();
-        if (!item || scrollDirection === Clutter.ScrollDirection.SMOOTH) return;
+        if (!item || (scrollDirection !== Clutter.ScrollDirection.UP &&
+                      scrollDirection !== Clutter.ScrollDirection.DOWN)) return;
         switch (name) {
             case AppStatusItemIcon.SoundInputVolume:
             case AppStatusItemIcon.SoundOutputVolume:
                 const soundVolumeControl = this.#appButton?.soundVolumeControl;
-                const step = scrollDirection === Clutter.ScrollDirection.DOWN ||
-                             scrollDirection === Clutter.ScrollDirection.LEFT ?
-                             -SOUND_VOLUME_CHANGE_STEP : SOUND_VOLUME_CHANGE_STEP;
+                const multiplier = scrollDirection === Clutter.ScrollDirection.UP ? 1 : -1;
                 const isInput = name === AppStatusItemIcon.SoundInputVolume;
-                if (isInput) soundVolumeControl?.addInputVolume(step);
-                else soundVolumeControl?.addOutputVolume(step);
+                if (isInput) soundVolumeControl?.changeInputVolume(multiplier);
+                else soundVolumeControl?.changeOutputVolume(multiplier);
                 break;
             default: return;
         }
