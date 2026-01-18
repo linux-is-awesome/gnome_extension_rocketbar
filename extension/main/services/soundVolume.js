@@ -11,6 +11,7 @@ import { Delay } from '../../shared/enums/general.js';
 
 const SOUND_STREAM_MIN_VOLUME = 0;
 const SOUND_STREAM_MAX_VOLUME = 1;
+const DEFAULT_VOLUME_CHANGE_STEP = 5;
 
 /** @enum {string} */
 const MixerControlEvent = {
@@ -323,21 +324,29 @@ export class AppSoundVolumeControl {
     }
 
     /**
-     * @param {number} volume negative or positive integer -100..-1, 1..100
+     * Note: `multiplier` * `step` = `value`;
+     *       `value` > 0 - increase the input volume by `step`;
+     *       `value` < 0 - decrease the input volume by `step`.
+     *
+     * @param {number} [multiplier] negative or positive integer
+     * @param {number} [step] negative or positive integer
      */
-    addInputVolume(volume) {
-        if (!volume || !this.hasInput) return;
-        volume = this.#getVolume(this.#inputStreams) + (volume / 100);
-        this.#setVolume(this.#inputStreams, volume);
+    changeInputVolume(multiplier = 1, step = DEFAULT_VOLUME_CHANGE_STEP) {
+        if (!this.hasInput) return;
+        this.#changeVolume(this.#inputStreams, multiplier, step);
     }
 
     /**
-     * @param {number} volume negative or positive integer -100..-1, 1..100
+     * Note: `multiplier` * `step` = `value`;
+     *       `value` > 0 - increase the output volume by `step`;
+     *       `value` < 0 - decrease the output volume by `step`.
+     *
+     * @param {number} [multiplier] negative or positive integer
+     * @param {number} [step] negative or positive integer
      */
-    addOutputVolume(volume) {
-        if (!volume || !this.hasOutput) return;
-        volume = this.#getVolume(this.#outputStreams) + (volume / 100);
-        this.#setVolume(this.#outputStreams, volume);
+    changeOutputVolume(multiplier = 1, step = DEFAULT_VOLUME_CHANGE_STEP) {
+        if (!this.hasOutput) return;
+        this.#changeVolume(this.#outputStreams, multiplier, step);
     }
 
     /**
@@ -441,6 +450,21 @@ export class AppSoundVolumeControl {
             }
         }
         return null;
+    }
+
+    /**
+     * @param {Set<AppSoundStream>?} streams
+     * @param {number} multiplier
+     * @param {number} step
+     */
+    #changeVolume(streams, multiplier, step) {
+        if (typeof multiplier !== 'number' ||
+            typeof step !== 'number' ||
+            multiplier === 0 ||
+            step === 0) return;
+        const value = step * multiplier;
+        const volume = this.#getVolume(streams) + (value / 100);
+        this.#setVolume(streams, volume);
     }
 
     /**
