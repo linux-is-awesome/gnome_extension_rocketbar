@@ -61,7 +61,7 @@ export const AppButtonConfigField = {
     enableSoundControl: SettingsKey.AppButtonSoundVolumeControl,
     enableMinimizeAction: SettingsKey.AppButtonMinimizeAction,
     enableDragAndDrop: SettingsKey.AppButtonDragAndDrop,
-    enableScroll: SettingsKey.AppButtonScroll,
+    scrollAction: SettingsKey.AppButtonScrollAction,
     iconSize: SettingsKey.AppButtonIconSize,
     iconPath: SettingsKey.AppButtonIconPath,
     iconHPadding: SettingsKey.AppButtonIconHPadding,
@@ -168,7 +168,8 @@ export const ColorType = {
 /** @enum {string} */
 export const ScrollAction = {
     None: 'none',
-    CycleWindows: 'cycle-windows',
-    SoundVolume: 'sound-volume'
+    CycleAllWindows: 'cycle-all-windows',
+    CycleRecentWindows: 'cycle-recent-windows',
+    ChangeOutputSoundVolume: 'change-output-sound-volume',
+    ChangeInputSoundVolume: 'change-input-sound-volume'
 };
-

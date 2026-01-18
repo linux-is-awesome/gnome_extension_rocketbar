@@ -25,7 +25,7 @@ import { Animation, AnimationDuration, AnimationType } from '../base/animation.j
 import { WindowManager } from '../../utils/taskbar/windowManager.js';
 import { AppConfig, ConfigField } from '../../../shared/utils/taskbar/appConfig.js';
 import { Event, Delay, Progress } from '../../../shared/enums/general.js';
-import { ActivationBehavior } from '../../../shared/enums/taskbar.js';
+import { ActivationBehavior, ScrollAction } from '../../../shared/enums/taskbar.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
 const SCHEDULED_DESTOY_DELAY = Delay.Scheduled * 5;
@@ -35,6 +35,14 @@ const LayoutProps = {
     name: `${MODULE_NAME}-Layout`,
     x_expand: true,
     y_expand: true
+};
+
+/** @type {{[primaryAction: ScrollAction]: ScrollAction}} */
+export const ScrollAlternativeAction = {
+    [ScrollAction.CycleAllWindows]: ScrollAction.CycleRecentWindows,
+    [ScrollAction.CycleRecentWindows]: ScrollAction.CycleAllWindows,
+    [ScrollAction.ChangeOutputSoundVolume]: ScrollAction.ChangeInputSoundVolume,
+    [ScrollAction.ChangeInputSoundVolume]: ScrollAction.ChangeOutputSoundVolume
 };
 
 /** @enum {string} */
@@ -381,12 +389,15 @@ export class AppButton extends RuntimeButton {
             case ConfigField.attentionBehavior:
             case ConfigField.attentionNotificationsBehavior:
             case ConfigField.notificationsBehavior:
+            case ConfigField.scrollAction:
                 return;
             case ConfigField.enableIndicators:
             case ConfigField.enableSoundControl:
             case ConfigField.enableNotificationBadges:
             case ConfigField.enableProgressBars:
             case ConfigField.enableTooltips:
+            case ConfigField.enableMenus:
+            case ConfigField.enableDragAndDrop:
                 return this.#toggleFeatures();
             case ConfigField.backlightColor:
             case ConfigField.backlightIntensity:
@@ -604,18 +615,6 @@ export class AppButton extends RuntimeButton {
         this.#rerenderMenu();
     }
 
-    #rerenderTooltip() {
-        const tooltip = this.hasTooltip ? this.tooltip : null;
-        if (tooltip instanceof Tooltip === false || !tooltip.isShown) return;
-        tooltip.rerender(true);
-    }
-
-    #rerenderMenu() {
-        const menu = this.hasMenu ? this.menu : null;
-        if (menu instanceof Menu === false || !menu.isOpen) return;
-        menu.rerender();
-    }
-
     #hover() {
         if (!this.#appIcon) return;
         this.#appIcon.isHighlighted = this.hasHover;
@@ -654,17 +653,40 @@ export class AppButton extends RuntimeButton {
      * @returns {boolean}
      */
     #scroll(event) {
-        if (!this.#windows || !this.#config?.enableScroll) return Clutter.EVENT_PROPAGATE;
+        if (!this.#config) return Clutter.EVENT_PROPAGATE;
         const scrollDirection = event?.get_scroll_direction();
         if (scrollDirection !== Clutter.ScrollDirection.UP &&
             scrollDirection !== Clutter.ScrollDirection.DOWN) return Clutter.EVENT_PROPAGATE;
-        if (!this.#isRunning || Context.jobs.has(this)) return Clutter.EVENT_STOP;
-        if (Overview.visible) Overview.hide();
-        Context.jobs.new(this, Delay.Sleep).destroy(() => null);
-        this.#windows.cycle(false, scrollDirection === Clutter.ScrollDirection.UP);
-        if (this.#windows.size > 1 && !this.tooltip?.isShown) this.tooltip?.show(true);
+        const { scrollAction } = this.#config;
+        if (!scrollAction || scrollAction === ScrollAction.None) return Clutter.EVENT_PROPAGATE;
+        const isDirectionUp = scrollDirection === Clutter.ScrollDirection.UP;
+        const isCtrlPressed = !!(event.get_state() & Clutter.ModifierType.CONTROL_MASK);
+        const action = isCtrlPressed ? ScrollAlternativeAction[scrollAction] : scrollAction;
+        switch (action) {
+            case ScrollAction.CycleAllWindows:
+            case ScrollAction.CycleRecentWindows:
+                if (!this.#isRunning || !this.#windows || Context.jobs.has(this)) return Clutter.EVENT_STOP;
+                Overview.hide();
+                Context.jobs.new(this, Delay.Sleep).destroy(() => null);
+                const isCycleRecent = action === ScrollAction.CycleRecentWindows;
+                this.#windows.cycle(false, isDirectionUp && !isCycleRecent);
+                if (this.#windows.size > 1 && !this.tooltip?.isShown) this.tooltip?.show(true);
+                if (isCycleRecent) this.#windows.resetQueue();
+                break;
+            case ScrollAction.ChangeInputSoundVolume:
+            case ScrollAction.ChangeOutputSoundVolume:
+                if (!this.#soundVolumeControl) return Clutter.EVENT_STOP;
+                const multiplier = isDirectionUp ? 1 : -1;
+                const isInput = action === ScrollAction.ChangeInputSoundVolume;
+                if (isInput && !this.#soundVolumeControl.hasInput) return Clutter.EVENT_STOP;
+                if (!isInput && !this.#soundVolumeControl.hasOutput) return Clutter.EVENT_STOP;
+                if (isInput) this.#soundVolumeControl.changeInputVolume(multiplier);
+                else this.#soundVolumeControl.changeOutputVolume(multiplier);
+                if (!this.tooltip?.isShown) this.tooltip?.show(true);
+                this.#rerenderTooltip();
+                break;
+        }
         return Clutter.EVENT_STOP;
-
     }
 
     /**
@@ -696,6 +718,18 @@ export class AppButton extends RuntimeButton {
         const isMiddleButton = button === Clutter.BUTTON_MIDDLE;
         const isCtrlPressed = !!(event && event.get_state() & Clutter.ModifierType.CONTROL_MASK);
         return { isPrimaryButton, isSecondaryButton, isMiddleButton, isCtrlPressed };
+    }
+
+    #rerenderTooltip() {
+        const tooltip = this.hasTooltip ? this.tooltip : null;
+        if (tooltip instanceof Tooltip === false || !tooltip.isShown) return;
+        tooltip.rerender(true);
+    }
+
+    #rerenderMenu() {
+        const menu = this.hasMenu ? this.menu : null;
+        if (menu instanceof Menu === false || !menu.isOpen) return;
+        menu.rerender();
     }
 
 }

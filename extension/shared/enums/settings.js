@@ -37,7 +37,7 @@ export const SettingsKey = {
     AppButtonProgressBars: 'appbutton-progress-bars',
     AppButtonSoundVolumeControl: 'appbutton-sound-volume-control',
     AppButtonDragAndDrop: 'appbutton-drag-and-drop',
-    AppButtonScroll: 'appbutton-scroll',
+    AppButtonScrollAction: 'appbutton-scroll-action',
     AppButtonIconSize: 'appbutton-icon-size',
     AppButtonIconPath: '~appbutton-icon-path',
     AppButtonIconHPadding: 'appbutton-icon-hpadding',

@@ -65,8 +65,8 @@
         <key type="b" name="appbutton-drag-and-drop">
             <default>true</default>
         </key>
-        <key type="b" name="appbutton-scroll">
-            <default>false</default>
+        <key type="s" name="appbutton-scroll-action">
+            <default>'cycle-all-windows'</default>
         </key>
         <key type="i" name="appbutton-icon-size">
             <default>20</default>
