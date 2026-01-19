@@ -83,6 +83,9 @@ export class Tooltip extends Component {
     #fadeInJob = null;
 
     /** @type {Job?} */
+    #rerenderJob = Context.jobs.new(this, Delay.Redraw);
+
+    /** @type {Job?} */
     #job = Context.jobs.new(super.actor);
 
     /** @type {{x: number, y: number, width: number, height: number}} */
@@ -195,9 +198,10 @@ export class Tooltip extends Component {
     }
 
     rerender() {
-        if (this.#isHidden || !this.isValid) return;
+        if (this.#isHidden || !this.#rerenderJob || !this.isValid) return;
+        this.#rerenderJob.reset();
         if (!this.#isShown) return this.#rerender();
-        this.#job?.reset(Delay.Redraw).enqueue(() => this.#updateTargetSize().#rerender());
+        this.#rerenderJob.enqueue(() => this.#updateTargetSize().#rerender());
     }
 
     lockSize() {
@@ -208,7 +212,9 @@ export class Tooltip extends Component {
     }
 
     #destroy() {
+        this.#rerenderJob?.destroy();
         this.#job?.destroy();
+        this.#rerenderJob = null;
         this.#job = null;
         this.#targetSize = null;
         this.#isHidden = true;
