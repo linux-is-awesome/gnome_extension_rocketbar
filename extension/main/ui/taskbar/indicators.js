@@ -15,7 +15,7 @@ import { Animation, AnimationType } from '../base/animation.js';
 import { SharedConfig } from '../../../shared/utils/config.js';
 import { Event, Alignment } from '../../../shared/enums/general.js';
 import { IndicatorsConfigField as ConfigField,
-         ConfigOptions } from '../../../shared/enums/taskbar.js';
+         ConfigOptions, ColorType } from '../../../shared/enums/taskbar.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_Indicators';
 const ANIMATION_FRAMES = 15;
@@ -211,7 +211,7 @@ class Indicator extends IndicatorBase {
 
     /**
      * Note: If spacing is 0, all indicators are drawn as a single line.
-     *       It's not a bug!
+     *       This is not a bug, it's a feature!
      *
      * @param {cairo.Context} canvas
      * @param {number} x
@@ -403,11 +403,12 @@ export class Indicators extends Component {
     /** @type {string} */
     get #color() {
         if (!this.#config) return BackendParams.color;
-        const isActive = this.#isActive;
         const { colorActive, colorInactive,
-                dominantColorActive, dominantColorInactive } = this.#config;
-        const requiresDominantColor = (isActive && dominantColorActive) || (!isActive && dominantColorInactive);
-        const dominantColor = requiresDominantColor ? this.#appButton?.dominantColor : null;
+                colorTypeActive, colorTypeInactive } = this.#config;
+        const isActive = this.#isActive;
+        const isDominantColor = (isActive && colorTypeActive === ColorType.Dominant) ||
+                                (!isActive && colorTypeInactive === ColorType.Dominant);
+        const dominantColor = isDominantColor ? this.#appButton?.dominantColor : null;
         if (isActive) return dominantColor ?? colorActive;
         return dominantColor ?? colorInactive;
     }

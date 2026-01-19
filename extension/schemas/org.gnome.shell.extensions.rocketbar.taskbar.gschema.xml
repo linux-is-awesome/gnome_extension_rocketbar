@@ -92,17 +92,17 @@
         <key type="i" name="appbutton-backlight-intensity">
             <default>1</default>
         </key>
-        <key type="b" name="indicator-dominant-color-active">
-            <default>false</default>
-        </key>
         <key type="s" name="indicator-color-active">
             <default>'rgb(53, 132, 228)'</default>
         </key>
-        <key type="b" name="indicator-dominant-color-inactive">
-            <default>false</default>
+        <key type="s" name="indicator-color-type-active">
+            <default>'static'</default>
         </key>
         <key type="s" name="indicator-color-inactive">
             <default>'rgb(255, 255, 255)'</default>
+        </key>
+        <key type="s" name="indicator-color-type-inactive">
+            <default>'static'</default>
         </key>
         <key type="s" name="indicator-position">
             <default>'top'</default>
