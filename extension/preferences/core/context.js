@@ -61,7 +61,6 @@ export default class Context extends SharedContext {
      */
     async initialize() {
         if (!this.#window) return this;
-        this.#window.set_search_enabled(true);
         this.#setWindowSize(this.#window);
         this.#loadStyles();
         await this.#loadPages();
