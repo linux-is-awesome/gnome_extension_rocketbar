@@ -45,7 +45,7 @@ export const SettingsKey = {
     AppButtonSpacing: 'appbutton-spacing',
     AppButtonRoundness: 'appbutton-roundness',
     AppButtonBacklightColor: 'appbutton-backlight-color',
-    AppButtonBacklightDominantColor: 'appbutton-backlight-dominant-color',
+    AppButtonBacklightColorType: 'appbutton-backlight-color-type',
     AppButtonBacklightIntensity: 'appbutton-backlight-intensity',
     AppButtonMinimizeAction: 'appbutton-minimize-action',
     AppButtonConfigOverride: 'appbutton-config-override',

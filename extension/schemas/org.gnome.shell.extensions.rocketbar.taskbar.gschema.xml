@@ -86,8 +86,8 @@
         <key type="s" name="appbutton-backlight-color">
             <default>'rgb(255, 255, 255)'</default>
         </key>
-        <key type="b" name="appbutton-backlight-dominant-color">
-            <default>false</default>
+        <key type="s" name="appbutton-backlight-color-type">
+            <default>'static'</default>
         </key>
         <key type="i" name="appbutton-backlight-intensity">
             <default>1</default>

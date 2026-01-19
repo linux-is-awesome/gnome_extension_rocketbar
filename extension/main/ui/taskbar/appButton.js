@@ -25,7 +25,7 @@ import { Animation, AnimationDuration, AnimationType } from '../base/animation.j
 import { WindowManager } from '../../utils/taskbar/windowManager.js';
 import { AppConfig, ConfigField } from '../../../shared/utils/taskbar/appConfig.js';
 import { Event, Delay, Progress } from '../../../shared/enums/general.js';
-import { ActivationBehavior, ScrollAction } from '../../../shared/enums/taskbar.js';
+import { ActivationBehavior, ScrollAction, ColorType } from '../../../shared/enums/taskbar.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_AppButton';
 const SCHEDULED_DESTOY_DELAY = Delay.Scheduled * 5;
@@ -400,8 +400,8 @@ export class AppButton extends RuntimeButton {
             case ConfigField.enableDragAndDrop:
                 return this.#toggleFeatures();
             case ConfigField.backlightColor:
+            case ConfigField.backlightColorType:
             case ConfigField.backlightIntensity:
-            case ConfigField.backlightDominantColor:
                 return this.#updateBacklight();
             case ConfigField.iconPath:
                 this.#appIcon.iconPath = this.#config.iconPath;
@@ -505,10 +505,10 @@ export class AppButton extends RuntimeButton {
 
     #updateBacklight() {
         if (!this.#config) return;
-        let { backlightColor, backlightIntensity, backlightDominantColor } = this.#config;
+        let { backlightColor, backlightIntensity, backlightColorType } = this.#config;
         if (!super.isActive) {
             backlightIntensity = 0;
-        } else if (backlightDominantColor) {
+        } else if (backlightColorType === ColorType.Dominant) {
             backlightColor = this.dominantColor ?? backlightColor;
         }
         const style = { backlightColor, backlightIntensity };

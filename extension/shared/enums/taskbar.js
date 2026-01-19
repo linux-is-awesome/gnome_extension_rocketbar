@@ -69,8 +69,8 @@ export const AppButtonConfigField = {
     spacingAfter: SettingsKey.AppButtonSpacing,
     roundness: SettingsKey.AppButtonRoundness,
     backlightColor: SettingsKey.AppButtonBacklightColor,
-    backlightIntensity: SettingsKey.AppButtonBacklightIntensity,
-    backlightDominantColor: SettingsKey.AppButtonBacklightDominantColor
+    backlightColorType: SettingsKey.AppButtonBacklightColorType,
+    backlightIntensity: SettingsKey.AppButtonBacklightIntensity
 };
 
 /** @enum {string} */
