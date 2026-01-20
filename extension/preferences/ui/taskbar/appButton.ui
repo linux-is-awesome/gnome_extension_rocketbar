@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <object class="AdwNavigationPage" id="taskbar/appButton">
+        <property name="title">App Buttons</property>
+        <property name="child">
+            <object class="AdwToolbarView">
+                <child type="top">
+                    <object class="AdwHeaderBar">
+                        <property name="title-widget">
+                            <object class="AdwWindowTitle">
+                                <property name="title" translatable="yes">Taskbar</property>
+                                <property name="subtitle" translatable="yes">App Buttons</property>
+                                <style>
+                                    <class name="child-page-title" />
+                                </style>
+                            </object>
+                        </property>
+                    </object>
+                </child>
+                <property name="content">
+                    <object class="AdwPreferencesPage" id="taskbar/appButton-page">
+                        <child>
+                            <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">Actions</property>
+                                <child>
+                                    <object class="AdwSwitchRow" id="appbutton-menus">
+                                        <property name="title" translatable="yes">Menu Triggers</property>
+                                        <property name="subtitle" translatable="yes">Open app menus using a secondary button click, long press, or by pressing an arrow key when a button is focused</property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwSwitchRow" id="appbutton-drag-and-drop">
+                                        <property name="title" translatable="yes">Drag And Drop</property>
+                                        <property name="subtitle" translatable="yes">Use drag and drop to rearrange apps on the taskbar, unpin pinned apps, and launch new app instances by dropping them into the Overview</property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwSwitchRow" id="appbutton-minimize-action">
+                                        <property name="title" translatable="yes">Click To Minimize</property>
+                                        <property name="subtitle" translatable="yes">Allow clicking app buttons to minimize windows</property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwSwitchRow" id="appbutton-sound-volume-control">
+                                        <property name="title" translatable="yes">Sound Volume Control</property>
+                                        <property name="subtitle" translatable="yes">Enable control of input and output sound volumes for apps</property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwComboRow" id="appbutton-scroll-action">
+                                        <property name="title" translatable="yes">Scroll Action</property>
+                                        <property name="subtitle" translatable="yes">Hold down the Ctrl key to trigger an alternative action</property>
+                                        <property name="model">scroll-action-options</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">Layout</property>
+                                <child>
+                                    <object class="AdwSpinRow" id="appbutton-icon-size">
+                                        <property name="title" translatable="yes">Icon Size</property>
+                                        <property name="adjustment">
+                                            <object class="GtkAdjustment">
+                                                <property name="lower">16</property>
+                                                <property name="upper">64</property>
+                                                <property name="value">0</property>
+                                                <property name="step-increment">1</property>
+                                            </object>
+                                        </property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwExpanderRow">
+                                        <property name="title" translatable="yes">Padding</property>
+                                        <child>
+                                            <object class="AdwSpinRow" id="appbutton-icon-hpadding">
+                                                <property name="title" translatable="yes">Horizontal</property>
+                                                <property name="adjustment">
+                                                    <object class="GtkAdjustment">
+                                                        <property name="lower">0</property>
+                                                        <property name="upper">20</property>
+                                                        <property name="value">0</property>
+                                                        <property name="step-increment">1</property>
+                                                    </object>
+                                                </property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwSpinRow" id="appbutton-icon-vpadding">
+                                                <property name="title" translatable="yes">Vertical</property>
+                                                <property name="adjustment">
+                                                    <object class="GtkAdjustment">
+                                                        <property name="lower">0</property>
+                                                        <property name="upper">20</property>
+                                                        <property name="value">0</property>
+                                                        <property name="step-increment">1</property>
+                                                    </object>
+                                                </property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwSpinRow" id="appbutton-roundness">
+                                        <property name="title" translatable="yes">Roundness</property>
+                                        <property name="adjustment">
+                                            <object class="GtkAdjustment">
+                                                <property name="lower">0</property>
+                                                <property name="upper">64</property>
+                                                <property name="value">0</property>
+                                                <property name="step-increment">1</property>
+                                            </object>
+                                        </property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwSpinRow" id="appbutton-spacing">
+                                        <property name="title" translatable="yes">Spacing</property>
+                                        <property name="adjustment">
+                                            <object class="GtkAdjustment">
+                                                <property name="lower">0</property>
+                                                <property name="upper">10</property>
+                                                <property name="value">0</property>
+                                                <property name="step-increment">1</property>
+                                            </object>
+                                        </property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">Backlight</property>
+                                <child>
+                                    <object class="AdwSpinRow" id="appbutton-backlight-intensity">
+                                        <property name="title" translatable="yes">Intensity</property>
+                                        <property name="adjustment">
+                                            <object class="GtkAdjustment">
+                                                <property name="lower">0</property>
+                                                <property name="upper">10</property>
+                                                <property name="value">0</property>
+                                                <property name="step-increment">1</property>
+                                            </object>
+                                        </property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwComboRow" id="appbutton-backlight-color-type">
+                                        <property name="title" translatable="yes">Type</property>
+                                        <property name="model">color-type-options</property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwActionRow" id="appbutton-backlight-color-row">
+                                        <property name="title" translatable="yes">Color</property>
+                                        <property name="activatable-widget">appbutton-backlight-color</property>
+                                        <property name="visible">false</property>
+                                        <child>
+                                            <object class="GtkColorDialogButton" id="appbutton-backlight-color">
+                                                <property name="valign">center</property>
+                                                <property name="dialog">color-dialog</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                    </object>
+                </property>
+            </object>
+        </property>
+    </object>
+    <object class="GtkColorDialog" id="color-dialog"/>
+    <object class="GtkStringList" id="scroll-action-options">
+        <items>
+            <item translatable="yes">None</item>
+            <item translatable="yes">Cycle All Windows</item>
+            <item translatable="yes">Cycle Recent Windows</item>
+            <item translatable="yes">Output Sound Volume</item>
+            <item translatable="yes">Input Sound Volume</item>
+        </items>
+    </object>
+    <object class="GtkStringList" id="color-type-options">
+        <items>
+            <item translatable="yes">Static Color</item>
+            <item translatable="yes">Dominant Color</item>
+        </items>
+    </object>
+</interface>
