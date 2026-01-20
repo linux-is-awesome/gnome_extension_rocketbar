@@ -137,6 +137,12 @@
         <key type="i" name="indicator-limit-active">
             <default>3</default>
         </key>
+        <key type="b" name="indicator-inactive-layout">
+            <default>false</default>
+        </key>
+        <key type="b" name="indicator-inactive-color">
+            <default>false</default>
+        </key>
         <key type="s" name="notification-badge-color">
             <default>'rgb(255, 0, 0)'</default>
         </key>

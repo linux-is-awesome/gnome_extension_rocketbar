@@ -64,6 +64,8 @@ export const SettingsKey = {
     IndicatorOffsetActive: 'indicator-offset-active',
     IndicatorLimitInactive: 'indicator-limit-inactive',
     IndicatorLimitActive: 'indicator-limit-active',
+    IndicatorInactiveLayout: 'indicator-inactive-layout',
+    IndicatorInactiveColor: 'indicator-inactive-color',
     NotificationBadgeColor: 'notification-badge-color',
     NotificationBadgeFontColor: 'notification-badge-font-color',
     NotificationBadgeBorderColor: 'notification-badge-border-color',

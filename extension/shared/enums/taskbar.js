@@ -83,13 +83,15 @@ export const IndicatorsConfigField = {
     colorTypeInactive: SettingsKey.IndicatorColorTypeInactive,
     sizeInactive: SettingsKey.IndicatorSizeInactive,
     sizeActive: SettingsKey.IndicatorSizeActive,
-    spacingInactive: SettingsKey.IndicatorSpacingActive,
+    spacingInactive: SettingsKey.IndicatorSpacingInactive,
     spacingActive: SettingsKey.IndicatorSpacingActive,
     weightInactive: SettingsKey.IndicatorWeightInactive,
     weightActive: SettingsKey.IndicatorWeightActive,
     offsetInactive: SettingsKey.IndicatorOffsetInactive,
     offsetActive: SettingsKey.IndicatorOffsetActive,
-    position: SettingsKey.IndicatorPosition
+    position: SettingsKey.IndicatorPosition,
+    hasInactiveLayout: SettingsKey.IndicatorInactiveLayout,
+    hasInactiveColor: SettingsKey.IndicatorInactiveColor
 };
 
 /** @enum {string} */

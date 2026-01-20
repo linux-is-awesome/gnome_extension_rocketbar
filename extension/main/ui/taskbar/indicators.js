@@ -404,8 +404,9 @@ export class Indicators extends Component {
     get #color() {
         if (!this.#config) return BackendParams.color;
         const { colorActive, colorInactive,
-                colorTypeActive, colorTypeInactive } = this.#config;
-        const isActive = this.#isActive;
+                colorTypeActive, colorTypeInactive,
+                hasInactiveColor } = this.#config;
+        const isActive = !hasInactiveColor || this.#isActive;
         const isDominantColor = (isActive && colorTypeActive === ColorType.Dominant) ||
                                 (!isActive && colorTypeInactive === ColorType.Dominant);
         const dominantColor = isDominantColor ? this.#appButton?.dominantColor : null;
@@ -418,10 +419,11 @@ export class Indicators extends Component {
         if (!this.#config) return BackendParams;
         const { limitActive, limitInactive, sizeActive, sizeInactive,
                 spacingActive, spacingInactive, weightActive, weightInactive,
-                offsetActive, offsetInactive, position } = this.#config;
+                offsetActive, offsetInactive, position,
+                hasInactiveLayout } = this.#config;
         const { fontScale, globalScale } = Context.desktop;
         const scale = fontScale * globalScale;
-        const isActive = this.#isActive;
+        const isActive = !hasInactiveLayout || this.#isActive;
         const count = Math.min(this.#count, isActive ? limitActive : limitInactive);
         const color = count > 0 ? this.#color : null;
         const size = (isActive ? sizeActive : sizeInactive) * scale;
