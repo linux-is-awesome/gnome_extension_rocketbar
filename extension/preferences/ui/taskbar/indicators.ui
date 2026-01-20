@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <object class="AdwNavigationPage" id="taskbar/indicators">
+        <property name="title">Indicators</property>
+        <property name="child">
+            <object class="AdwToolbarView">
+                <child type="top">
+                    <object class="AdwHeaderBar">
+                        <property name="title-widget">
+                            <object class="AdwWindowTitle">
+                                <property name="title" translatable="yes">Taskbar</property>
+                                <property name="subtitle" translatable="yes">Indicators</property>
+                                <style>
+                                    <class name="child-page-title" />
+                                </style>
+                            </object>
+                        </property>
+                    </object>
+                </child>
+                <property name="content">
+                    <object class="AdwPreferencesPage" id="taskbar/indicators-page">
+                        <child>
+                            <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">General</property>
+                                <child>
+                                    <object class="AdwComboRow" id="indicator-position">
+                                        <property name="title" translatable="yes">Position</property>
+                                        <property name="model">position-options</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">Layout</property>
+                                <child>
+                                    <object class="AdwExpanderRow">
+                                        <property name="title" translatable="yes">Active</property>
+                                        <property name="expanded">true</property>
+                                        <child>
+                                            <object class="AdwSpinRow" id="indicator-limit-active">
+                                                <property name="title" translatable="yes">Limit</property>
+                                                <property name="adjustment">
+                                                    <object class="GtkAdjustment">
+                                                        <property name="lower">0</property>
+                                                        <property name="upper">5</property>
+                                                        <property name="value">0</property>
+                                                        <property name="step-increment">1</property>
+                                                    </object>
+                                                </property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwSpinRow" id="indicator-size-active">
+                                                <property name="title" translatable="yes">Size</property>
+                                                <property name="adjustment">
+                                                    <object class="GtkAdjustment">
+                                                        <property name="lower">1</property>
+                                                        <property name="upper">64</property>
+                                                        <property name="value">0</property>
+                                                        <property name="step-increment">1</property>
+                                                    </object>
+                                                </property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwSpinRow" id="indicator-weight-active">
+                                                <property name="title" translatable="yes">Weight</property>
+                                                <property name="adjustment">
+                                                    <object class="GtkAdjustment">
+                                                        <property name="lower">0</property>
+                                                        <property name="upper">20</property>
+                                                        <property name="value">0</property>
+                                                        <property name="step-increment">1</property>
+                                                    </object>
+                                                </property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwSpinRow" id="indicator-spacing-active">
+                                                <property name="title" translatable="yes">Spacing</property>
+                                                <property name="adjustment">
+                                                    <object class="GtkAdjustment">
+                                                        <property name="lower">0</property>
+                                                        <property name="upper">10</property>
+                                                        <property name="value">0</property>
+                                                        <property name="step-increment">1</property>
+                                                    </object>
+                                                </property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwSpinRow" id="indicator-offset-active">
+                                                <property name="title" translatable="yes">Offset</property>
+                                                <property name="adjustment">
+                                                    <object class="GtkAdjustment">
+                                                        <property name="lower">0</property>
+                                                        <property name="upper">30</property>
+                                                        <property name="value">0</property>
+                                                        <property name="step-increment">1</property>
+                                                    </object>
+                                                </property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwExpanderRow" id="indicator-inactive-layout">
+                                        <property name="title" translatable="yes">Inactive</property>
+                                        <property name="subtitle" translatable="yes">Use a different layout for inactive indicators</property>
+                                        <property name="expanded">false</property>
+                                        <property name="enable-expansion">false</property>
+                                        <property name="show-enable-switch">true</property>
+                                        <child>
+                                            <object class="AdwSpinRow" id="indicator-limit-inactive">
+                                                <property name="title" translatable="yes">Limit </property>
+                                                <property name="adjustment">
+                                                    <object class="GtkAdjustment">
+                                                        <property name="lower">0</property>
+                                                        <property name="upper">5</property>
+                                                        <property name="value">0</property>
+                                                        <property name="step-increment">1</property>
+                                                    </object>
+                                                </property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwSpinRow" id="indicator-size-inactive">
+                                                <property name="title" translatable="yes">Size</property>
+                                                <property name="adjustment">
+                                                    <object class="GtkAdjustment">
+                                                        <property name="lower">1</property>
+                                                        <property name="upper">64</property>
+                                                        <property name="value">0</property>
+                                                        <property name="step-increment">1</property>
+                                                    </object>
+                                                </property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwSpinRow" id="indicator-weight-inactive">
+                                                <property name="title" translatable="yes">Weight</property>
+                                                <property name="adjustment">
+                                                    <object class="GtkAdjustment">
+                                                        <property name="lower">0</property>
+                                                        <property name="upper">20</property>
+                                                        <property name="value">0</property>
+                                                        <property name="step-increment">1</property>
+                                                    </object>
+                                                </property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwSpinRow" id="indicator-spacing-inactive">
+                                                <property name="title" translatable="yes">Spacing</property>
+                                                <property name="adjustment">
+                                                    <object class="GtkAdjustment">
+                                                        <property name="lower">0</property>
+                                                        <property name="upper">10</property>
+                                                        <property name="value">0</property>
+                                                        <property name="step-increment">1</property>
+                                                    </object>
+                                                </property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwSpinRow" id="indicator-offset-inactive">
+                                                <property name="title" translatable="yes">Offset</property>
+                                                <property name="adjustment">
+                                                    <object class="GtkAdjustment">
+                                                        <property name="lower">0</property>
+                                                        <property name="upper">30</property>
+                                                        <property name="value">0</property>
+                                                        <property name="step-increment">1</property>
+                                                    </object>
+                                                </property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">Colors</property>
+                                <child>
+                                    <object class="AdwExpanderRow">
+                                        <property name="title" translatable="yes">Active</property>
+                                        <property name="expanded">true</property>
+                                        <child>
+                                            <object class="AdwComboRow" id="indicator-color-type-active">
+                                                <property name="title" translatable="yes">Color Type</property>
+                                                <property name="model">color-type-options</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwActionRow" id="indicator-color-active-row">
+                                                <property name="title" translatable="yes">Color</property>
+                                                <property name="activatable-widget">indicator-color-active</property>
+                                                <child>
+                                                    <object class="GtkColorDialogButton" id="indicator-color-active">
+                                                        <property name="valign">center</property>
+                                                        <property name="dialog">color-dialog</property>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwExpanderRow" id="indicator-inactive-color">
+                                        <property name="title" translatable="yes">Inactive</property>
+                                        <property name="subtitle" translatable="yes">Use a different color for inactive indicators</property>
+                                        <property name="expanded">false</property>
+                                        <property name="enable-expansion">false</property>
+                                        <property name="show-enable-switch">true</property>
+                                        <child>
+                                            <object class="AdwComboRow" id="indicator-color-type-inactive">
+                                                <property name="title" translatable="yes">Color Type</property>
+                                                <property name="model">color-type-options</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwActionRow" id="indicator-color-inactive-row">
+                                                <property name="title" translatable="yes">Color</property>
+                                                <property name="activatable-widget">indicator-color-inactive</property>
+                                                <child>
+                                                    <object class="GtkColorDialogButton" id="indicator-color-inactive">
+                                                        <property name="valign">center</property>
+                                                        <property name="dialog">color-dialog</property>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                    </object>
+                </property>
+            </object>
+        </property>
+    </object>
+    <object class="GtkColorDialog" id="color-dialog"/>
+    <object class="GtkStringList" id="position-options">
+        <items>
+            <item translatable="yes">Top</item>
+            <item translatable="yes">Bottom</item>
+        </items>
+    </object>
+    <object class="GtkStringList" id="color-type-options">
+        <items>
+            <item translatable="yes">Static Color</item>
+            <item translatable="yes">Dominant Color</item>
+        </items>
+    </object>
+</interface>
