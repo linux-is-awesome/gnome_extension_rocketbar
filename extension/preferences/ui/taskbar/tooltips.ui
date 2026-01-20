@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <object class="AdwNavigationPage" id="taskbar/tooltips">
+        <property name="title">Tooltips</property>
+        <property name="child">
+            <object class="AdwToolbarView">
+                <child type="top">
+                    <object class="AdwHeaderBar">
+                        <property name="title-widget">
+                            <object class="AdwWindowTitle">
+                                <property name="title" translatable="yes">Taskbar</property>
+                                <property name="subtitle" translatable="yes">Tooltips</property>
+                                <style>
+                                    <class name="child-page-title" />
+                                </style>
+                            </object>
+                        </property>
+                    </object>
+                </child>
+                <property name="content">
+                    <object class="AdwPreferencesPage" id="taskbar/tooltips-page">
+                        <child>
+                            <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">Delays</property>
+                                <child>
+                                    <object class="AdwSpinRow" id="tooltip-show-delay">
+                                        <property name="title" translatable="yes">Show</property>
+                                        <property name="adjustment">
+                                            <object class="GtkAdjustment">
+                                                <property name="lower">100</property>
+                                                <property name="upper">5000</property>
+                                                <property name="value">0</property>
+                                                <property name="step-increment">100</property>
+                                            </object>
+                                        </property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwSpinRow" id="tooltip-hide-delay">
+                                        <property name="title" translatable="yes">Hide</property>
+                                        <property name="adjustment">
+                                            <object class="GtkAdjustment">
+                                                <property name="lower">100</property>
+                                                <property name="upper">5000</property>
+                                                <property name="value">0</property>
+                                                <property name="step-increment">100</property>
+                                            </object>
+                                        </property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">Layout</property>
+                                <child>
+                                    <object class="AdwSpinRow" id="tooltip-max-length">
+                                        <property name="title" translatable="yes">Max Length (% of Monitor)</property>
+                                        <property name="subtitle" translatable="yes">Limit the tooltip length to a percentage of the monitor size</property>
+                                        <property name="adjustment">
+                                            <object class="GtkAdjustment">
+                                                <property name="lower">10</property>
+                                                <property name="upper">100</property>
+                                                <property name="value">100</property>
+                                                <property name="step-increment">5</property>
+                                            </object>
+                                        </property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">Windows</property>
+                                <child>
+                                    <object class="AdwSwitchRow" id="tooltip-shrink-window-titles">
+                                        <property name="title" translatable="yes">Shrink Window Titles</property>
+                                        <property name="subtitle" translatable="yes">Remove application names from window titles</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                    </object>
+                </property>
+            </object>
+        </property>
+    </object>
+</interface>
