@@ -8,9 +8,9 @@ import St from 'gi://St';
 import { PopupMenu, PopupDummyMenu } from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import Context from '../../core/context.js';
 import { Component } from './component.js';
-import { LongPressAction } from './longPressAction.js';
 import { Tooltip, TooltipEvent } from './tooltip.js';
 import { Animation, AnimationType, AnimationDuration } from './animation.js';
+import { ActorPressHandler } from './actorPressHandler.js';
 import { Gradient } from '../../utils/gradient.js';
 import { Event, PseudoClass, Alignment } from '../../../shared/enums/general.js';
 
@@ -189,8 +189,8 @@ export class Button extends Component {
     /** @type {Tooltip?} */
     #tooltip = null;
 
-    /** @type {LongPressAction?} */
-    #longPressAction = new LongPressAction(this, event => this.#longPress(event));
+    /** @type {ActorPressHandler?} */
+    #pressHandler = new ActorPressHandler(event => this.#longPress(event), this.actor);
 
     /**
      * Note: Using Math.round to match css width.
@@ -354,6 +354,9 @@ export class Button extends Component {
         this.connect(Event.Clicked, () => this.#click());
         this.connect(Event.FocusIn, () => this.#focus());
         this.connect(Event.FocusOut, () => this.#focus());
+        this.connect(Event.ButtonPress, (_, event) => this.#pressHandler?.press(event));
+        this.connect(Event.ButtonRelease, () => this.#pressHandler?.release());
+        this.connect(Event.Leave, () => this.#pressHandler?.release());
         if (display) this.#setDisplay(display, name);
     }
 
@@ -430,8 +433,8 @@ export class Button extends Component {
     }
 
     #destroy() {
-        this.#longPressAction?.destroy();
-        this.#longPressAction = null;
+        this.#pressHandler?.destroy();
+        this.#pressHandler = null;
         this.#menuTrigger?.destroy();
         this.#menuTrigger = null;
         this.#menu?.destroy();
@@ -488,6 +491,9 @@ export class Button extends Component {
      * @param {Clutter.Event} event
      */
     #longPress(event) {
+        if (!this.#pressHandler || !this.isValid) return;
+        this.#pressHandler.release();
+        this.actor.fake_release();
         if (super.cancelDragEvents().notifySelf(ButtonEvent.LongPress, { event })) return;
         this.menu?.toggle();
     }
