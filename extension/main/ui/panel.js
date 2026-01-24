@@ -3,6 +3,7 @@ import { MainPanel, Overview } from '../core/shell.js';
 import Context from '../core/context.js';
 import { ModuleManager } from '../services/modules.js';
 import { Component, ComponentEvent } from './base/component.js';
+import { ActorPressHandler } from './base/actorPressHandler.js';
 import { Config, InnerConfig } from '../../shared/utils/config.js';
 import { Event, Module, Alignment } from '../../shared/enums/general.js';
 import { ConfigOptions, ConfigKey, ConfigField } from '../../shared/enums/panel.js';
@@ -17,11 +18,11 @@ export default class Panel extends Component {
         [ComponentEvent.Destroy]: () => this.#destroy()
     };
 
-    /** @type {number?} */
-    #pressedButton = null;
-
     /** @type {Map<string, [alignment?: Alignment, position?: number]>?} */
     #items = null;
+
+    /** @type {ActorPressHandler?} */
+    #pressHandler = new ActorPressHandler(null, this.actor);
 
     /** @type {ModuleManager?} */
     #moduleManager = new ModuleManager(newModules => this.#updateItems([...newModules.values()]));
@@ -29,32 +30,23 @@ export default class Panel extends Component {
     /** @type {Config?} */
     #config = Config(this, ConfigField, settingsKey => this.#handleConfig(settingsKey), ConfigOptions);
 
-    /** @type {boolean} */
-    get #isEventSource() {
-        if (!this.isValid) return false;
-        const [x, y] = global.get_pointer();
-        const currentActor = global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y);
-        return this.actor === currentActor;
-    }
-
     constructor() {
         super(MainPanel, true);
         super.notifyCallback = data => this.#events?.[data?.event]?.();
-        Context.signals.add(this, [
-            this.actor,
-            Event.ButtonPress, (_, event) => this.#handlePress(event),
-            Event.ButtonRelease, (_, event) => this.#handleRelease(event),
-            Event.Leave, () => this.#handleRelease(),
-            Event.Scroll, (_, event) => this.#scroll(event)
-        ]);
+        Context.signals.add(this, [this.actor,
+            Event.ButtonPress, (_, event) => this.#pressHandler?.press(event),
+            Event.ButtonRelease, () => this.#pressHandler?.release(event => this.#click(event)),
+            Event.Leave, () => this.#pressHandler?.release(),
+            Event.Scroll, (_, event) => this.#scroll(event)]);
         this.#handleConfig();
     }
 
     #destroy() {
         Context.signals.removeAll(this);
         this.#moduleManager?.destroy();
+        this.#pressHandler?.destroy();
         this.#moduleManager = null;
-        this.#pressedButton = null;
+        this.#pressHandler = null;
         this.#config = null;
         this.#events = null;
         this.#items = null;
@@ -139,30 +131,8 @@ export default class Panel extends Component {
      * @param {Clutter.Event} event
      * @returns {boolean}
      */
-    #handlePress(event) {
-        if (!event || !this.#isEventSource) return Clutter.EVENT_PROPAGATE;
-        this.#pressedButton = event.get_button();
-        return Clutter.EVENT_PROPAGATE;
-    }
-
-    /**
-     * @param {Clutter.Event} [event]
-     * @returns {boolean}
-     */
-    #handleRelease(event) {
-        const button = event?.get_button();
-        if (typeof this.#pressedButton === 'number' &&
-            this.#pressedButton === button && event &&
-            this.#isEventSource) return this.#click();
-        this.#pressedButton = null;
-        return Clutter.EVENT_PROPAGATE;
-    }
-
-    /**
-     * @returns {boolean}
-     */
-    #click() {
-        switch (this.#pressedButton) {
+    #click(event) {
+        switch (event.get_button()) {
             case Clutter.BUTTON_PRIMARY:
                 return this.#hideOverview();
             case Clutter.BUTTON_MIDDLE:
@@ -178,7 +148,7 @@ export default class Panel extends Component {
      * @returns {boolean}
      */
     #scroll(event) {
-        if (!event || !this.#isEventSource) return Clutter.EVENT_PROPAGATE;
+        if (Context.desktop.pointerTarget !== this.actor) return Clutter.EVENT_PROPAGATE;
         return this.#changeSoundVolume(event);
     }
 
