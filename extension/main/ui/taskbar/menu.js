@@ -119,8 +119,8 @@ class SoundVolumeControlGroup extends CollapsibleGroup {
     constructor(appButton) {
         super(Label.SoundVolumeControl);
         this.#appButton = appButton;
-        this.#inputVolumeSlider = new SliderMenuItem((menuItem, event) => this.#setVolume(menuItem, event));
-        this.#outputVolumeSlider = new SliderMenuItem((menuItem, event) => this.#setVolume(menuItem, event));
+        this.#inputVolumeSlider = new SliderMenuItem((...args) => this.#setVolume(...args));
+        this.#outputVolumeSlider = new SliderMenuItem((...args) => this.#setVolume(...args));
         const menu = this.menu;
         menu.addMenuItem(this.#inputVolumeSlider.actor);
         menu.addMenuItem(this.#outputVolumeSlider.actor);
@@ -144,11 +144,11 @@ class SoundVolumeControlGroup extends CollapsibleGroup {
 
     /**
      * @param {SliderMenuItem} menuItem
-     * @param {Clutter.Event} [event] click event
+     * @param {boolean} isMute
      */
-    #setVolume(menuItem, event) {
+    #setVolume(menuItem, isMute) {
         if (this.#isSyncing) return;
-        if (event) return this.#toggleMute(menuItem);
+        if (isMute) return this.#toggleMute(menuItem);
         const soundVolumeControl = this.#appButton?.soundVolumeControl;
         if (!soundVolumeControl) return;
         const slider = menuItem?.slider;

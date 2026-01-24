@@ -88,7 +88,7 @@ export class SliderMenuItem {
     }
 
     /**
-     * @param {(menuItem: SliderMenuItem, event?: Clutter.Event) => void} callback
+     * @param {(menuItem: SliderMenuItem, isClick: boolean) => void} callback
      * @param {string?} [icon]
      * @param {number?} [value]
      */
@@ -100,8 +100,9 @@ export class SliderMenuItem {
         this.#value = new St.Label(SliderValueProps);
         this.#icon = new Icon(icon);
         this.#icon.setProps(SliderIconProps);
-        const iconActor = this.#icon.actor;
-        this.#actor.add_child(iconActor);
+        const iconButton = new St.Button();
+        iconButton.set_child(this.#icon.actor);
+        this.#actor.add_child(iconButton);
         this.#actor.add_child(this.#slider);
         this.#actor.add_child(this.#value);
         this.#actor.setOrnament(Ornament.HIDDEN);
@@ -109,11 +110,8 @@ export class SliderMenuItem {
         this.#actor.connect(Event.KeyPress, (_, event) => this.#slider?.emit(Event.KeyPress, event));
         this.value = value ?? null;
         if (typeof callback !== 'function') return;
-        this.#slider.connect(Event.ValueChanged, () => callback(this));
-        const clickAction = new Clutter.ClickAction();
-        clickAction.connect(Event.Clicked, event => callback(this, event));
-        iconActor.add_action(clickAction);
-        iconActor.set_reactive(true);
+        this.#slider.connect(Event.ValueChanged, () => callback(this, false));
+        iconButton.connect(Event.Clicked, () => callback(this, true));
     }
 
     #destroy() {
