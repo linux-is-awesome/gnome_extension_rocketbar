@@ -78,6 +78,12 @@ export default class Desktop {
         return null;
     }
 
+    /** @type {Clutter.Actor?} */
+    get pointerTarget() {
+        const [x, y] = global.get_pointer();
+        return global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y) ?? null;
+    }
+
     destroy() {
         Context.signals.removeAll(this);
         this.#initClients?.clear();
