@@ -118,9 +118,6 @@ export class AppButton extends RuntimeButton {
     #isRunning = false;
 
     /** @type {number} */
-    #notificationsCount = 0;
-
-    /** @type {number} */
     #progress = Progress.Min;
 
     /** @type {Indicators?} */
@@ -167,9 +164,9 @@ export class AppButton extends RuntimeButton {
         return AppButton.#sharedConfig;
     }
 
-    /** @type {number} */
-    get notificationsCount() {
-        return this.#notificationsCount;
+    /** @type {NotificationHandler?} */
+    get notifications() {
+        return this.#notificationHandler;
     }
 
     /** @type {number} */
@@ -369,7 +366,7 @@ export class AppButton extends RuntimeButton {
         this.connect(Event.Scroll, (_, event) => this.#scroll(event));
         this.#service = new TaskbarClient(event => this.#events?.[event]?.(), this.#app);
         this.#windows = new WindowManager(this.#service, this.#appIcon);
-        this.#notificationHandler = new NotificationHandler(count => this.#handleNotifications(count), this.#app);
+        this.#notificationHandler = new NotificationHandler(() => this.#handleNotifications(), this.#app);
         Context.launcherApi.connectProgress(this, () => this.#handleProgress());
         this.#handleProgress();
         this.#handleAppState();
@@ -586,11 +583,7 @@ export class AppButton extends RuntimeButton {
         this.#progressBar?.rerender();
     }
 
-    /**
-     * @param {number} count
-     */
-    #handleNotifications(count) {
-        this.#notificationsCount = count;
+    #handleNotifications() {
         if (!this.isFadeInDone) return;
         this.#notificationBadge?.rerender();
         this.#rerenderTooltip();
@@ -666,12 +659,11 @@ export class AppButton extends RuntimeButton {
             case ScrollAction.CycleAllWindows:
             case ScrollAction.CycleRecentWindows:
                 if (!this.#isRunning || !this.#windows || Context.jobs.has(this)) return Clutter.EVENT_STOP;
-                Overview.hide();
                 Context.jobs.new(this, Delay.Sleep).destroy(() => null);
                 const isCycleRecent = action === ScrollAction.CycleRecentWindows;
+                if (isCycleRecent) this.#windows.resetQueue();
                 this.#windows.cycle(false, isDirectionUp && !isCycleRecent);
                 if (this.#windows.size > 1 && !this.tooltip?.isShown) this.tooltip?.show(true);
-                if (isCycleRecent) this.#windows.resetQueue();
                 break;
             case ScrollAction.ChangeInputSoundVolume:
             case ScrollAction.ChangeOutputSoundVolume:

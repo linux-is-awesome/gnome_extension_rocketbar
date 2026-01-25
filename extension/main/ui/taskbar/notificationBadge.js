@@ -92,7 +92,7 @@ export class NotificationBadge extends Component {
      */
     async rerender() {
         if (!this.#badge || !this.#config || !this.#appButton || !this.isValid) return;
-        const count = this.#appButton.notificationsCount;
+        const count = this.#appButton.notifications?.count ?? 0;
         const oldVisible = this.#badge.visible;
         const visible = count > 0;
         if (!visible && !oldVisible) return;
