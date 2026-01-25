@@ -44,6 +44,11 @@ const AppStatusItemProps = {
 };
 
 /** @type {{[prop: string]: *}} */
+const AppStatusItemLayoutProps = {
+    name: `${AppStatusItemProps.name}-Layout`
+};
+
+/** @type {{[prop: string]: *}} */
 const AppStatusItemValueProps = {
     name: `${AppStatusItemProps.name}-Value`,
     y_align: Clutter.ActorAlign.CENTER
@@ -70,79 +75,75 @@ const AppNameProps = {
     name: `${MODULE_NAME}-AppName`
 };
 
-class AppStatusItem extends Icon {
+/**
+ * @augments Component<St.Button>
+ */
+class AppStatusItem extends Component {
 
     /** @type {{[event: string]: () => *}?} */
     #events = {
         [ComponentEvent.Destroy]: () => this.#destroy()
     };
 
-    /** @type {St.BoxLayout?} */
-    #actor = null;
+    /** @type {Icon?} */
+    #icon = null;
 
     /** @type {St.Label?} */
     #value = null;
+
+    /** @param {string} value */
+    set iconPath(value) {
+        if (!this.#icon) return;
+        this.#icon.iconPath = value;
+    }
 
     /**
      * @param {string} name
      * @param {boolean} [reactive]
      */
     constructor(name, reactive = false) {
-        super(name, `${AppStatusItemProps.name}-Icon`);
-        super.notifyCallback = data => this.#events?.[data?.event]?.();
+        super(new St.Button({ ...AppStatusItemProps, reactive }));
+        this.#icon = new Icon(name, `${AppStatusItemProps.name}-Icon`);
         this.#value = new St.Label(AppStatusItemValueProps);
-        this.#actor = new St.BoxLayout({ ...AppStatusItemProps, reactive });
-        this.#actor.add_child(super.actor);
-        this.#actor.add_child(this.#value);
-        this.#actor.set_pivot_point(0.5, 0.5);
+        const layout = new St.BoxLayout(AppStatusItemLayoutProps);
+        layout.add_child(this.#icon.actor);
+        layout.add_child(this.#value);
+        this.actor.add_child(layout);
+        this.actor.set_pivot_point(0.5, 0.5);
+        this.notifyCallback = data => this.#events?.[data?.event]?.();
         if (!reactive) return;
-        const clickAction = new Clutter.ClickAction();
-        clickAction.connect(Event.Clicked, event => this.notifyParents(Event.Clicked, { name, event }));
-        this.#actor.add_action(clickAction);
-        this.#actor.connect(Event.Scroll, (_, event) => this.notifyParents(Event.Scroll, { name, event }));
+        this.connect(Event.Clicked, () => this.notifyParents(Event.Clicked, { name }));
+        this.connect(Event.Scroll, (_, event) => this.notifyParents(Event.Scroll, { name, event }));
     }
 
     /**
      * @param {number} value
-     * @param {boolean} [allowAnimation]
+     * @param {boolean} [canAnimate]
      * @returns {boolean}
      */
-    update(value, allowAnimation = false) {
-        if (!this.#actor) return false;
-        const isVisible = this.#actor.visible;
+    update(value, canAnimate = false) {
+        if (!this.isValid) return false;
+        const actor = this.actor;
+        const isVisible = actor.visible;
         const visible = typeof value === 'number' && value >= 0;
         if (visible) this.#value?.set_text(`${value}`);
         if (visible === isVisible) return visible;
         if (!visible) {
-            this.#actor.remove_all_transitions();
-            this.#actor.hide();
+            actor.remove_all_transitions();
+            actor.hide();
             return visible;
         }
         const animationParams = { ...AnimationType.OpacityMax, ...AnimationType.ScaleNormal };
-        const props = allowAnimation ? { ...AnimationType.OpacityMin, ...AnimationType.ScaleMin } : animationParams;
-        this.#actor.set({ ...props, visible });
-        if (allowAnimation) Animation(this.#actor, AnimationDuration.Slow, animationParams);
+        const props = canAnimate ? { ...AnimationType.OpacityMin, ...AnimationType.ScaleMin } : animationParams;
+        actor.set({ ...props, visible });
+        if (canAnimate) Animation(actor, AnimationDuration.Slow, animationParams);
         return visible;
     }
 
-    /**
-     * @override
-     * @param {AppStatus} parent
-     * @returns {this}
-     */
-    setParent(parent) {
-        if (parent instanceof AppStatus === false || !this.#actor) return this;
-        parent.actor.add_child(this.#actor);
-        this.#actor._delegate = parent;
-        return this;
-    }
-
     #destroy() {
+        this.#icon = null;
         this.#value = null;
         this.#events = null;
-        if (!this.#actor) return;
-        this.#actor._delegate = null;
-        this.#actor = null;
     }
 
 }
@@ -184,13 +185,13 @@ class AppStatus extends Component {
     }
 
     /**
-     * @param {boolean} allowAnimation
+     * @param {boolean} canAnimate
      */
-    rerender(allowAnimation) {
+    rerender(canAnimate) {
         if (!this.#items || !this.#appButton || !this.isValid) return;
         let visible = false;
         for (const [icon, item] of this.#items) {
-            if (!this.#updateStatus(icon, item, allowAnimation)) continue;
+            if (!this.#updateStatus(icon, item, canAnimate)) continue;
             visible = true;
         }
         this.setProps({ visible });
@@ -203,7 +204,7 @@ class AppStatus extends Component {
     }
 
     /**
-     * @param {{name: string, event: Clutter.Event}} params
+     * @param {{name: string}} params
      */
     #handleItemClick(params) {
         const { name } = params ?? {};
@@ -248,10 +249,10 @@ class AppStatus extends Component {
     /**
      * @param {AppStatusItemIcon} icon
      * @param {AppStatusItem} item
-     * @param {boolean} [allowAnimation]
+     * @param {boolean} [canAnimate]
      * @returns {boolean}
      */
-    #updateStatus(icon, item, allowAnimation = false) {
+    #updateStatus(icon, item, canAnimate = false) {
         if (!this.isValid) return false;
         let value = -1;
         switch (icon) {
@@ -286,7 +287,7 @@ class AppStatus extends Component {
                 break;
             }
         }
-        return item.update(value, allowAnimation);
+        return item.update(value, canAnimate);
     }
 
 }
