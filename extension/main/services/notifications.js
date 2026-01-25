@@ -88,6 +88,24 @@ class NotificationService {
         this.#handlers.delete(handler);
     }
 
+    /**
+     * @param {string} appId
+     */
+    clearNotifications(appId) {
+        if (!appId || !this.#config ||
+            !this.#notifications ||
+            !this.#countByAppId?.get(appId)) return;
+        for (const source of this.#notifications) {
+            if (source._inDestruction) continue;
+            const { app } = NotificationSourceInfo(source, this.#windowTracker);
+            const sourceAppId = app?.id;
+            if (sourceAppId?.replace(APPID_REGEXP_STRING, '') !== appId) continue;
+            source.destroy();
+        }
+        if (!this.#config.enableLauncherApi) return;
+        Context.launcherApi.clearNotifications(appId);
+    }
+
     #handleConfig() {
         if (!this.#config) return;
         if (!this.#config.enableLauncherApi) Context.launcherApi.disconnect(this);
@@ -187,6 +205,11 @@ export class NotificationHandler {
         return this.#appId;
     }
 
+    /** @type {number} */
+    get count() {
+        return this.#count ?? 0;
+    }
+
     /**
      * @param {(count: number) => void} callback
      * @param {Shell.App?} [app]
@@ -200,22 +223,31 @@ export class NotificationHandler {
     }
 
     destroy() {
+        Context.jobs.removeAll(this);
         this.#setCount(0);
         this.#callback = null;
         this.#app = null;
+        this.#appId = null;
         if (!NotificationHandler.#service) return;
         NotificationHandler.#service.removeHandler(this);
         if (!NotificationHandler.#service.destroy()) return;
         NotificationHandler.#service = null;
     }
 
+    clear() {
+        if (!this.#appId || !this.#count || !NotificationHandler.#service) return;
+        const service = NotificationHandler.#service;
+        const appId = this.#appId;
+        Context.jobs.removeAll(this).new(this).destroy(() => service.clearNotifications(appId));
+    }
+
     /**
      * @param {number} count
      */
     #setCount(count) {
-        if (typeof this.#callback !== 'function') return;
         if (this.#count === count) return;
         this.#count = count;
+        if (typeof this.#callback !== 'function') return;
         this.#callback(count);
     }
 
