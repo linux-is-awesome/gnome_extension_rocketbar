@@ -36,6 +36,9 @@ export const ComponentEvent = {
  */
 export class Component {
 
+    /** @type {Map<St.Widget, Component<St.Widget>>} */
+    static #wrappers = new Map();
+
     /** @type {{actor: ComponentActor}?} */
     #signalTracker = null;
 
@@ -89,10 +92,11 @@ export class Component {
     get parent() {
         if (!this.hasAllocation) return null;
         const result = this.#actor?.get_parent() ?? null;
-        if (result?._delegate instanceof Component) return result._delegate;
-        if (result?._delegate?._delegate instanceof Component) return result._delegate._delegate;
-        if (result instanceof St.Widget) return result;
-        return null;
+        if (result instanceof St.Widget === false) return null;
+        if (result._delegate instanceof Component) return result._delegate;
+        if (result._delegate?._delegate instanceof Component) return result._delegate._delegate;
+        const component = Component.#wrappers.get(result);
+        return component ?? result;
     }
 
     /** @type {St.Widget?} */
@@ -148,7 +152,10 @@ export class Component {
         this.#actor = actor;
         this.#actor.connectObject(Event.Destroy, () => this.#destroy(),
                                   GObject.ConnectFlags.AFTER, this.#signalTracker);
-        if (isWrapper) return;
+        if (isWrapper) {
+            Component.#wrappers.set(actor, this);
+            return;
+        }
         this.#actor._delegate = this;
     }
 
@@ -312,6 +319,7 @@ export class Component {
 
     #destroy() {
         if (!this.#isValid || !this.#actor) return;
+        if (this.#isWrapper) Component.#wrappers.delete(this.#actor);
         this.#isValid = false;
         this.#actor.remove_all_transitions();
         this.#setDragEvents(false);
