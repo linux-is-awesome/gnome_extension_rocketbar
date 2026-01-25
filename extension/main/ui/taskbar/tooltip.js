@@ -5,6 +5,7 @@
 
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
+import Context from '../../core/context.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { Icon } from '../base/icon.js';
@@ -12,7 +13,7 @@ import { Tooltip as BaseTooltip } from '../base/tooltip.js';
 import { SharedConfig } from '../../../shared/utils/config.js';
 import { SoundVolumeIcon, SoundInputIcon, SoundOutputIcon } from '../../utils/soundVolumeIcon.js';
 import { WindowProxy } from '../../utils/taskbar/windowProxy.js';
-import { Event } from '../../../shared/enums/general.js';
+import { Event, Delay } from '../../../shared/enums/general.js';
 import { TooltipConfigField as ConfigField, ConfigOptions } from '../../../shared/enums/taskbar.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_Tooltip';
@@ -117,11 +118,11 @@ class AppStatusItem extends Component {
     }
 
     /**
-     * @param {number} value
+     * @param {number} [value]
      * @param {boolean} [canAnimate]
      * @returns {boolean}
      */
-    update(value, canAnimate = false) {
+    update(value = -1, canAnimate = false) {
         if (!this.isValid) return false;
         const actor = this.actor;
         const isVisible = actor.visible;
@@ -176,8 +177,7 @@ class AppStatus extends Component {
         this.#items = new Map();
         for (const icon in AppStatusItemIcon) {
             const iconName = AppStatusItemIcon[icon];
-            const isReactive = iconName === AppStatusItemIcon.SoundInputVolume ||
-                               iconName === AppStatusItemIcon.SoundOutputVolume;
+            const isReactive = iconName !== AppStatusItemIcon.Progress;
             const statusItem = new AppStatusItem(iconName, isReactive);
             this.#items.set(iconName, statusItem);
             statusItem.setParent(this);
@@ -198,6 +198,7 @@ class AppStatus extends Component {
     }
 
     #destroy() {
+        Context.jobs.removeAll(this);
         this.#items?.clear();
         this.#items = null;
         this.#appButton = null;
@@ -209,15 +210,23 @@ class AppStatus extends Component {
     #handleItemClick(params) {
         const { name } = params ?? {};
         const item = this.#items?.get(name);
-        const soundVolumeControl = this.#appButton?.soundVolumeControl;
         if (!item) return;
         switch (name) {
             case AppStatusItemIcon.SoundInputVolume:
             case AppStatusItemIcon.SoundOutputVolume:
+                const soundVolumeControl = this.#appButton?.soundVolumeControl;
+                if (!soundVolumeControl) return;
                 const isInput = name === AppStatusItemIcon.SoundInputVolume;
                 const callback = () => this.#updateStatus(name, item);
-                if (isInput) soundVolumeControl?.toggleInputMute(callback);
-                else soundVolumeControl?.toggleOutputMute(callback);
+                if (isInput) soundVolumeControl.toggleInputMute(callback);
+                else soundVolumeControl.toggleOutputMute(callback);
+                break;
+            case AppStatusItemIcon.Windows:
+                this.#appButton?.windows?.raise();
+                break;
+            case AppStatusItemIcon.Notifications:
+                this.#appButton?.notifications?.clear();
+                item.update();
                 break;
         }
     }
@@ -232,15 +241,24 @@ class AppStatus extends Component {
         const scrollDirection = event.get_scroll_direction();
         if (!item || (scrollDirection !== Clutter.ScrollDirection.UP &&
                       scrollDirection !== Clutter.ScrollDirection.DOWN)) return;
+        const isDirectionUp = scrollDirection === Clutter.ScrollDirection.UP;
         switch (name) {
             case AppStatusItemIcon.SoundInputVolume:
             case AppStatusItemIcon.SoundOutputVolume:
                 const soundVolumeControl = this.#appButton?.soundVolumeControl;
-                const multiplier = scrollDirection === Clutter.ScrollDirection.UP ? 1 : -1;
+                if (!soundVolumeControl) return;
+                const multiplier = isDirectionUp ? 1 : -1;
                 const isInput = name === AppStatusItemIcon.SoundInputVolume;
-                if (isInput) soundVolumeControl?.changeInputVolume(multiplier);
-                else soundVolumeControl?.changeOutputVolume(multiplier);
+                if (isInput) soundVolumeControl.changeInputVolume(multiplier);
+                else soundVolumeControl.changeOutputVolume(multiplier);
                 break;
+            case AppStatusItemIcon.Windows:
+                if (!this.#appButton?.windows || Context.jobs.has(this)) return;
+                Context.jobs.new(this, Delay.Sleep).destroy(() => null);
+                const isCtrlPressed = !!(event.get_state() & Clutter.ModifierType.CONTROL_MASK);
+                if (isCtrlPressed) this.#appButton.windows.resetQueue();
+                this.#appButton.windows.cycle(false, isDirectionUp && !isCtrlPressed);
+                return;
             default: return;
         }
         this.#updateStatus(name, item);
@@ -261,7 +279,7 @@ class AppStatus extends Component {
                 value = windowCount > 1 ? windowCount : value;
                 break;
             case AppStatusItemIcon.Notifications:
-                const notificationsCount = this.#appButton?.notificationsCount;
+                const notificationsCount = this.#appButton?.notifications?.count;
                 value = notificationsCount ? notificationsCount : value;
                 break;
             case AppStatusItemIcon.Progress:
