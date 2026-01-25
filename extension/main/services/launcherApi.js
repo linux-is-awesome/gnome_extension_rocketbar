@@ -200,6 +200,16 @@ export default class LauncherApiProxy {
         if (this.#progressClients?.has(client)) this.#progressClients.delete(client);
     }
 
+    /**
+     * @param {string} appId
+     */
+    clearNotifications(appId) {
+        const notifications = LauncherApiProxy.#service?.notifications;
+        if (!notifications?.has(appId)) return;
+        notifications.delete(appId);
+        this.#notifyClients(LauncherApiNotify.Notifications);
+    }
+
     #handleConfig() {
         if (!this.#config.enableLauncherApi) {
             LauncherApiProxy.#service?.destroy();
