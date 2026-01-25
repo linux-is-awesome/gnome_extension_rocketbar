@@ -4,7 +4,7 @@ import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 
 declare global {
-    const global: Shell.Global;
+    var global: Shell.Global;
 }
 
 declare module 'gi://GObject' {
@@ -79,5 +79,3 @@ declare module 'resource:///org/gnome/shell/ui/dnd.js' {
     function makeDraggable(actor: Clutter.Actor, params?: Object): _Draggable
 
 }
-
-globalThis.global = Shell.Global.get();

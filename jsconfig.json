@@ -3,6 +3,7 @@
         "checkJs": true,
         "target": "esnext",
         "module": "esnext",
+        "moduleResolution": "bundler",
         "strict": true,
         "noImplicitOverride": true,
         "noUnusedLocals": true,
@@ -18,5 +19,10 @@
             "resource:///org/gnome/shell/*": ["../gnome-shell/js/*"],
             "resource:///org/gnome/Shell/Extensions/js/*": ["../gnome-shell/js/*"]
         }
-    }
+    },
+    "include": [
+        "@types",
+        "extension",
+        "extension-dev"
+    ]
 }
