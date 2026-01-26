@@ -151,7 +151,8 @@ export const MetadataField = {
     Name: 'name',
     Url: 'url',
     SettingsSchema: 'settings-schema',
-    VersionName: 'version-name'
+    VersionName: 'version-name',
+    SessionModes: 'session-modes'
 };
 
 /**
