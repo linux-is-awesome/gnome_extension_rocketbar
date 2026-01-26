@@ -8,6 +8,8 @@ import Hooks from './context/hooks.js';
 import Monitors from './context/monitors.js';
 import Modules from '../services/modules.js';
 import LauncherApi from '../services/launcherApi.js';
+import { SessionModesWatchdog } from '../../shared/utils/sessionModesWatchdog.js';
+import { Event } from '../../shared/enums/general.js';
 
 export default class Context extends SharedContext {
 
@@ -95,6 +97,7 @@ export default class Context extends SharedContext {
     #initialize() {
         this.#launcherApi = new LauncherApi();
         this.#modules = new Modules();
+        Context.signals.add(this, [global, Event.Shutdown, () => SessionModesWatchdog()]);
     }
 
     /**
