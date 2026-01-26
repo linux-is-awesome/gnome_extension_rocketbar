@@ -3,8 +3,10 @@
 if [ "$1" = "dev" ]; then
 
     cd ../extension-dev
+    cp -r ../extension/locale ./locale
 
     gnome-extensions pack --force\
+                          --podir=locale ./\
                           --extra-source devUtils.js/\
                           --extra-source ../extension/prefs.js/\
                           --extra-source ../extension/schemas/\
@@ -15,7 +17,7 @@ if [ "$1" = "dev" ]; then
                           --extra-source ../extension/stylesheet.css/\
                           --extra-source ../LICENSE\
                           --out-dir ../
-
+    rm -rf ./locale
     exit 0
 fi
 
