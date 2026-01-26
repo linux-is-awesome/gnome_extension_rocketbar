@@ -1,5 +1,6 @@
 import SettingsPage from './base/settingsPage.js';
 import { Config } from '../../shared/utils/config.js';
+import { SessionModesWatchdog } from '../../shared/utils/sessionModesWatchdog.js';
 import { PreferencesPage } from '../../shared/enums/general.js';
 import { SettingsKey } from '../../shared/enums/settings.js';
 
@@ -7,7 +8,8 @@ import { SettingsKey } from '../../shared/enums/settings.js';
 const ConfigField = {
     launcherApi: SettingsKey.LauncherApi,
     notificationsLauncherApi: SettingsKey.NotificationsLauncherApi,
-    notificationsCountAttentionSources: SettingsKey.NotificationsCountAttentionSources
+    notificationsCountAttentionSources: SettingsKey.NotificationsCountAttentionSources,
+    sessionModeLockscreen: SettingsKey.SessionModeLockscreen
 };
 
 export default class extends SettingsPage {
@@ -33,6 +35,10 @@ export default class extends SettingsPage {
     #handleConfig(settingsKey, value) {
         value ??= false;
         switch (settingsKey) {
+            case ConfigField.sessionModeLockscreen:
+                this.setBoolean(settingsKey, value);
+                SessionModesWatchdog();
+                break;
             case ConfigField.launcherApi:
                 this.getSwitchRow(ConfigField.notificationsLauncherApi).set_sensitive(value);
             default:
