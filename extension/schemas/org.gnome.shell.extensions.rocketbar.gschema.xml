@@ -14,5 +14,8 @@
         <key type="b" name="notifications-count-attention-sources">
             <default>false</default>
         </key>
+        <key type="b" name="session-mode-lockscreen">
+            <default>false</default>
+        </key>
     </schema>
 </schemalist>

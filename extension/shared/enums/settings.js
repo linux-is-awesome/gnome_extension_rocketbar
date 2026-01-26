@@ -15,6 +15,7 @@ export const SettingsKey = {
     LauncherApi: 'launcher-api',
     NotificationsLauncherApi: 'notifications-launcher-api',
     NotificationsCountAttentionSources: 'notifications-count-attention-sources',
+    SessionModeLockscreen: 'session-mode-lockscreen',
     Items: 'items',
     SoundVolumeControl: 'sound-volume-control',
     ClickToHideOverview: 'click-to-hide-overview',
