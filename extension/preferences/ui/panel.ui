@@ -8,7 +8,6 @@
                 <child>
                     <object class="AdwSwitchRow" id="ui/panel">
                         <property name="title" translatable="yes">Enable Customization</property>
-                        <property name="subtitle" translatable="yes">Allow customization of the main panel</property>
                     </object>
                 </child>
             </object>
@@ -19,8 +18,8 @@
                 <property name="sensitive">false</property>
                 <child>
                     <object class="AdwSwitchRow" id="sound-volume-control">
-                        <property name="title" translatable="yes">Sound Volume Control</property>
-                        <property name="subtitle" translatable="yes">Scroll to change output sound volume, Middle click to toggle mute</property>
+                        <property name="title" translatable="yes">Sound Volume Control (LS)</property>
+                        <property name="subtitle" translatable="yes">Scroll to change the output sound volume, middle button click to toggle mute. Hold down the Ctrl key to slow down the volume change</property>
                     </object>
                 </child>
                 <child>

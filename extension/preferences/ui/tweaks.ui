@@ -20,8 +20,8 @@
                 </child>
                 <child>
                     <object class="AdwSwitchRow" id="tweaks/overviewClicks">
-                        <property name="title" translatable="yes">Empty Space Clicks</property>
-                        <property name="subtitle" translatable="yes">Primary button click hides the Overview, secondary button click toggles the App Grid</property>
+                        <property name="title" translatable="yes">Click Actions</property>
+                        <property name="subtitle" translatable="yes">Primary button click on an empty space hides the Overview, long press or secondary button click toggles the App Grid. Close windows using middle button (or primary button while holding down the Ctrl key)</property>
                     </object>
                 </child>
             </object>
@@ -31,14 +31,14 @@
                 <property name="title" translatable="yes">Popups</property>
                 <child>
                     <object class="AdwSwitchRow" id="tweaks/popupsNoDelay">
-                        <property name="title" translatable="yes">Remove Display Delay</property>
+                        <property name="title" translatable="yes">Remove Display Delay (LS)</property>
                         <property name="subtitle" translatable="yes">Instantly display all popups for better recognition</property>
                     </object>
                 </child>
                 <child>
                     <object class="AdwSwitchRow" id="tweaks/popupsPreventFocus">
-                        <property name="title" translatable="yes">Prevent Focus Grabbing</property>
-                        <property name="subtitle" translatable="yes">Prevent window focus from being lost when switching applications or input languages</property>
+                        <property name="title" translatable="yes">Prevent Focus Stealing</property>
+                        <property name="subtitle" translatable="yes">Prevent window focus from being lost when switching windows or input languages</property>
                     </object>
                 </child>
             </object>
@@ -48,7 +48,7 @@
                 <property name="title" translatable="yes">Menus</property>
                 <child>
                     <object class="AdwSwitchRow" id="tweaks/menusClickToOpen">
-                        <property name="title" translatable="yes">Click To Open</property>
+                        <property name="title" translatable="yes">Click To Open (LS)</property>
                         <property name="subtitle" translatable="yes">Require a click to open menus</property>
                     </object>
                 </child>
@@ -59,13 +59,13 @@
                 <property name="title" translatable="yes">Input Sources</property>
                 <child>
                     <object class="AdwSwitchRow" id="tweaks/primaryInputSource">
-                        <property name="title" translatable="yes">Primary Source For Password Fields</property>
-                        <property name="subtitle" translatable="yes">Automatically switch to the primary input language when any password field becomes active, this also applies to the lock screen</property>
+                        <property name="title" translatable="yes">Primary Language For Password Fields (LS)</property>
+                        <property name="subtitle" translatable="yes">Automatically switch to the primary input language when any password field becomes active</property>
                     </object>
                 </child>
                 <child>
                     <object class="AdwSwitchRow" id="tweaks/upperCaseInputSource">
-                        <property name="title" translatable="yes">Uppercase Indicator</property>
+                        <property name="title" translatable="yes">Uppercase Indicator (LS)</property>
                         <property name="subtitle" translatable="yes">Display input languages in uppercase (en > EN)</property>
                     </object>
                 </child>
@@ -77,7 +77,7 @@
                 <child>
                     <object class="AdwSwitchRow" id="tweaks/dndSystemNotifications">
                         <property name="title" translatable="yes">Always Show System Notifications</property>
-                        <property name="subtitle" translatable="yes">Allow system notifications to bypass DND mode</property>
+                        <property name="subtitle" translatable="yes">Allow system notifications to bypass Do Not Disturb mode</property>
                     </object>
                 </child>
             </object>

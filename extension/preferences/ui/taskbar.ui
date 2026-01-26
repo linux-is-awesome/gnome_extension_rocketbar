@@ -16,7 +16,7 @@
                                 <child>
                                     <object class="AdwSwitchRow" id="isolate-workspaces">
                                         <property name="title" translatable="yes">Isolate Workspaces</property>
-                                        <property name="subtitle" translatable="yes">Show applications from the current workspace only</property>
+                                        <property name="subtitle" translatable="yes">Show apps from the current workspace only</property>
                                     </object>
                                 </child>
                                 <child>
@@ -27,15 +27,15 @@
                                 </child>
                                 <child>
                                     <object class="AdwExpanderRow" id="show-favorites">
-                                        <property name="title" translatable="yes">Show Pinned Applications</property>
-                                        <property name="subtitle" translatable="yes">Always show pinned applications on the taskbar, even if they are not running</property>
+                                        <property name="title" translatable="yes">Show Pinned Apps</property>
+                                        <property name="subtitle" translatable="yes">Always show pinned apps on the taskbar, even if they are not running</property>
                                         <property name="show-enable-switch">true</property>
                                         <property name="enable-expansion">false</property>
                                         <property name="expanded">false</property>
                                         <child>
                                             <object class="AdwSwitchRow" id="separator">
                                                 <property name="title" translatable="yes">Always Show Separator</property>
-                                                <property name="subtitle" translatable="yes">Make the separator between pinned and running applications always visible</property>
+                                                <property name="subtitle" translatable="yes">Make the separator between pinned and running apps always visible</property>
                                             </object>
                                         </child>
                                     </object>
@@ -43,7 +43,7 @@
                                 <child>
                                     <object class="AdwExpanderRow" id="window-routing">
                                         <property name="title" translatable="yes">Multi-Monitor Window Routing</property>
-                                        <property name="subtitle" translatable="yes">Enable preferred monitor selection for each application and automatically route all newly opened windows there</property>
+                                        <property name="subtitle" translatable="yes">Enable preferred monitor selection for each app and automatically route all newly opened windows there</property>
                                         <property name="show-enable-switch">true</property>
                                         <property name="enable-expansion">false</property>
                                         <property name="expanded">false</property>
@@ -59,7 +59,7 @@
                         </child>
                         <child>
                             <object class="AdwPreferencesGroup">
-                                <property name="title" translatable="yes">Applications</property>
+                                <property name="title" translatable="yes">Apps</property>
                                 <child>
                                     <object class="AdwExpanderRow">
                                         <property name="title" translatable="yes">Default Settings</property>
@@ -124,7 +124,7 @@
                                 <property name="title" translatable="yes">Components</property>
                                 <child>
                                     <object class="AdwActionRow" id="appbutton-row">
-                                        <property name="title" translatable="yes">Application Buttons</property>
+                                        <property name="title" translatable="yes">App Buttons</property>
                                         <property name="activatable">true</property>
                                         <child>
                                             <object class="GtkImage">
