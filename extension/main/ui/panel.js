@@ -129,7 +129,6 @@ export default class Panel extends Component {
 
     /**
      * @param {Clutter.Event} event
-     * @returns {boolean}
      */
     #click(event) {
         switch (event.get_button()) {
@@ -140,7 +139,6 @@ export default class Panel extends Component {
             case Clutter.BUTTON_SECONDARY:
                 break;
         }
-        return Clutter.EVENT_PROPAGATE;
     }
 
     /**
@@ -152,27 +150,18 @@ export default class Panel extends Component {
         return this.#changeSoundVolume(event);
     }
 
-    /**
-     * @returns {boolean}
-     */
     #hideOverview() {
         const canCloseOverview = Overview.visible && !!this.#config?.clickToHideOverview;
-        if (!canCloseOverview) return Clutter.EVENT_PROPAGATE;
-        Overview.hide();
-        return Clutter.EVENT_STOP;
+        if (canCloseOverview) Overview.hide();
     }
 
-    /**
-     * @returns {boolean}
-     */
     #muteSoundVolume() {
-        if (!this.#config?.soundVolumeControl) return Clutter.EVENT_PROPAGATE;
+        if (!this.#config?.soundVolumeControl) return;
         const quickSettings = this.actor?.statusArea?.quickSettings;
         const outputVolumeIndicator = quickSettings?._volumeOutput;
         const outputVolumeSlider = outputVolumeIndicator?.quickSettingsItems?.[0];
-        if (outputVolumeSlider instanceof Clutter.Actor === false) return Clutter.EVENT_PROPAGATE;
+        if (outputVolumeSlider instanceof Clutter.Actor === false) return;
         outputVolumeSlider.emit(Event.IconClicked);
-        return Clutter.EVENT_STOP;
     }
 
     /**
