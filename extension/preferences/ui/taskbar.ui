@@ -134,6 +134,11 @@
                                     </object>
                                 </child>
                                 <child>
+                                    <object class="AdwSwitchRow" id="appbutton-menus">
+                                        <property name="title" translatable="yes">App Menus</property>
+                                    </object>
+                                </child>
+                                <child>
                                     <object class="AdwActionRow" id="appbutton-indicators-row">
                                         <property name="title" translatable="yes">Indicators</property>
                                         <property name="activatable">false</property>

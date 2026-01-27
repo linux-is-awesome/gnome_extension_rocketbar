@@ -16,6 +16,7 @@ const APP_BUTTON_NAVIGATION_ROW_ID = 'appbutton';
 const ConfigField = {
     ...TaskbarConfigField,
     ...ServiceConfigField,
+    enableMenus: SettingsKey.AppButtonMenus,
     enableIndicators: SettingsKey.AppButtonIndicators,
     enableNotificationBadges: SettingsKey.AppButtonNotificationBadges,
     enableProgressBars: SettingsKey.AppButtonProgressBars,
@@ -64,6 +65,7 @@ export default class extends SettingsPage {
             case ConfigField.isolateWorkspaces:
             case ConfigField.showAllWindows:
             case ConfigField.windowRoutingWatchdog:
+            case ConfigField.enableMenus:
             case ConfigField.enableIndicators:
             case ConfigField.enableNotificationBadges:
             case ConfigField.enableProgressBars:
