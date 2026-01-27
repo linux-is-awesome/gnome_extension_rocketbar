@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-26 22:53+0300\n"
+"POT-Creation-Date: 2026-01-27 23:47+0300\n"
 "PO-Revision-Date: 2026-01-26 22:53+0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -16,177 +16,6 @@ msgstr ""
 "Content-Type: text/plain; charset=ASCII\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
-
-#: shared/enums/labels.js:7
-msgid "Pin"
-msgstr ""
-
-#: shared/enums/labels.js:8
-msgid "Sound Volume Control"
-msgstr ""
-
-#: shared/enums/labels.js:9 preferences/ui/panel.ui:65
-#: preferences/ui/panel.ui:89
-msgid "Customize"
-msgstr ""
-
-#: shared/enums/labels.js:10 preferences/ui/taskbar.ui:77
-msgid "Activation Behavior"
-msgstr ""
-
-#: shared/enums/labels.js:11
-msgid "Attention Behavior"
-msgstr ""
-
-#: shared/enums/labels.js:12 preferences/ui/taskbar.ui:89
-msgid "Attention Notifications"
-msgstr ""
-
-#: shared/enums/labels.js:13 preferences/ui/taskbar.ui:95
-msgid "Standard Notifications"
-msgstr ""
-
-#: shared/enums/labels.js:14
-msgid "Custom Icon"
-msgstr ""
-
-#: shared/enums/labels.js:15
-msgid "Icon Size"
-msgstr ""
-
-#: shared/enums/labels.js:16
-msgid "Icon from Clipboard"
-msgstr ""
-
-#: shared/enums/labels.js:17
-msgid "No Icon Found in Clipboard"
-msgstr ""
-
-#: shared/enums/labels.js:18
-msgid "Reset to Default"
-msgstr ""
-
-#: shared/enums/labels.js:19
-msgid "Reset All to Default"
-msgstr ""
-
-#: shared/enums/labels.js:20
-msgid "Find Window"
-msgstr ""
-
-#: shared/enums/labels.js:21 preferences/ui/taskbar.ui:237
-msgid "Move Windows"
-msgstr ""
-
-#: shared/enums/labels.js:22
-msgid "Set Focus When Active"
-msgstr ""
-
-#: shared/enums/labels.js:23
-msgid "Set Focus On Active Workspace"
-msgstr ""
-
-#: shared/enums/labels.js:24
-msgid "Always Set Focus"
-msgstr ""
-
-#: shared/enums/labels.js:25
-msgid "Select Icon"
-msgstr ""
-
-#: shared/enums/labels.js:26
-msgid "Icon"
-msgstr ""
-
-#: shared/enums/labels.js:27 preferences/ui/notificationCounter.ui:90
-#: preferences/ui/taskbar.ui:225 preferences/ui/taskbar.ui:235
-#: preferences/ui/taskbar.ui:242 preferences/ui/taskbar.ui:250
-msgid "Default"
-msgstr ""
-
-#: shared/enums/labels.js:28
-msgid "Current Workspace"
-msgstr ""
-
-#: shared/enums/labels.js:29
-msgid "Other Workspaces"
-msgstr ""
-
-#: shared/enums/labels.js:30
-msgid "Minimize All"
-msgstr ""
-
-#: shared/enums/labels.js:31
-msgid "Raise All"
-msgstr ""
-
-#: shared/enums/labels.js:32
-msgid "Close All"
-msgstr ""
-
-#: shared/enums/labels.js:33
-msgid "This Monitor"
-msgstr ""
-
-#: shared/enums/labels.js:34
-msgid "Monitor Left"
-msgstr ""
-
-#: shared/enums/labels.js:35
-msgid "Monitor Right"
-msgstr ""
-
-#: shared/enums/labels.js:36
-msgid "Monitor Above"
-msgstr ""
-
-#: shared/enums/labels.js:37
-msgid "Monitor Below"
-msgstr ""
-
-#: shared/enums/labels.js:38
-msgid "Move to"
-msgstr ""
-
-#: shared/enums/labels.js:39 preferences/ui/taskbar.ui:71
-msgid "Preferred Monitor"
-msgstr ""
-
-#: shared/enums/labels.js:40 preferences/ui/taskbar.ui:226
-msgid "Primary"
-msgstr ""
-
-#: shared/enums/labels.js:41 preferences/ui/taskbar.ui:227
-msgid "Left of Primary"
-msgstr ""
-
-#: shared/enums/labels.js:42 preferences/ui/taskbar.ui:228
-msgid "Right of Primary"
-msgstr ""
-
-#: shared/enums/labels.js:43 preferences/ui/taskbar.ui:229
-msgid "Above Primary"
-msgstr ""
-
-#: shared/enums/labels.js:44 preferences/ui/taskbar.ui:230
-msgid "Below Primary"
-msgstr ""
-
-#: shared/enums/labels.js:45 preferences/ui/taskbar.ui:251
-msgid "Disable"
-msgstr ""
-
-#: shared/enums/labels.js:46 preferences/ui/taskbar.ui:252
-msgid "Always Hide"
-msgstr ""
-
-#: shared/enums/labels.js:47 preferences/ui/taskbar.ui:253
-msgid "Always Show"
-msgstr ""
-
-#: shared/enums/labels.js:48
-msgid "Critical"
-msgstr ""
 
 #: preferences/ui/about.ui:4
 msgid "About"
@@ -275,6 +104,10 @@ msgid "Notification Counter"
 msgstr ""
 
 #: preferences/ui/notificationCounter.ui:15 preferences/ui/taskbar.ui:15
+#: preferences/ui/taskbar/appButton.ui:24
+#: preferences/ui/taskbar/indicators.ui:24
+#: preferences/ui/taskbar/notificationBadges.ui:24
+#: preferences/ui/taskbar/progressBars.ui:24
 msgid "General"
 msgstr ""
 
@@ -287,10 +120,16 @@ msgid "Center Clock Position"
 msgstr ""
 
 #: preferences/ui/notificationCounter.ui:28
+#: preferences/ui/taskbar/notificationBadges.ui:33
 msgid "Max Count To Display"
 msgstr ""
 
 #: preferences/ui/notificationCounter.ui:43 preferences/ui/taskbar.ui:105
+#: preferences/ui/taskbar/appButton.ui:223
+#: preferences/ui/taskbar/indicators.ui:35
+#: preferences/ui/taskbar/notificationBadges.ui:48
+#: preferences/ui/taskbar/progressBars.ui:35
+#: preferences/ui/taskbar/tooltips.ui:55
 msgid "Layout"
 msgstr ""
 
@@ -303,25 +142,40 @@ msgid "Vertical Centering"
 msgstr ""
 
 #: preferences/ui/notificationCounter.ui:72
+#: preferences/ui/taskbar/appButton.ui:270
+#: preferences/ui/taskbar/notificationBadges.ui:64
 msgid "Roundness"
 msgstr ""
 
 #: preferences/ui/notificationCounter.ui:87
+#: preferences/ui/taskbar/indicators.ui:185
+#: preferences/ui/taskbar/notificationBadges.ui:92
+#: preferences/ui/taskbar/progressBars.ui:79
 msgid "Colors"
+msgstr ""
+
+#: preferences/ui/notificationCounter.ui:90 preferences/ui/taskbar.ui:230
+#: preferences/ui/taskbar.ui:240 preferences/ui/taskbar.ui:247
+#: preferences/ui/taskbar.ui:255 shared/enums/labels.js:27
+msgid "Default"
 msgstr ""
 
 #: preferences/ui/notificationCounter.ui:94
 #: preferences/ui/notificationCounter.ui:139
+#: preferences/ui/taskbar/notificationBadges.ui:95
+#: preferences/ui/taskbar/progressBars.ui:82
 msgid "Background Color"
 msgstr ""
 
 #: preferences/ui/notificationCounter.ui:106
 #: preferences/ui/notificationCounter.ui:151
+#: preferences/ui/taskbar/notificationBadges.ui:107
 msgid "Border Color"
 msgstr ""
 
 #: preferences/ui/notificationCounter.ui:118
 #: preferences/ui/notificationCounter.ui:163
+#: preferences/ui/taskbar/notificationBadges.ui:119
 msgid "Text Color"
 msgstr ""
 
@@ -337,7 +191,7 @@ msgstr ""
 msgid "Enable Customization"
 msgstr ""
 
-#: preferences/ui/panel.ui:17
+#: preferences/ui/panel.ui:17 preferences/ui/taskbar/appButton.ui:41
 msgid "Actions"
 msgstr ""
 
@@ -360,6 +214,11 @@ msgid "When in Overview, primary button click on the panel hides the Overview"
 msgstr ""
 
 #: preferences/ui/panel.ui:35 preferences/ui/taskbar.ui:4
+#: preferences/ui/taskbar/appButton.ui:11
+#: preferences/ui/taskbar/indicators.ui:11
+#: preferences/ui/taskbar/notificationBadges.ui:11
+#: preferences/ui/taskbar/progressBars.ui:11
+#: preferences/ui/taskbar/tooltips.ui:11
 msgid "Taskbar"
 msgstr ""
 
@@ -367,8 +226,15 @@ msgstr ""
 msgid "Alignment"
 msgstr ""
 
-#: preferences/ui/panel.ui:51
+#: preferences/ui/panel.ui:51 preferences/ui/taskbar/indicators.ui:27
+#: preferences/ui/taskbar/notificationBadges.ui:27
+#: preferences/ui/taskbar/progressBars.ui:27
 msgid "Position"
+msgstr ""
+
+#: preferences/ui/panel.ui:65 preferences/ui/panel.ui:89
+#: shared/enums/labels.js:9
+msgid "Customize"
 msgstr ""
 
 #: preferences/ui/panel.ui:105
@@ -441,11 +307,27 @@ msgstr ""
 msgid "Default Settings"
 msgstr ""
 
+#: preferences/ui/taskbar.ui:71 shared/enums/labels.js:39
+msgid "Preferred Monitor"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:77 shared/enums/labels.js:10
+msgid "Activation Behavior"
+msgstr ""
+
 #: preferences/ui/taskbar.ui:83
 msgid "Focus Demanding Attention Windows"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:108
+#: preferences/ui/taskbar.ui:89 shared/enums/labels.js:12
+msgid "Attention Notifications"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:95 shared/enums/labels.js:13
+msgid "Standard Notifications"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:108 preferences/ui/taskbar/tooltips.ui:58
 msgid "Max Length (% of Monitor)"
 msgstr ""
 
@@ -457,44 +339,399 @@ msgstr ""
 msgid "Components"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:127
+#: preferences/ui/taskbar.ui:127 preferences/ui/taskbar/appButton.ui:12
 msgid "App Buttons"
 msgstr ""
 
 #: preferences/ui/taskbar.ui:138
+msgid "App Menus"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:143 preferences/ui/taskbar/indicators.ui:12
 msgid "Indicators"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:158
+#: preferences/ui/taskbar.ui:163
+#: preferences/ui/taskbar/notificationBadges.ui:12
 msgid "Notification Badges"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:178
+#: preferences/ui/taskbar.ui:183 preferences/ui/taskbar/progressBars.ui:12
 msgid "Progress Bars"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:198
+#: preferences/ui/taskbar.ui:203 preferences/ui/taskbar/tooltips.ui:12
 msgid "Tooltips"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:236
+#: preferences/ui/taskbar.ui:231 shared/enums/labels.js:40
+msgid "Primary"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:232 shared/enums/labels.js:41
+msgid "Left of Primary"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:233 shared/enums/labels.js:42
+msgid "Right of Primary"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:234 shared/enums/labels.js:43
+msgid "Above Primary"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:235 shared/enums/labels.js:44
+msgid "Below Primary"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:241
 msgid "Find Windows"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:243
+#: preferences/ui/taskbar.ui:242 shared/enums/labels.js:21
+msgid "Move Windows"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:248
 msgid "When Active"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:244
+#: preferences/ui/taskbar.ui:249
 msgid "On Active Workspace"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:245
+#: preferences/ui/taskbar.ui:250
 msgid "Always"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:254
+#: preferences/ui/taskbar.ui:256 shared/enums/labels.js:45
+msgid "Disable"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:257 shared/enums/labels.js:46
+msgid "Always Hide"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:258 shared/enums/labels.js:47
+msgid "Always Show"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:259
 msgid "Always Show as Critical"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:27
+msgid "Drag And Drop"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:28
+msgid ""
+"Use drag and drop to rearrange apps on the taskbar, unpin pinned apps, and "
+"launch new app instances by dropping them into the Overview"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:33 shared/enums/labels.js:8
+msgid "Sound Volume Control"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:34
+msgid "Enable control of input and output sound volumes for apps"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:44
+msgid "Scroll"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:45
+msgid "Hold down the Ctrl key to trigger an alternative action"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:51
+msgid "Click"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:52
+#: preferences/ui/taskbar/appButton.ui:106
+#: preferences/ui/taskbar/appButton.ui:164
+msgid "These actions are built-in and cannot be changed"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:57
+#: preferences/ui/taskbar/appButton.ui:111
+msgid "Primary Button"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:63
+#: preferences/ui/taskbar/appButton.ui:121
+msgid "Primary Button + Ctrl"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:66
+#: preferences/ui/taskbar/appButton.ui:86
+#: preferences/ui/taskbar/appButton.ui:182
+#: preferences/ui/taskbar/appButton.ui:202
+msgid "New Window"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:73
+#: preferences/ui/taskbar/appButton.ui:131
+msgid "Secondary Button"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:76
+#: preferences/ui/taskbar/appButton.ui:114
+#: preferences/ui/taskbar/appButton.ui:134
+msgid "Open Menu"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:83
+#: preferences/ui/taskbar/appButton.ui:141
+msgid "Middle Button"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:93
+#: preferences/ui/taskbar/appButton.ui:151
+msgid "Middle Button + Ctrl"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:96
+msgid "Close Window"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:105
+msgid "Long Press"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:124
+msgid "Minimize All Windows"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:144
+msgid "Raise All Windows"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:154
+msgid "Close All Windows"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:163
+msgid "Key Press"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:169
+msgid "Super + 1-9"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:172
+#: preferences/ui/taskbar/appButton.ui:192
+#: preferences/ui/taskbar/appButton.ui:350
+msgid "Activate"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:179
+msgid "Super + Ctrl + 1-9"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:189
+msgid "Enter/Space"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:199
+msgid "Enter/Space + Ctrl"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:209
+msgid "Up/Down"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:212
+msgid "Open menu"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:226 shared/enums/labels.js:15
+msgid "Icon Size"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:239
+msgid "Padding"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:242
+msgid "Horizontal"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:255
+msgid "Vertical"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:283
+#: preferences/ui/taskbar/indicators.ui:81
+#: preferences/ui/taskbar/indicators.ui:155
+msgid "Spacing"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:298
+msgid "Backlight"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:301
+msgid "Intensity"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:314
+msgid "Type"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:320
+#: preferences/ui/taskbar/indicators.ui:198
+#: preferences/ui/taskbar/indicators.ui:225
+msgid "Color"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:341
+msgid "None"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:342
+msgid "Cycle All Windows"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:343
+msgid "Cycle Recent Windows"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:344
+msgid "Output Sound Volume"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:345
+msgid "Input Sound Volume"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:351
+msgid "Activate/Minimize"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:356
+#: preferences/ui/taskbar/indicators.ui:253
+msgid "Static Color"
+msgstr ""
+
+#: preferences/ui/taskbar/appButton.ui:357
+#: preferences/ui/taskbar/indicators.ui:254
+msgid "Dominant Color"
+msgstr ""
+
+#: preferences/ui/taskbar/indicators.ui:38
+#: preferences/ui/taskbar/indicators.ui:188
+msgid "Active"
+msgstr ""
+
+#: preferences/ui/taskbar/indicators.ui:42
+#: preferences/ui/taskbar/indicators.ui:116
+msgid "Limit"
+msgstr ""
+
+#: preferences/ui/taskbar/indicators.ui:55
+#: preferences/ui/taskbar/indicators.ui:129
+#: preferences/ui/taskbar/notificationBadges.ui:51
+msgid "Size"
+msgstr ""
+
+#: preferences/ui/taskbar/indicators.ui:68
+#: preferences/ui/taskbar/indicators.ui:142
+msgid "Weight"
+msgstr ""
+
+#: preferences/ui/taskbar/indicators.ui:94
+#: preferences/ui/taskbar/indicators.ui:168
+#: preferences/ui/taskbar/notificationBadges.ui:77
+#: preferences/ui/taskbar/progressBars.ui:64
+msgid "Offset"
+msgstr ""
+
+#: preferences/ui/taskbar/indicators.ui:109
+#: preferences/ui/taskbar/indicators.ui:212
+msgid "Inactive"
+msgstr ""
+
+#: preferences/ui/taskbar/indicators.ui:110
+msgid "Use a different layout for inactive indicators"
+msgstr ""
+
+#: preferences/ui/taskbar/indicators.ui:192
+#: preferences/ui/taskbar/indicators.ui:219
+msgid "Color Type"
+msgstr ""
+
+#: preferences/ui/taskbar/indicators.ui:213
+msgid "Use a different color for inactive indicators"
+msgstr ""
+
+#: preferences/ui/taskbar/indicators.ui:247
+#: preferences/ui/taskbar/progressBars.ui:114
+msgid "Top"
+msgstr ""
+
+#: preferences/ui/taskbar/indicators.ui:248
+#: preferences/ui/taskbar/progressBars.ui:115
+msgid "Bottom"
+msgstr ""
+
+#: preferences/ui/taskbar/notificationBadges.ui:139
+msgid "Top Left"
+msgstr ""
+
+#: preferences/ui/taskbar/notificationBadges.ui:140
+msgid "Top Right"
+msgstr ""
+
+#: preferences/ui/taskbar/notificationBadges.ui:141
+msgid "Bottom Left"
+msgstr ""
+
+#: preferences/ui/taskbar/notificationBadges.ui:142
+msgid "Bottom Right"
+msgstr ""
+
+#: preferences/ui/taskbar/progressBars.ui:38
+msgid "Width"
+msgstr ""
+
+#: preferences/ui/taskbar/progressBars.ui:51
+msgid "Height"
+msgstr ""
+
+#: preferences/ui/taskbar/progressBars.ui:94
+msgid "Fill Color"
+msgstr ""
+
+#: preferences/ui/taskbar/tooltips.ui:24
+msgid "Delays"
+msgstr ""
+
+#: preferences/ui/taskbar/tooltips.ui:27
+msgid "Show"
+msgstr ""
+
+#: preferences/ui/taskbar/tooltips.ui:40
+msgid "Hide"
+msgstr ""
+
+#: preferences/ui/taskbar/tooltips.ui:59
+msgid "Limit the tooltip length to a percentage of the monitor size"
+msgstr ""
+
+#: preferences/ui/taskbar/tooltips.ui:74
+msgid "Windows"
+msgstr ""
+
+#: preferences/ui/taskbar/tooltips.ui:77
+msgid "Shrink Window Titles"
+msgstr ""
+
+#: preferences/ui/taskbar/tooltips.ui:78
+msgid "Remove application names from window titles"
 msgstr ""
 
 #: preferences/ui/tweaks.ui:8
@@ -592,4 +829,104 @@ msgstr ""
 
 #: preferences/ui/tweaks.ui:80
 msgid "Allow system notifications to bypass Do Not Disturb mode"
+msgstr ""
+
+#: shared/enums/labels.js:7
+msgid "Pin"
+msgstr ""
+
+#: shared/enums/labels.js:11
+msgid "Attention Behavior"
+msgstr ""
+
+#: shared/enums/labels.js:14
+msgid "Custom Icon"
+msgstr ""
+
+#: shared/enums/labels.js:16
+msgid "Icon from Clipboard"
+msgstr ""
+
+#: shared/enums/labels.js:17
+msgid "No Icon Found in Clipboard"
+msgstr ""
+
+#: shared/enums/labels.js:18
+msgid "Reset to Default"
+msgstr ""
+
+#: shared/enums/labels.js:19
+msgid "Reset All to Default"
+msgstr ""
+
+#: shared/enums/labels.js:20
+msgid "Find Window"
+msgstr ""
+
+#: shared/enums/labels.js:22
+msgid "Set Focus When Active"
+msgstr ""
+
+#: shared/enums/labels.js:23
+msgid "Set Focus On Active Workspace"
+msgstr ""
+
+#: shared/enums/labels.js:24
+msgid "Always Set Focus"
+msgstr ""
+
+#: shared/enums/labels.js:25
+msgid "Select Icon"
+msgstr ""
+
+#: shared/enums/labels.js:26
+msgid "Icon"
+msgstr ""
+
+#: shared/enums/labels.js:28
+msgid "Current Workspace"
+msgstr ""
+
+#: shared/enums/labels.js:29
+msgid "Other Workspaces"
+msgstr ""
+
+#: shared/enums/labels.js:30
+msgid "Minimize All"
+msgstr ""
+
+#: shared/enums/labels.js:31
+msgid "Raise All"
+msgstr ""
+
+#: shared/enums/labels.js:32
+msgid "Close All"
+msgstr ""
+
+#: shared/enums/labels.js:33
+msgid "This Monitor"
+msgstr ""
+
+#: shared/enums/labels.js:34
+msgid "Monitor Left"
+msgstr ""
+
+#: shared/enums/labels.js:35
+msgid "Monitor Right"
+msgstr ""
+
+#: shared/enums/labels.js:36
+msgid "Monitor Above"
+msgstr ""
+
+#: shared/enums/labels.js:37
+msgid "Monitor Below"
+msgstr ""
+
+#: shared/enums/labels.js:38
+msgid "Move to"
+msgstr ""
+
+#: shared/enums/labels.js:48
+msgid "Critical"
 msgstr ""
