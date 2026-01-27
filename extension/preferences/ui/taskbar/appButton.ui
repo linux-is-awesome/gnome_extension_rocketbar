@@ -54,13 +54,13 @@
                                         <property name="enable-expansion">true</property>
                                         <child>
                                             <object class="AdwComboRow" id="appbutton-minimize-action">
-                                                <property name="title" translatable="yes">Primary Button</property>
+                                                <property name="title" translatable="yes">Left Button</property>
                                                 <property name="model">click-action-options</property>
                                             </object>
                                         </child>
                                         <child>
                                             <object class="AdwActionRow">
-                                                <property name="title" translatable="yes">Primary Button + Ctrl</property>
+                                                <property name="title" translatable="yes">Left Button + Ctrl</property>
                                                 <child>
                                                     <object class="GtkLabel">
                                                         <property name="label" translatable="yes">New Window</property>
@@ -70,7 +70,7 @@
                                         </child>
                                         <child>
                                             <object class="AdwActionRow">
-                                                <property name="title" translatable="yes">Secondary Button</property>
+                                                <property name="title" translatable="yes">Right Button</property>
                                                 <child>
                                                     <object class="GtkLabel">
                                                         <property name="label" translatable="yes">Open Menu</property>
@@ -108,7 +108,7 @@
                                         <property name="enable-expansion">true</property>
                                         <child>
                                             <object class="AdwActionRow">
-                                                <property name="title" translatable="yes">Primary Button</property>
+                                                <property name="title" translatable="yes">Left Button</property>
                                                 <child>
                                                     <object class="GtkLabel">
                                                         <property name="label" translatable="yes">Open Menu</property>
@@ -118,7 +118,7 @@
                                         </child>
                                         <child>
                                             <object class="AdwActionRow">
-                                                <property name="title" translatable="yes">Primary Button + Ctrl</property>
+                                                <property name="title" translatable="yes">Left Button + Ctrl</property>
                                                 <child>
                                                     <object class="GtkLabel">
                                                         <property name="label" translatable="yes">Minimize All Windows</property>
@@ -128,7 +128,7 @@
                                         </child>
                                         <child>
                                             <object class="AdwActionRow">
-                                                <property name="title" translatable="yes">Secondary Button</property>
+                                                <property name="title" translatable="yes">Right Button</property>
                                                 <child>
                                                     <object class="GtkLabel">
                                                         <property name="label" translatable="yes">Open Menu</property>

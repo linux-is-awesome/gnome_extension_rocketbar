@@ -25,7 +25,7 @@
                 <child>
                     <object class="AdwSwitchRow" id="click-to-hide-overview">
                         <property name="title" translatable="yes">Click To Hide Overview</property>
-                        <property name="subtitle" translatable="yes">When in Overview, primary button click on the panel hides the Overview</property>
+                        <property name="subtitle" translatable="yes">When in Overview, left button click on the panel hides the Overview</property>
                     </object>
                 </child>
             </object>

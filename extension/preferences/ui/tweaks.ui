@@ -21,7 +21,7 @@
                 <child>
                     <object class="AdwSwitchRow" id="tweaks/overviewClicks">
                         <property name="title" translatable="yes">Click Actions</property>
-                        <property name="subtitle" translatable="yes">Primary button click on an empty space hides the Overview, long press or secondary button click toggles the App Grid. Close windows using middle button (or primary button while holding down the Ctrl key)</property>
+                        <property name="subtitle" translatable="yes">Left button click on an empty space hides the Overview, long press or right button click toggles the App Grid. Close windows using middle button (or left button while holding down the Ctrl key)</property>
                     </object>
                 </child>
             </object>
