@@ -113,7 +113,7 @@
                                         <property name="show-enable-switch">true</property>
                                         <child>
                                             <object class="AdwSpinRow" id="indicator-limit-inactive">
-                                                <property name="title" translatable="yes">Limit </property>
+                                                <property name="title" translatable="yes">Limit</property>
                                                 <property name="adjustment">
                                                     <object class="GtkAdjustment">
                                                         <property name="lower">0</property>
