@@ -7,6 +7,7 @@ import St from 'gi://St';
 import Context from '../../core/context.js';
 import { Component } from './component.js';
 import { Animation, AnimationType, AnimationDuration } from './animation.js';
+import { ActorPressHandler } from './actorPressHandler.js';
 import { MaxLengthBounds, MaxLengthCalculator } from '../../utils/maxLengthCalculator.js';
 import { Event, Delay, Alignment } from '../../../shared/enums/general.js';
 
@@ -35,7 +36,9 @@ const BodyProps = {
 
 /** @enum {string} */
 export const TooltipEvent = {
-    StateChanged: 'tooltip::state-changed'
+    StateChanged: 'tooltip::state-changed',
+    Click: 'tooltip::click',
+    LongPress: 'tooltip::long-press'
 };
 
 /**
@@ -78,6 +81,9 @@ export class Tooltip extends Component {
 
     /** @type {number} */
     #maxLength = MaxLengthBounds.Max;
+
+    /** @type {ActorPressHandler?} */
+    #pressHandler = null;
 
     /** @type {Job?} */
     #fadeInJob = null;
@@ -161,9 +167,13 @@ export class Tooltip extends Component {
         this.#body = new St.Widget({ ...BodyProps, layout_manager: new Clutter.BinLayout() });
         super.actor.add_child(this.#body);
         this.#sourceActor = sourceActor;
+        this.#pressHandler = new ActorPressHandler((...args) => this.#longPress(...args), this.#body);
         this.connect(Event.Destroy, () => this.#destroy());
         this.connect(Event.Mapped, () => this.#handleMapped());
         this.#body.connect(Event.Hover, () => this.#hover());
+        this.#body.connect(Event.ButtonPress, (_, event) => this.#pressHandler?.press(event));
+        this.#body.connect(Event.ButtonRelease, () => this.#pressHandler?.release((...args) => this.#click(...args)));
+        this.#body.connect(Event.Leave, () => this.#pressHandler?.release());
         if (typeof name !== 'string') return;
         this.#body.set_name(`${name}-Body`);
     }
@@ -214,8 +224,10 @@ export class Tooltip extends Component {
     #destroy() {
         this.#rerenderJob?.destroy();
         this.#job?.destroy();
+        this.#pressHandler?.destroy();
         this.#rerenderJob = null;
         this.#job = null;
+        this.#pressHandler = null;
         this.#targetSize = null;
         this.#isHidden = true;
         this.#isShown = false;
@@ -229,6 +241,24 @@ export class Tooltip extends Component {
     #handleMapped() {
         if (this.#isHidden || !this.hasAllocation) return;
         this.#job?.reset(Delay.Redraw).enqueue(() => this.#fadeIn());
+    }
+
+    /**
+     * @param {Clutter.Event} event
+     * @param {Clutter.Actor} target
+     */
+    #click(event, target) {
+        if (this.notifySelf(TooltipEvent.Click, { event, target })) return;
+        this.hide(true);
+    }
+
+    /**
+     * @param {Clutter.Event} event
+     * @param {Clutter.Actor} target
+     */
+    #longPress(event, target) {
+        if (!this.notifySelf(TooltipEvent.LongPress, { event, target })) return;
+        this.#pressHandler?.release();
     }
 
     #hover() {
