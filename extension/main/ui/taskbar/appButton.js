@@ -658,11 +658,10 @@ export class AppButton extends RuntimeButton {
         switch (action) {
             case ScrollAction.CycleAllWindows:
             case ScrollAction.CycleRecentWindows:
-                if (!this.#isRunning || !this.#windows || Context.jobs.has(this)) return Clutter.EVENT_STOP;
-                Context.jobs.new(this, Delay.Sleep).destroy(() => null);
+                if (!this.#isRunning || !this.#windows) return Clutter.EVENT_STOP;
                 const isCycleRecent = action === ScrollAction.CycleRecentWindows;
                 if (isCycleRecent) this.#windows.resetQueue();
-                this.#windows.cycle(false, isDirectionUp && !isCycleRecent);
+                this.#windows.cycle(false, isDirectionUp && !isCycleRecent, true);
                 if (this.#windows.size > 1 && !this.tooltip?.isShown) this.tooltip?.show(true);
                 break;
             case ScrollAction.ChangeInputSoundVolume:
