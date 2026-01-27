@@ -2,6 +2,11 @@
 
 cd ../extension
 
-FILE_NAME=`cat ./metadata.json | grep -oP '(?<="gettext-domain": ")[^"]*'`
+POT_FILE_NAME=`cat ./metadata.json | grep -oP '(?<="gettext-domain": ")[^"]*'`
 
-xgettext --output=./locale/$FILE_NAME.pot ./shared/enums/labels.js ./preferences/ui/*.ui
+find ./preferences/ui/ -name '*.ui' > POT_FILES
+echo ./shared/enums/labels.js >> POT_FILES
+
+xgettext --files-from=POT_FILES --output=./locale/$POT_FILE_NAME.pot
+
+rm POT_FILES
