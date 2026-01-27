@@ -104,13 +104,11 @@ export default class SettingsPage extends Page {
 
     /**
      * @param {string} settingsKey
-     * @param {string} value
-     * @param {string[]} options
+     * @param {*} value
+     * @param {*[]} options
      */
     setOption(settingsKey, value, options) {
         if (!this.#settings) return;
-        value ??= '';
-        if (typeof value !== 'string') return;
         const optionIndex = options.indexOf(value);
         if (optionIndex < 0) return;
         const widget = this.getComboRow(settingsKey);
