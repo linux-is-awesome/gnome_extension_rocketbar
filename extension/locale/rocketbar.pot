@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-27 23:42+0300\n"
+"POT-Creation-Date: 2026-01-27 23:47+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -628,6 +628,7 @@ msgid "Active"
 msgstr ""
 
 #: preferences/ui/taskbar/indicators.ui:42
+#: preferences/ui/taskbar/indicators.ui:116
 msgid "Limit"
 msgstr ""
 
@@ -656,10 +657,6 @@ msgstr ""
 
 #: preferences/ui/taskbar/indicators.ui:110
 msgid "Use a different layout for inactive indicators"
-msgstr ""
-
-#: preferences/ui/taskbar/indicators.ui:116
-msgid "Limit "
 msgstr ""
 
 #: preferences/ui/taskbar/indicators.ui:192
