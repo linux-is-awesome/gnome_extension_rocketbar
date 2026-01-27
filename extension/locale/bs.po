@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-27 23:47+0300\n"
+"POT-Creation-Date: 2026-01-28 00:02+0300\n"
 "PO-Revision-Date: 2026-01-26 22:53+0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -102,11 +102,11 @@ msgstr ""
 msgid "Notification Counter"
 msgstr ""
 
-#: preferences/ui/notificationCounter.ui:15 preferences/ui/taskbar.ui:15
-#: preferences/ui/taskbar/appButton.ui:24
-#: preferences/ui/taskbar/indicators.ui:24
+#: preferences/ui/notificationCounter.ui:15
 #: preferences/ui/taskbar/notificationBadges.ui:24
 #: preferences/ui/taskbar/progressBars.ui:24
+#: preferences/ui/taskbar/appButton.ui:24
+#: preferences/ui/taskbar/indicators.ui:24 preferences/ui/taskbar.ui:15
 msgid "General"
 msgstr ""
 
@@ -123,12 +123,12 @@ msgstr ""
 msgid "Max Count To Display"
 msgstr ""
 
-#: preferences/ui/notificationCounter.ui:43 preferences/ui/taskbar.ui:105
-#: preferences/ui/taskbar/appButton.ui:223
-#: preferences/ui/taskbar/indicators.ui:35
+#: preferences/ui/notificationCounter.ui:43
 #: preferences/ui/taskbar/notificationBadges.ui:48
 #: preferences/ui/taskbar/progressBars.ui:35
 #: preferences/ui/taskbar/tooltips.ui:55
+#: preferences/ui/taskbar/appButton.ui:223
+#: preferences/ui/taskbar/indicators.ui:35 preferences/ui/taskbar.ui:105
 msgid "Layout"
 msgstr ""
 
@@ -141,15 +141,15 @@ msgid "Vertical Centering"
 msgstr ""
 
 #: preferences/ui/notificationCounter.ui:72
-#: preferences/ui/taskbar/appButton.ui:270
 #: preferences/ui/taskbar/notificationBadges.ui:64
+#: preferences/ui/taskbar/appButton.ui:270
 msgid "Roundness"
 msgstr ""
 
 #: preferences/ui/notificationCounter.ui:87
-#: preferences/ui/taskbar/indicators.ui:185
 #: preferences/ui/taskbar/notificationBadges.ui:92
 #: preferences/ui/taskbar/progressBars.ui:79
+#: preferences/ui/taskbar/indicators.ui:185
 msgid "Colors"
 msgstr ""
 
@@ -209,15 +209,13 @@ msgid "Click To Hide Overview"
 msgstr ""
 
 #: preferences/ui/panel.ui:28
-msgid "When in Overview, primary button click on the panel hides the Overview"
+msgid "When in Overview, left button click on the panel hides the Overview"
 msgstr ""
 
-#: preferences/ui/panel.ui:35 preferences/ui/taskbar.ui:4
-#: preferences/ui/taskbar/appButton.ui:11
-#: preferences/ui/taskbar/indicators.ui:11
-#: preferences/ui/taskbar/notificationBadges.ui:11
+#: preferences/ui/panel.ui:35 preferences/ui/taskbar/notificationBadges.ui:11
 #: preferences/ui/taskbar/progressBars.ui:11
-#: preferences/ui/taskbar/tooltips.ui:11
+#: preferences/ui/taskbar/tooltips.ui:11 preferences/ui/taskbar/appButton.ui:11
+#: preferences/ui/taskbar/indicators.ui:11 preferences/ui/taskbar.ui:4
 msgid "Taskbar"
 msgstr ""
 
@@ -225,9 +223,9 @@ msgstr ""
 msgid "Alignment"
 msgstr ""
 
-#: preferences/ui/panel.ui:51 preferences/ui/taskbar/indicators.ui:27
-#: preferences/ui/taskbar/notificationBadges.ui:27
+#: preferences/ui/panel.ui:51 preferences/ui/taskbar/notificationBadges.ui:27
 #: preferences/ui/taskbar/progressBars.ui:27
+#: preferences/ui/taskbar/indicators.ui:27
 msgid "Position"
 msgstr ""
 
@@ -248,175 +246,104 @@ msgstr ""
 msgid "Right"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:18
-msgid "Isolate Workspaces"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:19
-msgid "Show apps from the current workspace only"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:24
-msgid "Include All Windows"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:25
-msgid "Enable management of windows marked to skip the taskbar"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:30
-msgid "Show Pinned Apps"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:31
-msgid "Always show pinned apps on the taskbar, even if they are not running"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:37
-msgid "Always Show Separator"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:38
-msgid "Make the separator between pinned and running apps always visible"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:45
-msgid "Multi-Monitor Window Routing"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:46
-msgid ""
-"Enable preferred monitor selection for each app and automatically route all "
-"newly opened windows there"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:52
-msgid "Handle Monitor Changes"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:53
-msgid "Automatically attempt to restore window positions after monitor changes"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:62
-msgid "Apps"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:65
-msgid "Default Settings"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:71 shared/enums/labels.js:39
-msgid "Preferred Monitor"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:77 shared/enums/labels.js:10
-msgid "Activation Behavior"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:83
-msgid "Focus Demanding Attention Windows"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:89 shared/enums/labels.js:12
-msgid "Attention Notifications"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:95 shared/enums/labels.js:13
-msgid "Standard Notifications"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:108 preferences/ui/taskbar/tooltips.ui:58
-msgid "Max Length (% of Monitor)"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:109
-msgid "Limit the taskbar length to a percentage of the monitor size"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:124
-msgid "Components"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:127 preferences/ui/taskbar/appButton.ui:12
-msgid "App Buttons"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:138
-msgid "App Menus"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:143 preferences/ui/taskbar/indicators.ui:12
-msgid "Indicators"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:163
 #: preferences/ui/taskbar/notificationBadges.ui:12
+#: preferences/ui/taskbar.ui:163
 msgid "Notification Badges"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:183 preferences/ui/taskbar/progressBars.ui:12
+#: preferences/ui/taskbar/notificationBadges.ui:51
+#: preferences/ui/taskbar/indicators.ui:55
+#: preferences/ui/taskbar/indicators.ui:129
+msgid "Size"
+msgstr ""
+
+#: preferences/ui/taskbar/notificationBadges.ui:77
+#: preferences/ui/taskbar/progressBars.ui:64
+#: preferences/ui/taskbar/indicators.ui:94
+#: preferences/ui/taskbar/indicators.ui:168
+msgid "Offset"
+msgstr ""
+
+#: preferences/ui/taskbar/notificationBadges.ui:139
+msgid "Top Left"
+msgstr ""
+
+#: preferences/ui/taskbar/notificationBadges.ui:140
+msgid "Top Right"
+msgstr ""
+
+#: preferences/ui/taskbar/notificationBadges.ui:141
+msgid "Bottom Left"
+msgstr ""
+
+#: preferences/ui/taskbar/notificationBadges.ui:142
+msgid "Bottom Right"
+msgstr ""
+
+#: preferences/ui/taskbar/progressBars.ui:12 preferences/ui/taskbar.ui:183
 msgid "Progress Bars"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:203 preferences/ui/taskbar/tooltips.ui:12
+#: preferences/ui/taskbar/progressBars.ui:38
+msgid "Width"
+msgstr ""
+
+#: preferences/ui/taskbar/progressBars.ui:51
+msgid "Height"
+msgstr ""
+
+#: preferences/ui/taskbar/progressBars.ui:94
+msgid "Fill Color"
+msgstr ""
+
+#: preferences/ui/taskbar/progressBars.ui:114
+#: preferences/ui/taskbar/indicators.ui:247
+msgid "Top"
+msgstr ""
+
+#: preferences/ui/taskbar/progressBars.ui:115
+#: preferences/ui/taskbar/indicators.ui:248
+msgid "Bottom"
+msgstr ""
+
+#: preferences/ui/taskbar/tooltips.ui:12 preferences/ui/taskbar.ui:203
 msgid "Tooltips"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:231 shared/enums/labels.js:40
-msgid "Primary"
+#: preferences/ui/taskbar/tooltips.ui:24
+msgid "Delays"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:232 shared/enums/labels.js:41
-msgid "Left of Primary"
+#: preferences/ui/taskbar/tooltips.ui:27
+msgid "Show"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:233 shared/enums/labels.js:42
-msgid "Right of Primary"
+#: preferences/ui/taskbar/tooltips.ui:40
+msgid "Hide"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:234 shared/enums/labels.js:43
-msgid "Above Primary"
+#: preferences/ui/taskbar/tooltips.ui:58 preferences/ui/taskbar.ui:108
+msgid "Max Length (% of Monitor)"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:235 shared/enums/labels.js:44
-msgid "Below Primary"
+#: preferences/ui/taskbar/tooltips.ui:59
+msgid "Limit the tooltip length to a percentage of the monitor size"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:241
-msgid "Find Windows"
+#: preferences/ui/taskbar/tooltips.ui:74
+msgid "Windows"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:242 shared/enums/labels.js:21
-msgid "Move Windows"
+#: preferences/ui/taskbar/tooltips.ui:77
+msgid "Shrink Window Titles"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:248
-msgid "When Active"
+#: preferences/ui/taskbar/tooltips.ui:78
+msgid "Remove application names from window titles"
 msgstr ""
 
-#: preferences/ui/taskbar.ui:249
-msgid "On Active Workspace"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:250
-msgid "Always"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:256 shared/enums/labels.js:45
-msgid "Disable"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:257 shared/enums/labels.js:46
-msgid "Always Hide"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:258 shared/enums/labels.js:47
-msgid "Always Show"
-msgstr ""
-
-#: preferences/ui/taskbar.ui:259
-msgid "Always Show as Critical"
+#: preferences/ui/taskbar/appButton.ui:12 preferences/ui/taskbar.ui:127
+msgid "App Buttons"
 msgstr ""
 
 #: preferences/ui/taskbar/appButton.ui:27
@@ -457,12 +384,12 @@ msgstr ""
 
 #: preferences/ui/taskbar/appButton.ui:57
 #: preferences/ui/taskbar/appButton.ui:111
-msgid "Primary Button"
+msgid "Left Button"
 msgstr ""
 
 #: preferences/ui/taskbar/appButton.ui:63
 #: preferences/ui/taskbar/appButton.ui:121
-msgid "Primary Button + Ctrl"
+msgid "Left Button + Ctrl"
 msgstr ""
 
 #: preferences/ui/taskbar/appButton.ui:66
@@ -474,7 +401,7 @@ msgstr ""
 
 #: preferences/ui/taskbar/appButton.ui:73
 #: preferences/ui/taskbar/appButton.ui:131
-msgid "Secondary Button"
+msgid "Right Button"
 msgstr ""
 
 #: preferences/ui/taskbar/appButton.ui:76
@@ -621,6 +548,10 @@ msgstr ""
 msgid "Dominant Color"
 msgstr ""
 
+#: preferences/ui/taskbar/indicators.ui:12 preferences/ui/taskbar.ui:143
+msgid "Indicators"
+msgstr ""
+
 #: preferences/ui/taskbar/indicators.ui:38
 #: preferences/ui/taskbar/indicators.ui:188
 msgid "Active"
@@ -631,22 +562,9 @@ msgstr ""
 msgid "Limit"
 msgstr ""
 
-#: preferences/ui/taskbar/indicators.ui:55
-#: preferences/ui/taskbar/indicators.ui:129
-#: preferences/ui/taskbar/notificationBadges.ui:51
-msgid "Size"
-msgstr ""
-
 #: preferences/ui/taskbar/indicators.ui:68
 #: preferences/ui/taskbar/indicators.ui:142
 msgid "Weight"
-msgstr ""
-
-#: preferences/ui/taskbar/indicators.ui:94
-#: preferences/ui/taskbar/indicators.ui:168
-#: preferences/ui/taskbar/notificationBadges.ui:77
-#: preferences/ui/taskbar/progressBars.ui:64
-msgid "Offset"
 msgstr ""
 
 #: preferences/ui/taskbar/indicators.ui:109
@@ -665,72 +583,6 @@ msgstr ""
 
 #: preferences/ui/taskbar/indicators.ui:213
 msgid "Use a different color for inactive indicators"
-msgstr ""
-
-#: preferences/ui/taskbar/indicators.ui:247
-#: preferences/ui/taskbar/progressBars.ui:114
-msgid "Top"
-msgstr ""
-
-#: preferences/ui/taskbar/indicators.ui:248
-#: preferences/ui/taskbar/progressBars.ui:115
-msgid "Bottom"
-msgstr ""
-
-#: preferences/ui/taskbar/notificationBadges.ui:139
-msgid "Top Left"
-msgstr ""
-
-#: preferences/ui/taskbar/notificationBadges.ui:140
-msgid "Top Right"
-msgstr ""
-
-#: preferences/ui/taskbar/notificationBadges.ui:141
-msgid "Bottom Left"
-msgstr ""
-
-#: preferences/ui/taskbar/notificationBadges.ui:142
-msgid "Bottom Right"
-msgstr ""
-
-#: preferences/ui/taskbar/progressBars.ui:38
-msgid "Width"
-msgstr ""
-
-#: preferences/ui/taskbar/progressBars.ui:51
-msgid "Height"
-msgstr ""
-
-#: preferences/ui/taskbar/progressBars.ui:94
-msgid "Fill Color"
-msgstr ""
-
-#: preferences/ui/taskbar/tooltips.ui:24
-msgid "Delays"
-msgstr ""
-
-#: preferences/ui/taskbar/tooltips.ui:27
-msgid "Show"
-msgstr ""
-
-#: preferences/ui/taskbar/tooltips.ui:40
-msgid "Hide"
-msgstr ""
-
-#: preferences/ui/taskbar/tooltips.ui:59
-msgid "Limit the tooltip length to a percentage of the monitor size"
-msgstr ""
-
-#: preferences/ui/taskbar/tooltips.ui:74
-msgid "Windows"
-msgstr ""
-
-#: preferences/ui/taskbar/tooltips.ui:77
-msgid "Shrink Window Titles"
-msgstr ""
-
-#: preferences/ui/taskbar/tooltips.ui:78
-msgid "Remove application names from window titles"
 msgstr ""
 
 #: preferences/ui/tweaks.ui:8
@@ -761,9 +613,9 @@ msgstr ""
 
 #: preferences/ui/tweaks.ui:24
 msgid ""
-"Primary button click on an empty space hides the Overview, long press or "
-"secondary button click toggles the App Grid. Close windows using middle "
-"button (or primary button while holding down the Ctrl key)"
+"Left button click on an empty space hides the Overview, long press or right "
+"button click toggles the App Grid. Close windows using middle button (or "
+"left button while holding down the Ctrl key)"
 msgstr ""
 
 #: preferences/ui/tweaks.ui:31
@@ -828,6 +680,152 @@ msgstr ""
 
 #: preferences/ui/tweaks.ui:80
 msgid "Allow system notifications to bypass Do Not Disturb mode"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:18
+msgid "Isolate Workspaces"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:19
+msgid "Show apps from the current workspace only"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:24
+msgid "Include All Windows"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:25
+msgid "Enable management of windows marked to skip the taskbar"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:30
+msgid "Show Pinned Apps"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:31
+msgid "Always show pinned apps on the taskbar, even if they are not running"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:37
+msgid "Always Show Separator"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:38
+msgid "Make the separator between pinned and running apps always visible"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:45
+msgid "Multi-Monitor Window Routing"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:46
+msgid ""
+"Enable preferred monitor selection for each app and automatically route all "
+"newly opened windows there"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:52
+msgid "Handle Monitor Changes"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:53
+msgid "Automatically attempt to restore window positions after monitor changes"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:62
+msgid "Apps"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:65
+msgid "Default Settings"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:71 shared/enums/labels.js:39
+msgid "Preferred Monitor"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:77 shared/enums/labels.js:10
+msgid "Activation Behavior"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:83
+msgid "Focus Demanding Attention Windows"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:89 shared/enums/labels.js:12
+msgid "Attention Notifications"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:95 shared/enums/labels.js:13
+msgid "Standard Notifications"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:109
+msgid "Limit the taskbar length to a percentage of the monitor size"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:124
+msgid "Components"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:138
+msgid "App Menus"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:231 shared/enums/labels.js:40
+msgid "Primary"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:232 shared/enums/labels.js:41
+msgid "Left of Primary"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:233 shared/enums/labels.js:42
+msgid "Right of Primary"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:234 shared/enums/labels.js:43
+msgid "Above Primary"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:235 shared/enums/labels.js:44
+msgid "Below Primary"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:241
+msgid "Find Windows"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:242 shared/enums/labels.js:21
+msgid "Move Windows"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:248
+msgid "When Active"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:249
+msgid "On Active Workspace"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:250
+msgid "Always"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:256 shared/enums/labels.js:45
+msgid "Disable"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:257 shared/enums/labels.js:46
+msgid "Always Hide"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:258 shared/enums/labels.js:47
+msgid "Always Show"
+msgstr ""
+
+#: preferences/ui/taskbar.ui:259
+msgid "Always Show as Critical"
 msgstr ""
 
 #: shared/enums/labels.js:7
