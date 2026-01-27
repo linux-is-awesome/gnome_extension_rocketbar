@@ -5,15 +5,14 @@
 
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
-import Context from '../../core/context.js';
 import { Component, ComponentEvent } from '../base/component.js';
 import { Animation, AnimationType, AnimationDuration } from '../base/animation.js';
 import { Icon } from '../base/icon.js';
-import { Tooltip as BaseTooltip } from '../base/tooltip.js';
+import { Tooltip as BaseTooltip, TooltipEvent } from '../base/tooltip.js';
 import { SharedConfig } from '../../../shared/utils/config.js';
 import { SoundVolumeIcon, SoundInputIcon, SoundOutputIcon } from '../../utils/soundVolumeIcon.js';
 import { WindowProxy } from '../../utils/taskbar/windowProxy.js';
-import { Event, Delay } from '../../../shared/enums/general.js';
+import { Event } from '../../../shared/enums/general.js';
 import { TooltipConfigField as ConfigField, ConfigOptions } from '../../../shared/enums/taskbar.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar_Tooltip';
@@ -198,7 +197,6 @@ class AppStatus extends Component {
     }
 
     #destroy() {
-        Context.jobs.removeAll(this);
         this.#items?.clear();
         this.#items = null;
         this.#appButton = null;
@@ -253,11 +251,10 @@ class AppStatus extends Component {
                 else soundVolumeControl.changeOutputVolume(multiplier);
                 break;
             case AppStatusItemIcon.Windows:
-                if (!this.#appButton?.windows || Context.jobs.has(this)) return;
-                Context.jobs.new(this, Delay.Sleep).destroy(() => null);
+                if (!this.#appButton?.windows) return;
                 const isCtrlPressed = !!(event.get_state() & Clutter.ModifierType.CONTROL_MASK);
                 if (isCtrlPressed) this.#appButton.windows.resetQueue();
-                this.#appButton.windows.cycle(false, isDirectionUp && !isCtrlPressed);
+                this.#appButton.windows.cycle(false, isDirectionUp && !isCtrlPressed, true);
                 return;
             default: return;
         }
@@ -317,7 +314,8 @@ export class Tooltip extends BaseTooltip {
 
     /** @type {{[event: string]: () => *}?} */
     #events = {
-        [ComponentEvent.Destroy]: () => this.#destroy()
+        [ComponentEvent.Destroy]: () => this.#destroy(),
+        [TooltipEvent.LongPress]: () => this.#longPress()
     };
 
     /** @type {Config?} */
@@ -435,6 +433,15 @@ export class Tooltip extends BaseTooltip {
     #releaseActiveWindow() {
         this.#activeWindow?.destroy();
         this.#activeWindow = null;
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    #longPress() {
+        this.#activeWindow?.activate();
+        this.hide(true);
+        return true;
     }
 
 }
