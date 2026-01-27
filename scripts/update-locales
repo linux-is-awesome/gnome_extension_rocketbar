@@ -1,0 +1,10 @@
+#!/bin/sh
+
+cd ../extension/locale
+
+POT_FILE_NAME=`cat ../metadata.json | grep -oP '(?<="gettext-domain": ")[^"]*'`
+
+for po_file in *.po; do
+    echo "Updating $po_file..."
+    msgmerge --update --backup=off "$po_file" $POT_FILE_NAME.pot;
+done
