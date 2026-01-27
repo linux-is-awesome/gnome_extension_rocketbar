@@ -28,10 +28,11 @@ export default class extends SettingsPage {
      */
     #handleConfig(settingsKey, value) {
         switch (settingsKey) {
-            case ConfigField.enableMenus:
             case ConfigField.enableDragAndDrop:
-            case ConfigField.enableMinimizeAction:
                 this.setBoolean(settingsKey, value);
+                break;
+            case ConfigField.enableMinimizeAction:
+                this.setOption(settingsKey, !!value, [false, true]);
                 break;
             case ConfigField.enableSoundControl:
                 this.setBoolean(settingsKey, value);
