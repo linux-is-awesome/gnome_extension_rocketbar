@@ -9,6 +9,7 @@
 import { activateWindow as FocusedWindow } from 'resource:///org/gnome/shell/ui/main.js';
 import { Overview } from '../../core/shell.js';
 import Context from '../../core/context.js';
+import { Delay } from '../../../shared/enums/general.js';
 
 class CycleWindowsQueue {
 
@@ -148,6 +149,7 @@ export class WindowManager {
     }
 
     destroy() {
+        Context.jobs.removeAll(this);
         this.resetQueue();
         this.#service = null;
         this.#windows = null;
@@ -200,8 +202,11 @@ export class WindowManager {
     /**
      * @param {boolean} [minimize]
      * @param {boolean} [reverse]
+     * @param {boolean} [pause]
      */
-    cycle(minimize = true, reverse = false) {
+    cycle(minimize = true, reverse = false, pause = false) {
+        if (pause && Context.jobs.has(this)) return;
+        if (pause) Context.jobs.new(this, Delay.Sleep).destroy(() => null);
         const [windowsByWorkspace, workspaceWindows] = this.#sortedWindows;
         if (!windowsByWorkspace.size) return this.resetQueue();
         let windows = workspaceWindows ?? [...windowsByWorkspace.values()][0];
