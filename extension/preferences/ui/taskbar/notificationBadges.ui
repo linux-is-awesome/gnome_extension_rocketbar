@@ -92,7 +92,7 @@
                                 <property name="title" translatable="yes">Colors</property>
                                 <child>
                                     <object class="AdwActionRow">
-                                        <property name="title" translatable="yes">Background Color</property>
+                                        <property name="title" translatable="yes">Background</property>
                                         <property name="activatable-widget">notification-badge-color</property>
                                         <child>
                                             <object class="GtkColorDialogButton" id="notification-badge-color">
@@ -104,7 +104,7 @@
                                 </child>
                                 <child>
                                     <object class="AdwActionRow">
-                                        <property name="title" translatable="yes">Border Color</property>
+                                        <property name="title" translatable="yes">Border</property>
                                         <property name="activatable-widget">notification-badge-border-color</property>
                                         <child>
                                             <object class="GtkColorDialogButton" id="notification-badge-border-color">
@@ -116,7 +116,7 @@
                                 </child>
                                 <child>
                                     <object class="AdwActionRow">
-                                        <property name="title" translatable="yes">Text Color</property>
+                                        <property name="title" translatable="yes">Text</property>
                                         <property name="activatable-widget">notification-badge-font-color</property>
                                         <child>
                                             <object class="GtkColorDialogButton" id="notification-badge-font-color">

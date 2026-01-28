@@ -79,7 +79,7 @@
                                 <property name="title" translatable="yes">Colors</property>
                                 <child>
                                     <object class="AdwActionRow">
-                                        <property name="title" translatable="yes">Background Color</property>
+                                        <property name="title" translatable="yes">Background</property>
                                         <property name="activatable-widget">progress-bar-background-color</property>
                                         <child>
                                             <object class="GtkColorDialogButton" id="progress-bar-background-color">
@@ -91,7 +91,7 @@
                                 </child>
                                 <child>
                                     <object class="AdwActionRow">
-                                        <property name="title" translatable="yes">Fill Color</property>
+                                        <property name="title" translatable="yes">Fill</property>
                                         <property name="activatable-widget">progress-bar-fill-color</property>
                                         <child>
                                             <object class="GtkColorDialogButton" id="progress-bar-fill-color">

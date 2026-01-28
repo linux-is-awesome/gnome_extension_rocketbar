@@ -91,7 +91,7 @@
                                         <property name="expanded">true</property>
                                         <child>
                                             <object class="AdwActionRow">
-                                                <property name="title" translatable="yes">Background Color</property>
+                                                <property name="title" translatable="yes">Background</property>
                                                 <property name="activatable-widget">color-when-not-empty</property>
                                                 <child>
                                                     <object class="GtkColorDialogButton" id="color-when-not-empty">
@@ -103,7 +103,7 @@
                                         </child>
                                         <child>
                                             <object class="AdwActionRow">
-                                                <property name="title" translatable="yes">Border Color</property>
+                                                <property name="title" translatable="yes">Border</property>
                                                 <property name="activatable-widget">color-when-empty</property>
                                                 <child>
                                                     <object class="GtkColorDialogButton" id="color-when-empty">
@@ -115,7 +115,7 @@
                                         </child>
                                         <child>
                                             <object class="AdwActionRow">
-                                                <property name="title" translatable="yes">Text Color</property>
+                                                <property name="title" translatable="yes">Text</property>
                                                 <property name="activatable-widget">text-color</property>
                                                 <child>
                                                     <object class="GtkColorDialogButton" id="text-color">
@@ -136,7 +136,7 @@
                                         <property name="show-enable-switch">true</property>
                                         <child>
                                             <object class="AdwActionRow">
-                                                <property name="title" translatable="yes">Background Color</property>
+                                                <property name="title" translatable="yes">Background</property>
                                                 <property name="activatable-widget">color-when-not-empty-dnd</property>
                                                 <child>
                                                     <object class="GtkColorDialogButton" id="color-when-not-empty-dnd">
@@ -148,7 +148,7 @@
                                         </child>
                                         <child>
                                             <object class="AdwActionRow">
-                                                <property name="title" translatable="yes">Border Color</property>
+                                                <property name="title" translatable="yes">Border</property>
                                                 <property name="activatable-widget">color-when-empty-dnd</property>
                                                 <child>
                                                     <object class="GtkColorDialogButton" id="color-when-empty-dnd">
@@ -160,7 +160,7 @@
                                         </child>
                                         <child>
                                             <object class="AdwActionRow">
-                                                <property name="title" translatable="yes">Text Color</property>
+                                                <property name="title" translatable="yes">Text</property>
                                                 <property name="activatable-widget">text-color-dnd</property>
                                                 <child>
                                                     <object class="GtkColorDialogButton" id="text-color-dnd">
