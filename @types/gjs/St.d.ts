@@ -2433,6 +2433,150 @@ declare module 'gi://St' {
         _init(config?: DrawingArea.ConstructorProperties): void
     }
 
+    module DndStartGesture {
+
+        // Constructor properties interface
+
+        interface ConstructorProperties extends Clutter.Gesture.ConstructorProperties {
+
+            // Own constructor properties of St-13.St.DndStartGesture
+
+            /**
+             * Whether the gesture is in manual mode, requiring explicit calls to
+             * start_drag() to initiate drag operations.
+             */
+            manual_mode?: boolean | null
+            /**
+             * Whether the gesture is in manual mode, requiring explicit calls to
+             * start_drag() to initiate drag operations.
+             */
+            manualMode?: boolean | null
+            /**
+             * Timeout threshold in milliseconds before starting a drag operation
+             * for touch devices.
+             */
+            timeout_threshold?: number | null
+            /**
+             * Timeout threshold in milliseconds before starting a drag operation
+             * for touch devices.
+             */
+            timeoutThreshold?: number | null
+        }
+
+    }
+
+    interface DndStartGesture extends Clutter.Gesture {
+
+        // Own properties of St-13.St.DndStartGesture
+
+        /**
+         * Whether the gesture is in manual mode, requiring explicit calls to
+         * start_drag() to initiate drag operations.
+         */
+        manual_mode: boolean
+        /**
+         * Whether the gesture is in manual mode, requiring explicit calls to
+         * start_drag() to initiate drag operations.
+         */
+        manualMode: boolean
+        /**
+         * Timeout threshold in milliseconds before starting a drag operation
+         * for touch devices.
+         */
+        timeout_threshold: number
+        /**
+         * Timeout threshold in milliseconds before starting a drag operation
+         * for touch devices.
+         */
+        timeoutThreshold: number
+
+        // Own methods of St-13.St.DndStartGesture
+
+        /**
+         * Gets the coordinates where the drag operation started.
+         * @param coords_out a #graphene_point_t to store the coordinates
+         */
+        get_drag_coords(coords_out: any): void
+        /**
+         * Returns the #ClutterEvent that triggered the drag operation.
+         * @returns the drag triggering event, or %NULL
+         */
+        get_drag_triggering_event(): Clutter.Event | null
+        /**
+         * Gets the value of the #StDndStartGesture:manual-mode property.
+         * @returns %TRUE if manual mode is enabled, %FALSE otherwise
+         */
+        get_manual_mode(): boolean
+        /**
+         * Returns the first #ClutterEvent of the dragging sequence.
+         * @returns the point begin event, or %NULL
+         */
+        get_point_begin_event(): Clutter.Event | null
+        /**
+         * Gets the value of the #StDndStartGesture:timeout-threshold property.
+         * @returns the timeout threshold in milliseconds
+         */
+        get_timeout_threshold(): number
+        /**
+         * Sets the value of the #StDndStartGesture:manual-mode property.
+         * 
+         * When manual mode is enabled, the gesture will not automatically start
+         * drag operations. Instead, you must call start_drag() explicitly.
+         * @param manual_mode %TRUE to enable manual mode, %FALSE otherwise
+         */
+        set_manual_mode(manual_mode: boolean): void
+        /**
+         * Sets the value of the #StDndStartGesture:timeout-threshold property.
+         * 
+         * This threshold determines how long touch devices must wait before
+         * a drag operation can be started.
+         * @param timeout_threshold_ms the timeout threshold in milliseconds
+         */
+        set_timeout_threshold(timeout_threshold_ms: number): void
+        /**
+         * Starts a drag operation manually.
+         * 
+         * This function should be called when manual mode is enabled to
+         * initiate a drag operation.
+         * @param start_event the event that triggered the drag, or %NULL
+         */
+        start_drag(start_event: Clutter.Event | null): void
+
+        // Class property signals of St-13.St.DndStartGesture
+
+        connect(sigName: "notify::manual-mode", callback: (($obj: DndStartGesture, pspec: GObject.ParamSpec) => void)): number
+        connect_after(sigName: "notify::manual-mode", callback: (($obj: DndStartGesture, pspec: GObject.ParamSpec) => void)): number
+        emit(sigName: "notify::manual-mode", ...args: any[]): void
+        connect(sigName: "notify::timeout-threshold", callback: (($obj: DndStartGesture, pspec: GObject.ParamSpec) => void)): number
+        connect_after(sigName: "notify::timeout-threshold", callback: (($obj: DndStartGesture, pspec: GObject.ParamSpec) => void)): number
+        emit(sigName: "notify::timeout-threshold", ...args: any[]): void
+        connect(sigName: string, callback: (...args: any[]) => void): number
+        connect_after(sigName: string, callback: (...args: any[]) => void): number
+        emit(sigName: string, ...args: any[]): void
+        disconnect(id: number): void
+    }
+
+    /**
+     * A gesture that detects when a drag-and-drop operation should start.
+     * 
+     * #StDndStartGesture is a #ClutterGesture subclass that monitors pointer
+     * or touch events and determines when a drag operation should begin. It
+     * can operate in automatic or manual mode.
+     * @class 
+     */
+    class DndStartGesture extends Clutter.Gesture {
+
+        // Own properties of St-13.St.DndStartGesture
+
+        static name: string
+        static $gtype: GObject.GType<DndStartGesture>
+
+        // Constructors of St-13.St.DndStartGesture
+
+        constructor(config?: DndStartGesture.ConstructorProperties)
+        _init(config?: DndStartGesture.ConstructorProperties): void
+    }
+
     module Entry {
 
         // Signal callback interfaces
