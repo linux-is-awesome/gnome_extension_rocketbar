@@ -6,7 +6,7 @@
 import Gtk from 'gi://Gtk';
 import Adw from 'gi://Adw';
 import Context from '../../core/context.js';
-import { Event } from '../../../shared/enums/general.js';
+import { Event, MetadataField } from '../../../shared/enums/general.js';
 
 const UI_PATH = '/preferences/ui/';
 const UI_FILE_TYPE = '.ui';
@@ -33,6 +33,9 @@ export default class Page {
      * @param {() => void} callback
      */
     constructor(name, callback) {
+        const metadata = Context.metadata ?? {};
+        const translationDomain = metadata[MetadataField.GettextDomain] ?? null;
+        this.#template.set_translation_domain(translationDomain);
         this.#template.add_from_file(`${Context.path}${UI_PATH}${name}${UI_FILE_TYPE}`);
         let instance = this.#template.get_object(name);
         if (instance instanceof Adw.NavigationPage) {
