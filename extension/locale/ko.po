@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-28 00:02+0300\n"
+"POT-Creation-Date: 2026-01-28 15:55+0300\n"
 "PO-Revision-Date: 2026-01-26 22:53+0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -164,19 +164,19 @@ msgstr ""
 #: preferences/ui/notificationCounter.ui:139
 #: preferences/ui/taskbar/notificationBadges.ui:95
 #: preferences/ui/taskbar/progressBars.ui:82
-msgid "Background Color"
+msgid "Background"
 msgstr ""
 
 #: preferences/ui/notificationCounter.ui:106
 #: preferences/ui/notificationCounter.ui:151
 #: preferences/ui/taskbar/notificationBadges.ui:107
-msgid "Border Color"
+msgid "Border"
 msgstr ""
 
 #: preferences/ui/notificationCounter.ui:118
 #: preferences/ui/notificationCounter.ui:163
 #: preferences/ui/taskbar/notificationBadges.ui:119
-msgid "Text Color"
+msgid "Text"
 msgstr ""
 
 #: preferences/ui/notificationCounter.ui:132
@@ -294,7 +294,7 @@ msgid "Height"
 msgstr ""
 
 #: preferences/ui/taskbar/progressBars.ui:94
-msgid "Fill Color"
+msgid "Fill"
 msgstr ""
 
 #: preferences/ui/taskbar/progressBars.ui:114
