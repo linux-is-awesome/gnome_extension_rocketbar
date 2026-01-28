@@ -238,7 +238,7 @@
     <object class="GtkStringList" id="activate-behavior-options">
         <items>
             <item translatable="yes">Default</item>
-            <item translatable="yes">Find Windows</item>
+            <item translatable="yes">Find Window</item>
             <item translatable="yes">Move Windows</item>
         </items>
     </object>

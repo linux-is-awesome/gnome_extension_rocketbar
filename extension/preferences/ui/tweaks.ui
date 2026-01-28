@@ -66,7 +66,7 @@
                 <child>
                     <object class="AdwSwitchRow" id="tweaks/upperCaseInputSource">
                         <property name="title" translatable="yes">Uppercase Indicator (LS)</property>
-                        <property name="subtitle" translatable="yes">Display input languages in uppercase (en > EN)</property>
+                        <property name="subtitle" translatable="yes">Display input languages in uppercase (en → EN)</property>
                     </object>
                 </child>
             </object>
