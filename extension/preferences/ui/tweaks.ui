@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
     <object class="AdwPreferencesPage" id="tweaks">
-        <property name="title">Tweaks</property>
+        <property name="title" translatable="yes">Tweaks</property>
         <property name="icon-name">applications-science-symbolic</property>
         <child>
             <object class="AdwPreferencesGroup">

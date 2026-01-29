@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
     <object class="AdwPreferencesPage" id="misc">
-        <property name="title">Misc</property>
+        <property name="title" translatable="yes">Misc</property>
         <property name="icon-name">application-x-executable-symbolic</property>
         <child>
             <object class="AdwPreferencesGroup">
