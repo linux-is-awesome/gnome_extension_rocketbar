@@ -64,14 +64,28 @@ declare module 'resource:///org/gnome/shell/ui/dnd.js' {
 
     interface _Draggable {
 
+        /**
+         * Introduced in GNOME 49
+         */
+        _dndGesture?: St.DndStartGesture
+
+        /**
+         * @deprecated since GNOME 49
+         */
         fakeRelease(): void
 
         disconnectAll(): void
 
         connect(event: string, callback: function): number
 
+        /**
+         * @deprecated since GNOME 49
+         */
         _onButtonPress(actor: Clutter.Actor, event: Clutter.Event): void
 
+        /**
+         * @deprecated since GNOME 49
+         */
         _onTouchEvent(actor: Clutter.Actor, event: Clutter.Event): void
 
     }

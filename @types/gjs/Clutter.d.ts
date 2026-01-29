@@ -585,6 +585,16 @@ declare module 'gi://Clutter' {
         BEFORE,
     }
     /**
+     * State of a #ClutterGesture.
+     */
+    enum GestureState {
+        NONE,
+        PENDING,
+        ACTIVE,
+        CANCELLED,
+        ENDED,
+    }
+    /**
      * Grid position modes.
      */
     enum GridPosition {
@@ -5496,6 +5506,67 @@ declare module 'gi://Clutter' {
 
         constructor(config?: Action.ConstructorProperties)
         _init(config?: Action.ConstructorProperties): void
+    }
+
+    /**
+     * Abstract base class for gesture recognition.
+     *
+     * #ClutterGesture is an abstract subclass of [class`Action]` that provides
+     * a common base for gesture recognizers. Subclasses such as #StDndStartGesture
+     * implement specific gesture detection logic.
+     * @class
+     */
+    module Gesture {
+
+        // Constructor properties interface
+
+        interface ConstructorProperties extends Action.ConstructorProperties {
+        }
+
+    }
+
+    interface Gesture {
+
+        // Own properties of Clutter-13.Clutter.Gesture (inherited from Action)
+
+        // Own methods of Clutter-13.Clutter.Gesture
+
+        get_phase(): EventPhase
+        /**
+         * Sets the state of the gesture.
+         * @param state the new #ClutterGestureState
+         * @returns %TRUE if the state was set successfully
+         */
+        set_state(state: GestureState): boolean
+
+        // Class property signals of Clutter-13.Clutter.Gesture (inherited from Action)
+
+        connect(sigName: "notify::actor", callback: (($obj: Gesture, pspec: GObject.ParamSpec) => void)): number
+        connect_after(sigName: "notify::actor", callback: (($obj: Gesture, pspec: GObject.ParamSpec) => void)): number
+        emit(sigName: "notify::actor", ...args: any[]): void
+        connect(sigName: "notify::enabled", callback: (($obj: Gesture, pspec: GObject.ParamSpec) => void)): number
+        connect_after(sigName: "notify::enabled", callback: (($obj: Gesture, pspec: GObject.ParamSpec) => void)): number
+        emit(sigName: "notify::enabled", ...args: any[]): void
+        connect(sigName: "notify::name", callback: (($obj: Gesture, pspec: GObject.ParamSpec) => void)): number
+        connect_after(sigName: "notify::name", callback: (($obj: Gesture, pspec: GObject.ParamSpec) => void)): number
+        emit(sigName: "notify::name", ...args: any[]): void
+        connect(sigName: string, callback: (...args: any[]) => void): number
+        connect_after(sigName: string, callback: (...args: any[]) => void): number
+        emit(sigName: string, ...args: any[]): void
+        disconnect(id: number): void
+    }
+
+    class Gesture extends Action {
+
+        // Own properties of Clutter-13.Clutter.Gesture
+
+        static name: string
+        static $gtype: GObject.GType<Gesture>
+
+        // Constructors of Clutter-13.Clutter.Gesture
+
+        constructor(config?: Gesture.ConstructorProperties)
+        _init(config?: Gesture.ConstructorProperties): void
     }
 
     module Actor {
