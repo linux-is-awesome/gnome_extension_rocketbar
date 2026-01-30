@@ -592,7 +592,8 @@ class TaskbarService {
             if (this.#routeWindow(windowInfo)) continue;
             windowInfo.update();
         }
-        Context.jobs.new(this, DEFAULT_ROUTING_DELAY).destroy(() => this.#stopWindowRouting());
+        Context.jobs.new(this, DEFAULT_ROUTING_DELAY).destroy(() =>
+            (this.#stopWindowRouting(), this.tracker?.trackAll()));
     }
 
     #stopWindowRouting() {
