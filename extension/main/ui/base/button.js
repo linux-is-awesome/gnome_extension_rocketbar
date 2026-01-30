@@ -354,9 +354,6 @@ export class Button extends Component {
         this.connect(Event.Clicked, () => this.#click());
         this.connect(Event.FocusIn, () => this.#focus());
         this.connect(Event.FocusOut, () => this.#focus());
-        this.connect(Event.ButtonPress, (_, event) => this.#pressHandler?.press(event));
-        this.connect(Event.ButtonRelease, () => this.#pressHandler?.release());
-        this.connect(Event.Leave, () => this.#pressHandler?.release());
         if (display) this.#setDisplay(display, name);
     }
 
@@ -483,7 +480,10 @@ export class Button extends Component {
         if (!this.isValid) return;
         this.#tooltip?.hide(true);
         const actor = this.actor;
-        if (!actor.pressed) actor.fake_release();
+        if (!actor.pressed) {
+            actor.fake_release();
+            this.#pressHandler?.release();
+        } else this.#pressHandler?.press(Clutter.get_current_event());
         super.notifySelf(ButtonEvent.Press);
     }
 
@@ -492,7 +492,6 @@ export class Button extends Component {
      */
     #longPress(event) {
         if (!this.#pressHandler || !this.isValid) return;
-        this.#pressHandler.release();
         this.actor.fake_release();
         if (super.cancelDragEvents().notifySelf(ButtonEvent.LongPress, { event })) return;
         this.menu?.toggle();
