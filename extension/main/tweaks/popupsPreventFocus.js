@@ -2,6 +2,8 @@ import Clutter from 'gi://Clutter';
 import { SwitcherPopup } from 'resource:///org/gnome/shell/ui/switcherPopup.js';
 import Context from '../core/context.js';
 
+const STAGE_GRAB_FUNCTION_NAME = 'grab';
+
 const FakePopupGrab = () => ({
     get_seat_state: () => Clutter.GrabState.KEYBOARD,
     dismiss: () => {}
@@ -10,7 +12,7 @@ const FakePopupGrab = () => ({
 export default class {
 
     constructor() {
-        Context.hooks.add(this, global.stage, global.stage.grab, (_, actor) => {
+        Context.hooks.add(this, global.stage, STAGE_GRAB_FUNCTION_NAME, (_, actor) => {
             if (actor instanceof SwitcherPopup) {
                 const oldFocus = global.stage.get_key_focus() ?? null;
                 global.stage.set_key_focus(actor);
