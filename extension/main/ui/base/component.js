@@ -1,8 +1,5 @@
-/**
- * @typedef {import('gi://Clutter').Actor} Clutter.Actor
- */
-
 import GObject from 'gi://GObject';
+import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import Mtk from 'gi://Mtk';
 import * as Dnd from 'resource:///org/gnome/shell/ui/dnd.js';
@@ -63,7 +60,7 @@ export class Component {
     /** @type {boolean} */
     #dropEvents = false;
 
-    /** @type {*} */
+    /** @type {{dragMotion: (event) => Dnd.DragMotionResult}?} */
     #dragMonitor = null;
 
     /** @type {boolean} */
@@ -313,7 +310,8 @@ export class Component {
      * @returns {this}
      */
     cancelDragEvents() {
-        this.#draggable?.fakeRelease();
+        if (!this.#draggable) return this;
+        if (typeof this.#draggable.fakeRelease === 'function') this.#draggable.fakeRelease();
         return this;
     }
 
@@ -328,6 +326,8 @@ export class Component {
         this.#actor._delegate = null;
         this.#actor = null;
         this.#parent = null;
+        this.#draggable = null;
+        this.#dragMonitor = null;
         this.#signalTracker = null;
         this.#notifyCallback = null;
     }
@@ -361,22 +361,24 @@ export class Component {
      * @param {boolean} enabled
      */
     #setDragEvents(enabled) {
-        if (this.#dragMonitor) Dnd.removeDragMonitor(this.#dragMonitor);
-        if (this.#draggable) this.#actor?.disconnectObject(this.#draggable);
-        this.#draggable?.disconnectAll();
-        this.#draggable = null;
-        this.#dragMonitor = null;
-        if (!enabled || !this.#actor) return;
-        this.#dragMonitor = {};
-        this.#draggable = Dnd.makeDraggable(this.#actor, DraggableParams);
+        if (!this.#actor || this.#isWrapper) return;
+        if (!enabled && this.#dragMonitor) Dnd.removeDragMonitor(this.#dragMonitor);
+        if (!enabled && !this.#draggable) return;
+        this.#draggable ??= Dnd.makeDraggable(this.#actor, DraggableParams);
+        this.#dragMonitor ??= { dragMotion: event => this.#dragMotion(event) };
+        this.#draggable.disconnectAll();
+        this.#actor.disconnectObject(this.#draggable);
+        this.#draggable._dndGesture?.set_manual_mode(!enabled);
+        if (!enabled) return;
         this.#draggable.connect(Event.DragBegin, () => this.#dragBegin());
         this.#draggable.connect(Event.DragCancelled, () => this.#dragCancelled());
         this.#draggable.connect(Event.DragEnd, () => this.#dragEnd());
-        this.#dragMonitor.dragMotion = event => this.#dragMotion(event);
+        if (typeof this.#draggable._onButtonPress !== 'function' ||
+            typeof this.#draggable._onTouchEvent !== 'function') return;
         this.#actor.connectObject(
             Event.ButtonPress, this.#draggable._onButtonPress.bind(this.#draggable),
             Event.Touch, this.#draggable._onTouchEvent.bind(this.#draggable),
-        this.#draggable);
+            this.#draggable);
     }
 
     /**
