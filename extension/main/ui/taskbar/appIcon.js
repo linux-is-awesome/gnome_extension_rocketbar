@@ -143,6 +143,7 @@ export class AppIcon extends Icon {
      */
     async animate(animation) {
         if (!this.hasAllocation) return false;
+        if (!Context.desktop.settings.enable_animations) return true;
         const { duration } = animation;
         switch (animation) {
             case AppIconAnimation.Press:
@@ -151,7 +152,6 @@ export class AppIcon extends Icon {
                 return Animation(this, duration, animation.params);
             case AppIconAnimation.Activate:
             case AppIconAnimation.Deactivate:
-                if (!Context.desktop.settings.enable_animations) return true;
                 const mode = Clutter.AnimationMode.EASE_OUT_SINE;
                 const { fontScale, globalScale } = Context.desktop;
                 const [_, y] = Context.monitors.getAlignment(this.rect);
