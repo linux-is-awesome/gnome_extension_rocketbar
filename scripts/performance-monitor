@@ -1,0 +1,91 @@
+#!/bin/bash
+
+if [ "$1" = "new-window" ]; then
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    script_name="$(basename "$0")"
+    x-terminal-emulator --command="sh -c 'cd '$script_dir' && ./$script_name'"
+    exit 0
+fi
+
+get_pids() {
+    pgrep -x gnome-shell 2>/dev/null || true
+}
+
+get_memory_kb() {
+    local total_kb=0
+    local pid
+    for pid in $(get_pids); do
+        if [ -r "/proc/$pid/status" ]; then
+            local rss
+            rss=$(awk '/^VmRSS:/ { print $2 }' "/proc/$pid/status" 2>/dev/null)
+            if [ -n "$rss" ]; then
+                total_kb=$((total_kb + rss))
+            fi
+        fi
+    done
+    echo "$total_kb"
+}
+
+get_process_cpu_ticks() {
+    local total=0
+    local pid
+    for pid in $(get_pids); do
+        if [ -r "/proc/$pid/stat" ]; then
+            local ticks
+            ticks=$(awk '{ print $14 + $15 }' "/proc/$pid/stat" 2>/dev/null)
+            if [ -n "$ticks" ]; then
+                total=$((total + ticks))
+            fi
+        fi
+    done
+    echo "$total"
+}
+
+get_total_cpu_ticks() {
+    awk '/^cpu / {
+        total = $2 + $3 + $4 + $5 + $6 + $7 + $8 + $9 + $10
+        print total
+        exit
+    }' /proc/stat 2>/dev/null
+}
+
+trap 'echo ""; echo "Stopped."; exit 0' INT TERM
+
+pids=$(get_pids)
+if [ -z "$pids" ]; then
+    echo "No gnome-shell process found." >&2
+    exit 1
+fi
+
+echo "Monitoring gnome-shell (PIDs: $pids). Press Ctrl+C to stop."
+echo ""
+printf "%8s  %10s  %10s\n" "MEM (MB)" "CPU (%)" "TIME"
+printf "%8s  %10s  %10s\n" "--------" "--------" "----------"
+
+prev_pticks=$(get_process_cpu_ticks)
+prev_total_ticks=$(get_total_cpu_ticks)
+
+while true; do
+    # Memory
+    total_kb=$(get_memory_kb)
+    mb=$((total_kb / 1024))
+
+    # CPU (sample over 1 second)
+    sleep 1
+    curr_pticks=$(get_process_cpu_ticks)
+    curr_total_ticks=$(get_total_cpu_ticks)
+
+    pdelta=$((curr_pticks - prev_pticks))
+    tdelta=$((curr_total_ticks - prev_total_ticks))
+    if [ "$tdelta" -gt 0 ]; then
+        cpu_pct=$((pdelta * 100 / tdelta))
+    else
+        cpu_pct=0
+    fi
+
+    prev_pticks=$curr_pticks
+    prev_total_ticks=$curr_total_ticks
+
+    timestamp=$(date +%H:%M:%S)
+    printf "\r%8s  %9s%%  %10s" "$mb" "$cpu_pct" "$timestamp"
+done
