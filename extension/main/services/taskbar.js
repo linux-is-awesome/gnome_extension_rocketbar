@@ -576,7 +576,7 @@ class TaskbarService {
     #createRoutingHelper() {
         if (!this.#windows?.size || this.#routingHelper) return;
         this.#routingHelper = new Clutter.Actor(RoutingHelperProps);
-        Context.desktop.addOverlay(this.#routingHelper);
+        Context.desktop.addOverlay(this.#routingHelper, true);
         for (const [window, windowInfo] of this.#windows) {
             const { app } = windowInfo;
             const name = `${this.#routingHelper.name}-WindowClone_${app.id}`;
