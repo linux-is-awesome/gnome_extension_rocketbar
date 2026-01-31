@@ -9,6 +9,7 @@ import Context from '../core/context.js';
 import { Event } from '../../shared/enums/general.js';
 
 const PRIMARY_INPUT_SOURCE = '0';
+const GRAB_KEY_FOCUS_FUNCTION_NAME = 'grab_key_focus';
 
 export default class {
 
@@ -17,7 +18,7 @@ export default class {
 
     constructor() {
         const prototype = St.PasswordEntry.prototype;
-        Context.hooks.add(this, prototype, prototype.grab_key_focus,
+        Context.hooks.add(this, prototype, GRAB_KEY_FOCUS_FUNCTION_NAME,
             sender => this.#activatePrimaryInputSource(sender), true);
     }
 
