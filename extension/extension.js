@@ -14,7 +14,7 @@ export default class extends Extension {
     /** @type {boolean} */
     #isEnabled = false;
 
-    /** @type {string} allows to override the path for development needs */
+    /** @type {string} provides a way to override the runtime path for development needs */
     get runtimePath() {
         return DEFAULT_RUNTIME_PATH;
     }
