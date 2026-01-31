@@ -153,7 +153,10 @@ export default class Hooks {
                              method.name || this.#getFunctionName(target, method) :
                              method;
         if (typeof functionName !== 'string' ||
-            typeof target[functionName] !== 'function') return this;
+            typeof target[functionName] !== 'function') {
+            Context.logError(`${this.constructor.name} failed to override method ${functionName}.`);
+            return this;
+        }
         const hooks = this.#hooks.get(target) ?? new Map();
         const hook = hooks?.get(functionName) ?? new Hook(target, functionName);
         hook.addClient(client, callback, isBefore);
