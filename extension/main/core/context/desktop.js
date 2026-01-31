@@ -124,11 +124,22 @@ export default class Desktop {
 
     /**
      * @param {Clutter.Actor|Component<St.Widget>} actor
+     * @param {boolean} [isOffscreen]
      */
-    addOverlay(actor) {
+    addOverlay(actor, isOffscreen = false) {
         if (MainLayout.uiGroup instanceof St.Widget === false) return;
-        if (actor instanceof Component) actor.setParent(MainLayout.uiGroup);
-        else if (actor instanceof Clutter.Actor) MainLayout.uiGroup.add_child(actor);
+        let actorProps = null;
+        if (isOffscreen) {
+            const [x, y] = MainLayout.uiGroup.get_size();
+            actorProps = { x, y };
+        }
+        if (actor instanceof Component) {
+            if (actorProps) actor.setProps(actorProps);
+            actor.setParent(MainLayout.uiGroup);
+        } else if (actor instanceof Clutter.Actor) {
+            if (actorProps) actor.set(actorProps);
+            MainLayout.uiGroup.add_child(actor);
+        }
     }
 
     /**
