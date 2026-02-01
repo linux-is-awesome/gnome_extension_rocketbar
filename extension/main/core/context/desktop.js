@@ -131,7 +131,7 @@ export default class Desktop {
         let actorProps = null;
         if (isOffscreen) {
             const [x, y] = MainLayout.uiGroup.get_size();
-            actorProps = { x, y };
+            actorProps = { x, y, width: 1, height: 1 };
         }
         if (actor instanceof Component) {
             if (actorProps) actor.setProps(actorProps);
