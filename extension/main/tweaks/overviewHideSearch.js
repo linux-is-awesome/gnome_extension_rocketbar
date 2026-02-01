@@ -80,6 +80,8 @@ export default class {
         this.#hideCtrlAltTabItem();
         this.#searchContainer.remove_all_transitions();
         this.#searchContainer.set({ ...AnimationType.OpacityMin, height: 0 });
+        if (!this.#workspaceThumbnails?.visible) return;
+        this.#workspaceThumbnails.expandFraction = 1.0;
     }
 
     /**
