@@ -29,7 +29,7 @@ const DefaultProps = {
 const BodyProps = {
     x_expand: true,
     y_expand: true,
-    reactive: false,
+    reactive: true,
     track_hover: false,
     style_class: BODY_STYLE_CLASS
 };
@@ -60,6 +60,9 @@ export class Tooltip extends Component {
 
     /** @type {boolean} */
     #isHidden = true;
+
+    /** @type {boolean} */
+    #isReactive = false;
 
     /** @type {Component<St.Widget>?} */
     #sourceActor = null;
@@ -190,7 +193,8 @@ export class Tooltip extends Component {
         const delay = shownTooltip && shownTooltip.#isVisible ?
                       Math.min(showDelay, this.#hideDelay) : showDelay;
         this.#fadeInJob = this.#job.reset(delay);
-        this.#fadeInJob.enqueue(() => this.hasAllocation ? this.#fadeIn() : Context.desktop.addOverlay(super.actor));
+        this.#fadeInJob.enqueue(() =>
+            this.hasAllocation ? this.#fadeIn() : Context.desktop.addOverlay(super.actor, true));
     }
 
     /**
@@ -198,7 +202,7 @@ export class Tooltip extends Component {
      */
     hide(isFinal = false) {
         if (!this.isValid) return;
-        if (isFinal) this.#body?.set_reactive(false);
+        this.#isReactive = !isFinal;
         if (this.#isHidden && isFinal) return;
         this.#isHidden = true;
         this.#fadeInJob = null;
@@ -229,6 +233,7 @@ export class Tooltip extends Component {
         this.#job = null;
         this.#pressHandler = null;
         this.#targetSize = null;
+        this.#isReactive = false;
         this.#isHidden = true;
         this.#isShown = false;
         this.#fadeInJob = null;
@@ -240,7 +245,7 @@ export class Tooltip extends Component {
 
     #handleMapped() {
         if (this.#isHidden || !this.hasAllocation) return;
-        this.#job?.reset(Delay.Redraw).enqueue(() => this.#fadeIn());
+        this.#job?.reset(Delay.Redraw).enqueue(() => this.setSize().#fadeIn());
     }
 
     /**
@@ -262,6 +267,7 @@ export class Tooltip extends Component {
     }
 
     #hover() {
+        if (!this.#isReactive) return;
         const hasHover = !!this.#body?.hover;
         if (hasHover && this.#isShown) return this.show();
         if (hasHover && !this.#checkHoverBounds()) {
@@ -323,7 +329,7 @@ export class Tooltip extends Component {
 
     #remove() {
         if (!this.hasAllocation) return;
-        this.#body?.set_reactive(false);
+        this.#isReactive = false;
         const actor = super.actor;
         const defaultProps = { ...AnimationType.OpacityMin, ...AnimationType.TranslationReset };
         actor.remove_all_transitions();
@@ -342,12 +348,11 @@ export class Tooltip extends Component {
      * @param {boolean} [state]
      */
     #changeState(state = false) {
-        const isReactive = !!this.#body?.track_hover;
-        const changeReactive = state && isReactive && !this.#body?.reactive;
-        if (changeReactive) this.#job?.reset(Delay.Redraw).enqueue(() => this.#body?.set_reactive(isReactive));
+        const canTrackHover = !!this.#body?.track_hover;
+        this.#isReactive = state && canTrackHover;
         if (this.#isShown === state) return;
         this.#isShown = state;
-        if (!isReactive) return;
+        if (!canTrackHover) return;
         this.#sourceActor?.notifySelf(TooltipEvent.StateChanged);
     }
 
@@ -374,10 +379,6 @@ export class Tooltip extends Component {
         const style = `max-width: ${maxWidth}px;`;
         const sourceCenter = Math.floor((sourceActorCenterRect.width - width) / 2);
         let x = Math.max(monitor.x, sourceActorCenterRect.x + sourceCenter);
-        const xOverflow = monitor.width - (x + width);
-        if (x > monitor.x && xOverflow < 0) {
-            x = Math.max(monitor.x, x + xOverflow);
-        }
         const y = this.#location === Alignment.Top ?
                   sourceActorRect.y + sourceActorRect.height :
                   sourceActorRect.y - height;
@@ -388,6 +389,7 @@ export class Tooltip extends Component {
                                                          initialRect.height / height;
         if (heightDiff < 0.5) {
             initialRect.height = height;
+            initialRect.y = y;
         }
         this.setProps({ style });
         this.#transform(initialRect, targetRect);
