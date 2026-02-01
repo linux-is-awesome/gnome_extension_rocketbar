@@ -5,7 +5,7 @@ import { PreferencesPage, MetadataField } from '../../shared/enums/general.js';
 const LOGO_PATH = '/assets/images/';
 const RELEASE_NOTES_URL_PATH = '/releases';
 const SUPPORT_URL_PATH = '/issues/new?template=';
-const HOME_PAGE_URL = 'https://extensions.gnome.org/extension/5180';
+const HOME_PAGE_URL = 'https://extensions.gnome.org/extension/9249';
 
 const DAY_START_HOURS = 7;
 const DAY_END_HOURS = 19;
