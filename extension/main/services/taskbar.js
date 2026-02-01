@@ -266,6 +266,8 @@ class TaskbarService {
         ]);
         this.#handleFocusedWindow();
         if (!this.tracker?.isActive) return;
+        this.clientApps?.clear();
+        this.clientAppWindows?.clear();
         const workspaceWindows = this.workspace.list_windows();
         if (!workspaceWindows?.length) return this.tracker.trackAll();
         for (const window of workspaceWindows) {
