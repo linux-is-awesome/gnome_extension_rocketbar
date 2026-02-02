@@ -48,7 +48,7 @@ export default class {
         if (target instanceof WindowPreview) {
             const isCtrlPressed = !!(event.get_state() & Clutter.ModifierType.CONTROL_MASK);
             if (button === Clutter.BUTTON_MIDDLE ||
-               (button === Clutter.BUTTON_PRIMARY && isCtrlPressed)) return Clutter.EVENT_STOP
+               (button === Clutter.BUTTON_PRIMARY && isCtrlPressed)) return Clutter.EVENT_STOP;
         } else if (target instanceof St.ScrollView) {
             if (button !== Clutter.BUTTON_PRIMARY) return Clutter.EVENT_STOP;
             const [x, y] = global.get_pointer();
@@ -56,7 +56,7 @@ export default class {
             return Clutter.EVENT_PROPAGATE;
         } else if (target === MainLayout.overviewGroup ||
                    target instanceof WorkspacesDisplay) return Clutter.EVENT_STOP;
-        this.#pressHandler?.release(); 
+        this.#pressHandler?.release();
         return Clutter.EVENT_PROPAGATE;
     }
 
