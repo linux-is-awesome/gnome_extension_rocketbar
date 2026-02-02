@@ -1,17 +1,12 @@
-/**
- * @typedef {*} AppFavorites
- * @typedef {*} ParentalControlsManager
- */
-
 import Shell from 'gi://Shell';
-import { getAppFavorites as AppFavorites } from 'resource:///org/gnome/shell/ui/appFavorites.js';
+import * as SystemFavorites from 'resource:///org/gnome/shell/ui/appFavorites.js';
 import Context from '../../core/context.js';
 import { Event } from '../../../shared/enums/general.js';
 
 export default class Favorites {
 
-    /** @type {AppFavorites} */
-    #favorites = AppFavorites();
+    /** @type {SystemFavorites.AppFavorites?} */
+    #favorites = SystemFavorites.getAppFavorites();
 
     /** @type {Set<Shell.App>?} */
     #apps = null;
@@ -22,15 +17,11 @@ export default class Favorites {
     /** @type {(() => void)?} */
     #callback = null;
 
-    /** @type {ParentalControlsManager} */
-    get #parentalControlsManager() {
-        return this.#favorites._parentalControlsManager;
-    }
-
     /** @type {Map<string, Shell.App>} */
     get appsById() {
         if (this.#appsById) return this.#appsById;
         this.#appsById = new Map();
+        if (!this.#favorites) return this.#appsById;
         const appsById = this.#favorites.getFavoriteMap();
         for (const appId in appsById) this.#appsById.set(appId, appsById[appId]);
         return this.#appsById;
@@ -57,8 +48,8 @@ export default class Favorites {
 
     destroy() {
         Context.signals.removeAll(this);
-        if (typeof this.#callback !== 'function') return;
-        this.#callback();
+        this.#favorites = null;
+        this.#triggerCallback();
         this.#callback = null;
     }
 
@@ -67,7 +58,7 @@ export default class Favorites {
      * @param {number} [position]
      */
     add(app, position = -1) {
-        if (app instanceof Shell.App === false || !app.id) return;
+        if (!this.#favorites || app instanceof Shell.App === false || !app.id) return;
         const oldPosition = [...this.appsById.keys()].indexOf(app.id);
         if (position === oldPosition) return;
         if (oldPosition < 0) this.#favorites.addFavoriteAtPos(app.id, position);
@@ -80,7 +71,8 @@ export default class Favorites {
      */
     canAdd(app) {
         if (app instanceof Shell.App === false || !app.id || !app.app_info) return false;
-        const validationFunction = this.#parentalControlsManager?.shouldShowApp;
+        const parentalControlsManager = this.#favorites?._parentalControlsManager;
+        const validationFunction = parentalControlsManager?.shouldShowApp;
         if (typeof validationFunction !== 'function') return false;
         return validationFunction(app.app_info);
     }
@@ -89,34 +81,32 @@ export default class Favorites {
      * @param {Shell.App} app
      */
     remove(app) {
-        if (app instanceof Shell.App === false || !app.id) return;
+        if (!this.#favorites || app instanceof Shell.App === false || !app.id) return;
         this.#favorites.removeFavorite(app.id);
     }
 
     #handleChanged() {
-        if (!this.#appsById || typeof this.#callback !== 'function') return;
-        this.#appsById = null;
-        this.#callback();
+        if (!this.#appsById) return;
+        this.#triggerCallback();
     }
 
     #handleInstalled() {
-        if (typeof this.#callback !== 'function') return;
+        if (!this.#favorites) return;
         const oldAppsById = this.#appsById;
-        const newAppsById = this.#favorites.getFavoriteMap();
-        let hasFavorites = false;
-        let isChanged = false;
+        const newAppsById = this.#favorites.getFavoriteMap() ?? {};
+        const newAppsSize = Object.keys(newAppsById).length;
+        if (oldAppsById?.size !== newAppsSize) return this.#triggerCallback();
         for (const appId in newAppsById) {
-            hasFavorites = true;
             const newApp = newAppsById[appId];
             const oldApp = oldAppsById?.get(appId);
             if (oldApp && oldApp === newApp) continue;
-            isChanged = true;
-            break;
+            return this.#triggerCallback();
         }
-        if (!isChanged && !hasFavorites && oldAppsById?.size) {
-            isChanged = true;
-        }
-        if (!isChanged) return;
+    }
+
+    #triggerCallback() {
+        if (typeof this.#callback !== 'function') return;
+        this.#appsById?.clear();
         this.#appsById = null;
         this.#callback();
     }
