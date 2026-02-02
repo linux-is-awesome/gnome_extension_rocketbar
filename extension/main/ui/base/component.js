@@ -1,5 +1,8 @@
+/**
+ * @typedef {import('gi://Clutter').Actor} Clutter.Actor
+ */
+
 import GObject from 'gi://GObject';
-import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import Mtk from 'gi://Mtk';
 import * as Dnd from 'resource:///org/gnome/shell/ui/dnd.js';
