@@ -4,16 +4,17 @@ import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 
 declare global {
-    var global: Shell.Global;
+    var global: Shell.Global
 }
 
 declare module 'gi://GObject' {
 
     interface Object {
 
-        connectObject(...args): void;
+        connectObject(...args): void
 
-        disconnectObject(...args): void;
+        disconnectObject(...args): void
+
     }
 
 }
@@ -24,9 +25,10 @@ declare module 'gi://Clutter' {
 
         _delegate: any;
 
-        set(props: object): void;
+        set(props: object): void
 
-        ease(props: object): void;
+        ease(props: object): void
+
     }
 
 }
@@ -35,7 +37,7 @@ declare module 'gi://St' {
 
     interface Adjustment {
 
-        ease(value: any, props: object): void;
+        ease(value: any, props: object): void
     }
 
     interface ThemeNode {
@@ -56,6 +58,7 @@ declare module 'resource:///org/gnome/shell/misc/signals.js' {
         connect(event: string, callback: function): number
 
         disconnect(event: string): void
+
     }
 
 }
@@ -91,5 +94,23 @@ declare module 'resource:///org/gnome/shell/ui/dnd.js' {
     }
 
     function makeDraggable(actor: Clutter.Actor, params?: Object): _Draggable
+
+}
+
+declare module 'resource:///org/gnome/shell/ui/appFavorites.js' {
+
+    interface AppFavorites {
+
+        _parentalControlsManager
+
+        getFavoriteMap(): {[appId: string]: Shell.App}
+
+        addFavoriteAtPos(appId: string, pos: number): void
+
+        moveFavoriteToPos(appId: string, pos: number): void
+
+        removeFavorite(appId: string): void
+
+    }
 
 }
