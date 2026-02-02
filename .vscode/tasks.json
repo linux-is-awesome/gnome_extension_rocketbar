@@ -136,18 +136,6 @@
             "problemMatcher": []
         },
         {
-            "label": "performance-monitor",
-            "type": "shell",
-            "command": "nohup ./scripts/performance-monitor new-window >/dev/null 2>&1",
-            "group": "test",
-            "presentation": {
-                "reveal": "silent",
-                "revealProblems": "onProblem",
-                "close": true
-            },
-            "problemMatcher": []
-        },
-        {
             "label": "open-preferences",
             "type": "shell",
             "command": "cd scripts && ./open-preferences",
@@ -197,6 +185,29 @@
             "label": "reset-dconf",
             "type": "shell",
             "command": "cd scripts && ./reset-dconf",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "performance-monitor",
+            "type": "shell",
+            "command": "nohup ./scripts/performance-monitor new-window >/dev/null 2>&1",
+            "group": "test",
+            "presentation": {
+                "reveal": "silent",
+                "revealProblems": "onProblem",
+                "close": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "validate-code",
+            "type": "shell",
+            "command": "cd scripts && ./validate-code",
             "group": "test",
             "presentation": {
                 "reveal": "always",
