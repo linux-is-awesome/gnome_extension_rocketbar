@@ -128,8 +128,9 @@ export default class Signals {
      */
     #connectTarget(target, connections, connection) {
         const { event, callback, flag } = connection;
-        if (!event || !callback || connections.has(event)) return;
+        if (!event || !callback) return;
         try {
+            if (connections.has(event)) throw new Error(`This event is already connected: ${event}.`);
             const id = flag === GObject.ConnectFlags.AFTER &&
                        typeof target.connect_after === 'function' ?
                        target.connect_after(event, callback) :
