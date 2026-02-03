@@ -11,6 +11,8 @@ import { Overview } from '../../core/shell.js';
 import Context from '../../core/context.js';
 import { Delay } from '../../../shared/enums/general.js';
 
+const CYCLE_PAUSE_DELAY = Delay.Sleep;
+
 class CycleWindowsQueue {
 
     /** @type {Meta.Window[]?} */
@@ -101,6 +103,9 @@ export class WindowManager {
     /** @type {boolean} */
     #hasFocus = false;
 
+    /** @type {number} */
+    #cyclePauseTimestamp = Date.now();
+
     /** @type {[windowsByWorkspace: Map<number, Meta.Window[]>, workspaceWindows?: Meta.Window[]]} */
     get #sortedWindows() {
         if (!this.#service || !this.#windows?.size) return [new Map(), []];
@@ -149,7 +154,6 @@ export class WindowManager {
     }
 
     destroy() {
-        Context.jobs.removeAll(this);
         this.resetQueue();
         this.#service = null;
         this.#windows = null;
@@ -205,8 +209,9 @@ export class WindowManager {
      * @param {boolean} [pause]
      */
     cycle(minimize = true, reverse = false, pause = false) {
-        if (pause && Context.jobs.has(this)) return;
-        if (pause) Context.jobs.new(this, Delay.Sleep).destroy(() => null);
+        const timestamp = Date.now();
+        if (pause && timestamp - this.#cyclePauseTimestamp <= CYCLE_PAUSE_DELAY) return;
+        this.#cyclePauseTimestamp = timestamp;
         const [windowsByWorkspace, workspaceWindows] = this.#sortedWindows;
         if (!windowsByWorkspace.size) return this.resetQueue();
         let windows = workspaceWindows ?? [...windowsByWorkspace.values()][0];
