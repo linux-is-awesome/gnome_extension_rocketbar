@@ -148,6 +148,9 @@ export default class NotificationCounter extends Component {
     /** @type {number} */
     #totalCount = 0;
 
+    /** @type {boolean} */
+    #isUpdated = false;
+
     /** @type {Config?} */
     #config = Config(this, ConfigField, settingsKey => this.#handleConfig(settingsKey), ConfigOptions);
 
@@ -166,9 +169,11 @@ export default class NotificationCounter extends Component {
         super(new St.BoxLayout({ name: MODULE_NAME }));
         super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.#createCounter();
-        Context.signals.add(this, [Context.desktop.settings, Event.FontNameChanged, () => this.#rerender()]);
-        Context.desktop.connectInit(this, () => super.setParent(this.#dateMenu))
-                       .connectScale(this, () => this.#rerender());
+        this.connect(Event.Mapped, () => this.#handleMapped());
+        const desktop = Context.desktop;
+        desktop.connectInit(this, () => super.setParent(this.#dateMenu))
+               .connectScale(this, () => this.#rerender());
+        Context.signals.add(this, [desktop.settings, Event.FontNameChanged, () => this.#rerender()]);
     }
 
     /**
@@ -229,6 +234,14 @@ export default class NotificationCounter extends Component {
         }
     }
 
+    #handleMapped() {
+        const isMapped = this.isMapped;
+        if (isMapped && !this.#isUpdated) return;
+        this.#isUpdated = false;
+        if (!isMapped) return;
+        this.#rerender();
+    }
+
     /**
      * @param {number} count
      */
@@ -245,39 +258,39 @@ export default class NotificationCounter extends Component {
     async #rerender() {
         if (!this.#counter || !this.hasAllocation ||
             Context.jobs.hasShared(this, Delay.Background)) return;
-        const actor = this.actor;
         const counter = this.#counter;
-        actor.disconnectObject(counter);
-        if (!this.isMapped) return actor.connectObject(Event.Mapped, () => this.#rerender(), counter);
         const transitionClass = COUNTER_STYLE_PSEUDO_CLASS;
         counter.remove_all_transitions();
         counter.remove_style_pseudo_class(transitionClass);
         const isHidden = await Animation(counter, AnimationDuration.Faster, AnimationType.ScaleMin);
         if (!isHidden || !this.isValid || !this.#counter) return;
-        counter.text = `${this.#count}`;
-        if (!this.#isVisible) {
-            counter.hide();
-            this.#updateClockMargin();
-            return;
-        }
-        counter.show();
+        const visible = this.#isVisible;
+        const text = `${this.#count}`;
+        counter.set({ text, visible });
         this.#updateStyle();
         this.#updateClockMargin();
+        if (!visible) return;
         counter.add_style_pseudo_class(transitionClass);
         const animationParams = { ...AnimationType.ScaleNormal, ...AnimationType.OpacityMax };
         Animation(counter, AnimationDuration.Default, animationParams);
     }
 
     #updateClockMargin() {
+        if (!this.#config?.centerClock ||
+            !this.#isVisible) return this.#setClockMargin();
+        const [width = 0] = this.actor?.get_size() ?? [];
+        this.#setClockMargin(width);
+    }
+
+    /**
+     * @param {number} [margin]
+     */
+    #setClockMargin(margin = 0) {
         const parent = this.parentActor;
         if (!parent) return;
-        if (!this.#config?.centerClock || !this.#isVisible) {
-            parent.set_style(null);
-            return;
-        }
-        const [width] = this.actor?.get_size() ?? [];
-        if (!width) return;
-        parent.set_style(`margin-left: ${width / Context.desktop.globalScale}px;`);
+        const style = margin ? `margin-left: ${margin / Context.desktop.globalScale}px;` : null;
+        parent.set_style(style);
+        this.#isUpdated = true;
     }
 
     #updateStyle() {
@@ -300,6 +313,7 @@ export default class NotificationCounter extends Component {
             `height: ${height}px;` +
             `min-width: ${height}px;` +
             `${offset > 0 ? 'margin-top' : 'margin-bottom'}: ${Math.abs(offset)}px;`;
+        this.#isUpdated = true;
     }
 
     /**
