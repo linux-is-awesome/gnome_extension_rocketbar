@@ -368,7 +368,6 @@ export class AppButton extends RuntimeButton {
         this.#windows = new WindowManager(this.#service, this.#appIcon);
         this.#notificationHandler = new NotificationHandler(() => this.#handleNotifications(), this.#app);
         Context.launcherApi.connectProgress(this, () => this.#handleProgress());
-        this.#handleProgress();
         this.#handleAppState();
     }
 
@@ -521,7 +520,7 @@ export class AppButton extends RuntimeButton {
         if (!isFavorite && !this.#isRunning) return this.#enqueueDestroy();
         this.#isFavorite = isFavorite;
         this.#soundVolumeControl?.update();
-        if (!this.#isRunning && this.#progress) this.#handleProgress();
+        this.#handleProgress();
         this.#handleRunningApp();
     }
 
