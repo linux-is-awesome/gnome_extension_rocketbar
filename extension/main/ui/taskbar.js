@@ -414,6 +414,7 @@ export default class Taskbar extends ScrollView {
         this.#allocation.isDragMode = false;
         this.#dndHandler = null;
         this.#separator?.unlock();
+        this.#scrollToActiveAppButton();
     }
 
     #rerender() {
@@ -551,14 +552,17 @@ export default class Taskbar extends ScrollView {
             this.#scrollLock = child;
         } else if (this.#scrollLock === child) {
             this.#scrollLock = null;
-            if (!hasFocus && this.#activeAppButton) {
-                Context.jobs.new(this, Delay.Scheduled).destroy(() =>
-                    this.#activeAppButton && this.scrollToActor(this.#activeAppButton, true));
-            }
+            if (!hasFocus) this.#scrollToActiveAppButton();
         }
         if (this.#scrollLock && this.#scrollLock !== child) return;
         if (!isActive && !hasHover && !hasFocus) return;
         this.scrollToActor(child, !hasHover);
+    }
+
+    #scrollToActiveAppButton() {
+        if (!this.#activeAppButton) return;
+        Context.jobs.removeAll(this).new(this, Delay.Scheduled).destroy(() =>
+            this.#activeAppButton && this.scrollToActor(this.#activeAppButton, true));
     }
 
     /**
