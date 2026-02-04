@@ -40,6 +40,7 @@ export const Event = {
     OverviewHiding: 'hiding',
     OverviewShowing: 'showing',
     OverviewShown: 'shown',
+    ParentChanged: 'parent-set',
     Position: 'notify::position',
     Pressed: 'notify::pressed',
     QueueChanged: 'queue-changed',
@@ -86,6 +87,7 @@ export const Property = {
 export const Delay = {
     Redraw: -1,
     Idle: 0,
+    Debounce: 10,
     Queue: 100,
     Sleep: 300,
     Background: 500,
