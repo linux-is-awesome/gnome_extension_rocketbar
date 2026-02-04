@@ -23,8 +23,6 @@ import { ServiceConfigField as ConfigField,
          AttentionBehavior,
          NotificationsBehavior } from '../../shared/enums/taskbar.js';
 
-const DEFAULT_ROUTING_DELAY = Delay.Scheduled;
-
 const SUPPORTED_WINDOW_TYPES = [
     Meta.WindowType.NORMAL,
     Meta.WindowType.DIALOG,
@@ -564,7 +562,7 @@ class TaskbarService {
         if (!this.#windows?.size) return this.#stopWindowRouting();
         this.#isRouting = true;
         if (!this.#routingHelper) this.#createRoutingHelper();
-        Context.jobs.removeAll(this).new(this, DEFAULT_ROUTING_DELAY).destroy(() =>
+        Context.jobs.removeAll(this).new(this, Delay.Scheduled).destroy(() =>
         this.#startWindowRouting());
     }
 
@@ -594,7 +592,7 @@ class TaskbarService {
             if (this.#routeWindow(windowInfo)) continue;
             windowInfo.update();
         }
-        Context.jobs.new(this, DEFAULT_ROUTING_DELAY).destroy(() =>
+        Context.jobs.new(this, Delay.Scheduled).destroy(() =>
             (this.#stopWindowRouting(), this.tracker?.trackAll()));
     }
 
