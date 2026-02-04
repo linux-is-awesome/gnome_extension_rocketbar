@@ -11,8 +11,6 @@ import { Overview } from '../../core/shell.js';
 import Context from '../../core/context.js';
 import { Delay } from '../../../shared/enums/general.js';
 
-const CYCLE_PAUSE_DELAY = Delay.Sleep;
-
 class CycleWindowsQueue {
 
     /** @type {Meta.Window[]?} */
@@ -210,7 +208,7 @@ export class WindowManager {
      */
     cycle(minimize = true, reverse = false, pause = false) {
         const timestamp = Date.now();
-        if (pause && timestamp - this.#cyclePauseTimestamp <= CYCLE_PAUSE_DELAY) return;
+        if (pause && timestamp - this.#cyclePauseTimestamp <= Delay.Sleep) return;
         this.#cyclePauseTimestamp = timestamp;
         const [windowsByWorkspace, workspaceWindows] = this.#sortedWindows;
         if (!windowsByWorkspace.size) return this.resetQueue();
