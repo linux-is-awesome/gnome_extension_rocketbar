@@ -84,10 +84,12 @@ export class AppIcon extends Icon {
         const size = Overview.dash?.iconSize || this.#size * Context.desktop.fontScale;
         const actorProps = { name: `${MODULE_NAME}-DragActor`, icon_size: size, gicon };
         const dragActor = new St.Icon(actorProps);
-        dragActor.connect(Event.Destroy, () => {
+        Context.signals.add(this, [dragActor, Event.Destroy, () => {
+            dragActor.remove_all_transitions();
+            Context.signals.remove(this, dragActor);
             if (this.#dragActor !== dragActor) return;
             this.#dragActor = null;
-        });
+        }]);
         this.#dragActor = dragActor;
         oldDragActor?.destroy();
         return this.#dragActor;
@@ -164,6 +166,7 @@ export class AppIcon extends Icon {
     }
 
     #destroy() {
+        Context.signals.removeAll(this);
         Context.desktop.disconnect(this);
         this.#dragActor?.destroy();
         this.#app = null;
