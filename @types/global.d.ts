@@ -13,7 +13,7 @@ declare module 'gi://GObject' {
 
         connectObject(...args): void
 
-        disconnectObject(...args): void
+        disconnectObject(target): void
 
     }
 
@@ -77,9 +77,9 @@ declare module 'resource:///org/gnome/shell/ui/dnd.js' {
          */
         fakeRelease(): void
 
-        disconnectAll(): void
+        connectObject(...args): void
 
-        connect(event: string, callback: function): number
+        disconnectObject(target): void
 
         /**
          * @deprecated since GNOME 49
