@@ -1,4 +1,5 @@
 /**
+ * @typedef {SignalTracker} Signals.SignalTracker
  * @typedef {{event?: string?, callback?: ((...args) => *)?, flag?: number?}} TargetConnection
  * @typedef {Map<string, number>} TargetConnections
  */
@@ -7,6 +8,43 @@ import GObject from 'gi://GObject';
 import Context from '../context.js';
 
 const TARGET_SCOPE_MIN_LENGTH = 3;
+
+class SignalTracker {
+
+    /** @type {Signals?} */
+    #signals = null;
+
+    /**
+     * @param {Signals} signals
+     */
+    constructor(signals) {
+        this.#signals = signals;
+    }
+
+    /**
+     * @param {*[]} scope [target, event, callback,..., event, callback], [target,...]
+     * @returns {this}
+     */
+    add(...scope) {
+        this.#signals?.add(this, ...scope);
+        return this;
+    }
+
+    /**
+     * @param {*[]} targets
+     * @returns {this}
+     */
+    remove(...targets) {
+        this.#signals?.remove(this, ...targets);
+        return this;
+    }
+
+    destroy() {
+        this.#signals?.removeAll(this);
+        this.#signals = null;
+    }
+
+}
 
 export default class Signals {
 
@@ -18,6 +56,13 @@ export default class Signals {
         for (const [_, connections] of this.#connections) this.#disconnectAll(connections);
         this.#connections.clear();
         this.#connections = null;
+    }
+
+    /**
+     * @returns {SignalTracker}
+     */
+    new() {
+        return new SignalTracker(this);
     }
 
     /**
@@ -137,7 +182,7 @@ export default class Signals {
                        typeof target.connect === 'function' ?
                        target.connect(event, callback) : null;
             if (typeof id === 'number') connections.set(event, id);
-            else Context.logError(`${this.constructor.name} got invalid connection id (${id}) for event: ${event}.`);
+            else Context.logError(`${this.constructor.name} got invalid signal id (${id}) for event: ${event}.`);
         } catch (e) {
             Context.logError(`${this.constructor.name} failed to connect target.`, e);
         }
