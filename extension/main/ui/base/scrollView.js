@@ -93,11 +93,12 @@ export class ScrollView extends Component {
         this.#actor = new St.BoxLayout({ name });
         this.#container = container;
         this.#scroll = container.hadjustment;
-        this.#handleScrollJob = Context.jobs.new(this.#scroll, Delay.Redraw);
-        container.add_child(this.#actor);
-        container.connect(Event.Destroy, () => this.#destroy());
+        this.#handleScrollJob = Context.jobs.new(this.#scroll, Delay.Debounce);
         this.#scroll.connect(Event.Changed, () =>
-            this.#handleScrollJob?.reset().enqueue(() => this.#handleScrollSize()));
+            this.#handleScrollJob?.reset().enqueue(() =>
+            this.#handleScrollSize()));
+        container.add_child(this.#actor);
+        this.connect(Event.Destroy, () => this.#destroy());
         if (typeof name !== 'string') return;
         container.set_name(`${name}-Container`);
     }
