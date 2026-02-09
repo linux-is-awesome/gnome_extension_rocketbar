@@ -171,12 +171,13 @@ export class Tooltip extends Component {
         super.actor.add_child(this.#body);
         this.#sourceActor = sourceActor;
         this.#pressHandler = new ActorPressHandler((...args) => this.#longPress(...args), this.#body);
+        const body = new Component(this.#body);
+        body.connect(Event.Hover, () => this.#hover());
+        body.connect(Event.ButtonPress, (_, event) => this.#pressHandler?.press(event));
+        body.connect(Event.ButtonRelease, () => this.#pressHandler?.release((...args) => this.#click(...args)));
+        body.connect(Event.Leave, () => this.#pressHandler?.release());
         this.connect(Event.Destroy, () => this.#destroy());
         this.connect(Event.Mapped, () => this.#handleMapped());
-        this.#body.connect(Event.Hover, () => this.#hover());
-        this.#body.connect(Event.ButtonPress, (_, event) => this.#pressHandler?.press(event));
-        this.#body.connect(Event.ButtonRelease, () => this.#pressHandler?.release((...args) => this.#click(...args)));
-        this.#body.connect(Event.Leave, () => this.#pressHandler?.release());
         if (typeof name !== 'string') return;
         this.#body.set_name(`${name}-Body`);
     }
