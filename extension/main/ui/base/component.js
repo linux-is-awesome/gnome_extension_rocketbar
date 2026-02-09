@@ -1,8 +1,8 @@
 /**
  * @typedef {import('gi://Clutter').Actor} Clutter.Actor
+ * @typedef {import('../../../shared/core/context/signals.js').Signals.SignalTracker} SignalTracker
  */
 
-import GObject from 'gi://GObject';
 import St from 'gi://St';
 import Mtk from 'gi://Mtk';
 import * as Dnd from 'resource:///org/gnome/shell/ui/dnd.js';
@@ -39,8 +39,11 @@ export class Component {
     /** @type {Map<St.Widget, Component<St.Widget>>} */
     static #wrappers = new Map();
 
-    /** @type {{actor: ComponentActor}?} */
-    #signalTracker = null;
+    /** @type {Set<number>} */
+    #signals = new Set();
+
+    /** @type {SignalTracker?} */
+    #dndSignals = null;
 
     /** @type {boolean} */
     #isWrapper = false;
@@ -148,10 +151,8 @@ export class Component {
             throw new Error(`Unable to construct ${this.constructor.name}, ${actor} is not an instance of St.Widget.`);
         }
         this.#isWrapper = isWrapper;
-        this.#signalTracker = { actor };
         this.#actor = actor;
-        this.#actor.connectObject(Event.Destroy, () => this.#destroy(),
-                                  GObject.ConnectFlags.AFTER, this.#signalTracker);
+        this.#signals.add(actor.connect_after(Event.Destroy, () => this.#destroy()));
         if (isWrapper) {
             Component.#wrappers.set(actor, this);
             return;
@@ -220,15 +221,19 @@ export class Component {
         if (!this.#actor ||
             typeof event !== 'string' ||
             typeof callback !== 'function') return null;
-        return this.#actor.connect(event, callback);
+        const signalId = this.#actor.connect(event, callback);
+        this.#signals.add(signalId);
+        return signalId;
     }
 
     /**
-     * @param {number} id
+     * @param {number} signalId
      * @returns {this}
      */
-    disconnect(id) {
-        this.#actor?.disconnect(id);
+    disconnect(signalId) {
+        if (!this.#signals.has(signalId)) return this;
+        this.#signals.delete(signalId);
+        this.#actor?.disconnect(signalId);
         return this;
     }
 
@@ -321,25 +326,25 @@ export class Component {
     #destroy() {
         if (!this.#isValid || !this.#actor) return;
         if (this.#isWrapper) Component.#wrappers.delete(this.#actor);
+        for (const id of this.#signals) this.#actor.disconnect(id);
+        this.#signals.clear();
         this.#isValid = false;
         this.#actor.remove_all_transitions();
         this.#setDragEvents(false);
         this.#notifySelf(ComponentEvent.Destroy);
-        this.#actor.disconnectObject(this.#signalTracker);
         this.#actor._delegate = null;
         this.#actor = null;
         this.#parent = null;
         this.#draggable = null;
         this.#dragMonitor = null;
-        this.#signalTracker = null;
         this.#notifyCallback = null;
     }
 
     #setInitHandler() {
-        const handlerId = this.#actor?.connect(Event.Mapped, () => {
-            if (handlerId) this.#actor?.disconnect(handlerId);
-            this.#notifySelf(ComponentEvent.Init);
-        });
+        if (!this.#actor) return;
+        const signalId = this.#actor.connect_after(Event.ParentChanged, () =>
+            (this.disconnect(signalId), this.#notifySelf(ComponentEvent.Init)));
+        this.#signals.add(signalId);
     }
 
     /**
@@ -369,19 +374,19 @@ export class Component {
         if (!enabled && !this.#draggable) return;
         this.#draggable ??= Dnd.makeDraggable(this.#actor, DraggableParams);
         this.#dragMonitor ??= { dragMotion: event => this.#dragMotion(event) };
-        this.#draggable.disconnectAll();
-        this.#actor.disconnectObject(this.#draggable);
         this.#draggable._dndGesture?.set_manual_mode(!enabled);
+        this.#dndSignals?.destroy();
+        this.#dndSignals = null;
         if (!enabled) return;
-        this.#draggable.connect(Event.DragBegin, () => this.#dragBegin());
-        this.#draggable.connect(Event.DragCancelled, () => this.#dragCancelled());
-        this.#draggable.connect(Event.DragEnd, () => this.#dragEnd());
+        this.#dndSignals = Context.signals.new().add([this.#draggable,
+            Event.DragBegin, () => this.#dragBegin(),
+            Event.DragCancelled, () => this.#dragCancelled(),
+            Event.DragEnd, () => this.#dragEnd()]);
         if (typeof this.#draggable._onButtonPress !== 'function' ||
             typeof this.#draggable._onTouchEvent !== 'function') return;
-        this.#actor.connectObject(
+        this.#dndSignals.add([this.#actor,
             Event.ButtonPress, this.#draggable._onButtonPress.bind(this.#draggable),
-            Event.Touch, this.#draggable._onTouchEvent.bind(this.#draggable),
-            this.#draggable);
+            Event.Touch, this.#draggable._onTouchEvent.bind(this.#draggable)]);
     }
 
     /**
