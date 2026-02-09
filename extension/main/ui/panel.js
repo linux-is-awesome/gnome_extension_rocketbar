@@ -33,11 +33,10 @@ export default class Panel extends Component {
     constructor() {
         super(MainPanel, true);
         super.notifyCallback = data => this.#events?.[data?.event]?.();
-        Context.signals.add(this, [this.actor,
-            Event.ButtonPress, (_, event) => this.#pressHandler?.press(event),
-            Event.ButtonRelease, () => this.#pressHandler?.release(event => this.#click(event)),
-            Event.Leave, () => this.#pressHandler?.release(),
-            Event.Scroll, (_, event) => this.#scroll(event)]);
+        this.connect(Event.ButtonPress, (_, event) => this.#pressHandler?.press(event));
+        this.connect(Event.ButtonRelease, () => this.#pressHandler?.release(event => this.#click(event)));
+        this.connect(Event.Leave, () => this.#pressHandler?.release());
+        this.connect(Event.Scroll, (_, event) => this.#scroll(event));
         this.#handleConfig();
     }
 
