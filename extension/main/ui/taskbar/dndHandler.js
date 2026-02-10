@@ -93,7 +93,7 @@ class DragActor {
     hide(candidate) {
         if (!this.#isVisible || !this.#actor) return;
         this.#isVisible = false;
-        const canAnimate = !!candidate && Context.desktop.settings.enable_animations;
+        const canAnimate = !!candidate && Context.desktop.animations;
         if (!canAnimate) return this.#actor.set(AnimationType.OpacityMin);
         Context.jobs.removeAll(this).new(this, Delay.Redraw).enqueue(() =>
             this.#animateHide(candidate.iconRect));

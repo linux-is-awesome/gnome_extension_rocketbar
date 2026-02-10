@@ -145,7 +145,7 @@ export class AppIcon extends Icon {
      */
     async animate(animation) {
         if (!this.hasAllocation) return false;
-        if (!Context.desktop.settings.enable_animations) return true;
+        if (!Context.desktop.animations) return true;
         const { duration } = animation;
         switch (animation) {
             case AppIconAnimation.Press:
