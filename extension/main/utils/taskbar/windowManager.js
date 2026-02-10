@@ -113,9 +113,12 @@ export class WindowManager {
         const windows = this.#service.app?.get_windows() ?? [...this.#windows];
         for (const window of windows) {
             if (!this.#windows.has(window)) continue;
-            const workspace = window.get_workspace()?.index();
-            if (!windowsByWorkspace.has(workspace)) windowsByWorkspace.set(workspace, [window]);
-            else windowsByWorkspace.get(workspace)?.push(window);
+            const workspace = window.get_workspace();
+            if (!workspace) continue;
+            const workspaceIndex = workspace.index();
+            const workspaceWindows = windowsByWorkspace.get(workspaceIndex);
+            if (workspaceWindows) workspaceWindows.push(window);
+            else windowsByWorkspace.set(workspaceIndex, [window]);
         }
         return [windowsByWorkspace, windowsByWorkspace.get(currentWorkspace)];
     }
