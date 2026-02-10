@@ -51,9 +51,6 @@ class TaskbarService {
     /** @type {Shell.WindowTracker?} */
     #windowTracker = Shell.WindowTracker.get_default();
 
-    /** @type {Meta.Workspace?} */
-    #oldWorkspace = null;
-
     /** @type {Map<Meta.Window, WindowInfo>?} */
     #windows = Context.getStorage(this.constructor.name);
 
@@ -83,6 +80,9 @@ class TaskbarService {
 
     /** @type {Meta.Workspace?} */
     workspace = null;
+
+    /** @type {Meta.Workspace?} */
+    #oldWorkspace = null;
 
     /** @type {Set<Shell.App>?} */
     clientApps = new Set();
@@ -135,6 +135,7 @@ class TaskbarService {
         this.#windowTracker = null;
         this.#apps = null;
         this.#focusedWindowInfo = null;
+        this.#oldWorkspace = null;
         this.#config = null;
         this.#appConfig = null;
         this.workspace = null;
@@ -576,7 +577,9 @@ class TaskbarService {
     #createRoutingHelper() {
         if (!this.#windows?.size || this.#routingHelper) return;
         this.#routingHelper = new Clutter.Actor(RoutingHelperProps);
-        Context.desktop.addOverlay(this.#routingHelper, true);
+        const desktop = Context.desktop;
+        desktop.animations = false;
+        desktop.addOverlay(this.#routingHelper, true);
         for (const [window, windowInfo] of this.#windows) {
             const { app } = windowInfo;
             const name = `${this.#routingHelper.name}-WindowClone_${app.id}`;
@@ -600,6 +603,7 @@ class TaskbarService {
         this.#isRouting = false;
         this.#routingHelper?.destroy();
         this.#routingHelper = null;
+        Context.desktop.animations = true;
     }
 
     /**
