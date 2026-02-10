@@ -1147,8 +1147,13 @@ declare module 'gi://St' {
              */
             pack_start?: boolean | null
             /**
+             * Orientation of the layout (GNOME 48+). Prefer this over vertical.
+             */
+            orientation?: Clutter.Orientation | null
+            /**
              * A convenience property for the #ClutterBoxLayout:vertical property of the
              * internal layout for #StBoxLayout.
+             * @deprecated Since GNOME 48 use orientation with Clutter.Orientation instead
              */
             vertical?: boolean | null
             /**
@@ -1175,8 +1180,13 @@ declare module 'gi://St' {
          */
         packStart: boolean
         /**
+         * Orientation of the layout (GNOME 48+).
+         */
+        orientation: Clutter.Orientation
+        /**
          * A convenience property for the #ClutterBoxLayout:vertical property of the
          * internal layout for #StBoxLayout.
+         * @deprecated Since GNOME 48 use orientation with Clutter.Orientation instead
          */
         vertical: boolean
 
@@ -1190,20 +1200,29 @@ declare module 'gi://St' {
         /**
          * Get the value of the #StBoxLayout:vertical property.
          * @returns %TRUE if the layout is vertical
+         * @deprecated Since GNOME 48 use get_orientation() instead
          */
         get_vertical(): boolean
+        /** Get the orientation (GNOME 48+). */
+        get_orientation(): Clutter.Orientation
         set_pack_start(pack_start: boolean): void
         /**
          * Set the value of the #StBoxLayout:vertical property
          * @param vertical %TRUE if the layout should be vertical
+         * @deprecated Since GNOME 48 use set_orientation(Clutter.Orientation.VERTICAL) instead
          */
         set_vertical(vertical: boolean): void
+        /** Set the orientation (GNOME 48+). */
+        set_orientation(orientation: Clutter.Orientation): void
 
         // Class property signals of St-13.St.BoxLayout
 
         connect(sigName: "notify::pack-start", callback: (($obj: BoxLayout, pspec: GObject.ParamSpec) => void)): number
         connect_after(sigName: "notify::pack-start", callback: (($obj: BoxLayout, pspec: GObject.ParamSpec) => void)): number
         emit(sigName: "notify::pack-start", ...args: any[]): void
+        connect(sigName: "notify::orientation", callback: (($obj: BoxLayout, pspec: GObject.ParamSpec) => void)): number
+        connect_after(sigName: "notify::orientation", callback: (($obj: BoxLayout, pspec: GObject.ParamSpec) => void)): number
+        emit(sigName: "notify::orientation", ...args: any[]): void
         connect(sigName: "notify::vertical", callback: (($obj: BoxLayout, pspec: GObject.ParamSpec) => void)): number
         connect_after(sigName: "notify::vertical", callback: (($obj: BoxLayout, pspec: GObject.ParamSpec) => void)): number
         emit(sigName: "notify::vertical", ...args: any[]): void
@@ -5351,7 +5370,12 @@ declare module 'gi://St' {
              */
             adjustment?: Adjustment | null
             /**
+             * Orientation of the scroll bar (GNOME 48+). Prefer this over vertical.
+             */
+            orientation?: Clutter.Orientation | null
+            /**
              * Whether the #StScrollBar is vertical. If %FALSE it is horizontal.
+             * @deprecated Since GNOME 48 use orientation with Clutter.Orientation instead
              */
             vertical?: boolean | null
         }
@@ -5367,7 +5391,12 @@ declare module 'gi://St' {
          */
         adjustment: Adjustment
         /**
+         * Orientation of the scroll bar (GNOME 48+).
+         */
+        orientation: Clutter.Orientation
+        /**
          * Whether the #StScrollBar is vertical. If %FALSE it is horizontal.
+         * @deprecated Since GNOME 48 use orientation with Clutter.Orientation instead
          */
         vertical: boolean
 
@@ -5383,6 +5412,8 @@ declare module 'gi://St' {
          */
         get_adjustment(): Adjustment
         set_adjustment(adjustment: Adjustment): void
+        get_orientation(): Clutter.Orientation
+        set_orientation(orientation: Clutter.Orientation): void
 
         // Own virtual methods of St-13.St.ScrollBar
 
@@ -5403,6 +5434,9 @@ declare module 'gi://St' {
         connect(sigName: "notify::adjustment", callback: (($obj: ScrollBar, pspec: GObject.ParamSpec) => void)): number
         connect_after(sigName: "notify::adjustment", callback: (($obj: ScrollBar, pspec: GObject.ParamSpec) => void)): number
         emit(sigName: "notify::adjustment", ...args: any[]): void
+        connect(sigName: "notify::orientation", callback: (($obj: ScrollBar, pspec: GObject.ParamSpec) => void)): number
+        connect_after(sigName: "notify::orientation", callback: (($obj: ScrollBar, pspec: GObject.ParamSpec) => void)): number
+        emit(sigName: "notify::orientation", ...args: any[]): void
         connect(sigName: "notify::vertical", callback: (($obj: ScrollBar, pspec: GObject.ParamSpec) => void)): number
         connect_after(sigName: "notify::vertical", callback: (($obj: ScrollBar, pspec: GObject.ParamSpec) => void)): number
         emit(sigName: "notify::vertical", ...args: any[]): void

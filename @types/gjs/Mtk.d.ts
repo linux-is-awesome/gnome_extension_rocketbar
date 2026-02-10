@@ -1,5 +1,7 @@
 declare module 'gi://Mtk' {
 
+    import type Graphene from 'gi://Graphene';
+
     enum RoundingStrategy {
         SHRINK,
         GROW,
