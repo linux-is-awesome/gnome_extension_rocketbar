@@ -3587,8 +3587,8 @@ declare module 'gi://Meta' {
 
         readonly compositor_modifiers: Clutter.ModifierType
         readonly compositorModifiers: Clutter.ModifierType
-        readonly focus_window: Window
-        readonly focusWindow: Window
+        readonly focus_window: Window | null
+        readonly focusWindow: Window | null
 
         // Owm methods of Meta-13.Meta.Display
 
@@ -3632,10 +3632,10 @@ declare module 'gi://Meta' {
         /**
          * Get our best guess as to the "currently" focused window (that is,
          * the window that we expect will be focused at the point when the X
-         * server processes our next request).
-         * @returns The current focus window
+         * server processes our next request). May return %NULL when no window has focus.
+         * @returns The current focus window, or %NULL
          */
-        get_focus_window(): Window
+        get_focus_window(): Window | null
         /**
          * Get the keybinding action bound to `keycode`. Builtin keybindings
          * have a fixed associated #MetaKeyBindingAction, for bindings added
@@ -3690,12 +3690,17 @@ declare module 'gi://Meta' {
         get_size(): [ /* width */ number, /* height */ number]
         get_sound_player(): SoundPlayer
         /**
+         * Gets the startup notification context for the display.
+         * @returns the #MetaStartupNotification for the display
+         */
+        get_startup_notification(): StartupNotification
+        /**
          * Determine the active window that should be displayed for Alt-TAB.
          * @param type type of tab list
          * @param workspace origin workspace
-         * @returns Current window
+         * @returns Current window, or %NULL if none
          */
-        get_tab_current(type: TabList, workspace: Workspace): Window
+        get_tab_current(type: TabList, workspace: Workspace): Window | null
         /**
          * Determine the list of windows that should be displayed for Alt-TAB
          * functionality.  The windows are returned in most recently used order.
@@ -3714,9 +3719,9 @@ declare module 'gi://Meta' {
          * @param workspace origin workspace
          * @param window starting window
          * @param backward If %TRUE, look for the previous window.
-         * @returns Next window
+         * @returns Next window, or %NULL if none
          */
-        get_tab_next(type: TabList, workspace: Workspace, window: Window | null, backward: boolean): Window
+        get_tab_next(type: TabList, workspace: Workspace, window: Window | null, backward: boolean): Window | null
         get_workspace_manager(): WorkspaceManager
         grab_accelerator(accelerator: string, flags: KeyBindingFlags): number
         /**
@@ -5893,6 +5898,7 @@ declare module 'gi://Meta' {
 
         activate(current_time: number): void
         activate_with_workspace(current_time: number, workspace: Workspace): void
+        add_external_constraint(constraint: GObject.Object): void
         allows_move(): boolean
         allows_resize(): boolean
         begin_grab_op(op: GrabOp, device: Clutter.InputDevice | null, sequence: Clutter.EventSequence | null, timestamp: number): boolean
@@ -5980,6 +5986,11 @@ declare module 'gi://Meta' {
          */
         get_frame_rect(): /* rect */ Mtk.Rectangle
         /**
+         * Gets the rectangle that the client content occupies (excluding frame and shadows).
+         * @returns the client content rectangle
+         */
+        get_client_content_rect(): /* rect */ Mtk.Rectangle
+        /**
          * Gets the type of window decorations that should be used for this window.
          * @returns the frame type
          */
@@ -6011,6 +6022,11 @@ declare module 'gi://Meta' {
          * @returns current maximization state
          */
         get_maximized(): MaximizeFlags
+        /**
+         * Returns whether the window is maximized (horizontally and/or vertically).
+         * @returns %TRUE if the window is maximized
+         */
+        is_maximized(): boolean
         /**
          * Gets index of the monitor that this window is on.
          * @returns The index of the monitor in the screens monitor list, or -1 if the window has been recently unmanaged and does not have a monitor.
@@ -6060,6 +6076,11 @@ declare module 'gi://Meta' {
          * @returns the startup id
          */
         get_startup_id(): string | null
+        /**
+         * Gets the tag (e.g. workspace index or identifier) associated with the window.
+         * @returns the tag value
+         */
+        get_tag(): number
         /**
          * Returns the matching tiled window on the same monitor as `window`. This is
          * the topmost tiled window in a complementary tile mode that is:
@@ -6124,10 +6145,10 @@ declare module 'gi://Meta' {
          * Gets the [class`Meta`.Workspace] that the window is currently displayed on.
          * 
          * If the window is on all workspaces, returns the currently active
-         * workspace.
-         * @returns the #MetaWorkspace for the window
+         * workspace. Returns %NULL when the window is unmanaged or being destroyed.
+         * @returns the #MetaWorkspace for the window, or %NULL
          */
-        get_workspace(): Workspace
+        get_workspace(): Workspace | null
         group_leader_changed(): void
         /**
          * Tests if `window` has any transients attached to it.
@@ -6139,6 +6160,10 @@ declare module 'gi://Meta' {
         has_attached_dialogs(): boolean
         has_focus(): boolean
         has_pointer(): boolean
+        /** Hides the window from the window list (e.g. taskbar). */
+        hide_from_window_list(): void
+        /** Inhibits the window from being mapped. */
+        inhibit_mapped(): void
         is_above(): boolean
         is_always_on_all_workspaces(): boolean
         /**
@@ -6165,6 +6190,8 @@ declare module 'gi://Meta' {
         is_client_decorated(): boolean
         is_fullscreen(): boolean
         is_hidden(): boolean
+        /** Returns whether the window is currently inhibited from being mapped. */
+        is_mapped_inhibited(): boolean
         is_monitor_sized(): boolean
         is_on_all_workspaces(): boolean
         is_on_primary_monitor(): boolean
@@ -6182,7 +6209,12 @@ declare module 'gi://Meta' {
         lower_with_transients(timestamp: number): void
         make_above(): void
         make_fullscreen(): void
-        maximize(directions: MaximizeFlags): void
+        /**
+         * Maximizes the window in the given directions. If no directions are given,
+         * maximizes in both directions (META_MAXIMIZE_BOTH).
+         * @param directions which directions to maximize (optional, defaults to both)
+         */
+        maximize(directions?: MaximizeFlags): void
         minimize(): void
         /**
          * Moves the window to the desired location on window's assigned
@@ -6211,8 +6243,15 @@ declare module 'gi://Meta' {
          * @param monitor desired monitor index
          */
         move_to_monitor(monitor: number): void
+        /**
+         * Converts a rectangle from protocol (client) coordinates to stage coordinates.
+         * @param rect rectangle in protocol coordinates
+         * @returns rectangle in stage coordinates
+         */
+        protocol_to_stage_rect(rect: Mtk.Rectangle): /* rect */ Mtk.Rectangle
         raise(): void
         raise_and_make_recent_on_workspace(workspace: Meta.Workspace): void
+        remove_external_constraint(constraint: GObject.Object): void
         set_compositor_private(priv: GObject.Object): void
         set_demands_attention(): void
         /**
@@ -6223,14 +6262,35 @@ declare module 'gi://Meta' {
          * @param rect rectangle with the desired geometry or %NULL.
          */
         set_icon_geometry(rect: Mtk.Rectangle | null): void
+        /** Sets the maximization flags for the window. */
+        set_maximize_flags(flags: MaximizeFlags): void
+        /** Sets the window type (e.g. normal, dialog). */
+        set_type(type: WindowType): void
+        /** Sets the unmaximize flags for the window. */
+        set_unmaximize_flags(flags: MaximizeFlags): void
+        /** Shows the window in the window list (e.g. taskbar). */
+        show_in_window_list(): void
         shove_titlebar_onscreen(): void
         showing_on_its_workspace(): boolean
         shutdown_group(): void
+        /**
+         * Converts a rectangle from stage coordinates to protocol (client) coordinates.
+         * @param rect rectangle in stage coordinates
+         * @returns rectangle in protocol coordinates
+         */
+        stage_to_protocol_rect(rect: Mtk.Rectangle): /* rect */ Mtk.Rectangle
         stick(): void
         titlebar_is_onscreen(): boolean
         unmake_above(): void
         unmake_fullscreen(): void
-        unmaximize(directions: MaximizeFlags): void
+        /** Removes the mapped inhibition from the window. */
+        uninhibit_mapped(): void
+        /**
+         * Unmaximizes the window in the given directions. If no directions are given,
+         * unmaximizes in both directions (META_MAXIMIZE_BOTH).
+         * @param directions which directions to unmaximize (optional, defaults to both)
+         */
+        unmaximize(directions?: MaximizeFlags): void
         unminimize(): void
         unset_demands_attention(): void
         unstick(): void
@@ -7237,6 +7297,16 @@ declare module 'gi://Meta' {
         append_new_workspace(activate: boolean, timestamp: number): Workspace
         get_active_workspace(): Workspace
         get_active_workspace_index(): number
+        /**
+         * Gets the number of layout columns for the workspace layout.
+         * @returns the number of columns
+         */
+        get_layout_columns(): number
+        /**
+         * Gets the number of layout rows for the workspace layout.
+         * @returns the number of rows
+         */
+        get_layout_rows(): number
         get_n_workspaces(): number
         /**
          * Gets the workspace object for one of a workspace manager's workspaces given the workspace
@@ -7246,6 +7316,11 @@ declare module 'gi://Meta' {
          * @returns the workspace object with specified   index, or %NULL if the index is out of range.
          */
         get_workspace_by_index(index: number): Workspace | null
+        /**
+         * Gets the list of workspaces.
+         * @returns the list of #MetaWorkspace
+         */
+        get_workspaces(): Workspace[]
         /**
          * Explicitly set the layout of workspaces. Once this has been called, the contents of the
          * _NET_DESKTOP_LAYOUT property on the root window are completely ignored.
