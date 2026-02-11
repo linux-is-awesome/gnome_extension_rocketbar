@@ -58,8 +58,8 @@ const AppStatusItemValueProps = {
 const LayoutProps = {
     name: `${MODULE_NAME}-Layout`,
     style_class: LAYOUT_STYLE_CLASS,
+    orientation: Clutter.Orientation.VERTICAL,
     clip_to_allocation: true,
-    vertical: true,
     x_expand: true,
     y_expand: true
 };
