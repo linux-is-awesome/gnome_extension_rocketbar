@@ -374,7 +374,7 @@ export class Component {
         if (!enabled && !this.#draggable) return;
         this.#draggable ??= Dnd.makeDraggable(this.#actor, DraggableParams);
         this.#dragMonitor ??= { dragMotion: event => this.#dragMotion(event) };
-        this.#draggable._dndGesture?.set_manual_mode(!enabled);
+        this.#draggable.startGesture?.set_manual_mode(!enabled);
         this.#dndSignals?.destroy();
         this.#dndSignals = null;
         if (!enabled) return;

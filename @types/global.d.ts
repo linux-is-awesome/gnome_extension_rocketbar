@@ -70,7 +70,7 @@ declare module 'resource:///org/gnome/shell/ui/dnd.js' {
         /**
          * Introduced in GNOME 49
          */
-        _dndGesture?: St.DndStartGesture
+        startGesture?: St.DndStartGesture
 
         /**
          * @deprecated since GNOME 49
