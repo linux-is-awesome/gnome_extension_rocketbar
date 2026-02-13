@@ -385,7 +385,7 @@ export default class Taskbar extends ScrollView {
         this.#appButtons = appButtons;
         oldAppButton?.destroy();
         if (separatorPosition > 0 &&
-            separatorPosition < apps.size &&
+            separatorPosition <= apps.size &&
             this.#config?.enableSeparator) this.#separator?.lock();
         if (isFavorite) {
             const favoritePosition = [...apps].indexOf(candidateApp);
