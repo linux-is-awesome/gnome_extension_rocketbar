@@ -4,6 +4,7 @@ declare module 'gi://Shell' {
     import type Meta from 'gi://Meta';
     import type Clutter from 'gi://Clutter';
     import type St from 'gi://St';
+    import type Gio from 'gi://Gio';
 
     enum AppLaunchGpu {
         APP_PREF,

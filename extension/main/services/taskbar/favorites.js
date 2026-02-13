@@ -1,5 +1,6 @@
 import Shell from 'gi://Shell';
 import * as SystemFavorites from 'resource:///org/gnome/shell/ui/appFavorites.js';
+import * as ParentalControls from 'resource:///org/gnome/shell/misc/parentalControlsManager.js';
 import Context from '../../core/context.js';
 import { Event } from '../../../shared/enums/general.js';
 
@@ -7,6 +8,9 @@ export default class Favorites {
 
     /** @type {SystemFavorites.AppFavorites?} */
     #favorites = SystemFavorites.getAppFavorites();
+
+    /** @type {ParentalControls.ParentalControlsManager?} */
+    #parentalControlsManager = ParentalControls.getDefault();
 
     /** @type {Set<Shell.App>?} */
     #apps = null;
@@ -49,6 +53,7 @@ export default class Favorites {
     destroy() {
         Context.signals.removeAll(this);
         this.#favorites = null;
+        this.#parentalControlsManager = null;
         this.#triggerCallback();
         this.#callback = null;
     }
@@ -70,11 +75,9 @@ export default class Favorites {
      * @returns {boolean}
      */
     canAdd(app) {
-        if (app instanceof Shell.App === false || !app.id || !app.app_info) return false;
-        const parentalControlsManager = this.#favorites?._parentalControlsManager;
-        const validationFunction = parentalControlsManager?.shouldShowApp;
-        if (typeof validationFunction !== 'function') return false;
-        return validationFunction(app.app_info);
+        if (!this.#parentalControlsManager ||
+            app instanceof Shell.App === false) return false;
+        return this.#parentalControlsManager.shouldShowApp(app.app_info);
     }
 
     /**

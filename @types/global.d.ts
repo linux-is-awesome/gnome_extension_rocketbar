@@ -2,6 +2,8 @@ import GObject from 'gi://GObject';
 import Shell from 'gi://Shell';
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
+import Gio from 'gi://St';
+import { DesktopAppInfo } from 'gi://Gio';
 
 declare global {
     var global: Shell.Global
@@ -110,6 +112,16 @@ declare module 'resource:///org/gnome/shell/ui/appFavorites.js' {
         moveFavoriteToPos(appId: string, pos: number): void
 
         removeFavorite(appId: string): void
+
+    }
+
+}
+
+declare module 'resource:///org/gnome/shell/misc/parentalControlsManager.js' {
+
+    interface ParentalControlsManager {
+
+        shouldShowApp(appInfo: Gio.DesktopAppInfo): boolean
 
     }
 
