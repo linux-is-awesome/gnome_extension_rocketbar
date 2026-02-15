@@ -565,6 +565,8 @@ class TaskbarService {
         if (!this.#routingHelper) this.#createRoutingHelper();
         Context.jobs.removeAll(this).new(this, Delay.Scheduled).destroy(() =>
         this.#startWindowRouting());
+        if (!Context.monitors.isUpdating) return;
+        Context.desktop.animations = false;
     }
 
     /**
@@ -577,9 +579,7 @@ class TaskbarService {
     #createRoutingHelper() {
         if (!this.#windows?.size || this.#routingHelper) return;
         this.#routingHelper = new Clutter.Actor(RoutingHelperProps);
-        const desktop = Context.desktop;
-        desktop.animations = false;
-        desktop.addOverlay(this.#routingHelper, true);
+        Context.desktop.addOverlay(this.#routingHelper, true);
         for (const [window, windowInfo] of this.#windows) {
             const { app } = windowInfo;
             const name = `${this.#routingHelper.name}-WindowClone_${app.id}`;
