@@ -9,6 +9,7 @@
  * @typedef {import('resource:///org/gnome/shell/ui/osdWindow').OsdWindowManager} OsdWindowManager
  * @typedef {import('resource:///org/gnome/shell/ui/ctrlAltTab').CtrlAltTabManager} CtrlAltTabManager
  * @typedef {import('resource:///org/gnome/shell/ui/windowManager').WindowManager} WindowManager
+ * @typedef {import('resource:///org/gnome/shell/ui/xdndHandler.js').XdndHandler} XdndHandler
  * @typedef {SessionMode} Session
  * @typedef {LayoutManager} MainLayout
  * @typedef {Panel} MainPanel
@@ -26,7 +27,8 @@ import { sessionMode,
          messageTray,
          osdWindowManager,
          ctrlAltTabManager,
-         wm } from 'resource:///org/gnome/shell/ui/main.js';
+         wm,
+         xdndHandler } from 'resource:///org/gnome/shell/ui/main.js';
 
 if (!sessionMode) throw new Error('SessionMode instance is not available.');
 if (!layoutManager) throw new Error('LayoutManager instance is not available.');
@@ -36,6 +38,7 @@ if (!messageTray) throw new Error('MessageTray instance is not available.');
 if (!osdWindowManager) throw new Error('OsdWindowManager instance is not available.');
 if (!ctrlAltTabManager) throw new Error('CtrlAltTabManager instance is not available.');
 if (!wm) throw new Error('WindowManager instance is not available.');
+if (!xdndHandler) throw new Error('XdndHandler instance is not available.');
 
 /** @type {SessionMode} */
 export const Session = sessionMode;
@@ -60,3 +63,6 @@ export const CtrlAltTabManager = ctrlAltTabManager;
 
 /** @type {WindowManager} */
 export const WindowManager = wm;
+
+/** @type {XdndHandler} */
+export const XdndHandler = xdndHandler;
