@@ -272,10 +272,13 @@ export class AppButton extends RuntimeButton {
      * @param {ActivationBehavior?} [activationBehavior]
      */
     activate(activationBehavior = null) {
-        if (!this.#service) return;
+        if (!this.#service || !this.#windows) return;
         this.#abortDestroy(true);
+        if (!activationBehavior) {
+            Overview.hide();
+            if (this.#isRunning) return this.#windows.raise();
+        }
         this.animateLaunch();
-        if (!activationBehavior) Overview.hide();
         this.#service.activate(activationBehavior);
     }
 
