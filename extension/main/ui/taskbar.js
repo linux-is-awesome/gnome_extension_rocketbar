@@ -21,7 +21,7 @@ import { Animation, AnimationDuration } from './base/animation.js';
 import { Config } from '../../shared/utils/config.js';
 import { MaxLengthBounds, MaxLengthCalculator } from '../utils/maxLengthCalculator.js';
 import { Event, Delay } from '../../shared/enums/general.js';
-import { ConfigField, ConfigOptions, ActivationBehavior } from '../../shared/enums/taskbar.js';
+import { ConfigField, ConfigOptions } from '../../shared/enums/taskbar.js';
 
 const MODULE_NAME = 'Rocketbar__Taskbar';
 const APP_ALLOCATION_THRESHOLD = 2;
@@ -404,10 +404,7 @@ export default class Taskbar extends ScrollView {
             return true;
         }
         candidate.drop();
-        if (!oldAppButton?.isValid) {
-            Overview.hide();
-            candidate.activate(ActivationBehavior.Default);
-        }
+        if (!oldAppButton?.isValid) candidate.activate();
         if (oldAppButton) this.#activatedApps?.delete(oldAppButton);
         this.#activatedApps?.set(candidate, candidateApp);
         return true;
