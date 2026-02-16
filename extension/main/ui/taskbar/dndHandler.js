@@ -7,10 +7,11 @@
 import Clutter from 'gi://Clutter';
 import Mtk from 'gi://Mtk';
 import Shell from 'gi://Shell';
+import { XdndHandler } from '../../core/shell.js';
 import Context from '../../core/context.js';
 import { AppButton } from './appButton.js';
 import { Animation, AnimationDuration, AnimationType } from '../base/animation.js';
-import { Event, Delay } from '../../../shared/enums/general.js';
+import { Event, Delay, PseudoClass } from '../../../shared/enums/general.js';
 
 /**
  * @param {Component} competitor
@@ -130,6 +131,9 @@ export class DragAndDropHandler {
     /** @type {number} */
     #candidatePosition = -1;
 
+    /** @type {boolean} */
+    #isXdndTarget = false;
+
     /** @type {DragActor?} */
     #dragActor = null;
 
@@ -143,6 +147,13 @@ export class DragAndDropHandler {
         const [x, y] = this.#parent.actor.get_transformed_position();
         [rect.x, rect.y] = [rect.x - x, rect.y - y];
         return rect;
+    }
+
+    /** @type {Mtk.Rectangle?} */
+    get #dragTargetRect() {
+        if (!this.#isXdndTarget) return this.#dragActor?.rect ?? null;
+        const [x, y] = global.get_pointer();
+        return new Mtk.Rectangle({ x, y, width: 1, height: 1 });
     }
 
     /** @type {boolean} */
@@ -175,10 +186,9 @@ export class DragAndDropHandler {
 
     destroy() {
         Context.signals.removeAll(this);
+        this.#releaseCandidate();
         this.#dragActor?.destroy();
-        this.#candidate?.destroy();
         this.#dragActor = null;
-        this.#candidate = null;
         this.#slots = null;
         this.#parent = null;
         if (typeof this.#destroyCallback === 'function') this.#destroyCallback();
@@ -213,6 +223,14 @@ export class DragAndDropHandler {
             break;
         }
         const competitorAtPosition = this.#slots[position]?.competitor;
+        if (this.#isXdndTarget) {
+            if (competitorAtPosition === this.#candidate) return this.#candidate;
+            this.#releaseCandidate();
+            this.#candidate = competitorAtPosition instanceof AppButton ?
+                              competitorAtPosition : null;
+            if (this.#candidate) this.#changeXdndCandidateState(true);
+            return competitorAtPosition;
+        }
         const competitorBeforePosition = this.#slots[position - 1]?.competitor;
         const lastSlotPosition = this.#slots.length - 1;
         if (target === competitorBeforePosition && position === lastSlotPosition) {
@@ -220,8 +238,7 @@ export class DragAndDropHandler {
             slotRect = null;
         } else if (target === competitorAtPosition || target === competitorBeforePosition) {
             this.#dragActor?.show();
-            this.#candidate?.destroy();
-            this.#candidate = null;
+            this.#releaseCandidate();
             return competitorAtPosition;
         }
         if (this.#candidate && (this.#candidatePosition === position ||
@@ -230,7 +247,7 @@ export class DragAndDropHandler {
             this.#candidatePosition = position;
             return competitorAtPosition;
         }
-        this.#candidate?.destroy();
+        this.#releaseCandidate();
         this.#candidatePosition = position;
         this.#candidate = new AppButton(target.app, true).setParent(this.#parent, position);
         this.#dragActor?.hide(this.#candidate);
@@ -242,7 +259,7 @@ export class DragAndDropHandler {
      * @returns {[candidate: AppButton, slots: Component[]]?}
      */
     handleDrop() {
-        if (!this.#slots || !this.#candidate) return null;
+        if (!this.#slots || !this.#candidate || this.#isXdndTarget) return null;
         const candidate = this.#candidate;
         const slots = new Set();
         for (let i = 0, l = this.#slots.length; i < l; ++i) {
@@ -259,24 +276,59 @@ export class DragAndDropHandler {
      * @param {Clutter.Actor} actor
      */
     #watchDragTarget(target, actor) {
+        if (target === XdndHandler) {
+            if (this.#isXdndTarget) return;
+            this.#isXdndTarget = true;
+            Context.signals.add(this, [global.backend.get_dnd(),
+                Event.DndLeave, () => this.destroy(),
+                Event.DndPositionChange, () => this.#handleDragTargetPosition()]);
+            return;
+        }
         if (this.#dragActor) return;
         this.#dragActor = new DragActor(actor);
         Context.signals.add(this, [target, Event.Destroy, () => this.destroy()],
                                   [actor, Event.Destroy, () => this.destroy(),
-                                          Event.MoveX, () => this.#handleDragActorPosition(),
-                                          Event.MoveY, () => this.#handleDragActorPosition()]);
+                                          Event.MoveX, () => this.#handleDragTargetPosition(),
+                                          Event.MoveY, () => this.#handleDragTargetPosition()]);
     }
 
-    #handleDragActorPosition() {
-        if (!this.#dragActor) return;
+    #handleDragTargetPosition() {
+        if (!this.#dragActor && !this.#isXdndTarget) return;
         const parentRect = this.#parent?.rect;
-        const targetRect = this.#dragActor.rect;
+        const targetRect = this.#dragTargetRect;
         if (!parentRect || !targetRect) return;
-        const [parentContainsActor] = targetRect.intersect(parentRect);
-        if (parentContainsActor) return;
-        this.#dragActor.show();
-        this.#candidate?.destroy();
+        const [parentContainsTarget] = targetRect.intersect(parentRect);
+        if (parentContainsTarget) return;
+        this.#dragActor?.show();
+        this.#releaseCandidate();
+    }
+
+    #releaseCandidate() {
+        if (!this.#isXdndTarget) this.#candidate?.destroy();
+        else this.#changeXdndCandidateState();
         this.#candidate = null;
+    }
+
+    /**
+     * @param {boolean} [state]
+     */
+    #changeXdndCandidateState(state = false) {
+        Context.jobs.removeAll(this);
+        if (!this.#candidate || !this.#isXdndTarget) return;
+        const { display, hasHover } = this.#candidate;
+        if (state) {
+            display.add_style_pseudo_class(PseudoClass.Hover);
+            Context.jobs.new(this, Delay.Background).destroy(() => this.#triggerXdndAction());
+            return;
+        }
+        if (!hasHover) display.remove_style_pseudo_class(PseudoClass.Hover);
+    }
+
+    #triggerXdndAction() {
+        if (!this.#isXdndTarget ||
+            !this.#candidate ||
+            !this.#candidate.isValid) return;
+        this.#candidate.activate();
     }
 
 }
