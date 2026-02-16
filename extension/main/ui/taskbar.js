@@ -8,7 +8,7 @@ import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Shell from 'gi://Shell';
 import { DragMotionResult } from 'resource:///org/gnome/shell/ui/dnd.js';
-import { Overview, WindowManager } from '../core/shell.js';
+import { WindowManager, XdndHandler } from '../core/shell.js';
 import Context from '../core/context.js';
 import { ComponentEvent } from './base/component.js';
 import { TaskbarClient } from '../services/taskbar.js';
@@ -317,12 +317,15 @@ export default class Taskbar extends ScrollView {
         if (this.#isRerendering || !this.isValid ||
             !this.#allocation || !this.#appButtons ||
             !this.#separator || !target || !params?.actor) return DragMotionResult.NO_DROP;
-        const isAppButton = target instanceof AppButton;
-        const isAppContainer = isAppButton || target?.app instanceof Shell.App;
-        if (!isAppContainer || (isAppButton && !target.isValid)) return DragMotionResult.NO_DROP;
-        if (!isAppButton && this.#appButtons.has(target.app)) {
-            const appButton = this.#appButtons.get(target.app);
-            target = appButton?.isValid ? appButton : target;
+        const isXdndTarget = target === XdndHandler;
+        if (!isXdndTarget) {
+            const isAppButton = !isXdndTarget && target instanceof AppButton;
+            const isAppContainer = isAppButton || target?.app instanceof Shell.App;
+            if (!isAppContainer || (isAppButton && !target.isValid)) return DragMotionResult.NO_DROP;
+            if (isAppContainer && this.#appButtons.has(target.app)) {
+                const appButton = this.#appButtons.get(target.app);
+                target = appButton?.isValid ? appButton : target;
+            }
         }
         if (!this.#dndHandler) {
             Context.jobs.removeAll(this);
@@ -330,7 +333,7 @@ export default class Taskbar extends ScrollView {
             /** @type {(AppButton|Separator)[]} */
             const competitors = [...this.#appButtons.values()];
             if (this.#service?.favorites) {
-                this.#separator.lock();
+                if (!isXdndTarget) this.#separator.lock();
                 if (this.#separatorPosition < 0) competitors.push(this.#separator);
                 else competitors.splice(this.#separatorPosition, 0, this.#separator);
             }
@@ -339,6 +342,7 @@ export default class Taskbar extends ScrollView {
         const dragParams = { target, ...params };
         const competitor = this.#dndHandler.handleDrag(dragParams);
         if (competitor) super.scrollToActor(competitor);
+        if (isXdndTarget) return DragMotionResult.CONTINUE;
         return competitor && !this.#dndHandler.hasCandidate ? DragMotionResult.NO_DROP :
                target instanceof AppButton ? DragMotionResult.MOVE_DROP : DragMotionResult.COPY_DROP;
     }
@@ -562,7 +566,8 @@ export default class Taskbar extends ScrollView {
     #scrollToActiveAppButton() {
         if (!this.#activeAppButton) return;
         Context.jobs.removeAll(this).new(this, Delay.Scheduled).destroy(() =>
-            this.#activeAppButton && this.scrollToActor(this.#activeAppButton, true));
+            this.#activeAppButton?.isValid && !this.#scrollLock?.isValid &&
+            this.scrollToActor(this.#activeAppButton, true));
     }
 
     /**
