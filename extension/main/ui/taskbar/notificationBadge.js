@@ -32,15 +32,14 @@ const BadgeAnimation = {
 const DefaultProps = {
     name: MODULE_NAME,
     x_expand: true,
-    y_expand: true
+    y_expand: true,
+    clip_to_allocation: true
 };
 
 /** @type {{[prop: string]: *}} */
 const BadgeProps = {
     name: `${MODULE_NAME}-Badge`,
     style_class: STYLE_CLASS,
-    x_expand: true,
-    y_expand: true,
     visible: false,
     text: DEFAULT_TEXT,
     ...AnimationType.OpacityMin,
@@ -48,7 +47,7 @@ const BadgeProps = {
 };
 
 /**
- * @augments Component<St.Bin>
+ * @augments Component<St.Widget>
  */
 export class NotificationBadge extends Component {
 
@@ -61,7 +60,7 @@ export class NotificationBadge extends Component {
     };
 
     /** @type {St.Label?} */
-    #badge = new St.Label(BadgeProps);
+    #badge = null;
 
     /** @type {Config?} */
     #config = this.#configProvider.get(this, () => this.#updateStyle());
@@ -79,11 +78,12 @@ export class NotificationBadge extends Component {
      * @param {AppButton} appButton
      */
     constructor(appButton) {
-        super(new St.Bin(DefaultProps));
+        super(new St.Widget(DefaultProps));
         super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.#appButton = appButton;
-        this.#badge?.set_pivot_point(0.5, 0.5);
-        this.actor.set_child(this.#badge);
+        this.#badge = new St.Label(BadgeProps);
+        this.#badge.set_pivot_point(0.5, 0.5);
+        this.actor.add_child(this.#badge);
         Context.desktop.connectScale(this, () => this.#updateStyle());
     }
 
@@ -103,7 +103,9 @@ export class NotificationBadge extends Component {
             return;
         }
         const { maxCount } = this.#config;
+        const oldText = this.#badge.get_text();
         const text = `${count > maxCount ? maxCount : count}`;
+        if (oldVisible === visible && oldText === text) return;
         this.#badge.set({ text, visible });
         this.#updateStyle();
         if (oldVisible === visible) return this.#blink();
@@ -172,7 +174,7 @@ export class NotificationBadge extends Component {
                         position === Alignment.TopRight ?
                         Clutter.ActorAlign.START :
                         Clutter.ActorAlign.END;
-        this.#badge?.set({ x_align, y_align });
+        this.setProps({ x_align, y_align });
     }
 
 }
