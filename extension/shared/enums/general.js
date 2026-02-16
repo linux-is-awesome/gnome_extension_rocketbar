@@ -18,6 +18,8 @@ export const Event = {
     DragBegin: 'drag-begin',
     DragCancelled: 'drag-cancelled',
     DragEnd: 'drag-end',
+    DndPositionChange: 'dnd-position-change',
+    DndLeave: 'dnd-leave',
     EnableExpansionChanged: 'notify::enable-expansion',
     FocusIn: 'key-focus-in',
     FocusOut: 'key-focus-out',
