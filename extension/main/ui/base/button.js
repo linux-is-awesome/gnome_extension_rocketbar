@@ -43,7 +43,8 @@ const MenuTriggerProps = {
 /** @type {{[prop: string]: *}} */
 const RuntimeButtonProps = {
     width: 0,
-    ...AnimationType.OpacityMin
+    ...AnimationType.OpacityMin,
+    ...AnimationType.ScaleMin
 };
 
 /** @enum {string} */
@@ -539,6 +540,7 @@ export class RuntimeButton extends Button {
      */
     constructor(display, name = null) {
         super(display, name);
+        this.actor.set_pivot_point(0, 0.5);
         this.setProps(RuntimeButtonProps);
     }
 
@@ -549,7 +551,8 @@ export class RuntimeButton extends Button {
      */
     fadeIn(width, opacity = AnimationType.OpacityMax.opacity) {
         if (!width || this.isFadeInDone) return null;
-        const animationParams = { opacity, width, mode: Clutter.AnimationMode.EASE_OUT_QUAD };
+        const mode = Clutter.AnimationMode.EASE_OUT_QUAD;
+        const animationParams = { opacity, width, mode, ...AnimationType.ScaleNormal };
         return Animation(this, AnimationDuration.Default, animationParams).then(isShown => {
             if (isShown) this.setSize();
             return isShown;
