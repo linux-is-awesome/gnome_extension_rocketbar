@@ -47,7 +47,8 @@ export const ScrollAlternativeAction = {
 
 /** @enum {string} */
 export const AppButtonEvent = {
-    Reaction: 'appbutton::reaction'
+    Reaction: 'appbutton::reaction',
+    Motion: 'appbutton::motion'
 };
 
 /**
@@ -74,6 +75,7 @@ export class AppButton extends RuntimeButton {
         [ButtonEvent.Click]: params => this.#click(params),
         [ButtonEvent.RequestMenu]: () => new Menu(this),
         [ButtonEvent.RequestTooltip]: () => new Tooltip(this),
+        [AppButtonEvent.Motion]: () => this.#rerenderTooltip(),
         [AppIconEvent.DominantColorChanged]: () => (this.#handleDominantColor(), true),
         [TaskbarEvent.Focus]: () => this.#handleAppFocus(),
         [TaskbarEvent.Change]: () => this.#handleAppState(),
