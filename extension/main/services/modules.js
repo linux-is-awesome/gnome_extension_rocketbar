@@ -140,7 +140,7 @@ export class ModuleManager {
         }
         if (!this.#moduleInstances.size && !this.#managedModules?.size) return;
         const sessionMode = Session.parentMode ?? Session.currentMode ?? '';
-        const sessionModules = new Set(Modules[sessionMode] ?? []);
+        const sessionModules = new Set(Modules[sessionMode]);
         const newModules = new Map();
         const scope = new Set([...this.#moduleInstances.keys(), ...this.#managedModules ?? []]);
         for (const module of scope) {
