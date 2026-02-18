@@ -46,16 +46,10 @@ class LauncherApiService {
 
     constructor() {
         this.#dbusId = Gio.DBus.session.own_name(
-            DBUS_NAME,
-            Gio.BusNameOwnerFlags.ALLOW_REPLACEMENT | Gio.BusNameOwnerFlags.REPLACE,
-            null, () => {
-                this.#dbusId = null;
-            }
-        );
+            DBUS_NAME, Gio.BusNameOwnerFlags.REPLACE, null, () => this.destroy());
         this.#signalId = Gio.DBus.session.signal_subscribe(
             null, DBUS_SIGNAL_SOURCE, null, null, null, Gio.DBusSignalFlags.NONE,
-            (_, __, ___, ____, _____, params) => this.#update(params)
-        );
+            (_, __, ___, ____, _____, params) => this.#update(params));
     }
 
     destroy() {
@@ -64,6 +58,8 @@ class LauncherApiService {
         this.#callback = null;
         this.#dbusId = null;
         this.#signalId = null;
+        this.notifications.clear();
+        this.progress.clear();
     }
 
     /**
