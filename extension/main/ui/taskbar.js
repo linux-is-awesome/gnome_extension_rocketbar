@@ -40,17 +40,20 @@ class TaskbarAllocation {
     /** @type {Job?} */
     #job = Context.jobs.new(this, Delay.Redraw);
 
+    /** @type {{hover: ?Component, focus: ?AppButton, active: ?AppButton}?} */
+    #scrollTargets = { hover: null, focus: null, active: null };
+
     /** @type {Taskbar?} */
     #taskbar = null;
 
     /** @type {boolean} */
-    isDragMode = false;
+    #isUpdating = false;
 
     /** @type {boolean} */
-    isUpdating = false;
+    #isDragMode = false;
 
     /** @type {boolean} */
-    isWorkspaceChanged = false;
+    #isWorkspaceChanged = false;
 
     /** @type {St.BoxLayout?} */
     actor = new St.BoxLayout(AllocationProps);
@@ -73,6 +76,22 @@ class TaskbarAllocation {
         return result;
     }
 
+    /** @param {boolean} value */
+    set isDragMode(value) {
+        if (this.#isDragMode === value) return;
+        this.#isDragMode = value;
+        if (this.#isDragMode) return;
+        this.#scrollToCurrentTarget();
+    }
+
+    /** @param {boolean} value */
+    set isWorkspaceChanged(value) {
+        if (!this.#job) return;
+        this.#isWorkspaceChanged = value;
+        if (!this.#isWorkspaceChanged) return;
+        this.update();
+    }
+
     /**
      * @param {Taskbar} taskbar
      */
@@ -84,6 +103,7 @@ class TaskbarAllocation {
         this.actor?.remove_all_transitions();
         this.#job?.destroy();
         this.#job = null;
+        this.#scrollTargets = null;
         this.#taskbar = null;
         this.#allocation?.clear();
         this.#allocation = null;
@@ -97,11 +117,12 @@ class TaskbarAllocation {
         if (!source || !this.#allocation) return;
         const rect = source.rect;
         if (!rect) return;
+        this.#isUpdating = true;
         const { width } = source.rect;
         this.#allocation.set(source, width);
         this.#job?.reset(Delay.Redraw);
-        if (this.isWorkspaceChanged) this.update();
-        else this.#job?.enqueue(() => this.update());
+        if (this.#isWorkspaceChanged) this.#update();
+        else this.#job?.enqueue(() => this.#update());
     }
 
     /**
@@ -109,30 +130,60 @@ class TaskbarAllocation {
      */
     remove(source) {
         if (!source || !this.#allocation?.has(source)) return;
+        this.#isUpdating = true;
         this.#allocation.delete(source);
-        const delay = this.isDragMode ? Delay.Scheduled : Delay.Redraw;
-        this.#job?.reset(delay).enqueue(() => this.update());
+        for (const target in this.#scrollTargets) {
+            if (this.#scrollTargets[target] !== source) continue;
+            this.#scrollTargets[target] = null;
+        }
+        const delay = this.#isDragMode ? Delay.Scheduled : Delay.Redraw;
+        this.#job?.reset(delay).enqueue(() => this.#update());
     }
 
-    async update() {
+    /**
+     * @param {Component?} source
+     */
+    scrollIntoView(source) {
+        if (!this.#scrollTargets || !source?.isValid || !this.#allocation?.has(source)) return;
+        const isAppButton = source instanceof AppButton;
+        const { hover: oldHover, focus: oldFocus, active: oldActive } = this.#scrollTargets;
+        const hover = (isAppButton ? source.hasHover : source.actor.hover) ? source :
+                       oldHover === source ? null : oldHover;
+        const focus = isAppButton && source.hasFocus ? source :
+                      oldFocus === source ? null : oldFocus;
+        const active = isAppButton && source.isActive ? source :
+                       oldActive === source ? null : oldActive;
+        if (oldHover === hover && oldFocus === focus && oldActive === active) return;
+        const delay = hover === source ? Delay.Debounce :
+                      !hover && oldHover === source ? Delay.Scheduled : Delay.Redraw;
+        this.#scrollTargets = { hover, focus, active };
+        this.#scrollToCurrentTarget(delay);
+    }
+
+    update() {
+        if (!this.#job || this.#isUpdating || !this.#allocation?.size) return;
+        this.#job.reset(Delay.Queue).enqueue(() => this.#update());
+    }
+
+    async #update() {
         if (!this.#allocation || !this.actor || !this.#taskbar) return;
+        this.#isUpdating = false;
         this.actor.remove_all_transitions();
-        this.isUpdating = false;
         const { pageSize, scrollSize, scrollPosition } = this.#taskbar;
         const width = this.#allocationSize;
         const scrollOffset = Math.max(0, width - pageSize);
         const duration = width >= scrollSize ?
-                         this.isDragMode ? AnimationDuration.Disabled :
+                         this.#isDragMode ? AnimationDuration.Disabled :
                          AnimationDuration.Faster : AnimationDuration.Slower;
-        const delay = width >= scrollSize ? 0 : Delay.Queue;
+        const delay = width >= scrollSize ? Delay.Idle : Delay.Queue;
         this.#taskbar.scrollLimit = scrollOffset;
         const scrollJob = scrollOffset > scrollPosition ? null :
                           this.#taskbar.scrollToPosition(scrollOffset, true);
         if (!scrollJob) return this.#allocate(duration, delay, width);
-        this.isUpdating = true;
+        this.#isUpdating = true;
         const scrollJobResult = await scrollJob;
-        if (!scrollJobResult || !this.isUpdating) return;
-        this.isUpdating = false;
+        if (!scrollJobResult || !this.#isUpdating) return;
+        this.#isUpdating = false;
         this.#allocate(duration, delay, width);
     }
 
@@ -148,7 +199,37 @@ class TaskbarAllocation {
         const animationParams = { width, mode, delay };
         const isFinished = await Animation(this.actor, duration, animationParams);
         if (!isFinished) return;
-        this.isWorkspaceChanged = false;
+        if (!this.#isDragMode) this.#scrollToCurrentTarget();
+        this.#isWorkspaceChanged = false;
+    }
+
+    /**
+     * @param {Delay} [delay]
+     */
+    #scrollToCurrentTarget(delay = Delay.Scheduled) {
+        if (this.#isUpdating || !this.#job || !this.#scrollTargets) return;
+        this.#job.reset(this.#isWorkspaceChanged ? Delay.Redraw : delay);
+        for (const target in this.#scrollTargets) {
+            const currentTarget = this.#scrollTargets[target];
+            if (!currentTarget?.isValid) continue;
+            const deceleration = currentTarget !== this.#scrollTargets.hover;
+            this.#job.enqueue(() => this.#scrollToTarget(currentTarget, deceleration));
+            return;
+        }
+    }
+
+    /**
+     * @param {Component} target
+     * @param {boolean} deceleration
+     */
+    async #scrollToTarget(target, deceleration) {
+        if (!this.#taskbar || this.#isUpdating ||
+            !this.#allocation?.has(target) || !target.isValid) return;
+        const scrollJob = this.#taskbar.scrollToActor(target, deceleration);
+        if (!scrollJob) return;
+        const scrollJobResult = await scrollJob;
+        if (!scrollJobResult || target instanceof AppButton === false) return;
+        target.notifySelf(AppButtonEvent.Motion);
     }
 
 }
@@ -161,7 +242,7 @@ export default class Taskbar extends ScrollView {
         [ComponentEvent.Init]: data => (this.#handleInit(data?.sender), true),
         [ComponentEvent.DragOver]: data => this.#handleDragOver(data?.target, data?.params),
         [ComponentEvent.AcceptDrop]: () => this.#handleDrop(),
-        [AppButtonEvent.Reaction]: data => (this.#handleChildReaction(data?.sender), true)
+        [AppButtonEvent.Reaction]: data => (this.#allocation?.scrollIntoView(data?.sender), true)
     };
 
     /** @type {boolean} */
@@ -181,12 +262,6 @@ export default class Taskbar extends ScrollView {
 
     /** @type {Map<Shell.App, AppButton>?} */
     #appButtons = new Map();
-
-    /** @type {AppButton?} */
-    #activeAppButton = null;
-
-    /** @type {Component?} */
-    #scrollLock = null;
 
     /** @type {TaskbarClient?} */
     #service = new TaskbarClient(() => this.#rerender());
@@ -215,7 +290,7 @@ export default class Taskbar extends ScrollView {
         super.actor.add_child(this.actor);
         super.dropEvents = true;
         super.notifyCallback = data => this.#events?.[data?.event]?.(data);
-        this.#separator?.connect(Event.Hover, () => this.#handleChildReaction(this.#separator));
+        this.#separator?.connect(Event.Hover, () => this.#allocation?.scrollIntoView(this.#separator));
         Context.hooks.add(this, WindowManager, WindowManager._getNthFavoriteApp,
             (_, __, appIndex) => (this.#handleAppActivationShortcut(appIndex), null));
     }
@@ -229,18 +304,6 @@ export default class Taskbar extends ScrollView {
     setParent(parent, position) {
         Context.desktop.connectInit(this, () => super.setParent(parent, position));
         return this;
-    }
-
-    /**
-     * @override
-     * @param {St.Widget|Component} actor
-     * @param {boolean} [deceleration]
-     * @returns {Promise<boolean>?}
-     */
-    scrollToActor(actor, deceleration = false) {
-        const result = super.scrollToActor(actor, deceleration);
-        if (this.#allocation?.isUpdating) this.#allocation.update();
-        return result;
     }
 
     /**
@@ -272,12 +335,6 @@ export default class Taskbar extends ScrollView {
      */
     #handleDestroy(sender) {
         if (sender === this) return this.#destroy();
-        if (sender === this.#activeAppButton) {
-            this.#activeAppButton = null;
-        }
-        if (sender === this.#scrollLock) {
-            this.#scrollLock = null;
-        }
         this.#allocation?.remove(sender);
         if (sender instanceof AppButton && this.#activatedApps?.has(sender)) {
             this.#activatedApps.delete(sender);
@@ -302,8 +359,6 @@ export default class Taskbar extends ScrollView {
         this.#dndHandler = null;
         this.#separator = null;
         this.#allocation = null;
-        this.#activeAppButton = null;
-        this.#scrollLock = null;
         this.#config = null;
         this.#events = null;
     }
@@ -328,7 +383,6 @@ export default class Taskbar extends ScrollView {
             }
         }
         if (!this.#dndHandler) {
-            Context.jobs.removeAll(this);
             this.#allocation.isDragMode = true;
             /** @type {(AppButton|Separator)[]} */
             const competitors = [...this.#appButtons.values()];
@@ -411,11 +465,10 @@ export default class Taskbar extends ScrollView {
     }
 
     #handleDragEnd() {
-        if (!this.isValid || !this.#allocation) return;
-        this.#allocation.isDragMode = false;
+        if (!this.#allocation || !this.isValid) return;
         this.#dndHandler = null;
         this.#separator?.unlock();
-        this.#scrollToActiveAppButton();
+        this.#allocation.isDragMode = false;
     }
 
     #rerender() {
@@ -535,39 +588,6 @@ export default class Taskbar extends ScrollView {
     }
 
     /**
-     * @param {Component?} child
-     */
-    #handleChildReaction(child) {
-        if (!this.isValid || !child || !child.isValid) return;
-        Context.jobs.removeAll(this);
-        const isAppButton = child instanceof AppButton;
-        const isActive = isAppButton ? child.isActive : false;
-        const hasFocus = isAppButton ? child.hasFocus : false;
-        const hasHover = isAppButton ? child.hasHover : child.actor.hover;
-        if (isActive && isAppButton) {
-            this.#activeAppButton = child;
-        } else if (this.#activeAppButton === child) {
-            this.#activeAppButton = null;
-        }
-        if (hasHover) {
-            this.#scrollLock = child;
-        } else if (this.#scrollLock === child) {
-            this.#scrollLock = null;
-            if (!hasFocus) this.#scrollToActiveAppButton();
-        }
-        if (this.#scrollLock && this.#scrollLock !== child) return;
-        if (!isActive && !hasHover && !hasFocus) return;
-        this.scrollToActor(child, !hasHover);
-    }
-
-    #scrollToActiveAppButton() {
-        if (!this.#activeAppButton) return;
-        Context.jobs.removeAll(this).new(this, Delay.Scheduled).destroy(() =>
-            this.#activeAppButton?.isValid && !this.#scrollLock?.isValid &&
-            this.scrollToActor(this.#activeAppButton, true));
-    }
-
-    /**
      * @param {number} appIndex
      */
     #handleAppActivationShortcut(appIndex) {
@@ -580,17 +600,19 @@ export default class Taskbar extends ScrollView {
     }
 
     #updateMaxLength() {
-        if (!this.#config || !this.isValid) return;
+        if (!this.#allocation || !this.#config || !this.isValid) return;
         const { maxLength } = this.#config;
         if (maxLength >= MaxLengthBounds.Max) {
             this.container.set_style(null);
             Context.monitors.disconnect(this);
+            this.#allocation.update();
             return;
         }
         const monitorInfo = Context.monitors.getMonitorInfo(this.rect);
         if (!monitorInfo) return;
         const length = MaxLengthCalculator(monitorInfo.width, maxLength);
         this.container.set_style(`max-width: ${length}px;`);
+        this.#allocation.update();
         if (Context.monitors.has(this)) return;
         Context.monitors.connect(this, () => this.#updateMaxLength());
     }
