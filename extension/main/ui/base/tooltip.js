@@ -17,6 +17,7 @@ const OFFSET_THEME_NODE = 'padding';
 const DEFAULT_SHOW_DELAY = Delay.Scheduled;
 const DEFAULT_HIDE_DELAY = Delay.Queue;
 const VISIBLE_OPACITY_THRESHOLD = 100;
+const HEIGHT_TRANSFORMATION_THRESHOLD = 0.5;
 
 /** @type {{[prop: string]: *}} */
 const DefaultProps = {
@@ -54,6 +55,9 @@ export class Tooltip extends Component {
 
     /** @type {number} */
     #hideDelay = DEFAULT_HIDE_DELAY;
+
+    /** @type {boolean} */
+    #isInitialized = false;
 
     /** @type {boolean} */
     #isShown = false;
@@ -245,6 +249,7 @@ export class Tooltip extends Component {
     }
 
     #handleMapped() {
+        this.#isInitialized = false;
         if (this.#isHidden || !this.hasAllocation) return;
         this.#job?.reset(Delay.Redraw).enqueue(() => this.setSize().#fadeIn());
     }
@@ -385,10 +390,11 @@ export class Tooltip extends Component {
                   sourceActorRect.y - height;
         const targetRect = { x, y, width, height };
         const shownTooltip = Tooltip.#shownTooltip;
-        const initialRect = shownTooltip?.hasAllocation ? shownTooltip.#rect : targetRect;
+        const initialRect = shownTooltip?.hasAllocation && shownTooltip.#isInitialized ?
+                            shownTooltip.#rect : targetRect;
         const heightDiff = initialRect.height > height ? height / initialRect.height :
                                                          initialRect.height / height;
-        if (heightDiff < 0.5) {
+        if (heightDiff < HEIGHT_TRANSFORMATION_THRESHOLD) {
             initialRect.height = height;
             initialRect.y = y;
         }
@@ -429,6 +435,7 @@ export class Tooltip extends Component {
             size.height = targetRect.height;
         }
         this.setProps(initialProps);
+        this.#isInitialized = true;
         const transformPosition = !!Object.keys(position).length;
         const transformSize = !!Object.keys(size).length;
         if (!transformPosition && !transformSize) return;
