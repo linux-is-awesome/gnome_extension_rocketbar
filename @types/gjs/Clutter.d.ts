@@ -5569,6 +5569,125 @@ declare module 'gi://Clutter' {
         _init(config?: Gesture.ConstructorProperties): void
     }
 
+    /**
+     * #ClutterClickGesture is a sub-class of [class`Gesture]` that recognizes
+     * click (press and release) gestures. It is the gesture-based counterpart
+     * to [class`ClickAction`]. It shares API with [class`PressGesture`].
+     * @class
+     */
+    module ClickGesture {
+
+        // Constructor properties interface
+
+        interface ConstructorProperties extends Gesture.ConstructorProperties {
+
+            // Own constructor properties of Clutter-13.Clutter.ClickGesture
+
+            /**
+             * Whether the gesture is recognized on press (true) or on release (false).
+             */
+            recognize_on_press?: boolean | null
+            /**
+             * Whether the gesture is recognized on press (true) or on release (false).
+             */
+            recognizeOnPress?: boolean | null
+            /**
+             * The mouse button required for the gesture (0 = any button).
+             */
+            required_button?: number | null
+            /**
+             * The mouse button required for the gesture (0 = any button).
+             */
+            requiredButton?: number | null
+        }
+    }
+
+    interface ClickGesture {
+
+        // Own properties of Clutter-13.Clutter.ClickGesture (inherited from Gesture)
+
+        /**
+         * Whether the gesture is recognized on press (true) or on release (false).
+         */
+        readonly recognize_on_press: boolean
+        /**
+         * Whether the gesture is recognized on press (true) or on release (false).
+         */
+        readonly recognizeOnPress: boolean
+        /**
+         * The mouse button required for the gesture (0 = any button).
+         */
+        readonly required_button: number
+        /**
+         * The mouse button required for the gesture (0 = any button).
+         */
+        readonly requiredButton: number
+
+        // Own methods of Clutter-13.Clutter.ClickGesture
+
+        /**
+         * Gets the movement threshold in pixels that cancels the gesture.
+         */
+        get_cancel_threshold(): [ /* x */ number, /* y */ number ]
+        /**
+         * Retrieves the button that was pressed.
+         */
+        get_button(): number
+        /**
+         * Retrieves the coordinates of the press relative to the actor.
+         */
+        get_coords(): [ /* x */ number, /* y */ number ]
+        /**
+         * Retrieves the coordinates of the press in stage coordinates.
+         */
+        get_coords_abs(): [ /* x */ number, /* y */ number ]
+        /**
+         * Retrieves the number of presses that happened on the gesture.
+         */
+        get_n_presses(): number
+        /**
+         * Gets whether the gesture is currently in the pressed state.
+         */
+        get_pressed(): boolean
+        /**
+         * Gets whether the gesture is recognized on press (true) or on release (false).
+         */
+        get_recognize_on_press(): boolean
+        /**
+         * Gets the mouse button required for the gesture (0 = any button).
+         */
+        get_required_button(): number
+        /**
+         * Sets the movement threshold in pixels that cancels the gesture.
+         * @param x threshold on the horizontal axis
+         * @param y threshold on the vertical axis
+         */
+        set_cancel_threshold(x: number, y: number): void
+        /**
+         * Sets whether the gesture is recognized on press (true) or on release (false).
+         * @param recognize_on_press whether to recognize on press
+         */
+        set_recognize_on_press(recognize_on_press: boolean): void
+        /**
+         * Sets the mouse button required for the gesture. Use 0 to allow any button.
+         * @param button the button number (e.g. Clutter.BUTTON_PRIMARY)
+         */
+        set_required_button(button: number): void
+    }
+
+    class ClickGesture extends Gesture {
+
+        // Own properties of Clutter-13.Clutter.ClickGesture
+
+        static name: string
+        static $gtype: GObject.GType<ClickGesture>
+
+        // Constructors of Clutter-13.Clutter.ClickGesture
+
+        constructor(config?: ClickGesture.ConstructorProperties)
+        _init(config?: ClickGesture.ConstructorProperties): void
+    }
+
     module Actor {
 
         // Signal callback interfaces
