@@ -8,6 +8,8 @@ import { Config, InnerConfig } from '../../shared/utils/config.js';
 import { Event, Module, Alignment } from '../../shared/enums/general.js';
 import { ConfigOptions, ConfigKey, ConfigField } from '../../shared/enums/panel.js';
 
+const CLICK_GESTURE_DEFAULT_BUTTON = 0;
+
 /**
  * @augments Component<MainPanel>
  */
@@ -38,10 +40,15 @@ export default class Panel extends Component {
         this.connect(Event.Leave, () => this.#pressHandler?.release());
         this.connect(Event.Scroll, (_, event) => this.#scroll(event));
         this.#handleConfig();
+        if (!this.#setClickGestureButton(Clutter.BUTTON_PRIMARY)) return;
+        Context.signals.add(this, [Overview,
+            Event.OverviewShowing, () => this.#setClickGestureButton(Clutter.BUTTON_SECONDARY + 1),
+            Event.OverviewHiding, () => this.#setClickGestureButton(Clutter.BUTTON_PRIMARY)]);
     }
 
     #destroy() {
         Context.signals.removeAll(this);
+        this.#setClickGestureButton();
         this.#moduleManager?.destroy();
         this.#pressHandler?.destroy();
         this.#moduleManager = null;
@@ -57,6 +64,16 @@ export default class Panel extends Component {
     #handleConfig(settingsKey) {
         if (settingsKey && settingsKey !== ConfigField.items) return;
         this.#handleItems();
+    }
+
+    /**
+     * @param {number} [button]
+     * @returns {boolean}
+     */
+    #setClickGestureButton(button = CLICK_GESTURE_DEFAULT_BUTTON) {
+        if (!MainPanel._clickGesture) return false;
+        MainPanel._clickGesture.set_required_button(button);
+        return true;
     }
 
     async #handleItems() {
