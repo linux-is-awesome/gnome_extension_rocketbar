@@ -237,17 +237,11 @@ export class AppSoundVolumeControl {
     /** @type {AppSoundVolumeService?} */
     static #service = null;
 
-    /** @type {Shell.App?} */
-    #app = null;
-
     /** @type {string?} */
     #appName = null;
 
     /** @type {string?} */
     #appId = null;
-
-    /** @type {string?} */
-    #parentAppName = null;
 
     /** @type {Set<AppSoundStream>?} */
     #inputStreams = new Set();
@@ -294,7 +288,6 @@ export class AppSoundVolumeControl {
      */
     constructor(app, callback) {
         if (app instanceof Shell.App === false) return;
-        this.#app = app;
         this.#appId = app.get_id();
         this.#appName = app.get_name().toLowerCase();
         this.#callback = typeof callback === 'function' ? callback : null;
@@ -306,7 +299,6 @@ export class AppSoundVolumeControl {
         Context.jobs.removeAll(this);
         this.#inputStreams?.clear();
         this.#outputStreams?.clear();
-        this.#app = null;
         this.#inputStreams = null;
         this.#outputStreams = null;
         this.#callback = null;
@@ -314,13 +306,6 @@ export class AppSoundVolumeControl {
         AppSoundVolumeControl.#service.removeControl(this);
         if (!AppSoundVolumeControl.#service.destroy()) return;
         AppSoundVolumeControl.#service = null;
-    }
-
-    update() {
-        if (this.#parentAppName) return;
-        this.#setParentAppName();
-        if (!this.#parentAppName || this.#parentAppName === this.#appName) return;
-        AppSoundVolumeControl.#service?.update();
     }
 
     /**
@@ -409,47 +394,8 @@ export class AppSoundVolumeControl {
         if (this.#appId && this.#appId === stream.appId) return true;
         const streamName = stream.name?.toLowerCase();
         if (!streamName) return false;
-        if (!this.#parentAppName) this.#setParentAppName();
-        if (this.#parentAppName && streamName.includes(this.#parentAppName)) return true;
         if (this.#appName && streamName.includes(this.#appName)) return true;
         return false;
-    }
-
-    /**
-     * Note: A workaround to handle Chrome Apps and probably something else.
-     *       Chrome Apps share Google Chrome's sound streams.
-     *       To identify proper streams for such apps we need to get name of the parent app.
-     */
-    #setParentAppName() {
-        const windows = this.#app?.get_windows();
-        if (!windows?.length) return;
-        const parentAppName = this.#getParentAppName(windows);
-        this.#parentAppName = parentAppName ?? this.#appName;
-    }
-
-    /**
-     * @param {Meta.Window[]} windows
-     * @returns {string?}
-     */
-    #getParentAppName(windows) {
-        const appSystem = Shell.AppSystem.get_default();
-        for (const window of windows) {
-            const wmClass = window.wm_class;
-            if (!wmClass) continue;
-            /** @type {string[][]} */
-            const searchResults = Shell.AppSystem.search(wmClass);
-            if (!searchResults?.length) continue;
-            for (const searchResult of searchResults) {
-                if (!searchResult?.length) continue;
-                for (const appId of searchResult) {
-                    if (this.#appId && appId === this.#appId) continue;
-                    const app = appSystem.lookup_app(appId);
-                    if (!app) continue;
-                    return app.get_name().toLowerCase();
-                }
-            }
-        }
-        return null;
     }
 
     /**

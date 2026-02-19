@@ -524,7 +524,6 @@ export class AppButton extends RuntimeButton {
         this.#handleAppFocus();
         if (!isFavorite && !this.#isRunning) return this.#enqueueDestroy();
         this.#isFavorite = isFavorite;
-        this.#soundVolumeControl?.update();
         this.#handleProgress();
         this.#handleRunningApp();
     }
