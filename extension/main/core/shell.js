@@ -1,9 +1,10 @@
 /**
+ * @typedef {import('gi://Clutter').ClickGesture} Clutter.ClickGesture
  * @typedef {import('gi://Meta').Window} Meta.Window
  * @typedef {import('gi://St').Widget} St.Widget
  * @typedef {import('resource:///org/gnome/shell/ui/sessionMode').SessionMode & {parentMode?: string?}} SessionMode
  * @typedef {import('resource:///org/gnome/shell/ui/layout.js').LayoutManager & {uiGroup: St.Widget}} LayoutManager
- * @typedef {import('resource:///org/gnome/shell/ui/panel.js').Panel & St.Widget} Panel
+ * @typedef {import('resource:///org/gnome/shell/ui/panel.js').Panel & St.Widget & { _clickGesture?: Clutter.ClickGesture }} Panel
  * @typedef {import('resource:///org/gnome/shell/ui/overview.js').Overview} Overview
  * @typedef {import('resource:///org/gnome/shell/ui/messageTray').MessageTray} MessageTray
  * @typedef {import('resource:///org/gnome/shell/ui/osdWindow').OsdWindowManager} OsdWindowManager
