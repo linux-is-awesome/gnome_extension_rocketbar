@@ -15,8 +15,9 @@ export default class {
 
     constructor() {
         const inputSourceManager = InputSourceManager();
-        Context.signals.add(this,
-            [inputSourceManager, Event.SourcesChanged, () => this.#updateIndicator()]);
+        Context.signals.add(this, [inputSourceManager,
+            Event.SourcesChanged, () => this.#updateIndicator(),
+            Event.KeymapChanged, () => this.#updateIndicator()]);
         this.#updatePopup();
         this.#updateIndicator();
     }

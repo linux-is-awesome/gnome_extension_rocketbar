@@ -30,6 +30,7 @@ export const Event = {
     IconThemeChanged: 'notify::gtk-icon-theme',
     InstalledChanged: 'installed-changed',
     KeyPress: 'key-press-event',
+    KeymapChanged: 'keymap-changed',
     Leave: 'leave-event',
     Mapped: 'notify::mapped',
     MenuClosed: 'menu-closed',
