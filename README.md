@@ -4,7 +4,7 @@
 ![](/media/preview.png)
 
 ## Install from EGO
-<a href="https://extensions.gnome.org/extension/9249" target="_blank" rel="noopener noreferrer">
+<a href="https://extensions.gnome.org/extension/5180" target="_blank" rel="noopener noreferrer">
   <img src="/media/ego-waifu.png" alt="ego logo">
 </a>
 
