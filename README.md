@@ -28,3 +28,9 @@ curl -L https://github.com/linux-is-awesome/gnome_extension_rocketbar/archive/re
 
 ##  🤝 Contributing
 Help with testing and creating translations would be highly appreciated.
+
+## Credits
+
+[Just Perfection](https://gitlab.gnome.org/jrahmatzadeh/just-perfection) |
+[Dash to Dock](https://github.com/micheleg/dash-to-dock) |
+[Tela Icon Theme](https://github.com/vinceliuice/Tela-icon-theme)
