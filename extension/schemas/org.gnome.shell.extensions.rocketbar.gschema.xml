@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-    <schema id="org.gnome.shell.extensions.rocketbar2"
-            path="/org/gnome/shell/extensions/rocketbar2/">
+    <schema id="org.gnome.shell.extensions.rocketbar"
+            path="/org/gnome/shell/extensions/rocketbar/">
         <key type="s" name="modules">
             <default>'["ui/panel"]'</default>
         </key>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-    <schema id="org.gnome.shell.extensions.rocketbar2.taskbar"
-            path="/org/gnome/shell/extensions/rocketbar2/taskbar/">
+    <schema id="org.gnome.shell.extensions.rocketbar.taskbar"
+            path="/org/gnome/shell/extensions/rocketbar/taskbar/">
         <key type="b" name="show-favorites">
             <default>true</default>
         </key>

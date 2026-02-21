@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-    <schema id="org.gnome.shell.extensions.rocketbar2.panel"
-            path="/org/gnome/shell/extensions/rocketbar2/panel/">
+    <schema id="org.gnome.shell.extensions.rocketbar.panel"
+            path="/org/gnome/shell/extensions/rocketbar/panel/">
         <key type="s" name="items">
             <default>'{"0":["Taskbar","left",1]}'</default>
         </key>

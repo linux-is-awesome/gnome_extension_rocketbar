@@ -1,10 +1,10 @@
 {
     "name": "Rocketbar 2 Dev",
     "description": "Taskbar and additional enhancements for the shell.",
-    "uuid": "rocketbar2.dev@chepkun.github.com",
-    "settings-schema": "org.gnome.shell.extensions.rocketbar2",
+    "uuid": "rocketbar.dev@chepkun.github.com",
+    "settings-schema": "org.gnome.shell.extensions.rocketbar",
     "gettext-domain": "rocketbar",
-    "session-modes": ["user", "unlock-dialog"],
+    "session-modes": ["user","unlock-dialog"],
     "url": "https://github.com/linux-is-awesome/gnome_extension_rocketbar",
     "version": 1,
     "version-name": "2.0",

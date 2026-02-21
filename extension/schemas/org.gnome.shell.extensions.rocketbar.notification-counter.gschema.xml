@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-    <schema id="org.gnome.shell.extensions.rocketbar2.notification-counter"
-            path="/org/gnome/shell/extensions/rocketbar2/notification-counter/">
+    <schema id="org.gnome.shell.extensions.rocketbar.notification-counter"
+            path="/org/gnome/shell/extensions/rocketbar/notification-counter/">
         <key type="b" name="hide-when-empty">
             <default>false</default>
         </key>
