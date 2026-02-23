@@ -210,6 +210,15 @@ export default class Jobs {
      * @param {number} [delay]
      * @returns {Job}
      */
+    replace(client, delay = Delay.Idle) {
+        return this.removeAll(client).new(client, delay);
+    }
+
+    /**
+     * @param {*} client
+     * @param {number} [delay]
+     * @returns {Job}
+     */
     new(client, delay = Delay.Idle) {
         if (!this.#jobs || !client ||
             typeof delay !== 'number') throw new Error(`${this.constructor.name} failed to create new ${Job.name}.`);

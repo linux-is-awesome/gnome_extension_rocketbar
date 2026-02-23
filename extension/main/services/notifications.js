@@ -238,7 +238,7 @@ export class NotificationHandler {
         if (!this.#appId || !this.#count || !NotificationHandler.#service) return;
         const service = NotificationHandler.#service;
         const appId = this.#appId;
-        Context.jobs.removeAll(this).new(this).destroy(() => service.clearNotifications(appId));
+        Context.jobs.replace(this).destroy(() => service.clearNotifications(appId));
     }
 
     /**
