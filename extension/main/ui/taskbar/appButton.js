@@ -575,7 +575,7 @@ export class AppButton extends RuntimeButton {
      */
     #enqueueDestroy(delay = Delay.Idle) {
         if (this.#destroyJob && this.#service) return;
-        this.#destroyJob = Context.jobs.removeAll(this).new(this, delay).destroy(() => (
+        this.#destroyJob = Context.jobs.replace(this, delay).destroy(() => (
         this.fadeOut().then(isHidden => isHidden && super.destroy()),
         this.notifyParents(ComponentEvent.Destroy)));
     }

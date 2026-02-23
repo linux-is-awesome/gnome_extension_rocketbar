@@ -450,7 +450,7 @@ export class AppSoundVolumeControl {
             stream.toggleMute();
         }
         if (typeof callback !== 'function') return;
-        Context.jobs.removeAll(this).new(this, Delay.Queue).destroy(callback);
+        Context.jobs.replace(this, Delay.Queue).destroy(callback);
     }
 
     /**

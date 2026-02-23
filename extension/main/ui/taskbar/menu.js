@@ -546,7 +546,8 @@ class CustomizeChildMenu extends ChildMenu {
     async #selectIcon() {
         if (!this.#config) return;
         this.parentMenu?.toggle();
-        const iconPath = await FileSelector(Label.SelectIcon, ICON_FILE_TYPE_FILTER, this.#config[ConfigKey.IconPath]);
+        const iconPath = await FileSelector(
+            Label.SelectIcon, ICON_FILE_TYPE_FILTER, this.#config[ConfigKey.IconPath]);
         if (typeof iconPath !== 'string') return;
         this.#setCustomIcon(iconPath);
     }
@@ -568,8 +569,8 @@ class CustomizeChildMenu extends ChildMenu {
         const iconSize = Math.round((AppIconSize.Max - AppIconSize.Min) * slider.value) + AppIconSize.Min;
         menuItem.value = iconSize;
         if (this.#isSyncing || !this.#appButton) return;
-        Context.jobs.removeAll(this).new(this, Delay.Sleep).destroy(() =>
-            this.#setConfigOverride(ConfigKey.IconSize, iconSize));
+        Context.jobs.replace(this, Delay.Sleep).destroy(() =>
+        this.#setConfigOverride(ConfigKey.IconSize, iconSize));
     }
 
     /**
