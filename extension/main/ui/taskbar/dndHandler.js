@@ -297,8 +297,7 @@ export class DragAndDropHandler {
         const parentRect = this.#parent?.rect;
         const targetRect = this.#dragTargetRect;
         if (!parentRect || !targetRect) return;
-        const [parentContainsTarget] = targetRect.intersect(parentRect);
-        if (parentContainsTarget) return;
+        if (targetRect.overlap(parentRect)) return;
         this.#dragActor?.show();
         this.#releaseCandidate();
     }
