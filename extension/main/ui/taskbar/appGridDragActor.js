@@ -1,14 +1,14 @@
 /**
- * @typedef {import('../appButton.js').AppButton} AppButton
- * @typedef {import('../appIcon.js').AppIcon} AppIcon
+ * @typedef {import('./appButton.js').AppButton} AppButton
+ * @typedef {import('./appIcon.js').AppIcon} AppIcon
  */
 
-import Context from '../../../core/context.js';
 import { AppIcon as AppGridIcon } from 'resource:///org/gnome/shell/ui/appDisplay.js';
 import { DragMotionResult } from 'resource:///org/gnome/shell/ui/dnd.js';
-import { Overview } from '../../../core/shell.js';
+import Context from '../../core/context.js';
+import { Overview } from '../../core/shell.js';
 
-export default class AppGridDragActor {
+export class AppGridDragActor {
 
     /** @type {AppButton?} */
     #appButton = null;
