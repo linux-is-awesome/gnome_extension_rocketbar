@@ -244,7 +244,6 @@ export class WindowManager {
         FocusedWindow(primaryWindow);
     }
 
-
     /**
      * @param {Meta.Window} window
      */
