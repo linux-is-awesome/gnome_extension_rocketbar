@@ -34,29 +34,24 @@ class Job {
     /** @type {number?} */
     #delay = null;
 
+    /** @type {boolean} */
+    #highPriority = false;
+
+    /** @type {number?} */
+    #timestamp = null;
+
     /** @type {((job: this) => void)?} */
     #destroyCallback = null;
 
-    /** @type {boolean} */
-    get #isValid() {
-        return typeof this.#destroyCallback === 'function' &&
-               typeof this.#delay === 'number';
-    }
-
-    /** @type {Promise<boolean>?} */
-    get #currentJob() {
-        if (!this.#isValid) return null;
-        this.#job ??= new Promise(resolve => this.#start(resolve));
-        return this.#job;
-    }
-
     /**
      * @param {(job: Job) => void} destroyCallback
-     * @param {number?} [delay]
+     * @param {number} delay
+     * @param {boolean} [highPriority]
      */
-    constructor(destroyCallback, delay) {
+    constructor(destroyCallback, delay, highPriority = false) {
         this.#destroyCallback = destroyCallback;
-        this.#delay = delay ?? Delay.Idle;
+        this.#delay = delay;
+        this.#highPriority = highPriority;
     }
 
     /**
@@ -64,25 +59,32 @@ class Job {
      * @returns {this}
      */
     destroy(callback) {
-        if (!this.#isValid) return this;
-        if (typeof callback === 'function') return this.enqueue(() => (this.destroy(), callback()));
+        if (!this.#destroyCallback) return this;
+        const hasCallback = typeof callback === 'function';
+        if (hasCallback) return this.enqueue(() => (this.destroy(), callback()));
         this.#abort();
-        if (this.#destroyCallback) this.#destroyCallback(this);
+        this.#destroyCallback(this);
         this.#delay = null;
         this.#destroyCallback = null;
+        this.#timestamp = null;
         return this;
     }
 
     /**
      * @param {() => void} callback
+     * @param {boolean} [replace]
      * @returns {this}
      */
-    enqueue(callback) {
-        if (typeof callback !== 'function') return this;
-        this.#job = this.#currentJob?.then(isFinished => {
-            if (isFinished) callback();
-            return isFinished;
-        }) ?? this.#job;
+    enqueue(callback, replace = true) {
+        if (!this.#destroyCallback ||
+            typeof this.#delay !== 'number' ||
+            typeof callback !== 'function') return this;
+        if (this.#job) this.#abort(!replace && this.#delay > 0 &&
+                                   typeof this.#timestamp === 'number' &&
+                                   Date.now() - this.#timestamp >= this.#delay);
+        this.#timestamp ??= Date.now();
+        this.#job = new Promise(resolve => this.#start(resolve)).then(
+            isFinished => (isFinished && callback(), isFinished));
         return this;
     }
 
@@ -91,7 +93,9 @@ class Job {
      * @returns {this}
      */
     reset(delay) {
+        if (!this.#destroyCallback) return this;
         this.#abort();
+        this.#timestamp = null;
         if (typeof delay !== 'number') return this;
         this.#delay = delay;
         return this;
@@ -101,22 +105,30 @@ class Job {
      * @param {(isFinished: boolean) => void} resolver
      */
     #start(resolver) {
+        if (typeof this.#delay !== 'number') return;
         this.#resolver = resolver;
-        const delay = this.#delay ?? Delay.Idle;
+        const delay = this.#delay;
         const isLaterType = !!Laters && typeof LaterType[delay] === 'number';
-        this.#id = isLaterType ? Laters.add(LaterType[delay], () => this.#finish()) :
-                   GLib.timeout_add(GLib.PRIORITY_DEFAULT_IDLE, Math.max(0, delay), () => this.#finish());
+        if (isLaterType) {
+            this.#id = Laters.add(LaterType[delay], () => this.#finish());
+            return;
+        }
+        const priority = this.#highPriority ? GLib.PRIORITY_HIGH_IDLE : GLib.PRIORITY_DEFAULT_IDLE;
+        this.#id = GLib.timeout_add(priority, Math.max(0, delay), () => this.#finish());
     }
 
-    #abort() {
-        if (this.#id) {
+    /**
+     * @param {boolean} [result]
+     */
+    #abort(result = false) {
+        if (typeof this.#id === 'number') {
             const isLaterType = !!Laters &&
                                 typeof this.#delay === 'number' &&
                                 typeof LaterType[this.#delay] === 'number';
             if (isLaterType) Laters.remove(this.#id);
             else GLib.source_remove(this.#id);
         }
-        this.#finish(false);
+        this.#finish(result);
     }
 
     /**
@@ -126,9 +138,11 @@ class Job {
     #finish(result = true) {
         this.#id = null;
         this.#job?.catch(e => Context.logError(`${this.constructor.name} failed.`, e));
-        if (typeof this.#resolver === 'function') this.#resolver(result);
+        if (this.#resolver) this.#resolver(result);
         this.#resolver = null;
         this.#job = null;
+        if (!result) return GLib.SOURCE_REMOVE;
+        this.#timestamp = null;
         return GLib.SOURCE_REMOVE;
     }
 
@@ -208,21 +222,23 @@ export default class Jobs {
     /**
      * @param {*} client
      * @param {number} [delay]
+     * @param {boolean} [highPriority]
      * @returns {Job}
      */
-    replace(client, delay = Delay.Idle) {
-        return this.removeAll(client).new(client, delay);
+    replace(client, delay, highPriority = false) {
+        return this.removeAll(client).new(client, delay, highPriority);
     }
 
     /**
      * @param {*} client
      * @param {number} [delay]
+     * @param {boolean} [highPriority]
      * @returns {Job}
      */
-    new(client, delay = Delay.Idle) {
+    new(client, delay = Delay.Idle, highPriority = false) {
         if (!this.#jobs || !client ||
             typeof delay !== 'number') throw new Error(`${this.constructor.name} failed to create new ${Job.name}.`);
-        return this.#add(client, new Job(job => this.#remove(client, job), delay));
+        return this.#add(client, new Job(job => this.#remove(client, job), delay, highPriority));
     }
 
     /**
@@ -233,7 +249,7 @@ export default class Jobs {
     shared(client, callback, delay = Delay.Idle) {
         if (!this.#sharedJobs || !client ||
             typeof callback !== 'function' ||
-            typeof delay !== 'number') return;
+            typeof delay !== 'number') throw new Error(`${this.constructor.name} failed to create new ${SharedJob.name}.`);
         const sharedJob = this.#sharedJobs.get(delay) ?? new SharedJob(() => this.#removeShared(delay), delay);
         sharedJob.addClient(client, callback);
         this.#sharedJobs.set(delay, sharedJob);

@@ -36,7 +36,7 @@ class NotificationService {
     #totalCount = 0;
 
     /** @type {Job?} */
-    #updateJob = Context.jobs.new(this, Delay.Background);
+    #job = Context.jobs.new(this, Delay.Background);
 
     /** @type {Config?} */
     #config = Config(this, ConfigField, () => this.#handleConfig());
@@ -57,14 +57,14 @@ class NotificationService {
      */
     destroy() {
         if (this.#handlers?.size) return false;
-        this.#updateJob?.destroy();
         Context.signals.removeAll(this);
         Context.launcherApi.disconnect(this);
+        this.#job?.destroy();
         this.#notifications?.clear();
         this.#notifications = null;
         this.#countByAppId = null;
         this.#handlers = null;
-        this.#updateJob = null;
+        this.#job = null;
         this.#windowTracker = null;
         this.#config = null;
         return true;
@@ -140,8 +140,7 @@ class NotificationService {
     }
 
     #enqueueUpdate() {
-        if (!this.#updateJob) return;
-        this.#updateJob.reset().enqueue(() => this.#update());
+        this.#job?.enqueue(() => this.#update());
     }
 
     #update() {

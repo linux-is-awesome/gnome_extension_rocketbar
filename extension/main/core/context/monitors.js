@@ -136,7 +136,7 @@ export default class Monitors {
     #handleMonitors() {
         if (!this.#job) return;
         this.#isUpdating = true;
-        this.#job.reset().enqueue(() => (
+        this.#job.enqueue(() => (
             this.#updateMonitors(),
             this.#notifyClients(),
             this.#finishUpdate()));
