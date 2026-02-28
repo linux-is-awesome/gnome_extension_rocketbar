@@ -2061,6 +2061,7 @@ declare module 'gi://Meta' {
 
         // Own properties of Meta-13.Meta.BackgroundActor
 
+        readonly content: BackgroundContent
         readonly meta_display: Display
         readonly metaDisplay: Display
         readonly monitor: number
