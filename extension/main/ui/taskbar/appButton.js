@@ -228,11 +228,8 @@ export class AppButton extends RuntimeButton {
         const overviewHandler = () => {
             this.isActive = this.#isActive;
         };
-        Context.signals.add(this, [
-            Overview,
-            Event.OverviewShowing, overviewHandler,
-            Event.OverviewHiding, overviewHandler
-        ]);
+        Context.signals.add(this, [Overview, Event.Showing, overviewHandler,
+                                             Event.Hiding, overviewHandler]);
     }
 
     /**
