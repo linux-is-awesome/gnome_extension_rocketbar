@@ -7,51 +7,21 @@ const RGB_STRING_SPLITTER = ',';
 
 /**
  * @param {Gio.Icon} icon
+ * @param {number} sampleSize
  * @returns {GdkPixbuf.Pixbuf?}
  */
-const Pixbuf = icon => {
+const Pixbuf = (icon, sampleSize) => {
     try {
         if (icon instanceof Gio.FileIcon) {
             return GdkPixbuf.Pixbuf.new_from_file(icon.get_file().get_path() ?? '');
         }
         if (icon instanceof Gio.ThemedIcon) {
-            return Context.desktop.iconTheme.lookup_by_gicon(icon, SAMPLE_SIZE, 0)?.load_icon() ?? null;
+            return Context.desktop.iconTheme.lookup_by_gicon(icon, sampleSize, 0)?.load_icon() ?? null;
         }
     } catch (e) {
         Context.logError(`${Pixbuf.name} loading failed.`, e);
     }
     return null;
-};
-
-/**
- * Note: Downsamples large icons before scanning for the backlight color to improve performance.
- *
- * @param {GdkPixbuf.Pixbuf} pixbuf
- * @returns {Uint8Array|number[]}
- */
-const Pixels = pixbuf => {
-    const pixels = pixbuf.get_pixels();
-    const width = pixbuf.get_width();
-    const height = pixbuf.get_height();
-    let resampleY = 1;
-    let resampleX = 1;
-    if (height >= 2 * SAMPLE_SIZE) {
-        resampleY = ~~(height / SAMPLE_SIZE);
-    }
-    if (width >= 2 * SAMPLE_SIZE) {
-        resampleX = ~~(width / SAMPLE_SIZE);
-    }
-    if (resampleX === 1 && resampleY === 1) return pixels;
-    const resampledPixels = [];
-    const limit = pixels.length / (resampleX * resampleY) / 4;
-    for (let i = 0; i < limit; ++i) {
-        const pixel = i * resampleX * resampleY * 4;
-        resampledPixels.push(pixels[pixel]);
-        resampledPixels.push(pixels[pixel + 1]);
-        resampledPixels.push(pixels[pixel + 2]);
-        resampledPixels.push(pixels[pixel + 3]);
-    }
-    return resampledPixels;
 };
 
 /**
@@ -124,24 +94,30 @@ const RGB = (h, s, v) => {
  *       https://bazaar.launchpad.net/~unity-team/unity/trunk/view/head:/launcher/LauncherIcon.cpp
  *
  * @param {Gio.Icon?} icon
+ * @param {number} [sampleSize]
  * @returns {string?} `rgb(0-255, 0-255, 0-255)`
  */
-export const DominantColor = icon => {
+export const DominantColor = (icon, sampleSize = SAMPLE_SIZE) => {
     if (icon instanceof Gio.Icon === false) return null;
-    const pixbuf = Pixbuf(icon);
+    const pixbuf = Pixbuf(icon, sampleSize);
     if (!pixbuf) return null;
-    const pixels = Pixels(pixbuf);
+    const pixels = pixbuf.get_pixels();
+    const width = pixbuf.get_width();
+    const height = pixbuf.get_height();
+    const resampleY = height >= 2 * sampleSize ? ~~(height / sampleSize) : 1;
+    const resampleX = width >= 2 * sampleSize ? ~~(width / sampleSize) : 1;
+    const step = resampleX * resampleY * 4;
     let total = 0;
     let rTotal = 0;
     let gTotal = 0;
     let bTotal = 0;
-    for (let i = 0, l = pixels.length; i < l; i += 4) {
+    for (let i = 0, l = pixels.length; i < l; i += step) {
         const r = pixels[i];
         const g = pixels[i + 1];
         const b = pixels[i + 2];
         const a = pixels[i + 3];
         const saturation = Math.max(r, g, b) - Math.min(r, g, b);
-        const relevance  = 0.1 * 255 * 255 + 0.9 * a * saturation;
+        const relevance = 0.1 * 255 * 255 + 0.9 * a * saturation;
         rTotal += r * relevance;
         gTotal += g * relevance;
         bTotal += b * relevance;
