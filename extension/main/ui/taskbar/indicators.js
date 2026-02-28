@@ -256,7 +256,7 @@ class IndicatorsBackend {
     #params = BackendParams;
 
     /** @type {Job?} */
-    #job = Context.jobs.new(this, ANIMATION_INTERVAL);
+    #job = Context.jobs.new(this, ANIMATION_INTERVAL, true);
 
     /**
      * @param {St.DrawingArea} actor
