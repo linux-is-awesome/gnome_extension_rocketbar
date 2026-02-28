@@ -329,10 +329,12 @@ export class Component {
         for (const id of this.#signals) this.#actor.disconnect(id);
         this.#signals.clear();
         this.#isValid = false;
-        this.#actor.remove_all_transitions();
+        if (!this.#isWrapper) this.#actor.remove_all_transitions();
         this.#setDragEvents(false);
         this.#notifySelf(ComponentEvent.Destroy);
-        this.#actor._delegate = null;
+        if (!this.#isWrapper) {
+            this.#actor._delegate = null;
+        }
         this.#actor = null;
         this.#parent = null;
         this.#draggable = null;
