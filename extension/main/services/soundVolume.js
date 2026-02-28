@@ -122,7 +122,7 @@ class AppSoundVolumeService {
     #streams = new Map();
 
     /** @type {Job?} */
-    #updateJob = Context.jobs.new(this, Delay.Background);
+    #job = Context.jobs.new(this, Delay.Background);
 
     /** @type {IterableIterator<AppSoundStream>?} */
     get streams() {
@@ -145,13 +145,13 @@ class AppSoundVolumeService {
     destroy() {
         if (this.#controls?.size) return false;
         Context.signals.removeAll(this);
-        this.#updateJob?.destroy();
+        this.#job?.destroy();
         if (this.#streams?.size) {
             const streams = this.#streams.values();
             for (const stream of streams) stream.destroy();
             this.#streams?.clear();
         }
-        this.#updateJob = null;
+        this.#job = null;
         this.#streams = null;
         this.#controls = null;
         return true;
@@ -220,8 +220,7 @@ class AppSoundVolumeService {
     }
 
     #enqueueUpdate() {
-        if (!this.#updateJob) return;
-        this.#updateJob.reset().enqueue(() => this.#update());
+        this.#job?.enqueue(() => this.#update());
     }
 
     #update() {

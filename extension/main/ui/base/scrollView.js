@@ -95,7 +95,7 @@ export class ScrollView extends Component {
         this.#scroll = container.hadjustment;
         this.#handleScrollJob = Context.jobs.new(this.#scroll, Delay.Debounce);
         this.#scroll.connect(Event.Changed, () =>
-            this.#handleScrollJob?.reset().enqueue(() =>
+            this.#handleScrollJob?.enqueue(() =>
             this.#handleScrollSize()));
         container.add_child(this.#actor);
         this.connect(Event.Destroy, () => this.#destroy());
