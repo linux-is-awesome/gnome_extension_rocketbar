@@ -1,6 +1,7 @@
 declare module 'gi://Meta' {
 
-    import GObject from 'gi://GObject';
+    import type GObject from 'gi://GObject';
+    import type Mtk from 'gi://Mtk';
 
     /**
      * Function a window button can have.
