@@ -92,7 +92,7 @@ export default class {
         if (typeof searchController?.reset !== 'function') return;
         if (searchController.searchActive) return searchController.reset();
         if (isPrimaryAction) return Overview.toggle();
-        const overviewControls = Overview._overview?._controls;
+        const overviewControls = Overview._overview?.controls;
         if (typeof overviewControls?._toggleAppsPage !== 'function') return;
         overviewControls._toggleAppsPage();
     }
