@@ -22,7 +22,7 @@ export default class {
     #searchController = Overview.searchController ?? null;
 
     /** @type {ThumbnailsBox?} */
-    #workspaceThumbnails = Overview._overview?._controls?._thumbnailsBox ?? null;
+    #workspaceThumbnails = Overview._overview?.controls?._thumbnailsBox ?? null;
 
     /** @type {{[field: string]: *}?} */
     #ctrlAltTabItem = null;
