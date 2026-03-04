@@ -1,0 +1,65 @@
+{
+    "version": 1.1,
+    "properties": [
+        {
+            "name": "icon-size",
+            "description": "St/Clutter: Size of the icon. Used by StIcon.",
+            "syntax": "<length> | <percentage>",
+            "status": "nonstandard"
+        },
+        {
+            "name": "icon-shadow",
+            "description": "St/Clutter: Shadow applied to the icon. Used by StIcon.",
+            "syntax": "none | <shadow>#",
+            "status": "nonstandard"
+        },
+        {
+            "name": "icon-padding",
+            "description": "St/Clutter: Padding around the icon. Used by StIcon.",
+            "syntax": "<length>",
+            "status": "nonstandard"
+        },
+        {
+            "name": "spacing",
+            "description": "St/Clutter: Spacing between children. Used by StBoxLayout and similar.",
+            "syntax": "<length>",
+            "status": "nonstandard"
+        },
+        {
+            "name": "-natural-hpadding",
+            "description": "St: Natural horizontal padding. Used by St widgets (e.g. panel buttons).",
+            "syntax": "<length>",
+            "status": "nonstandard"
+        },
+        {
+            "name": "-minimum-hpadding",
+            "description": "St: Minimum horizontal padding. Used by St widgets (e.g. panel buttons).",
+            "syntax": "<length>",
+            "status": "nonstandard"
+        },
+        {
+            "name": "-st-icon-style",
+            "description": "St: Icon style for StIcon. Controls symbolic vs regular icon lookup.",
+            "syntax": "regular | symbolic",
+            "status": "nonstandard"
+        },
+        {
+            "name": "-st-shadow",
+            "description": "St: Generic shadow (color, xoffset, yoffset, blur, spread, inset). Used by St.ThemeNode.",
+            "syntax": "none | <shadow>#",
+            "status": "nonstandard"
+        },
+        {
+            "name": "-st-background-image-shadow",
+            "description": "St: Shadow for background-image. Used by St.ThemeNode (get_background_image_shadow).",
+            "syntax": "none | <shadow>#",
+            "status": "nonstandard"
+        },
+        {
+            "name": "-shell-grid-item-size",
+            "description": "GNOME Shell: Size of app grid items in the overview.",
+            "syntax": "<length>",
+            "status": "nonstandard"
+        }
+    ]
+}

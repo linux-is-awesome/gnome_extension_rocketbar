@@ -1,5 +1,6 @@
 {
     "files.associations": {
         "*.ui": "xml"
-    }
+    },
+    "css.customData": [".vscode/css_custom_data.json"]
 }
