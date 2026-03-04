@@ -11,7 +11,6 @@ import { Animation, AnimationDuration, AnimationType } from '../ui/base/animatio
 import { Event } from '../../shared/enums/general.js';
 
 const MODULE_NAME = 'Rocketbar__Tweak_OverviewKillDash';
-const STYLE_CLASS = 'rocketbar__tweak_overview-kill-dash';
 const SHOW_APPS_BUTTON_STYLE_CLASS = 'page-navigation-arrow';
 const ACTOR_ICON_NAME = 'carousel-arrow-next-symbolic';
 const ACTOR_ROTATION_DEFAULT = -90;
@@ -61,7 +60,6 @@ export default class {
         });
         dash._background?.hide();
         dash._box?.hide();
-        dash.add_style_class_name(STYLE_CLASS);
         const showAppsButton = dash.showAppsButton;
         const searchController = Overview.searchController;
         if (!showAppsButton || !searchController) return;
@@ -98,7 +96,6 @@ export default class {
         this.#showAppsButtonDefaultProps = null;
         this.#showAppsButton = null;
         this.#searchController = null;
-        dash.remove_style_class_name(STYLE_CLASS);
         dash._box?.show();
         dash._background?.show();
         dash._queueRedisplay();
