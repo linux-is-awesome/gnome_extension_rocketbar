@@ -56,7 +56,7 @@ export class AppGridDragActor {
     }
 
     #patchAppGrid() {
-        const appGrid = Overview._overview?._controls?._appDisplay;
+        const appGrid = Overview._overview?.controls?.appDisplay;
         if (!appGrid) return;
         Context.hooks.add(this, appGrid, appGrid.handleDragOver, (_, result, source) =>
             source === this.#appButton?.actor?._delegate &&
