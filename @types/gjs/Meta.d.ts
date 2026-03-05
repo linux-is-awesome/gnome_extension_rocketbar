@@ -6006,12 +6006,12 @@ declare module 'gi://Meta' {
         get_gtk_window_object_path(): string | null
         /**
          * Gets the location of the icon corresponding to the window.
-         * 
+         *
          * The location will be provided set by the task bar or other user interface
          * element displaying the icon, and is relative to the root window.
-         * @returns %TRUE if the icon geometry was successfully retrieved.
+         * @returns %TRUE if the icon geometry was successfully retrieved. When false, rect may be null.
          */
-        get_icon_geometry(): [ /* returnType */ boolean, /* rect */ Mtk.Rectangle]
+        get_icon_geometry(): [ /* returnType */ boolean, /* rect */ Mtk.Rectangle | null]
         /**
          * Returns the window id associated with window.
          * @returns The window id
