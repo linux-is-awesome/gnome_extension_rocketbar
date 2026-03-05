@@ -258,7 +258,7 @@ export class WindowManager {
      */
     #getWindowIconGeometry(window) {
         if (!window) return [false, null];
-        if (this.#anchor) return [true, this.#anchor.rect];
+        if (this.#anchor?.isValid) return [true, this.#anchor.rect];
         window.get_icon_geometry = window.constructor.prototype.get_icon_geometry;
         return window.get_icon_geometry();
     }
