@@ -178,10 +178,12 @@ export default class Page {
 
     /**
      * @param {string} id
-     * @returns {GObject.Object?}
+     * @returns {Gtk.Widget}
      */
-    getObject(id) {
-        return this.#template.get_object(id);
+    getWidget(id) {
+        const result = this.#template.get_object(id);
+        if (result instanceof Gtk.Widget) return result;
+        throw new Error(`${id} is not an instane of Gtk.Widget.`);
     }
 
     /**

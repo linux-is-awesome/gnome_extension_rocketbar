@@ -41,12 +41,12 @@ export default class SettingsPage extends Page {
         if (!this.#settings) return;
         value ??= false;
         if (typeof value !== 'boolean') return;
-        const widget = this.getObject(settingsKey);
+        const widget = this.getWidget(settingsKey);
         const isConnected = this.#connectedSettings.has(settingsKey);
         if (widget instanceof Gtk.Switch) {
             if (widget.get_active() !== value) widget.set_active(value);
-            const row = this.getObject(`${settingsKey}-row`);
-            const arrow = this.getObject(`${settingsKey}-row-arrow`);
+            const row = this.getWidget(`${settingsKey}-row`);
+            const arrow = this.getWidget(`${settingsKey}-row-arrow`);
             if (row instanceof Adw.ActionRow) row.set_activatable(value);
             if (arrow instanceof Gtk.Image) arrow.set_sensitive(value);
             if (isConnected) return;
