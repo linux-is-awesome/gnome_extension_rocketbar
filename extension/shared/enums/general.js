@@ -54,6 +54,7 @@ export const Event = {
     SourceRemoved: 'source-removed',
     SourcesChanged: 'sources-changed',
     StartupComplete: 'startup-complete',
+    StartupPrepared: 'startup-prepared',
     SwitchWorkspace: 'switch-workspace',
     TitleChanged: 'notify::title',
     Touch: 'touch-event',

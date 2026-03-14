@@ -2,6 +2,7 @@
  * @typedef {import('gi://Gio').Settings} Gio.Settings
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupMenu} PopupMenu
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupDummyMenu} PopupDummyMenu
+ * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupMenuManager} PopupMenuManager
  * @typedef {import('resource:///org/gnome/shell/ui/modalDialog.js').ModalDialog} ModalDialog
  */
 
@@ -14,6 +15,7 @@ import { Component } from '../../ui/base/component.js';
 import { Event, SessionMode } from '../../../shared/enums/general.js';
 
 const FONT_SCALE_SETTINGS_KEY = 'text-scaling-factor';
+const STYLE_CLASS_NAME_POSTFIX = '__desktop';
 
 export default class Desktop {
 
@@ -38,10 +40,12 @@ export default class Desktop {
     /** @type {number?} */
     #oldAnimationSpeed = null;
 
-    /** @type {boolean} */
-    get isReady() {
-        return !MainLayout._startingUp;
-    }
+    /** @type {St.Widget?} */
+    #desktopActor = MainLayout.uiGroup instanceof St.Widget ?
+                    MainLayout.uiGroup : null;
+
+    /** @type {PopupMenuManager?} */
+    #menuManager = MainPanel.menuManager ?? null;
 
     /** @type {boolean} */
     get isLocked() {
@@ -117,15 +121,18 @@ export default class Desktop {
         this.#iconTheme = null;
         this.#settings = null;
         this.#uiSettings = null;
+        this.#desktopActor = null;
+        this.#menuManager = null;
     }
 
     /**
      * @param {PopupMenu|PopupDummyMenu} menu
      */
     addMenu(menu) {
-        if (menu?.actor instanceof St.Widget === false) return;
+        if (!this.#menuManager ||
+            menu?.actor instanceof St.Widget === false) return;
         try {
-            MainPanel.menuManager?.addMenu(menu);
+            this.#menuManager.addMenu(menu);
             this.addOverlay(menu.actor);
         } catch (e) {
             Context.logError(`${this.constructor.name} failed to add menu.`, e);
@@ -136,9 +143,10 @@ export default class Desktop {
      * @param {PopupMenu|PopupDummyMenu} menu
      */
     removeMenu(menu) {
-        if (menu?.actor instanceof St.Widget === false) return;
+        if (!this.#menuManager ||
+            menu?.actor instanceof St.Widget === false) return;
         try {
-            MainPanel.menuManager?.removeMenu(menu);
+            this.#menuManager.removeMenu(menu);
             this.removeOverlay(menu.actor);
         } catch (e) {
             Context.logError(`${this.constructor.name} failed to remove menu.`, e);
@@ -150,18 +158,18 @@ export default class Desktop {
      * @param {boolean} [isOffscreen]
      */
     addOverlay(actor, isOffscreen = false) {
-        if (MainLayout.uiGroup instanceof St.Widget === false) return;
+        if (!this.#desktopActor) return;
         let actorProps = null;
         if (isOffscreen) {
-            const [x, y] = MainLayout.uiGroup.get_size();
+            const [x, y] = this.#desktopActor.get_size();
             actorProps = { x, y, width: 1, height: 1 };
         }
         if (actor instanceof Component) {
             if (actorProps) actor.setProps(actorProps);
-            actor.setParent(MainLayout.uiGroup);
+            actor.setParent(this.#desktopActor);
         } else if (actor instanceof Clutter.Actor) {
             if (actorProps) actor.set(actorProps);
-            MainLayout.uiGroup.add_child(actor);
+            this.#desktopActor.add_child(actor);
         }
     }
 
@@ -173,7 +181,23 @@ export default class Desktop {
             actor = actor.actor ?? actor;
         }
         if (actor instanceof St.Widget === false) return;
-        MainLayout.uiGroup?.remove_child(actor);
+        this.#desktopActor?.remove_child(actor);
+    }
+
+    /**
+     * @param {string} className
+     */
+    addStyleClass(className) {
+        if (!this.#desktopActor || !className) return;
+        this.#desktopActor.add_style_class_name(`${className}${STYLE_CLASS_NAME_POSTFIX}`);
+    }
+
+    /**
+     * @param {string} className
+     */
+    removeStyleClass(className) {
+        if (!this.#desktopActor || !className) return;
+        this.#desktopActor.remove_style_class_name(`${className}${STYLE_CLASS_NAME_POSTFIX}`);
     }
 
     /**
@@ -184,9 +208,10 @@ export default class Desktop {
     connectInit(client, callback) {
         if (!this.#initClients || !client ||
             typeof callback !== 'function') return this;
-        if (this.isReady) return callback(), this;
+        if (!MainLayout._startingUp) return callback(), this;
         if (!this.#initClients.size) Context.signals.add(this,
-            [MainLayout, Event.StartupComplete, () => this.#handleInit()]);
+            [MainLayout, Event.StartupPrepared, () => this.#handleInit(),
+                         Event.StartupComplete, () => this.#handleInit()]);
         this.#initClients.set(client, callback);
         return this;
     }
