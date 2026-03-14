@@ -113,12 +113,12 @@ class DateMenu extends Component {
 
     #destroy() {
         Context.signals.removeAll(this);
-        this.actor?.remove_all_children();
+        this.actor.remove_all_children();
         if (!this.#dateMenu) return;
         this.#dateMenu.remove_style_class_name(DATE_MENU_STYLE_CLASS);
         this.#dateMenu._clockDisplay?.set_style_class_name(this.#clockDisplayStyleClass);
         this.#dateMenu._indicator?._sync();
-        if (this.#dateMenu._clockDisplay && !this.#dateMenu._clockDisplay?.get_parent()) {
+        if (this.#dateMenu._clockDisplay && !this.#dateMenu._clockDisplay.get_parent()) {
             this.#container?.insert_child_at_index(this.#dateMenu._clockDisplay, CLOCK_DISPLAY_POSITION);
         }
         this.#dateMenu = null;
