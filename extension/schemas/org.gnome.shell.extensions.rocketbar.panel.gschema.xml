@@ -11,5 +11,20 @@
         <key type="b" name="click-to-hide-overview">
             <default>false</default>
         </key>
+        <key type="s" name="position">
+            <default>'top'</default>
+        </key>
+        <key type="b" name="height-adjustment">
+            <default>false</default>
+        </key>
+        <key type="i" name="height">
+            <default>32</default>
+        </key>
+        <key type="b" name="transparency">
+            <default>false</default>
+        </key>
+        <key type="b" name="dynamic-transparency">
+            <default>false</default>
+        </key>
     </schema>
 </schemalist>
