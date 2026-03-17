@@ -148,7 +148,7 @@ export class Component {
      */
     constructor(actor, isWrapper = false) {
         if (actor instanceof St.Widget === false) {
-            throw new Error(`Unable to construct ${this.constructor.name}, ${actor} is not an instance of St.Widget.`);
+            throw new Error(`Failed to construct ${this.constructor.name}, ${actor} is not an instance of St.Widget.`);
         }
         this.#isWrapper = isWrapper;
         this.#actor = actor;
