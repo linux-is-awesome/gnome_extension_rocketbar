@@ -108,7 +108,7 @@ export default class Context extends SharedContext {
             provider.load_from_path(`${Context.path}${STYLES_PATH}`);
             Gtk.StyleContext.add_provider_for_display(display, provider, priority);
         } catch (e) {
-            Context.logError('unable to load styles.', e);
+            Context.logError('failed to load styles.', e);
         }
     }
 
@@ -132,7 +132,7 @@ export default class Context extends SharedContext {
             if (!this.#window) return;
             this.#pages.set(page, new pageModule.default());
         } catch (e) {
-            Context.logError(`unable to load page: ${page}.`, e);
+            Context.logError(`failed to load page: ${page}.`, e);
             this.#pages.delete(page);
         }
     }

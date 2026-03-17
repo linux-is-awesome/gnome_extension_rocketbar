@@ -178,7 +178,7 @@ export class ModuleManager {
             const instance = new source.default();
             this.#moduleInstances.set(module, instance);
         } catch (e) {
-            Context.logError(`unable to construct module: ${module}.`, e);
+            Context.logError(`failed to construct module: ${module}.`, e);
         }
     }
 
@@ -193,7 +193,7 @@ export class ModuleManager {
             if (typeof instance === 'number') return;
             instance?.destroy();
         } catch (e) {
-            Context.logError(`unable to destroy module: ${module}.`, e);
+            Context.logError(`failed to destroy module: ${module}.`, e);
         }
     }
 
