@@ -156,14 +156,17 @@ export default class LauncherApiProxy {
         this.#handleConfig();
     }
 
-    destroy() {
+    /**
+     * @param {boolean} [isFinal]
+     */
+    destroy(isFinal = true) {
         LauncherApiProxy.#service?.disconnect();
         Context.signals.removeAll(this);
         this.#notificationClients?.clear();
         this.#progressClients?.clear();
         this.#notificationClients = null;
         this.#progressClients = null;
-        if (Context.desktop.isLocked) return;
+        if (!isFinal) return;
         LauncherApiProxy.#service?.destroy();
         LauncherApiProxy.#service = null;
     }
