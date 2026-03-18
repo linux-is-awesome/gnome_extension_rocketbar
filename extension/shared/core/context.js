@@ -86,6 +86,14 @@ export default class Context {
     }
 
     /**
+     * @param {*} client
+     */
+    static clearStorage(client) {
+        _sessionStorage?.get(client)?.clear();
+        _sessionStorage?.delete(client);
+    }
+
+    /**
      * @param {string?} [message]
      * @param {*} [error]
      */
@@ -119,42 +127,25 @@ export default class Context {
 
     destroy() {
         try {
-            const callbackResult = typeof this.#destroyCallback === 'function' ?
-                                   this.#destroyCallback() ?? true : true;
+            const isFinal = typeof this.#destroyCallback === 'function' ?
+                            this.#destroyCallback() ?? true : true;
             this.#destroyCallback = null;
             this.#jobs?.removeAll(this);
             this.#jobs?.destroy();
             this.#signals?.destroy();
-            this.#cleanSessionStorage(callbackResult);
+            if (!_sessionStorage) return;
+            if (isFinal) _sessionStorage.clear();
+            else _sessionStorage.delete(this.constructor.name);
+            if (_sessionStorage.size) return;
+            _sessionStorage = null;
         } catch (e) {
-            Context.logError(`unable to destroy ${this.constructor.name}.`, e);
+            Context.logError(`failed to destroy ${this.constructor.name}.`, e);
         } finally {
             this.#jobs = null;
             this.#signals = null;
             this.#extension = null;
             _instance = null;
         }
-    }
-
-    /**
-     * @param {boolean} nullify
-     */
-    #cleanSessionStorage(nullify) {
-        if (!_sessionStorage) return;
-        if (nullify) {
-            _sessionStorage.clear();
-            _sessionStorage = null;
-            return;
-        }
-        _sessionStorage.delete(this.constructor.name);
-        const clients = [..._sessionStorage.keys()];
-        for (let i = 0, l = clients.length; i < l; ++i) {
-            const client = clients[i];
-            if (_sessionStorage.get(client)?.size) continue;
-            _sessionStorage.delete(client);
-        }
-        if (_sessionStorage.size) return;
-        _sessionStorage = null;
     }
 
 }
