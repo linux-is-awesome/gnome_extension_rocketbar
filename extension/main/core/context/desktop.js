@@ -10,12 +10,12 @@ import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import Context from '../context.js';
 import { ModalDialog } from 'resource:///org/gnome/shell/ui/modalDialog.js';
-import { MainLayout, MainPanel, Session } from '../shell.js';
+import { MainLayout, MainPanel } from '../shell.js';
 import { Component } from '../../ui/base/component.js';
-import { Event, SessionMode } from '../../../shared/enums/general.js';
+import { Event } from '../../../shared/enums/general.js';
 
 const FONT_SCALE_SETTINGS_KEY = 'text-scaling-factor';
-const STYLE_CLASS_NAME_POSTFIX = '__desktop';
+const STYLE_CLASS_POSTFIX = '__desktop';
 
 export default class Desktop {
 
@@ -46,12 +46,6 @@ export default class Desktop {
 
     /** @type {PopupMenuManager?} */
     #menuManager = MainPanel.menuManager ?? null;
-
-    /** @type {boolean} */
-    get isLocked() {
-        return Session.currentMode === SessionMode.Locksreen ||
-               MainLayout.screenShieldGroup?.visible === true;
-    }
 
     /** @type {number} */
     get globalScale() {
@@ -189,7 +183,7 @@ export default class Desktop {
      */
     addStyleClass(className) {
         if (!this.#desktopActor || !className) return;
-        this.#desktopActor.add_style_class_name(`${className}${STYLE_CLASS_NAME_POSTFIX}`);
+        this.#desktopActor.add_style_class_name(`${className}${STYLE_CLASS_POSTFIX}`);
     }
 
     /**
@@ -197,7 +191,7 @@ export default class Desktop {
      */
     removeStyleClass(className) {
         if (!this.#desktopActor || !className) return;
-        this.#desktopActor.remove_style_class_name(`${className}${STYLE_CLASS_NAME_POSTFIX}`);
+        this.#desktopActor.remove_style_class_name(`${className}${STYLE_CLASS_POSTFIX}`);
     }
 
     /**
@@ -208,7 +202,10 @@ export default class Desktop {
     connectInit(client, callback) {
         if (!this.#initClients || !client ||
             typeof callback !== 'function') return this;
-        if (!MainLayout._startingUp) return callback(), this;
+        if (!MainLayout._startingUp) {
+            callback();
+            return this;
+        }
         if (!this.#initClients.size) Context.signals.add(this,
             [MainLayout, Event.StartupPrepared, () => this.#handleInit(),
                          Event.StartupComplete, () => this.#handleInit()]);
@@ -225,9 +222,12 @@ export default class Desktop {
         if (!this.#scaleClients || !client ||
             !this.#themeContext || !this.#uiSettings ||
             typeof callback !== 'function') return this;
-        if (!this.#scaleClients.size) Context.signals.add(this,
-            [this.#themeContext, Event.ScaleFactor, () => this.#notifyClients(this.#scaleClients)],
-            [this.#uiSettings, `${Event.Changed}::${FONT_SCALE_SETTINGS_KEY}`, () => this.#notifyClients(this.#scaleClients)]);
+        if (!this.#scaleClients.size) {
+            const signalHandler = () => this.#notifyClients(this.#scaleClients);
+            Context.signals.add(this,
+                [this.#themeContext, Event.ScaleFactor, signalHandler],
+                [this.#uiSettings, `${Event.Changed}::${FONT_SCALE_SETTINGS_KEY}`, signalHandler]);
+        }
         this.#scaleClients.set(client, callback);
         return this;
     }
