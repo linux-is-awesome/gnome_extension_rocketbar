@@ -1,5 +1,4 @@
 /**
- * @typedef {import('../../../shared/core/context/jobs.js').Jobs.Job} Job
  * @typedef {{index: number, x: number, y: number, width: number, height: number, geometry_scale: number}} MonitorInfo
  */
 
@@ -31,9 +30,6 @@ export default class Monitors {
     /** @type {Map<*, () => void>?} */
     #clients = new Map();
 
-    /** @type {Job?} */
-    #job = Context.jobs.new(this, Delay.Queue);
-
     /** @type {MonitorInfo[]} */
     get list() {
         return MainLayout.monitors ?? [];
@@ -51,15 +47,14 @@ export default class Monitors {
 
     constructor() {
         this.#updateMonitors();
-        Context.signals.add(this,
-            [global.backend.get_monitor_manager(), Event.MonitorsChanged, () => this.#handleMonitors()]);
+        Context.signals.add(this, [global.backend.get_monitor_manager(),
+            Event.MonitorsChanged, () => this.#enqueueUpdate()]);
     }
 
     destroy() {
         Context.signals.removeAll(this);
-        this.#job?.destroy();
+        Context.jobs.removeAll(this);
         this.#clients?.clear();
-        this.#job = null;
         this.#clients = null;
     }
 
@@ -133,13 +128,15 @@ export default class Monitors {
         return !!this.#clients?.has(client);
     }
 
-    #handleMonitors() {
-        if (!this.#job) return;
+    #enqueueUpdate() {
         this.#isUpdating = true;
-        this.#job.enqueue(() => (
-            this.#updateMonitors(),
-            this.#notifyClients(),
-            this.#finishUpdate()));
+        Context.jobs.replace(this, Delay.Queue).destroy(() => this.#update());
+    }
+
+    #update() {
+        this.#updateMonitors();
+        this.#notifyClients();
+        this.#isUpdating = false;
     }
 
     #updateMonitors() {
@@ -162,10 +159,6 @@ export default class Monitors {
     #notifyClients() {
         if (!this.#clients?.size) return;
         for (const [_, callback] of this.#clients) callback();
-    }
-
-    #finishUpdate() {
-        this.#isUpdating = false;
     }
 
 }
