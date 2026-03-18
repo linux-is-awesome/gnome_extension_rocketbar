@@ -21,7 +21,7 @@ import { SharedConfig } from '../../../shared/utils/config.js';
 import { FileSelector } from '../../utils/zenity.js';
 import { SoundVolumeIcon } from '../../utils/soundVolumeIcon.js';
 import { WindowProxy } from '../../utils/taskbar/windowProxy.js';
-import { Delay, Event, Alignment } from '../../../shared/enums/general.js';
+import { Delay, Event } from '../../../shared/enums/general.js';
 import { SettingsKey } from '../../../shared/enums/settings.js';
 import { Label } from '../../../shared/enums/labels.js';
 import { ConfigOptions, ConfigKey,
@@ -37,12 +37,6 @@ const ICON_FILE_TYPE_FILTER = `${Label.Icon} | *.svg *.png`;
 const DefaultProps = {
     favoritesSection: true,
     showSingleWindow: true
-};
-
-/** @type {{[position: string]: number}} */
-const MenuPosition = {
-    [Alignment.Top]: St.Side.TOP,
-    [Alignment.Bottom]: St.Side.BOTTOM
 };
 
 /** @type {{[value: string]: string}} */
@@ -670,9 +664,7 @@ export class Menu extends AppMenu {
      * @param {BoxPointer.PopupAnimation} animation
      */
     open(animation) {
-        if (!this.#appButton || !this.#config) return;
-        const [_, y] = Context.monitors.getAlignment(this.#appButton.rect);
-        this.actor._arrowSide = MenuPosition[y];
+        if (!this.#appButton) return;
         this.rerender();
         super.open(animation);
     }
