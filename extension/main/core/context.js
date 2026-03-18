@@ -2,6 +2,7 @@
  * @typedef {import('resource:///org/gnome/shell/extensions/extension.js').Extension} Extension
  */
 
+import { MainLayout, Session } from './shell.js';
 import SharedContext from '../../shared/core/context.js';
 import Desktop from './context/desktop.js';
 import Hooks from './context/hooks.js';
@@ -9,15 +10,12 @@ import Monitors from './context/monitors.js';
 import Modules from '../services/modules.js';
 import LauncherApi from '../services/launcherApi.js';
 import { SessionModesWatchdog } from '../../shared/utils/sessionModesWatchdog.js';
-import { Event } from '../../shared/enums/general.js';
+import { Event, SessionMode } from '../../shared/enums/general.js';
 
 export default class Context extends SharedContext {
 
     /** @type {Context?} store another context instance in this class to optimize the call path */
     static #instance = null;
-
-    /** @type {boolean} */
-    static #isNew = true;
 
     /**
      * @override
@@ -56,9 +54,13 @@ export default class Context extends SharedContext {
         return result;
     }
 
-    /** @type {boolean} */
-    static get isNew() {
-        return Context.#isNew;
+    /**
+     * @override
+     * @param {*} client
+     */
+    static clearStorage(client) {
+        if (this.#instance && !this.#instance.#isSessionUnlocked) return;
+        super.clearStorage(client);
     }
 
     /** @type {Modules?} */
@@ -76,13 +78,19 @@ export default class Context extends SharedContext {
     /** @type {Monitors?} */
     #monitors = null;
 
+    /** @type {boolean} */
+    get #isSessionUnlocked() {
+        return Session.currentMode !== SessionMode.Locksreen &&
+               !MainLayout.screenShieldGroup?.visible;
+    }
+
     /**
      * @param {Extension} extension
      */
     constructor(extension) {
         super(extension, () => this.#destroy());
         Context.#instance = this;
-        if (!Context.desktop.isLocked) this.#initialize();
+        if (this.#isSessionUnlocked) this.#initialize();
         else Context.jobs.new(this).destroy(() => this.#initialize());
     }
 
@@ -104,13 +112,13 @@ export default class Context extends SharedContext {
      * @returns {boolean}
      */
     #destroy() {
-        Context.#isNew = !Context.desktop.isLocked;
+        const isFinal = this.#isSessionUnlocked;
         try {
             this.#hooks?.destroy();
             this.#modules?.destroy();
-            this.#launcherApi?.destroy();
             this.#desktop?.destroy();
             this.#monitors?.destroy();
+            this.#launcherApi?.destroy(isFinal);
         } finally {
             this.#modules = null;
             this.#launcherApi = null;
@@ -118,7 +126,7 @@ export default class Context extends SharedContext {
             this.#hooks = null;
             this.#monitors = null;
         }
-        return Context.#isNew;
+        return isFinal;
     }
 
 }
