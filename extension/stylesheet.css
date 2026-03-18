@@ -122,3 +122,9 @@
 .rocketbar__notification-counter:transition {
     transition-duration: 0.3s;
 }
+
+/* tweak: hide show apps button */
+
+.rocketbar__tweak_hide-show-apps-button {
+    min-height: 2.5em;
+}
