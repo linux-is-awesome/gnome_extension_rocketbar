@@ -2,7 +2,6 @@
  * @typedef {import('../core/shell.js').MessageTray.Source} MessageTraySource
  */
 
-import GObject from 'gi://GObject';
 import Clutter from 'gi://Clutter';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
@@ -15,6 +14,7 @@ import Favorites from './taskbar/favorites.js';
 import { WindowPreview } from '../ui/base/windowPreview.js';
 import { Config, InnerConfig } from '../../shared/utils/config.js';
 import { AppConfigValue } from '../../shared/utils/taskbar/appConfig.js';
+import { AppWindow } from '../utils/appWindow.js';
 import { NotificationSourceInfo } from '../utils/notificationSourceInfo.js';
 import { Event, Delay, Property } from '../../shared/enums/general.js';
 import { ServiceConfigField as ConfigField,
@@ -22,12 +22,6 @@ import { ServiceConfigField as ConfigField,
          ActivationBehavior,
          AttentionBehavior,
          NotificationsBehavior } from '../../shared/enums/taskbar.js';
-
-const SUPPORTED_WINDOW_TYPES = [
-    Meta.WindowType.NORMAL,
-    Meta.WindowType.DIALOG,
-    Meta.WindowType.MODAL_DIALOG
-];
 
 /** @type {{[prop: string]: *}} */
 const RoutingHelperProps = {
@@ -44,9 +38,6 @@ export const TaskbarEvent = {
 };
 
 class TaskbarService {
-
-    /** @type {Set<Meta.WindowType>} */
-    #windowTypes = new Set(SUPPORTED_WINDOW_TYPES);
 
     /** @type {Shell.WindowTracker?} */
     #windowTracker = Shell.WindowTracker.get_default();
@@ -125,6 +116,7 @@ class TaskbarService {
         Context.signals.removeAll(this);
         Context.hooks.removeAll(this);
         Context.monitors.disconnect(this);
+        Context.clearStorage(this.constructor.name);
         this.#stopWindowRouting();
         this.tracker?.destroy();
         this.favorites?.destroy();
@@ -176,18 +168,23 @@ class TaskbarService {
         this.#handleConfig();
         this.#loadWindows();
         this.#handleWorkspace();
-        if (!this.workspace) return;
         this.tracker.isActive = true;
         Context.signals.add(this,
-            [Shell.AppSystem.get_default(), Event.AppStateChanged, (_, app) => this.#handleAppStateAsync(app)],
-            [global.window_manager, Event.SwitchWorkspace, () => this.#handleWorkspace(),
-                                    Event.WindowMapped, (_, windowActor) => this.#handleMappedWindow(windowActor),
-                                    Event.Minimize, (_, windowActor) => this.#handleWindowMinimizedState(windowActor),
-                                    Event.Unminimize, (_, windowActor) => this.#handleWindowMinimizedState(windowActor)],
-            [global.display, Event.FocusWindow, () => this.#handleFocusedWindow(),
-                             Event.WindowDemandsAttention, (_, window) => this.#handleWindowAttention(window),
-                             Event.WindowMarkedUrgent, (_, window) => this.#handleWindowAttention(window),
-                             Event.WindowEnteredMonitor, (_, __, window) => this.#handleWindowMonitor(window)]);
+            [Shell.AppSystem.get_default(),
+                Event.AppStateChanged, (_, app) =>
+                    Context.jobs.replace(app).destroy(() => this.#handleAppState(app))],
+            [global.window_manager,
+                Event.SwitchWorkspace, () => this.#handleWorkspace(),
+                Event.WindowMapped, (_, windowActor) => this.#handleNewWindow(windowActor, true),
+                Event.Minimize, (_, windowActor) => this.#handleWindowMinimizedState(windowActor),
+                Event.Unminimize, (_, windowActor) => this.#handleWindowMinimizedState(windowActor),
+                Event.Destroy, (_, windowActor) => this.#removeWindow(windowActor)],
+            [global.display,
+                Event.WindowCreated, (_, windowActor) => this.#handleNewWindow(windowActor),
+                Event.FocusWindow, () => this.#handleFocusedWindow(),
+                Event.WindowDemandsAttention, (_, window) => this.#handleWindowAttention(window),
+                Event.WindowMarkedUrgent, (_, window) => this.#handleWindowAttention(window),
+                Event.WindowEnteredMonitor, (_, __, window) => this.#handleWindowMonitor(window)]);
         Context.hooks.add(this, MessageTraySource.prototype, MessageTraySource.prototype.addNotification,
             (source, notification) => this.#handleAppNotification(source, notification), true);
     }
@@ -226,12 +223,12 @@ class TaskbarService {
         if (!this.#windows || !this.#config) return;
         const windowActors = global.get_window_actors();
         if (!windowActors.length) return this.#windows.clear();
-        this.#isRouting = !Context.isNew && Context.monitors.has(this);
         const hasOldWindows = !!this.#windows.size;
         const newWindows = new Set();
+        this.#isRouting = hasOldWindows && Context.monitors.has(this);
         for (const windowActor of windowActors) {
-            const window = windowActor.get_meta_window();
-            if (!window || !this.#isValidWindow(window)) continue;
+            const window = AppWindow(windowActor);
+            if (!window) continue;
             newWindows.add(window);
             let windowInfo = hasOldWindows ? this.#windows.get(window) : null;
             if (windowInfo) this.#addAppWindow(windowInfo);
@@ -255,25 +252,17 @@ class TaskbarService {
         if (!this.#windows) return;
         const newWorkspace = global.workspace_manager.get_active_workspace();
         if (this.workspace === newWorkspace) return;
-        if (this.workspace) Context.signals.remove(this, this.workspace);
+        const signals = Context.signals;
+        if (this.workspace) signals.remove(this, this.workspace);
         this.#oldWorkspace = this.workspace;
         this.workspace = newWorkspace;
-        Context.signals.add(this, [
-            this.workspace,
-            Event.WindowAdded, (_, window) => this.#addWindowAsync(window), GObject.ConnectFlags.AFTER,
-            Event.WindowRemoved, (_, window) => this.#removeWindowAsync(window), GObject.ConnectFlags.AFTER
-        ]);
+        signals.add(this, [this.workspace,
+            Event.WindowAdded, (_, window) => this.#handleWindowMotion(window),
+            Event.WindowRemoved, (_, window) => this.#handleWindowMotion(window)]);
         this.#handleFocusedWindow();
         if (!this.tracker?.isActive) return;
         this.clientApps?.clear();
         this.clientAppWindows?.clear();
-        const workspaceWindows = this.workspace.list_windows();
-        if (!workspaceWindows?.length) return this.tracker.trackAll();
-        for (const window of workspaceWindows) {
-            const windowInfo = this.#windows.get(window)?.update();
-            if (windowInfo || !this.#isValidWindow(window)) continue;
-            this.#addWindow(window);
-        }
         this.tracker.trackAll();
     }
 
@@ -283,15 +272,6 @@ class TaskbarService {
     #handleTrackerState(hasChangedApps) {
         if (hasChangedApps) return this.#updateClientAppsAndWindows();
         this.#oldWorkspace = this.workspace;
-    }
-
-    /**
-     * @param {Shell.App} app
-     * @param {Delay} [delay]
-     */
-    #handleAppStateAsync(app, delay = Delay.Idle) {
-        if (!app) return;
-        Context.jobs.removeAll(app).new(app, delay).destroy(() => this.#handleAppState(app));
     }
 
     /**
@@ -309,7 +289,7 @@ class TaskbarService {
                 if (!windows.length) return;
                 let hasValidWindows = false;
                 for (const window of windows) {
-                    if (!this.#isValidWindow(window)) continue;
+                    if (!AppWindow(window)) continue;
                     this.#addWindowInfo(window, app);
                     hasValidWindows = true;
                 }
@@ -332,15 +312,14 @@ class TaskbarService {
 
     /**
      * @param {Meta.WindowActor} windowActor
+     * @param {boolean} [isMapped]
      */
-    #handleMappedWindow(windowActor) {
-        if (!windowActor || !this.#windows || !this.#config) return;
-        const window = windowActor.get_meta_window();
+    #handleNewWindow(windowActor, isMapped = false) {
+        if (!windowActor || !this.#windows) return;
+        const window = AppWindow(windowActor);
         if (!window) return;
-        if (!this.#windows.has(window)) {
-            if (!this.#isValidWindow(window)) return;
-            this.#addWindow(window);
-        }
+        if (!this.#windows.has(window)) this.#addWindow(window);
+        if (!isMapped) return;
         const windowInfo = this.#windows.get(window);
         if (!windowInfo) return;
         if (!this.#routeWindow(windowInfo)) windowInfo.updateMonitor();
@@ -373,18 +352,82 @@ class TaskbarService {
     #handleWindowMonitor(window) {
         if (!this.#windows || !window) return;
         const windowInfo = this.#windows.get(window);
-        if (windowInfo?.isRouting) windowInfo.routeToWorkspace();
-        else this.#addWindowAsync(window);
+        if (!windowInfo) return;
+        if (windowInfo.isRouting) windowInfo.routeToWorkspace();
+        else this.#handleWindowMotion(window);
     }
 
     /**
-     * Note: Async execution is required in order to extract an app from the window.
-     *
      * @param {Meta.Window} window
      */
-    #addWindowAsync(window) {
-        if (!this.#windows || !this.#isValidWindow(window)) return;
-        Context.jobs.removeAll(window).new(window).destroy(() => this.#addWindow(window));
+    #handleWindowMotion(window) {
+        if (!this.#windows || !this.#windows.has(window)) return;
+        Context.jobs.replace(window).destroy(() => this.#updateWindowInfo(window));
+    }
+
+    /**
+     * @param {Meta.WindowActor} windowActor
+     */
+    #handleWindowMinimizedState(windowActor) {
+        if (!windowActor || !this.#windows || !this.tracker) return;
+        const window = windowActor.get_meta_window();
+        if (!window) return;
+        const windowInfo = this.#windows.get(window);
+        const app = windowInfo?.app;
+        if (!app) return;
+        const event = window.minimized ? TaskbarEvent.Minimize : TaskbarEvent.Unminimize;
+        this.tracker.routeAppEvent(app, event);
+    }
+
+    /**
+     * @param {Meta.Window} window
+     */
+    #handleWindowAttention(window) {
+        if (!this.#windowTracker || !this.#config ||
+            window instanceof Meta.Window === false || window.has_focus()) return;
+        const app = this.#windowTracker.get_window_app(window);
+        if (!app) return;
+        const behavior = AppConfigValue(app.id, this.#appConfig, this.#config, ConfigKey.AttentionBehavior);
+        switch (behavior) {
+            case AttentionBehavior.FocusActive:
+                const focusedWindow = global.display.get_focus_window();
+                const appWindows = app.get_windows();
+                const isActive = !!focusedWindow && new WeakSet(appWindows).has(focusedWindow);
+                if (!isActive) return;
+            case AttentionBehavior.FocusWorkspace:
+                if (window.get_workspace() !== this.workspace) return;
+            case AttentionBehavior.FocusAll:
+                FocusedWindow(window);
+        }
+    }
+
+    /**
+     * @param {MessageTraySource} source
+     * @param {*} notification
+     */
+    #handleAppNotification(source, notification) {
+        if (!this.#config || !source || source._inDestruction) return;
+        const { app, isAttentionSource } = NotificationSourceInfo(source, this.#windowTracker);
+        const appId = app?.id;
+        if (typeof appId !== 'string') return;
+        const configKey = isAttentionSource ? ConfigKey.AttentionNotificationsBehavior :
+                                              ConfigKey.NotificationsBehavior;
+        const behavior = AppConfigValue(appId, this.#appConfig, this.#config, configKey);
+        switch (behavior) {
+            case NotificationsBehavior.Disable:
+                Context.jobs.replace(source).destroy(() =>
+                !source._inDestruction && source.destroy());
+                return;
+            case NotificationsBehavior.Hide:
+            case NotificationsBehavior.Show:
+            case NotificationsBehavior.Critical:
+                const value = behavior !== NotificationsBehavior.Hide;
+                if (source.policy.showBanners === value) return;
+                const propertyDescriptor = { value, writable: true };
+                Object.defineProperty(source.policy, Property.ShowBanners, propertyDescriptor);
+                if (!notification || behavior !== NotificationsBehavior.Critical) return;
+                notification.urgency = Urgency.CRITICAL;
+        }
     }
 
     /**
@@ -392,8 +435,7 @@ class TaskbarService {
      */
     #addWindow(window) {
         if (!this.#windows || !window) return;
-        const windowInfo = this.#windows.get(window);
-        if (windowInfo) return this.#updateWindowInfo(windowInfo);
+        if (this.#updateWindowInfo(window)) return;
         const app = this.#windowTracker?.get_window_app(window);
         if (!app) return;
         this.#addWindowInfo(window, app);
@@ -423,26 +465,16 @@ class TaskbarService {
     }
 
     /**
-     * Note: Async execution is required in order to check existing app windows.
-     *
-     * @param {Meta.Window} window
+     * @param {Meta.WindowActor} windowActor
      */
-    #removeWindowAsync(window) {
-        if (!this.#windows) return;
-        const jobs = Context.jobs.removeAll(window);
-        if (!this.#windows.has(window)) return;
-        jobs.new(window).destroy(() => this.#removeWindow(window));
-    }
-
-    /**
-     * @param {Meta.Window} window
-     */
-    #removeWindow(window) {
-        if (!this.#windows || !window) return;
+    #removeWindow(windowActor) {
+        if (!this.#windows || !windowActor) return;
+        const window = windowActor.get_meta_window();
+        if (!window) return;
+        Context.jobs.removeAll(window);
         const windowInfo = this.#windows.get(window);
         if (!windowInfo) return;
-        const { app, isValid } = windowInfo;
-        if (isValid) return this.#updateWindowInfo(windowInfo);
+        const { app } = windowInfo;
         this.#removeWindowInfo(window);
         if (!this.#apps?.has(app)) return;
         const windows = this.#apps.get(app);
@@ -462,79 +494,20 @@ class TaskbarService {
     }
 
     /**
-     * @param {WindowInfo} windowInfo
-     */
-    #updateWindowInfo(windowInfo) {
-        if (this.isRouting) return this.#scheduleWindowRouting();
-        if (windowInfo.isRouting) return;
-        windowInfo.update(false);
-        if (!windowInfo.isWorkspaceChanged) return;
-        this.tracker?.trackAppChange(windowInfo.app);
-    }
-
-    /**
      * @param {Meta.Window} window
+     * @returns {boolean}
      */
-    #handleWindowAttention(window) {
-        if (!this.#windowTracker || !this.#config ||
-            window instanceof Meta.Window === false || window.has_focus()) return;
-        const app = this.#windowTracker.get_window_app(window);
-        if (!app) return;
-        const behavior = AppConfigValue(app.id, this.#appConfig, this.#config, ConfigKey.AttentionBehavior);
-        switch (behavior) {
-            case AttentionBehavior.FocusActive:
-                const focusedWindow = global.display.get_focus_window();
-                const appWindows = app.get_windows();
-                const isActive = !!focusedWindow && new WeakSet(appWindows).has(focusedWindow);
-                if (!isActive) return;
-            case AttentionBehavior.FocusWorkspace:
-                if (window.get_workspace() !== this.workspace) return;
-            case AttentionBehavior.FocusAll:
-                FocusedWindow(window);
-        }
-    }
-
-    /**
-     * @param {Meta.WindowActor} windowActor
-     */
-    #handleWindowMinimizedState(windowActor) {
-        if (!windowActor || !this.#windows || !this.tracker) return;
-        const window = windowActor.get_meta_window();
-        if (!window) return;
+    #updateWindowInfo(window) {
+        if (!this.#windows || !window) return false;
         const windowInfo = this.#windows.get(window);
-        const app = windowInfo?.app;
-        if (!app) return;
-        const event = window.minimized ? TaskbarEvent.Minimize : TaskbarEvent.Unminimize;
-        this.tracker.routeAppEvent(app, event);
-    }
-
-    /**
-     * @param {MessageTraySource} source
-     * @param {*} notification
-     */
-    #handleAppNotification(source, notification) {
-        if (!this.#config || !source || source._inDestruction) return;
-        const { app, isAttentionSource } = NotificationSourceInfo(source, this.#windowTracker);
-        const appId = app?.id;
-        if (typeof appId !== 'string') return;
-        const configKey = isAttentionSource ? ConfigKey.AttentionNotificationsBehavior :
-                                              ConfigKey.NotificationsBehavior;
-        const behavior = AppConfigValue(appId, this.#appConfig, this.#config, configKey);
-        switch (behavior) {
-            case NotificationsBehavior.Disable:
-                Context.jobs.removeAll(source).new(source).destroy(() =>
-                !source._inDestruction && source.destroy());
-                return;
-            case NotificationsBehavior.Hide:
-            case NotificationsBehavior.Show:
-            case NotificationsBehavior.Critical:
-                const value = behavior !== NotificationsBehavior.Hide;
-                if (source.policy.showBanners === value) return;
-                const propertyDescriptor = { value, writable: true };
-                Object.defineProperty(source.policy, Property.ShowBanners, propertyDescriptor);
-                if (!notification || behavior !== NotificationsBehavior.Critical) return;
-                notification.urgency = Urgency.CRITICAL;
+        if (!windowInfo) return false;
+        if (this.isRouting) this.#scheduleWindowRouting();
+        else if (!windowInfo.isRouting) {
+            windowInfo.update(false);
+            const { isWorkspaceChanged, app } = windowInfo;
+            if (isWorkspaceChanged) this.tracker?.trackAppChange(app);
         }
+        return true;
     }
 
     #updateClientAppsAndWindows() {
@@ -563,8 +536,7 @@ class TaskbarService {
         if (!this.#windows?.size) return this.#stopWindowRouting();
         this.#isRouting = true;
         if (!this.#routingHelper) this.#createRoutingHelper();
-        Context.jobs.removeAll(this).new(this, Delay.Scheduled).destroy(() =>
-        this.#startWindowRouting());
+        Context.jobs.replace(this, Delay.Scheduled).destroy(() => this.#startWindowRouting());
         if (!Context.monitors.isUpdating) return;
         Context.desktop.animations = false;
     }
@@ -589,12 +561,16 @@ class TaskbarService {
     }
 
     #startWindowRouting() {
+        if (!this.#windows?.size) return this.#stopWindowRouting();
         this.#isRouting = false;
-        if (!this.#windows?.size) return;
+        let hasRoutingWindows = false;
+        Context.desktop.animations = false;
         for (const [_, windowInfo] of this.#windows) {
-            if (this.#routeWindow(windowInfo)) continue;
-            windowInfo.update();
+            const isRoutingWindow = this.#routeWindow(windowInfo);
+            if (!isRoutingWindow) windowInfo.update();
+            hasRoutingWindows ||= isRoutingWindow;
         }
+        if (!hasRoutingWindows) return this.#stopWindowRouting();
         Context.jobs.new(this, Delay.Scheduled).destroy(() =>
             (this.#stopWindowRouting(), this.tracker?.trackAll()));
     }
@@ -621,14 +597,6 @@ class TaskbarService {
         if (typeof monitor !== 'number') windowInfo.routeToWorkspace();
         windowInfo.updateMonitor(monitor).updateWorkspace();
         return true;
-    }
-
-    /**
-     * @param {Meta.Window?} window
-     * @returns {boolean}
-     */
-    #isValidWindow(window) {
-        return window instanceof Meta.Window && this.#windowTypes.has(window.get_window_type());
     }
 
 }
