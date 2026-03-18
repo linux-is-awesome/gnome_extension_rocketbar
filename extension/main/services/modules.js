@@ -9,38 +9,38 @@ const MODULE_FILE_TYPE = '.js';
 const CONFIG_KEY_MODULES = 'modules';
 
 const CORE_MODULES = [
-    Module.TweakOverviewKillDash,
+    Module.TweakOverviewHideDash,
     Module.TweakOverviewHideSearch,
-    Module.TweakOverviewClicks,
-    Module.TweakPrimaryInputSource,
-    Module.TweakUpperCaseInputSource,
+    Module.TweakOverviewClickActions,
+    Module.TweakInputSourcePrimaryForPasswords,
+    Module.TweakInputSourceUpperCaseLabels,
     Module.TweakPopupsPreventFocus,
-    Module.TweakPopupsNoDelay,
+    Module.TweakPopupsRemoveDelay,
     Module.TweakMenusClickToOpen,
-    Module.TweakDndSystemNotifications,
+    Module.TweakNotificationsSystemBypassDnd,
     Module.Panel
 ];
 
 /** @type {{[sessionMode: SessionMode]: Module[]}} */
 const Modules = {
     [SessionMode.Desktop]: [
-        Module.TweakOverviewKillDash,
+        Module.TweakOverviewHideDash,
         Module.TweakOverviewHideSearch,
-        Module.TweakOverviewClicks,
+        Module.TweakOverviewClickActions,
         Module.TweakPopupsPreventFocus,
-        Module.TweakPopupsNoDelay,
-        Module.TweakPrimaryInputSource,
-        Module.TweakUpperCaseInputSource,
+        Module.TweakPopupsRemoveDelay,
+        Module.TweakInputSourcePrimaryForPasswords,
+        Module.TweakInputSourceUpperCaseLabels,
         Module.TweakMenusClickToOpen,
-        Module.TweakDndSystemNotifications,
+        Module.TweakNotificationsSystemBypassDnd,
         Module.Panel,
         Module.NotificationCounter,
         Module.Taskbar
     ],
     [SessionMode.Locksreen]: [
-        Module.TweakPopupsNoDelay,
-        Module.TweakPrimaryInputSource,
-        Module.TweakUpperCaseInputSource,
+        Module.TweakPopupsRemoveDelay,
+        Module.TweakInputSourcePrimaryForPasswords,
+        Module.TweakInputSourceUpperCaseLabels,
         Module.TweakMenusClickToOpen,
         Module.Panel
     ]

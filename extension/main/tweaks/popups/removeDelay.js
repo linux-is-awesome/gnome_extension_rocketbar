@@ -1,5 +1,5 @@
 import { SwitcherPopup } from 'resource:///org/gnome/shell/ui/switcherPopup.js';
-import Context from '../core/context.js';
+import Context from '../../core/context.js';
 
 export default class {
 

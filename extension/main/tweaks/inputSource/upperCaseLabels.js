@@ -4,9 +4,9 @@
 
 import { getInputSourceManager as InputSourceManager,
          InputSourcePopup } from 'resource:///org/gnome/shell/ui/status/keyboard.js';
-import { MainPanel } from '../core/shell.js';
-import Context from '../core/context.js';
-import { Event } from '../../shared/enums/general.js';
+import { MainPanel } from '../../core/shell.js';
+import Context from '../../core/context.js';
+import { Event } from '../../../shared/enums/general.js';
 
 export default class {
 

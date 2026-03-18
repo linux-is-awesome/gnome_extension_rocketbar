@@ -7,15 +7,15 @@ import { SettingsKey } from '../../shared/enums/settings.js';
 const CONFIG_KEY_MODULES = 'modules';
 
 const MANAGED_MODULES = [
-    Module.TweakMenusClickToOpen,
-    Module.TweakOverviewClicks,
+    Module.TweakOverviewClickActions,
     Module.TweakOverviewHideSearch,
-    Module.TweakOverviewKillDash,
-    Module.TweakPopupsNoDelay,
+    Module.TweakOverviewHideDash,
+    Module.TweakPopupsRemoveDelay,
     Module.TweakPopupsPreventFocus,
-    Module.TweakPrimaryInputSource,
-    Module.TweakUpperCaseInputSource,
-    Module.TweakDndSystemNotifications
+    Module.TweakInputSourcePrimaryForPasswords,
+    Module.TweakInputSourceUpperCaseLabels,
+    Module.TweakMenusClickToOpen,
+    Module.TweakNotificationsSystemBypassDnd
 ];
 
 /** @enum {string} */

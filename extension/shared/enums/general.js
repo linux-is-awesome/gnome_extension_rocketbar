@@ -170,15 +170,15 @@ export const MetadataField = {
  * @enum {string}
  */
 export const Module = {
-    TweakOverviewKillDash: 'tweaks/overviewKillDash',
-    TweakOverviewHideSearch: 'tweaks/overviewHideSearch',
-    TweakOverviewClicks: 'tweaks/overviewClicks',
-    TweakPopupsPreventFocus: 'tweaks/popupsPreventFocus',
-    TweakPopupsNoDelay: 'tweaks/popupsNoDelay',
-    TweakPrimaryInputSource: 'tweaks/primaryInputSource',
-    TweakUpperCaseInputSource: 'tweaks/upperCaseInputSource',
-    TweakMenusClickToOpen: 'tweaks/menusClickToOpen',
-    TweakDndSystemNotifications: 'tweaks/dndSystemNotifications',
+    TweakOverviewHideDash: 'tweaks/overview/hideDash',
+    TweakOverviewHideSearch: 'tweaks/overview/hideSearch',
+    TweakOverviewClickActions: 'tweaks/overview/clickActions',
+    TweakPopupsPreventFocus: 'tweaks/popups/preventFocus',
+    TweakPopupsRemoveDelay: 'tweaks/popups/removeDelay',
+    TweakInputSourcePrimaryForPasswords: 'tweaks/inputSource/primaryForPasswords',
+    TweakInputSourceUpperCaseLabels: 'tweaks/inputSource/upperCaseLabels',
+    TweakMenusClickToOpen: 'tweaks/menus/clickToOpen',
+    TweakNotificationsSystemBypassDnd: 'tweaks/notifications/systemBypassDnd',
     Panel: 'ui/panel',
     NotificationCounter: 'ui/notificationCounter',
     Taskbar: 'ui/taskbar'
