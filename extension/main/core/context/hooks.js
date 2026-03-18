@@ -166,16 +166,31 @@ export default class Hooks {
 
     /**
      * @param {*} client
+     * @returns {this}
      */
     removeAll(client) {
-        if (!this.#hooks?.size) return;
-        for (const [target, hooks] of this.#hooks) {
-            for (const [functionName, hook] of hooks) {
-                hook.removeClient(client);
-                if (!hook.isValid) hooks.delete(functionName);
-            }
-            if (!hooks.size) this.#hooks.delete(target);
+        if (!this.#hooks?.size) return this;
+        const targets = this.#hooks.keys();
+        for (const target of targets) this.remove(client, target);
+        return this;
+    }
+
+    /**
+     * @param {*} client
+     * @param {*} target
+     * @returns {this}
+     */
+    remove(client, target) {
+        if (!this.#hooks) return this;
+        const hooks = this.#hooks.get(target);
+        if (!hooks) return this;
+        for (const [functionName, hook] of hooks) {
+            console.log('remove hook for function', functionName);
+            hook.removeClient(client);
+            if (!hook.isValid) hooks.delete(functionName);
         }
+        if (!hooks.size) this.#hooks.delete(target);
+        return this;
     }
 
     /**
