@@ -185,7 +185,6 @@ export default class Hooks {
         const hooks = this.#hooks.get(target);
         if (!hooks) return this;
         for (const [functionName, hook] of hooks) {
-            console.log('remove hook for function', functionName);
             hook.removeClient(client);
             if (!hook.isValid) hooks.delete(functionName);
         }
