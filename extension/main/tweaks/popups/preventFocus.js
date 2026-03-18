@@ -1,6 +1,6 @@
 import Clutter from 'gi://Clutter';
 import { SwitcherPopup } from 'resource:///org/gnome/shell/ui/switcherPopup.js';
-import Context from '../core/context.js';
+import Context from '../../core/context.js';
 
 const STAGE_GRAB_FUNCTION_NAME = 'grab';
 

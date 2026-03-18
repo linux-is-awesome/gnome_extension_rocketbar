@@ -6,10 +6,10 @@
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import { ThumbnailsBox, MAX_THUMBNAIL_SCALE } from 'resource:///org/gnome/shell/ui/workspaceThumbnail.js';
-import { Overview, CtrlAltTabManager } from '../core/shell.js';
-import Context from '../core/context.js';
-import { Event } from '../../shared/enums/general.js';
-import { Animation, AnimationDuration, AnimationType } from '../ui/base/animation.js';
+import { Overview, CtrlAltTabManager } from '../../core/shell.js';
+import Context from '../../core/context.js';
+import { Event } from '../../../shared/enums/general.js';
+import { Animation, AnimationDuration, AnimationType } from '../../ui/base/animation.js';
 
 const WORKSPACE_THUMBNAIL_SCALE = 0.1;
 

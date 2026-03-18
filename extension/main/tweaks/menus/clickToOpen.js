@@ -1,5 +1,5 @@
-import { MainPanel } from '../core/shell.js';
-import Context from '../core/context.js';
+import { MainPanel } from '../../core/shell.js';
+import Context from '../../core/context.js';
 
 export default class {
 

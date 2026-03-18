@@ -6,10 +6,10 @@ import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import { WindowPreview } from 'resource:///org/gnome/shell/ui/windowPreview.js';
 import { WorkspacesDisplay } from 'resource:///org/gnome/shell/ui/workspacesView.js';
-import { Overview, MainLayout } from '../core/shell.js';
-import Context from '../core/context.js';
-import { ActorPressHandler } from '../ui/base/actorPressHandler.js';
-import { Event } from '../../shared/enums/general.js';
+import { Overview, MainLayout } from '../../core/shell.js';
+import Context from '../../core/context.js';
+import { ActorPressHandler } from '../../ui/base/actorPressHandler.js';
+import { Event } from '../../../shared/enums/general.js';
 
 export default class {
 
