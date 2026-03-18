@@ -254,7 +254,7 @@ export default class Taskbar extends ScrollView {
     /** @type {Config?} */
     #config = Config(this, ConfigField, settingsKey => this.#handleConfig(settingsKey), ConfigOptions);
 
-    /** @type {Map<Meta.Workspace, Set<Shell.App>>} */
+    /** @type {Map<Meta.Workspace, Set<Shell.App>>?} */
     #runningApps = Context.getStorage(this.constructor.name);
 
     /** @type {Map<AppButton, Shell.App>?} */
@@ -290,7 +290,10 @@ export default class Taskbar extends ScrollView {
         super.actor.add_child(this.actor);
         super.dropEvents = true;
         super.notifyCallback = data => this.#events?.[data?.event]?.(data);
+        this.#cleanRunningApps();
         this.#separator?.connect(Event.Hover, () => this.#allocation?.scrollIntoView(this.#separator));
+        Context.signals.add(this, [global.workspace_manager,
+            Event.WorkspaceRemoved, () => this.#cleanRunningApps()]);
         Context.hooks.add(this, WindowManager, WindowManager._getNthFavoriteApp,
             (_, __, appIndex) => (this.#handleAppActivationShortcut(appIndex), null));
     }
@@ -348,6 +351,7 @@ export default class Taskbar extends ScrollView {
         Context.monitors.disconnect(this);
         Context.hooks.removeAll(this);
         Context.signals.removeAll(this);
+        Context.clearStorage(this.constructor.name);
         this.#allocation?.destroy();
         this.#service?.destroy();
         this.#dndHandler?.destroy();
@@ -356,6 +360,7 @@ export default class Taskbar extends ScrollView {
         this.#activatedApps?.clear();
         this.#appButtons = null;
         this.#activatedApps = null;
+        this.#runningApps = null;
         this.#dndHandler = null;
         this.#separator = null;
         this.#allocation = null;
@@ -406,7 +411,7 @@ export default class Taskbar extends ScrollView {
      */
     #handleDrop() {
         const dropResult = this.#dndHandler?.handleDrop();
-        if (!dropResult) return false;
+        if (!dropResult || !this.#activatedApps || !this.#runningApps) return false;
         const [candidate, slots] = dropResult;
         const workspace = this.#service?.workspace;
         const favorites = this.#service?.favorites;
@@ -459,8 +464,8 @@ export default class Taskbar extends ScrollView {
         }
         candidate.drop();
         if (!oldAppButton?.isValid) candidate.activate();
-        if (oldAppButton) this.#activatedApps?.delete(oldAppButton);
-        this.#activatedApps?.set(candidate, candidateApp);
+        if (oldAppButton) this.#activatedApps.delete(oldAppButton);
+        if (!candidate.isRunning) this.#activatedApps.set(candidate, candidateApp);
         return true;
     }
 
@@ -563,7 +568,7 @@ export default class Taskbar extends ScrollView {
      */
     #getRunningApps() {
         const workspace = this.#service?.workspace;
-        if (!this.#service || !workspace) return null;
+        if (!this.#service || !workspace || !this.#runningApps) return null;
         let runningApps = this.#service.apps;
         if (this.#activatedApps?.size) {
             runningApps = runningApps ? new Set([...runningApps]) : new Set();
@@ -585,6 +590,19 @@ export default class Taskbar extends ScrollView {
             this.#runningApps.set(workspace, runningApps);
         }
         return runningApps;
+    }
+
+    #cleanRunningApps() {
+        if (!this.#runningApps?.size) return;
+        const allWorkspaces = new Set();
+        for (let i = 0, l = global.workspace_manager.get_n_workspaces(); i < l; ++i) {
+            allWorkspaces.add(global.workspace_manager.get_workspace_by_index(i));
+        }
+        const cachedWorkspaces = this.#runningApps.keys();
+        for (const workspace of cachedWorkspaces) {
+            if (allWorkspaces.has(workspace)) continue;
+            this.#runningApps.delete(workspace);
+        }
     }
 
     /**
