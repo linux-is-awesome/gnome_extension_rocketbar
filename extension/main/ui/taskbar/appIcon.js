@@ -53,8 +53,8 @@ export class AppIcon extends Icon {
         [IconEvent.TextureChanged]: () => this.#handleIconTexture()
     };
 
-    /** @type {Shell.App?} */
-    #app = null;
+    /** @type {string?} */
+    #appId = null;
 
      /** @type {St.Icon?} */
     #dragActor = null;
@@ -68,7 +68,7 @@ export class AppIcon extends Icon {
     /** @type {string?} */
     #dominantColor = null;
 
-    /** @type {Map<Shell.App, string?>} */
+    /** @type {Map<string, string?>?} */
     #dominantColors = Context.getStorage(this.constructor.name);
 
     /** @param {boolean} value */
@@ -97,13 +97,15 @@ export class AppIcon extends Icon {
 
     /** @type {string?} */
     get dominantColor() {
-        if (!this.#app || this.#dominantColor) return this.#dominantColor;
-        this.#dominantColor = this.#dominantColors.get(this.#app) ?? null;
-        if (this.#dominantColors.has(this.#app)) return this.#dominantColor;
+        if (!this.#appId ||
+            !this.#dominantColors ||
+            this.#dominantColor) return this.#dominantColor;
+        this.#dominantColor = this.#dominantColors.get(this.#appId) ?? null;
+        if (this.#dominantColors.has(this.#appId)) return this.#dominantColor;
         const icon = this.actor.get_gicon();
         if (!icon) return null;
         this.#dominantColor = DominantColor(icon);
-        this.#dominantColors.set(this.#app, this.#dominantColor);
+        this.#dominantColors.set(this.#appId, this.#dominantColor);
         return this.#dominantColor;
     }
 
@@ -112,12 +114,12 @@ export class AppIcon extends Icon {
      * @param {string?} [iconPath]
      */
     constructor(app, iconPath) {
-        const iconTexture = app?.get_icon() ?? null;
+        const iconTexture = app.get_icon() ?? null;
         const icon = { iconTexture, iconPath };
         super(icon, MODULE_NAME);
         super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.setProps(DefaultProps);
-        this.#app = app;
+        this.#appId = app.get_id();
         this.#highlight = new Clutter.BrightnessContrastEffect(HighlightProps);
         this.#highlight.set_brightness(HIGHLIGHT_BRIGHTNESS);
         this.#highlight.set_contrast(HIGHLIGHT_CONTRAST);
@@ -169,20 +171,21 @@ export class AppIcon extends Icon {
         Context.signals.removeAll(this);
         Context.desktop.disconnect(this);
         this.#dragActor?.destroy();
-        this.#app = null;
+        this.#appId = null;
         this.#events = null;
         this.#highlight = null;
         this.#dragActor = null;
+        this.#dominantColors = null;
     }
 
     #handleIconTexture() {
         const iconThemeName = Context.desktop.settings.gtk_icon_theme;
         if (AppIcon.iconThemeName !== iconThemeName) {
             AppIcon.iconThemeName = iconThemeName;
-            this.#dominantColors.clear();
+            this.#dominantColors?.clear();
         }
-        if (!this.#app || !this.#dominantColor) return;
-        this.#dominantColors.delete(this.#app);
+        if (!this.#appId || !this.#dominantColors || !this.#dominantColor) return;
+        this.#dominantColors.delete(this.#appId);
         this.#dominantColor = null;
         this.notifyParents(AppIconEvent.DominantColorChanged);
     }
