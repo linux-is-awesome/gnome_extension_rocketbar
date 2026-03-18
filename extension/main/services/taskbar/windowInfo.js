@@ -30,13 +30,6 @@ export default class WindowInfo {
     app;
 
     /** @type {boolean} */
-    get isValid() {
-        const workspace = this.window.get_workspace()?.index() ?? -1;
-        return workspace >= 0 ||
-               new WeakSet(this.app.get_windows()).has(this.window);
-    }
-
-    /** @type {boolean} */
     get isWorkspaceChanged() {
         return this.#workspace !== this.#oldWorkspace;
     }
