@@ -16,6 +16,7 @@ import { ConfigOptions, ConfigKey, ConfigField } from '../../shared/enums/panel.
 
 const ROOT_MODULE = Module.Panel;
 const PAGE_GROUP_ACTIONS = 'actions';
+const PAGE_GROUP_LAYOUT = 'layout';
 const CONFIG_KEY_MODULES = 'modules';
 
 const MANAGED_MODULES = [
@@ -23,9 +24,16 @@ const MANAGED_MODULES = [
     Module.NotificationCounter
 ];
 
-const PAGE_GROUPS = [
+const ROOT_WIDGETS = [
+    ConfigField.position,
     PAGE_GROUP_ACTIONS,
+    PAGE_GROUP_LAYOUT,
     ...MANAGED_MODULES
+];
+
+const POSITION_OPTIONS = [
+    Alignment.Top,
+    Alignment.Bottom
 ];
 
 const ALIGNMENT_OPTIONS = [
@@ -112,10 +120,10 @@ export default class extends SettingsPage {
     #handleRootConfig(isInitial = false) {
         const modules = this.#rootModules;
         const isActive = !!modules?.has(ROOT_MODULE);
-        for (const groupId of PAGE_GROUPS) {
-            const group = this.getGroup(groupId);
-            if (!group) continue;
-            group.set_sensitive(isActive);
+        for (const widgetId of ROOT_WIDGETS) {
+            const widget = this.getWidget(widgetId);
+            if (!widget) continue;
+            widget.set_sensitive(isActive);
         }
         const rootSwitch = this.getSwitchRow(ROOT_MODULE);
         if (rootSwitch.get_active() !== isActive) rootSwitch.set_active(isActive);
@@ -143,6 +151,12 @@ export default class extends SettingsPage {
         switch (settingsKey) {
             case ConfigField.items:
                 this.#handleItems();
+                break;
+            case ConfigField.position:
+                this.setOption(settingsKey, value, POSITION_OPTIONS);
+                break;
+            case ConfigField.height:
+                this.setNumber(settingsKey, value);
                 break;
             default:
                 if (typeof value !== 'boolean') return;
