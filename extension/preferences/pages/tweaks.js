@@ -10,11 +10,14 @@ const MANAGED_MODULES = [
     Module.TweakOverviewClickActions,
     Module.TweakOverviewHideSearch,
     Module.TweakOverviewHideDash,
+    Module.TweakOverviewHideShowAppsButton,
+    Module.TweakOverviewExpandWorkspaceBackground,
     Module.TweakPopupsRemoveDelay,
     Module.TweakPopupsPreventFocus,
     Module.TweakInputSourcePrimaryForPasswords,
     Module.TweakInputSourceUpperCaseLabels,
     Module.TweakMenusClickToOpen,
+    Module.TweakMenusAutoAlign,
     Module.TweakNotificationsSystemBypassDnd
 ];
 
