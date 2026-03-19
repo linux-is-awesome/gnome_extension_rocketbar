@@ -5,9 +5,17 @@
         <property name="icon-name">media-view-subtitles-symbolic</property>
         <child>
             <object class="AdwPreferencesGroup">
+                <property name="title" translatable="yes">General</property>
                 <child>
                     <object class="AdwSwitchRow" id="ui/panel">
                         <property name="title" translatable="yes">Enable Customization</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwComboRow" id="position">
+                        <property name="title" translatable="yes">Position (LS)</property>
+                        <property name="model">position-options</property>
+                        <property name="sensitive">false</property>
                     </object>
                 </child>
             </object>
@@ -26,6 +34,47 @@
                     <object class="AdwSwitchRow" id="click-to-hide-overview">
                         <property name="title" translatable="yes">Click To Hide Overview</property>
                         <property name="subtitle" translatable="yes">When in Overview, left button click on the panel hides the Overview</property>
+                    </object>
+                </child>
+            </object>
+        </child>
+        <child>
+            <object class="AdwPreferencesGroup" id="layout">
+                <property name="title" translatable="yes">Layout</property>
+                <property name="sensitive">false</property>
+                <child>
+                    <object class="AdwExpanderRow" id="height-adjustment">
+                        <property name="title" translatable="yes">Height Adjustment (LS)</property>
+                        <property name="show-enable-switch">true</property>
+                        <property name="enable-expansion">false</property>
+                        <property name="expanded">false</property>
+                        <child>
+                            <object class="AdwSpinRow" id="height">
+                                <property name="title" translatable="yes">Height</property>
+                                <property name="adjustment">
+                                    <object class="GtkAdjustment">
+                                        <property name="lower">20</property>
+                                        <property name="upper">64</property>
+                                        <property name="value">0</property>
+                                        <property name="step-increment">1</property>
+                                    </object>
+                                </property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwExpanderRow" id="transparency">
+                        <property name="title" translatable="yes">Transparency</property>
+                        <property name="show-enable-switch">true</property>
+                        <property name="enable-expansion">false</property>
+                        <property name="expanded">false</property>
+                        <child>
+                            <object class="AdwSwitchRow" id="dynamic-transparency">
+                                <property name="title" translatable="yes">Affected By Maximized Windows</property>
+                                <property name="subtitle" translatable="yes">Disable transparency when any window is maximized on the same monitor</property>
+                            </object>
+                        </child>
                     </object>
                 </child>
             </object>
@@ -99,6 +148,12 @@
                 </child>
             </object>
         </child>
+    </object>
+    <object class="GtkStringList" id="position-options">
+        <items>
+            <item translatable="yes">Top</item>
+            <item translatable="yes">Bottom</item>
+        </items>
     </object>
     <object class="GtkStringList" id="alignment-options">
         <items>
