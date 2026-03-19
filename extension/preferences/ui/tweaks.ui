@@ -19,6 +19,18 @@
                     </object>
                 </child>
                 <child>
+                    <object class="AdwSwitchRow" id="tweaks/overview/hideShowAppsButton">
+                        <property name="title" translatable="yes">Hide Show Apps Button</property>
+                        <property name="subtitle" translatable="yes">Hide the Show Apps button in the Dash</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwSwitchRow" id="tweaks/overview/expandWorkspaceBackground">
+                        <property name="title" translatable="yes">Expand Workspace Background</property>
+                        <property name="subtitle" translatable="yes">Expand the active workspace background to fill the space under the panel during Overview transitions. Enable to avoid visual glitches behind the transparent panel</property>
+                    </object>
+                </child>
+                <child>
                     <object class="AdwSwitchRow" id="tweaks/overview/clickActions">
                         <property name="title" translatable="yes">Click Actions</property>
                         <property name="subtitle" translatable="yes">Left button click on an empty space hides the Overview, long press or right button click toggles the App Grid. Close windows using middle button (or left button while holding down the Ctrl key)</property>
@@ -50,6 +62,12 @@
                     <object class="AdwSwitchRow" id="tweaks/menus/clickToOpen">
                         <property name="title" translatable="yes">Click To Open (LS)</property>
                         <property name="subtitle" translatable="yes">Require a click to open menus</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwSwitchRow" id="tweaks/menus/autoAlign">
+                        <property name="title" translatable="yes">Auto-Align (LS)</property>
+                        <property name="subtitle" translatable="yes">Automatically align menus based on their position on the screen. Enable if a non-standard panel position is used</property>
                     </object>
                 </child>
             </object>
