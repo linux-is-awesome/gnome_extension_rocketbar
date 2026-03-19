@@ -75,7 +75,8 @@ export const Event = {
     WindowMinimized: 'notify::minimized',
     WindowPositionChanged: 'position-changed',
     WindowRemoved: 'window_removed',
-    WindowSizeChanged: 'size-changed'
+    WindowSizeChanged: 'size-changed',
+    WorkspaceRemoved: 'workspace-removed'
 };
 
 /**
