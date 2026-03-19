@@ -123,6 +123,16 @@
     transition-duration: 0.3s;
 }
 
+/* panel */
+
+.rocketbar__panel:transparent {
+    background-color: rgba(0, 0, 0, 0);
+}
+.rocketbar__panel-bottom__desktop
+.popup-menu.panel-menu {
+    margin-bottom: 0;
+}
+
 /* tweak: hide show apps button */
 
 .rocketbar__tweak_hide-show-apps-button {
