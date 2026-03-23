@@ -239,12 +239,14 @@ export class AppButton extends RuntimeButton {
     constructor(app, isDropCandidate = false) {
         super(new St.Bin(), MODULE_NAME);
         super.notifyCallback = data => this.#events?.[data?.event]?.(data?.params);
-        this.#layout = new St.Widget({ ...LayoutProps, layout_manager: new Clutter.BinLayout() });
-        this.#layout.add_child(this.display);
-        this.actor.set_child(this.#layout);
         this.#app = app;
         this.#isDropCandidate = isDropCandidate;
-        this.actor.set_reactive(!isDropCandidate);
+        this.#layout = new St.Widget({ ...LayoutProps, layout_manager: new Clutter.BinLayout() });
+        this.#layout.add_child(this.display);
+        const child = this.#layout;
+        const reactive = !isDropCandidate;
+        const accessible_name = app.get_name();
+        this.setProps({ child, reactive, accessible_name });
         this.#config = this.configProvider.get(app.id, this, settingsKey => this.#handleConfig(settingsKey));
         this.#appIcon = new AppIcon(app, this.#config?.iconPath).setParent(this.display);
         Context.desktop.connectScale(this, () => this.#updateStyle());
