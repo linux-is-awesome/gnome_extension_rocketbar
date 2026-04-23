@@ -6,7 +6,7 @@
     "gettext-domain": "rocketbar",
     "session-modes": ["user"],
     "url": "https://github.com/linux-is-awesome/gnome_extension_rocketbar",
-    "version": 12,
+    "version": 14,
     "version-name": "2.1",
     "shell-version": ["48","49","50"]
 }
