@@ -1,5 +1,9 @@
 #!/bin/sh
 
+OUT_PATH=../release
+
+mkdir -p $OUT_PATH
+
 if [ "$1" = "dev" ]; then
 
     cd ../extension-dev
@@ -16,7 +20,7 @@ if [ "$1" = "dev" ]; then
                           --extra-source ../extension/shared/\
                           --extra-source ../extension/stylesheet.css/\
                           --extra-source ../LICENSE\
-                          --out-dir ../
+                          --out-dir $OUT_PATH
     rm -rf ./locale
     exit 0
 fi
@@ -30,4 +34,4 @@ gnome-extensions pack --force\
                       --extra-source preferences/\
                       --extra-source shared/\
                       --extra-source ../LICENSE\
-                      --out-dir ../
+                      --out-dir $OUT_PATH

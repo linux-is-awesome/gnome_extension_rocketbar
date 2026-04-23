@@ -2,17 +2,17 @@
 
 ./build $1
 
-cd ../
+cd ../release
 
 gnome-extensions install --force *.shell-extension.zip
 
 if [ "$1" = "dev" ]; then
-    UUID=`cat ./extension-dev/metadata.json | grep -oP '(?<="uuid": ")[^"]*'`
+    UUID=`cat ../extension-dev/metadata.json | grep -oP '(?<="uuid": ")[^"]*'`
     INSTALL_PATH=~/.local/share/gnome-shell/extensions/$UUID
     RUNTIME_PATH=.runtime
     TIMESTAMP=`date +"%s"`
 
-    cp ./extension/extension.js $INSTALL_PATH/extensionBase.js
+    cp ../extension/extension.js $INSTALL_PATH/extensionBase.js
     mkdir -p $INSTALL_PATH/$RUNTIME_PATH
     unzip -q *.shell-extension.zip -d $INSTALL_PATH/$RUNTIME_PATH/$TIMESTAMP
 fi
