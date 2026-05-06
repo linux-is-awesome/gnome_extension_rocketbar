@@ -3823,7 +3823,7 @@ declare module 'gi://GObject' {
          * use this `object` as closure data.
          * @param closure #GClosure to watch
          */
-        watch_closure(closure: TClosure): void
+        watch_closure(closure: Closure): void
 
         // Own virtual methods of GObject-2.0.GObject.Object
 
