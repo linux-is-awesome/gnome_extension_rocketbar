@@ -95242,7 +95242,7 @@ declare module 'gi://Gtk' {
         * 
         * Use [id`gtk_widget_measure]` if you want to support baseline alignment.
         */
-        get_preferred_size(): [ /* minimum_size */ Requisition, /* natural_size */ Requisition ]
+        get_preferred_size(): [ /* minimum_size */ Requisition | null, /* natural_size */ Requisition | null ]
         /**
         * Returns the widget’s previous sibling.
         * 
