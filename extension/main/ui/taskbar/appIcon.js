@@ -47,16 +47,20 @@ export class AppIcon extends Icon {
     /** @type {string?} */
     static iconThemeName = null;
 
-    /** @type {{[event: string]: () => *}?} */
-    #events = {
-        [ComponentEvent.Destroy]: () => this.#destroy(),
-        [IconEvent.TextureChanged]: () => this.#handleIconTexture()
+    /** @type {{[event: string]: (instance: AppIcon) => *}} */
+    static #events = {
+        [ComponentEvent.Destroy]: instance => instance.#destroy(),
+        [IconEvent.TextureChanged]: instance => instance.#handleIconTexture()
     };
+
+    static {
+        this.notifyCallback = (instance, data) => this.#events[data?.event]?.(instance, data);
+    }
 
     /** @type {string?} */
     #appId = null;
 
-     /** @type {St.Icon?} */
+    /** @type {St.Icon?} */
     #dragActor = null;
 
     /** @type {number} */
@@ -117,7 +121,6 @@ export class AppIcon extends Icon {
         const iconTexture = app.get_icon() ?? null;
         const icon = { iconTexture, iconPath };
         super(icon, MODULE_NAME);
-        super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.setProps(DefaultProps);
         this.#appId = app.get_id();
         this.#highlight = new Clutter.BrightnessContrastEffect(HighlightProps);
@@ -172,7 +175,6 @@ export class AppIcon extends Icon {
         Context.desktop.disconnect(this);
         this.#dragActor?.destroy();
         this.#appId = null;
-        this.#events = null;
         this.#highlight = null;
         this.#dragActor = null;
         this.#dominantColors = null;

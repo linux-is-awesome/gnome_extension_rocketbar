@@ -37,10 +37,14 @@ export class ProgressBar extends Component {
     /** @type {SharedConfig?} */
     static #sharedConfig = null;
 
-    /** @type {{[event: string]: () => *}?} */
-    #events = {
-        [ComponentEvent.Destroy]: () => this.#destroy()
+    /** @type {{[event: string]: (instance: ProgressBar) => *}} */
+    static #events = {
+        [ComponentEvent.Destroy]: instance => instance.#destroy()
     };
+
+    static {
+        this.notifyCallback = (instance, data) => this.#events[data?.event]?.(instance, data);
+    }
 
     /** @type {AppButton?} */
     #appButton = null;
@@ -88,7 +92,6 @@ export class ProgressBar extends Component {
      */
     constructor(appButton) {
         super(new St.DrawingArea(DefaultProps));
-        super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.#appButton = appButton;
         this.actor.set_pivot_point(0.5, 0.5);
         this.connect(Event.Repaint, () => this.#draw());
@@ -116,7 +119,6 @@ export class ProgressBar extends Component {
         this.#progress = Progress.Min;
         this.#toggleInfiniteProgress();
         this.#appButton = null;
-        this.#events = null;
         this.#config = null;
         if (!ProgressBar.#sharedConfig?.destroy(this)) return;
         ProgressBar.#sharedConfig = null;

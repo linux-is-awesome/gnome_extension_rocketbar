@@ -54,10 +54,14 @@ const SpacerProps = {
  */
 class DateMenu extends Component {
 
-    /** @type {{[event: string]: () => *}?} */
-    #events = {
-        [ComponentEvent.Destroy]: () => this.#destroy()
+    /** @type {{[event: string]: (instance: DateMenu) => *}} */
+    static #events = {
+        [ComponentEvent.Destroy]: instance => instance.#destroy()
     };
+
+    static {
+        this.notifyCallback = (instance, data) => this.#events[data?.event]?.(instance, data);
+    }
 
     /** @type {DateMenuButton?} */
     #dateMenu = MainPanel.statusArea?.dateMenu;
@@ -78,7 +82,6 @@ class DateMenu extends Component {
 
     constructor() {
         super(new St.BoxLayout({ name: `${MODULE_NAME}-${DateMenu.name}` }));
-        super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.#initialize();
     }
 
@@ -122,7 +125,6 @@ class DateMenu extends Component {
             this.#container?.insert_child_at_index(this.#dateMenu._clockDisplay, CLOCK_DISPLAY_POSITION);
         }
         this.#dateMenu = null;
-        this.#events = null;
     }
 
 }
@@ -132,12 +134,16 @@ class DateMenu extends Component {
  */
 export default class NotificationCounter extends Component {
 
-    /** @type {{[event: string]: () => *}?} */
-    #events = {
-        [ComponentEvent.Destroy]: () => this.#destroy(),
-        [ComponentEvent.Init]: () => Context.jobs.shared(this, () => this.#rerender(), Delay.Background),
-        [DateMenuEvent.DndChanged]: () => (this.#config?.colorsDnd && this.#updateStyle(), true)
+    /** @type {{[event: string]: (instance: NotificationCounter) => *}} */
+    static #events = {
+        [ComponentEvent.Destroy]: instance => instance.#destroy(),
+        [ComponentEvent.Init]: instance => Context.jobs.shared(instance, () => instance.#rerender(), Delay.Background),
+        [DateMenuEvent.DndChanged]: instance => (instance.#config?.colorsDnd && instance.#updateStyle(), true)
     };
+
+    static {
+        this.notifyCallback = (instance, data) => this.#events[data?.event]?.(instance, data);
+    }
 
     /** @type {St.Label?} */
     #counter = null;
@@ -167,7 +173,6 @@ export default class NotificationCounter extends Component {
 
     constructor() {
         super(new St.BoxLayout({ name: MODULE_NAME }));
-        super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.#createCounter();
         this.connect(Event.Mapped, () => this.#handleMapped());
         const desktop = Context.desktop;
@@ -195,7 +200,6 @@ export default class NotificationCounter extends Component {
         this.#notificationHandler?.destroy();
         this.#counter = null;
         this.#dateMenu = null;
-        this.#events = null;
         this.#config = null;
     }
 

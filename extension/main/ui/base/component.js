@@ -1,6 +1,7 @@
 /**
  * @typedef {import('gi://Clutter').Actor} Clutter.Actor
  * @typedef {import('../../../shared/core/context/signals.js').Signals.SignalTracker} SignalTracker
+ * @typedef {(instance: *, data: {event: string, params: *, target: *, sender: *}) => *} NotifyCallback
  */
 
 import St from 'gi://St';
@@ -39,6 +40,18 @@ export class Component {
     /** @type {Map<St.Widget, Component<St.Widget>>} */
     static #wrappers = new Map();
 
+    /** @type {WeakMap<Function, NotifyCallback>} */
+    static #notifyCallbacks = new WeakMap();
+
+    /**
+     * @param {NotifyCallback|undefined} callback
+     */
+    static set notifyCallback(callback) {
+        if (typeof callback !== 'function') return;
+        if (!Component.#notifyCallbacks.has(this)) Component.#notifyCallbacks.set(this, callback);
+        else throw new Error(`${this.name} notify callback is already set.`);
+    }
+
     /** @type {Set<number>} */
     #signals = new Set();
 
@@ -59,9 +72,6 @@ export class Component {
 
     /** @type {Dnd._Draggable?} */
     #draggable = null;
-
-    /** @type {((data: {event: string, params: *, target: *, sender: *}) => *)?} */
-    #notifyCallback = null;
 
     /** @type {boolean} */
     #dropEvents = false;
@@ -135,11 +145,6 @@ export class Component {
     /** @param {boolean} enabled */
     set dropEvents(enabled) {
         this.#dropEvents = typeof enabled === 'boolean' ? enabled : false;
-    }
-
-    /** @param {((data: {event: string, params: *, target: *, sender: *}) => *)?} callback */
-    set notifyCallback(callback) {
-        this.#notifyCallback = typeof callback === 'function' ? callback : null;
     }
 
     /**
@@ -339,7 +344,6 @@ export class Component {
         this.#parent = null;
         this.#draggable = null;
         this.#dragMonitor = null;
-        this.#notifyCallback = null;
     }
 
     #setInitHandler() {
@@ -437,13 +441,17 @@ export class Component {
      * @param {*} [target]
      * @param {*} [params]
      * @param {Component<St.Widget>} [sender]
+     * @param {Function} [prototype]
      * @returns {*}
      */
-    #notifySelf(event, target = this, params, sender = this) {
-        if (typeof this.#notifyCallback !== 'function') return null;
+    #notifySelf(event, target = this, params, sender = this, prototype = this.constructor) {
+        if (!prototype || prototype === Function.prototype) return null;
+        const callback = Component.#notifyCallbacks.get(prototype);
+        if (typeof callback !== 'function')
+            return this.#notifySelf(event, target, params, sender, Object.getPrototypeOf(prototype));
         try {
             const notifyParams = { event, target, params, sender };
-            return this.#notifyCallback(notifyParams);
+            return callback(this, notifyParams);
         } catch (e) {
             Context.logError(`${this.constructor.name} failed to handle event ${event}.`, e);
         }

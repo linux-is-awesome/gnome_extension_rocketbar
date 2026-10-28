@@ -59,29 +59,33 @@ export class AppButton extends RuntimeButton {
     /** @type {AppConfig?} */
     static #sharedConfig = null;
 
-    /** @type {{[event: string]: (...args) => *}?} */
-    #events = {
-        [ComponentEvent.Destroy]: () => this.#destroy(),
-        [ComponentEvent.Init]: () => this.#handleInit(),
-        [ComponentEvent.DragActorRequest]: () => this.#appIcon?.dragActor,
-        [ComponentEvent.DragActorSourceRequest]: () => this.#appIcon?.actor,
-        [ComponentEvent.DragBegin]: () => this.#handleDragBegin(),
-        [ComponentEvent.DragCancelled]: () => this.#handleDragEnd(true),
-        [ComponentEvent.DragEnd]: () => this.#handleDragEnd(),
-        [ButtonEvent.Hover]: () => this.#hover(),
-        [ButtonEvent.Focus]: () => this.notifyParents(AppButtonEvent.Reaction),
-        [ButtonEvent.Press]: () => this.#press(),
-        [ButtonEvent.LongPress]: params => this.#longPress(params),
-        [ButtonEvent.Click]: params => this.#click(params),
-        [ButtonEvent.RequestMenu]: () => new Menu(this),
-        [ButtonEvent.RequestTooltip]: () => new Tooltip(this),
-        [AppButtonEvent.Motion]: () => this.#rerenderTooltip(),
-        [AppIconEvent.DominantColorChanged]: () => (this.#handleDominantColor(), true),
-        [TaskbarEvent.Focus]: () => this.#handleAppFocus(),
-        [TaskbarEvent.Change]: () => this.#handleAppState(),
-        [TaskbarEvent.Minimize]: () => this.#appIcon?.animate(AppIconAnimation.Deactivate),
-        [TaskbarEvent.Unminimize]: () => this.#appIcon?.animate(AppIconAnimation.Activate)
+    /** @type {{[event: string]: (instance: AppButton, data?: *) => *}} */
+    static #events = {
+        [ComponentEvent.Destroy]: instance => instance.#destroy(),
+        [ComponentEvent.Init]: instance => instance.#handleInit(),
+        [ComponentEvent.DragActorRequest]: instance => instance.#appIcon?.dragActor,
+        [ComponentEvent.DragActorSourceRequest]: instance => instance.#appIcon?.actor,
+        [ComponentEvent.DragBegin]: instance => instance.#handleDragBegin(),
+        [ComponentEvent.DragCancelled]: instance => instance.#handleDragEnd(true),
+        [ComponentEvent.DragEnd]: instance => instance.#handleDragEnd(),
+        [ButtonEvent.Hover]: instance => instance.#hover(),
+        [ButtonEvent.Focus]: instance => instance.notifyParents(AppButtonEvent.Reaction),
+        [ButtonEvent.Press]: instance => instance.#press(),
+        [ButtonEvent.LongPress]: (instance, data) => instance.#longPress(data?.params),
+        [ButtonEvent.Click]: (instance, data) => instance.#click(data?.params),
+        [ButtonEvent.RequestMenu]: instance => new Menu(instance),
+        [ButtonEvent.RequestTooltip]: instance => new Tooltip(instance),
+        [AppButtonEvent.Motion]: instance => instance.#rerenderTooltip(),
+        [AppIconEvent.DominantColorChanged]: instance => (instance.#handleDominantColor(), true),
+        [TaskbarEvent.Focus]: instance => instance.#handleAppFocus(),
+        [TaskbarEvent.Change]: instance => instance.#handleAppState(),
+        [TaskbarEvent.Minimize]: instance => instance.#appIcon?.animate(AppIconAnimation.Deactivate),
+        [TaskbarEvent.Unminimize]: instance => instance.#appIcon?.animate(AppIconAnimation.Activate)
     };
+
+    static {
+        this.notifyCallback = (instance, data) => this.#events[data?.event]?.(instance, data);
+    }
 
     /** @type {boolean} */
     #isFavorite = false;
@@ -238,7 +242,6 @@ export class AppButton extends RuntimeButton {
      */
     constructor(app, isDropCandidate = false) {
         super(new St.Bin(), MODULE_NAME);
-        super.notifyCallback = data => this.#events?.[data?.event]?.(data?.params);
         this.#app = app;
         this.#isDropCandidate = isDropCandidate;
         this.#layout = new St.Widget({ ...LayoutProps, layout_manager: new Clutter.BinLayout() });
@@ -352,7 +355,6 @@ export class AppButton extends RuntimeButton {
         this.#notificationBadge = null;
         this.#destroyJob = null;
         this.#config = null;
-        this.#events = null;
         this.#app = null;
     }
 
@@ -368,7 +370,7 @@ export class AppButton extends RuntimeButton {
         this.#handleConfig();
         if (this.#isDropCandidate) return this.#handleRunningApp();
         this.connect(Event.Scroll, (_, event) => this.#scroll(event));
-        this.#service = new TaskbarClient(event => this.#events?.[event]?.(), this.#app);
+        this.#service = new TaskbarClient(event => AppButton.#events[event]?.(this), this.#app);
         this.#windows = new WindowManager(this.#service, this.#appIcon);
         this.#notificationHandler = new NotificationHandler(() => this.#handleNotifications(), this.#app);
         Context.launcherApi.connectProgress(this, () => this.#handleProgress());

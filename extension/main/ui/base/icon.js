@@ -79,7 +79,7 @@ export class Icon extends Component {
         } else if (typeof icon.iconPath === 'string') {
             this.#iconPath = icon.iconPath;
         } else return;
-        this.#rerender();
+        this.#rerender(true);
     }
 
     #destroy() {
@@ -90,7 +90,10 @@ export class Icon extends Component {
         this.#iconTexture = null;
     }
 
-    #rerender() {
+    /**
+     * @param {boolean} [isInitial]
+     */
+    #rerender(isInitial = false) {
         const actor = this.actor;
         const iconPath = this.#iconPath;
         const hasIconPath = !!iconPath;
@@ -118,7 +121,7 @@ export class Icon extends Component {
             }
         }
         actor.visible = isVisible;
-        this.notifySelf(IconEvent.TextureChanged);
+        if (!isInitial) this.notifySelf(IconEvent.TextureChanged);
         if (!isThemeControlled) signals.removeAll(actor);
         if (!isThemeControlled || signals.has(actor)) return;
         signals.add(actor, [desktop.settings, Event.IconThemeChanged, () =>

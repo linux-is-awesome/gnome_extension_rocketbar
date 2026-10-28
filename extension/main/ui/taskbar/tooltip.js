@@ -80,10 +80,14 @@ const AppNameProps = {
  */
 class AppStatusItem extends Component {
 
-    /** @type {{[event: string]: () => *}?} */
-    #events = {
-        [ComponentEvent.Destroy]: () => this.#destroy()
+    /** @type {{[event: string]: (instance: AppStatusItem) => *}} */
+    static #events = {
+        [ComponentEvent.Destroy]: instance => instance.#destroy()
     };
+
+    static {
+        this.notifyCallback = (instance, data) => this.#events[data?.event]?.(instance, data);
+    }
 
     /** @type {Icon?} */
     #icon = null;
@@ -110,7 +114,6 @@ class AppStatusItem extends Component {
         layout.add_child(this.#value);
         this.actor.add_child(layout);
         this.actor.set_pivot_point(0.5, 0.5);
-        this.notifyCallback = data => this.#events?.[data?.event]?.();
         if (!reactive) return;
         this.connect(Event.Clicked, () => this.notifyParents(Event.Clicked, { name }));
         this.connect(Event.Scroll, (_, event) => this.notifyParents(Event.Scroll, { name, event }));
@@ -143,7 +146,6 @@ class AppStatusItem extends Component {
     #destroy() {
         this.#icon = null;
         this.#value = null;
-        this.#events = null;
     }
 
 }
@@ -153,12 +155,16 @@ class AppStatusItem extends Component {
  */
 class AppStatus extends Component {
 
-    /** @type {{[event: string]: (...args) => *}?} */
-    #events = {
-        [ComponentEvent.Destroy]: () => this.#destroy(),
-        [Event.Clicked]: params => (this.#handleItemClick(params), true),
-        [Event.Scroll]: params => (this.#handleItemScroll(params), true)
+    /** @type {{[event: string]: (instance: AppStatus, data?: *) => *}} */
+    static #events = {
+        [ComponentEvent.Destroy]: instance => instance.#destroy(),
+        [Event.Clicked]: (instance, data) => (instance.#handleItemClick(data?.params), true),
+        [Event.Scroll]: (instance, data) => (instance.#handleItemScroll(data?.params), true)
     };
+
+    static {
+        this.notifyCallback = (instance, data) => this.#events[data?.event]?.(instance, data);
+    }
 
     /** @type {Map<string, AppStatusItem>?} */
     #items = null;
@@ -171,7 +177,6 @@ class AppStatus extends Component {
      */
     constructor(appButton) {
         super(new St.BoxLayout(AppStatusProps));
-        super.notifyCallback = data => this.#events?.[data?.event]?.(data?.params);
         this.#appButton = appButton;
         this.#items = new Map();
         for (const icon in AppStatusItemIcon) {
@@ -312,11 +317,15 @@ export class Tooltip extends BaseTooltip {
     /** @type {SharedConfig?} */
     static #sharedConfig = null;
 
-    /** @type {{[event: string]: () => *}?} */
-    #events = {
-        [ComponentEvent.Destroy]: () => this.#destroy(),
-        [TooltipEvent.LongPress]: () => this.#longPress()
+    /** @type {{[event: string]: (instance: Tooltip) => *}} */
+    static #events = {
+        [ComponentEvent.Destroy]: instance => instance.#destroy(),
+        [TooltipEvent.LongPress]: instance => instance.#longPress()
     };
+
+    static {
+        this.notifyCallback = (instance, data) => this.#events[data?.event]?.(instance, data);
+    }
 
     /** @type {Config?} */
     #config = this.#configProvider.get(this, settingsKey => this.#handleConfig(settingsKey));
@@ -350,7 +359,6 @@ export class Tooltip extends BaseTooltip {
      */
     constructor(appButton) {
         super(appButton, MODULE_NAME);
-        super.notifyCallback = data => this.#events?.[data?.event]?.();
         super.trackHover = true;
         this.#appButton = appButton;
         this.#layout = new St.BoxLayout(LayoutProps);
@@ -387,7 +395,6 @@ export class Tooltip extends BaseTooltip {
         this.#windowTitle = null;
         this.#status = null;
         this.#config = null;
-        this.#events = null;
         this.#appButton = null;
         if (!Tooltip.#sharedConfig?.destroy(this)) return;
         Tooltip.#sharedConfig = null;

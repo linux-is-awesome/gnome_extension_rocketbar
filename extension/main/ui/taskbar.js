@@ -236,14 +236,18 @@ class TaskbarAllocation {
 
 export default class Taskbar extends ScrollView {
 
-    /** @type {{[event: string]: (...args) => *}?} */
-    #events = {
-        [ComponentEvent.Destroy]: data => (this.#handleDestroy(data?.sender), true),
-        [ComponentEvent.Init]: data => (this.#handleInit(data?.sender), true),
-        [ComponentEvent.DragOver]: data => this.#handleDragOver(data?.target, data?.params),
-        [ComponentEvent.AcceptDrop]: () => this.#handleDrop(),
-        [AppButtonEvent.Reaction]: data => (this.#allocation?.scrollIntoView(data?.sender), true)
+    /** @type {{[event: string]: (instance: Taskbar, data?: *) => *}} */
+    static #events = {
+        [ComponentEvent.Destroy]: (instance, data) => (instance.#handleDestroy(data?.sender), true),
+        [ComponentEvent.Init]: (instance, data) => (instance.#handleInit(data?.sender), true),
+        [ComponentEvent.DragOver]: (instance, data) => instance.#handleDragOver(data?.target, data?.params),
+        [ComponentEvent.AcceptDrop]: instance => instance.#handleDrop(),
+        [AppButtonEvent.Reaction]: (instance, data) => (instance.#allocation?.scrollIntoView(data?.sender), true)
     };
+
+    static {
+        this.notifyCallback = (instance, data) => this.#events[data?.event]?.(instance, data);
+    }
 
     /** @type {boolean} */
     #isRerendering = true;
@@ -289,7 +293,6 @@ export default class Taskbar extends ScrollView {
         super(MODULE_NAME);
         super.actor.add_child(this.actor);
         super.dropEvents = true;
-        super.notifyCallback = data => this.#events?.[data?.event]?.(data);
         this.#cleanRunningApps();
         this.#separator?.connect(Event.Hover, () => this.#allocation?.scrollIntoView(this.#separator));
         Context.signals.add(this, [global.workspace_manager,
@@ -365,7 +368,6 @@ export default class Taskbar extends ScrollView {
         this.#separator = null;
         this.#allocation = null;
         this.#config = null;
-        this.#events = null;
     }
 
     /**

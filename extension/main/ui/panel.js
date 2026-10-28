@@ -19,10 +19,14 @@ const DEFAULT_HEIGHT = -1;
  */
 export default class Panel extends Component {
 
-    /** @type {{[event: string]: () => *}?} */
-    #events = {
-        [ComponentEvent.Destroy]: () => this.#destroy()
+    /** @type {{[event: string]: (instance: Panel) => *}} */
+    static #events = {
+        [ComponentEvent.Destroy]: instance => instance.#destroy()
     };
+
+    static {
+        this.notifyCallback = (instance, data) => this.#events[data?.event]?.(instance, data);
+    }
 
     /** @type {Map<string, [alignment?: Alignment, position?: number]>?} */
     #items = null;
@@ -47,7 +51,6 @@ export default class Panel extends Component {
 
     constructor() {
         super(MainPanel, true);
-        super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.actor.add_style_class_name(STYLE_CLASS);
         this.connect(Event.ButtonPress, (_, event) => this.#pressHandler?.press(event));
         this.connect(Event.ButtonRelease, () => this.#pressHandler?.release(event => this.#click(event)));
@@ -84,7 +87,6 @@ export default class Panel extends Component {
         this.#pressHandler = null;
         this.#config = null;
         this.#items = null;
-        this.#events = null;
     }
 
     /**

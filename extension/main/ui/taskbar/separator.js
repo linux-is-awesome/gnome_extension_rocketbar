@@ -43,11 +43,15 @@ const BodyProps = {
  */
 export class Separator extends Component {
 
-    /** @type {{[event: string]: () => *}?} */
-    #events = {
-        [ComponentEvent.Destroy]: () => this.#destroy(),
-        [ComponentEvent.Init]: () => (this.#updateStyle(), this.#handleState())
+    /** @type {{[event: string]: (instance: Separator) => *}} */
+    static #events = {
+        [ComponentEvent.Destroy]: instance => instance.#destroy(),
+        [ComponentEvent.Init]: instance => (instance.#updateStyle(), instance.#handleState())
     };
+
+    static {
+        this.notifyCallback = (instance, data) => this.#events[data?.event]?.(instance, data);
+    }
 
     /** @type {boolean} */
     #isVisible = false;
@@ -97,7 +101,6 @@ export class Separator extends Component {
 
     constructor() {
         super(new St.Bin(DefaultProps));
-        super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.actor.set_child(this.#body);
         Context.desktop.connectScale(this, () => this.#handleConfig());
     }
@@ -117,7 +120,6 @@ export class Separator extends Component {
         Context.desktop.disconnect(this);
         Context.signals.removeAll(this);
         this.#body = null;
-        this.#events = null;
     }
 
     #handleConfig() {

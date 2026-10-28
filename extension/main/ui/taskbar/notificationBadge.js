@@ -54,10 +54,14 @@ export class NotificationBadge extends Component {
     /** @type {SharedConfig?} */
     static #sharedConfig = null;
 
-    /** @type {{[event: string]: () => *}?} */
-    #events = {
-        [ComponentEvent.Destroy]: () => this.#destroy()
+    /** @type {{[event: string]: (instance: NotificationBadge) => *}} */
+    static #events = {
+        [ComponentEvent.Destroy]: instance => instance.#destroy()
     };
+
+    static {
+        this.notifyCallback = (instance, data) => this.#events[data?.event]?.(instance, data);
+    }
 
     /** @type {St.Label?} */
     #badge = null;
@@ -79,7 +83,6 @@ export class NotificationBadge extends Component {
      */
     constructor(appButton) {
         super(new St.Widget(DefaultProps));
-        super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.#appButton = appButton;
         this.#badge = new St.Label(BadgeProps);
         this.#badge.set_pivot_point(0.5, 0.5);
@@ -117,7 +120,6 @@ export class NotificationBadge extends Component {
         this.#badge?.remove_all_transitions();
         this.#badge = null;
         this.#appButton = null;
-        this.#events = null;
         this.#config = null;
         if (!NotificationBadge.#sharedConfig?.destroy(this)) return;
         NotificationBadge.#sharedConfig = null;

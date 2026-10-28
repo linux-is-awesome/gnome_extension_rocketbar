@@ -372,10 +372,14 @@ export class Indicators extends Component {
     /** @type {SharedConfig?} */
     static #sharedConfig = null;
 
-    /** @type {{[event: string]: () => *}?} */
-    #events = {
-        [ComponentEvent.Destroy]: () => this.#destroy()
+    /** @type {{[event: string]: (instance: Indicators) => *}} */
+    static #events = {
+        [ComponentEvent.Destroy]: instance => instance.#destroy()
     };
+
+    static {
+        this.notifyCallback = (instance, data) => this.#events[data?.event]?.(instance, data);
+    }
 
     /** @type {AppButton?} */
     #appButton = null;
@@ -438,7 +442,6 @@ export class Indicators extends Component {
      */
     constructor(appButton) {
         super(new St.DrawingArea(DefaultProps));
-        super.notifyCallback = data => this.#events?.[data?.event]?.();
         this.#appButton = appButton;
         this.connect(Event.Repaint, () => this.#backend?.rerender());
         Context.desktop.connectScale(this, () => this.rerender());
@@ -466,7 +469,6 @@ export class Indicators extends Component {
         this.#backend?.destroy();
         this.#backend = null;
         this.#appButton = null;
-        this.#events = null;
         this.#config = null;
         if (!Indicators.#sharedConfig?.destroy(this)) return;
         Indicators.#sharedConfig = null;
