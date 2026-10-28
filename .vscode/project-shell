@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if command -v host-shell >/dev/null 2>&1; then
+    exec host-shell "$@"
+fi
+
+shell="${SHELL:-/bin/bash}"
+exec "$shell" "$@"

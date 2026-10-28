@@ -2,5 +2,15 @@
     "files.associations": {
         "*.ui": "xml"
     },
-    "css.customData": [".vscode/css_custom_data.json"]
+    "css.customData": [".vscode/css_custom_data.json"],
+    "terminal.integrated.profiles.linux": {
+        "project-shell": {
+            "path": "${workspaceFolder}/.vscode/project-shell",
+            "icon": "terminal-linux"
+        }
+    },
+    "terminal.integrated.defaultProfile.linux": "project-shell",
+    "terminal.integrated.automationProfile.linux": {
+        "path": "${workspaceFolder}/.vscode/project-shell"
+    }
 }
