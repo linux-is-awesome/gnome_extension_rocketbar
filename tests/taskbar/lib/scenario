@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Shared scenario bootstrap: optional instance count (default 1).
+# shellcheck source=./common
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common"
+
+STEPS="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/steps"
+
+if parse_fixture_count_arg "${1:-}"; then
+    shift
+fi
+# Re-export so child steps inherit when not passed explicitly.
+export FIXTURE_COUNT
+
+scenario_cleanup() {
+    favorites_restore
+    "$STEPS/kill" "$FIXTURE_COUNT" >/dev/null 2>&1 || true
+    "$STEPS/uninstall" "$FIXTURE_COUNT" >/dev/null 2>&1 || true
+}
+
+scenario_expect_counts() {
+    local expected="$1"
+    local got line
+    got="$("$STEPS/window-count" "$FIXTURE_COUNT")"
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        if [[ "$line" != "$expected" ]]; then
+            echo "expected window count $expected per instance, got:" >&2
+            echo "$got" >&2
+            return 1
+        fi
+    done <<< "$got"
+}

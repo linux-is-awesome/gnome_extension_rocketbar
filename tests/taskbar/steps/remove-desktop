@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/common
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/common"
+
+if parse_fixture_count_arg "${1:-}"; then
+    shift
+fi
+
+_remove_one() {
+    if [[ ! -f "$DESKTOP_FILE" ]]; then
+        echo "desktop already absent: $DESKTOP_FILE"
+    else
+        rm -f "$DESKTOP_FILE"
+        echo "removed $DESKTOP_FILE"
+    fi
+}
+
+fixture_foreach _remove_one
+update_desktop_db
+echo "desktop database updated"

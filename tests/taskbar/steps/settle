@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/common
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/common"
+
+# settle [seconds]
+# settle [count] [seconds]  — count accepted for scenario uniformity; only used when two args.
+if [[ $# -ge 2 ]] && parse_fixture_count_arg "${1:-}"; then
+    shift
+fi
+seconds="${1:-1}"
+sleep "$seconds"
+echo "settled ${seconds}s"

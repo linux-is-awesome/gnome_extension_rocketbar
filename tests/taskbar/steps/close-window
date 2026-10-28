@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/common
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/common"
+
+# Optional count only when a window token follows (bare "5" is a window id).
+if [[ $# -ge 2 ]] && parse_fixture_count_arg "${1:-}"; then
+    shift
+fi
+
+token="${1:-}"
+if [[ -z "$token" ]]; then
+    echo "usage: close-window [count] <window_id|index:window_id>" >&2
+    exit 1
+fi
+
+parse_window_token "$token"
+set_fixture_instance "$WINDOW_TOKEN_INDEX"
+wait_for_bus_name 5
+result="$(fixture_call CloseWindow "$WINDOW_TOKEN_ID")"
+if echo "$result" | grep -q false; then
+    echo "close failed for $FIXTURE_INSTANCE_ID window_id=$WINDOW_TOKEN_ID" >&2
+    exit 1
+fi
+echo "closed $FIXTURE_INSTANCE_ID window_id=$WINDOW_TOKEN_ID"

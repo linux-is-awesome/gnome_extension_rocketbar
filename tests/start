@@ -1,0 +1,389 @@
+#!/usr/bin/env bash
+# Interactive launcher for Rocketbar host tests (block → scenarios).
+set -euo pipefail
+
+TESTS_ROOT="$(cd "$(dirname "$0")" && pwd)"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/rocketbar-tests"
+INSTANCE_FILE="$CACHE_DIR/instances"
+INSTANCE_COUNT=1
+
+if [[ -t 1 ]]; then
+    C_RESET=$'\033[0m'
+    C_BOLD=$'\033[1m'
+    C_DIM=$'\033[2m'
+    C_CYAN=$'\033[36m'
+    C_GREEN=$'\033[32m'
+    C_YELLOW=$'\033[33m'
+    C_RED=$'\033[31m'
+    C_MAGENTA=$'\033[35m'
+else
+    C_RESET='' C_BOLD='' C_DIM='' C_CYAN='' C_GREEN='' C_YELLOW='' C_RED='' C_MAGENTA=''
+fi
+
+die() {
+    printf '%s%s%s\n' "$C_RED" "$*" "$C_RESET" >&2
+    exit 1
+}
+
+load_instance_count() {
+    if [[ -f "$INSTANCE_FILE" ]]; then
+        local saved
+        saved="$(tr -d '[:space:]' < "$INSTANCE_FILE" || true)"
+        if [[ "$saved" =~ ^[1-9][0-9]*$ ]]; then
+            INSTANCE_COUNT="$saved"
+        fi
+    fi
+}
+
+save_instance_count() {
+    mkdir -p "$CACHE_DIR"
+    printf '%s\n' "$INSTANCE_COUNT" > "$INSTANCE_FILE"
+}
+
+load_instance_count
+
+list_blocks() {
+    local path
+    for path in "$TESTS_ROOT"/*/scenarios; do
+        [[ -d "$path" ]] || continue
+        basename "$(dirname "$path")"
+    done | sort
+}
+
+list_scenarios() {
+    local block="$1"
+    local dir="$TESTS_ROOT/$block/scenarios"
+    local path name
+    [[ -d "$dir" ]] || return 0
+    if [[ -x "$dir/smoke" ]]; then
+        echo "smoke"
+    fi
+    for path in "$dir"/*; do
+        [[ -x "$path" && -f "$path" ]] || continue
+        name="$(basename "$path")"
+        [[ "$name" == "smoke" ]] && continue
+        printf '%s\n' "$name"
+    done
+}
+
+list_actions() {
+    local block="$1"
+    local dir="$TESTS_ROOT/$block/actions"
+    local path
+    [[ -d "$dir" ]] || return 0
+    for path in "$dir"/*; do
+        [[ -x "$path" && -f "$path" ]] || continue
+        basename "$path"
+    done | sort
+}
+
+mapfile -t BLOCK_NAMES < <(list_blocks)
+
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [options] [block] [scenario|all|action] [instances]
+
+  Interactive menu: pick a block (e.g. taskbar), then a test or action.
+  Instance count is asked before each run; the last value is remembered.
+
+Options:
+  -h, --help          Show this help
+  -n, --instances N   Instance count (default: last saved, or 1)
+  -l, --list          List blocks and their scenarios/actions
+
+Examples:
+  $(basename "$0")
+  $(basename "$0") taskbar smoke 5
+  $(basename "$0") taskbar all
+  $(basename "$0") taskbar open-apps 8
+EOF
+}
+
+prompt_instances() {
+    local reply
+    printf '%sInstance count%s [%s%d%s]: ' "$C_CYAN" "$C_RESET" "$C_BOLD" "$INSTANCE_COUNT" "$C_RESET"
+    read -r reply || true
+    if [[ -n "${reply:-}" ]]; then
+        if [[ "$reply" =~ ^[1-9][0-9]*$ ]]; then
+            INSTANCE_COUNT="$reply"
+        else
+            printf '%sInvalid count — using %d%s\n' "$C_YELLOW" "$INSTANCE_COUNT" "$C_RESET"
+        fi
+    fi
+    save_instance_count
+}
+
+pause_enter() {
+    printf '\n%sPress Enter to continue…%s' "$C_DIM" "$C_RESET"
+    read -r _ || true
+}
+
+run_scenario() {
+    local block="$1"
+    local name="$2"
+    local script="$TESTS_ROOT/$block/scenarios/$name"
+    [[ -x "$script" ]] || die "unknown scenario: $block/$name"
+
+    printf '\n%s▶%s %s%s/%s%s  %s×%s%s\n' \
+        "$C_GREEN" "$C_RESET" "$C_BOLD" "$block" "$name" "$C_RESET" \
+        "$C_DIM" "$INSTANCE_COUNT" "$C_RESET"
+
+    if "$script" "$INSTANCE_COUNT"; then
+        printf '%s✓%s %s/%s ok\n' "$C_GREEN" "$C_RESET" "$block" "$name"
+        return 0
+    fi
+    printf '%s✗%s %s/%s failed\n' "$C_RED" "$C_RESET" "$block" "$name"
+    return 1
+}
+
+run_action() {
+    local block="$1"
+    local name="$2"
+    local script="$TESTS_ROOT/$block/actions/$name"
+    [[ -x "$script" ]] || die "unknown action: $block/$name"
+
+    printf '\n%s▶%s %s%s/%s%s  %s×%s%s\n' \
+        "$C_GREEN" "$C_RESET" "$C_BOLD" "$block" "$name" "$C_RESET" \
+        "$C_DIM" "$INSTANCE_COUNT" "$C_RESET"
+
+    if "$script" "$INSTANCE_COUNT"; then
+        printf '%s✓%s %s/%s ok\n' "$C_GREEN" "$C_RESET" "$block" "$name"
+        return 0
+    fi
+    printf '%s✗%s %s/%s failed\n' "$C_RED" "$C_RESET" "$block" "$name"
+    return 1
+}
+
+run_all_scenarios() {
+    local block="$1"
+    local name failed=0
+    local -a names
+    mapfile -t names < <(list_scenarios "$block")
+    [[ ${#names[@]} -gt 0 ]] || die "no scenarios in block: $block"
+
+    printf '%sRunning all %s scenarios%s (%s×%s%s)\n' \
+        "$C_BOLD" "$block" "$C_RESET" "$C_DIM" "$INSTANCE_COUNT" "$C_RESET"
+    for name in "${names[@]}"; do
+        if ! run_scenario "$block" "$name"; then
+            failed=$((failed + 1))
+        fi
+    done
+    if [[ "$failed" -eq 0 ]]; then
+        printf '\n%sAll %s scenarios passed%s\n' "$C_GREEN" "$block" "$C_RESET"
+        return 0
+    fi
+    printf '\n%s%d scenario(s) failed%s\n' "$C_RED" "$failed" "$C_RESET"
+    return 1
+}
+
+print_blocks_menu() {
+    local i=1 name
+    clear 2>/dev/null || true
+    printf '%s%sRocketbar tests%s\n' "$C_BOLD" "$C_MAGENTA" "$C_RESET"
+    printf '%sSelect a test block%s\n\n' "$C_DIM" "$C_RESET"
+    for name in "${BLOCK_NAMES[@]}"; do
+        printf '  %s%d%s) %s\n' "$C_CYAN" "$i" "$C_RESET" "$name"
+        i=$((i + 1))
+    done
+    printf '\n  %sq%s) Quit\n\n' "$C_YELLOW" "$C_RESET"
+}
+
+print_block_menu() {
+    local block="$1"
+    local i=1 name
+    local -a scenarios actions
+    mapfile -t scenarios < <(list_scenarios "$block")
+    mapfile -t actions < <(list_actions "$block")
+
+    clear 2>/dev/null || true
+    printf '%s%sRocketbar tests%s › %s%s%s\n\n' \
+        "$C_BOLD" "$C_MAGENTA" "$C_RESET" "$C_BOLD$C_CYAN" "$block" "$C_RESET"
+
+    printf '  %s%s%s) %sRun all scenarios%s\n' "$C_GREEN" "$C_BOLD" "a" "$C_BOLD" "$C_RESET"
+    printf '\n  %sScenarios%s\n' "$C_DIM" "$C_RESET"
+    if [[ ${#scenarios[@]} -eq 0 ]]; then
+        printf '    %s(none)%s\n' "$C_DIM" "$C_RESET"
+    else
+        for name in "${scenarios[@]}"; do
+            printf '  %s%d%s) %s\n' "$C_CYAN" "$i" "$C_RESET" "$name"
+            i=$((i + 1))
+        done
+    fi
+
+    if [[ ${#actions[@]} -gt 0 ]]; then
+        printf '\n  %sActions%s\n' "$C_DIM" "$C_RESET"
+        for name in "${actions[@]}"; do
+            printf '  %s%d%s) %s\n' "$C_YELLOW" "$i" "$C_RESET" "$name"
+            i=$((i + 1))
+        done
+    fi
+
+    printf '\n  %sb%s) Back\n' "$C_YELLOW" "$C_RESET"
+    printf '  %sq%s) Quit\n\n' "$C_YELLOW" "$C_RESET"
+}
+
+block_menu() {
+    local block="$1"
+    local choice index name
+    local -a scenarios actions items
+    while true; do
+        mapfile -t scenarios < <(list_scenarios "$block")
+        mapfile -t actions < <(list_actions "$block")
+        items=("${scenarios[@]}" "${actions[@]}")
+        print_block_menu "$block"
+        printf '%sSelect%s: ' "$C_BOLD" "$C_RESET"
+        read -r choice || choice=b
+        case "$choice" in
+            q|Q)
+                printf '%sBye.%s\n' "$C_DIM" "$C_RESET"
+                exit 0
+                ;;
+            b|B)
+                return 0
+                ;;
+            a|A)
+                prompt_instances
+                run_all_scenarios "$block" || true
+                pause_enter
+                ;;
+            *)
+                if [[ "$choice" =~ ^[1-9][0-9]*$ ]] &&
+                   [[ "$choice" -ge 1 && "$choice" -le ${#items[@]} ]]; then
+                    index=$((choice - 1))
+                    name="${items[$index]}"
+                    prompt_instances
+                    if [[ "$index" -lt ${#scenarios[@]} ]]; then
+                        run_scenario "$block" "$name" || true
+                    else
+                        run_action "$block" "$name" || true
+                    fi
+                    pause_enter
+                else
+                    printf '%sInvalid choice%s\n' "$C_YELLOW" "$C_RESET"
+                    sleep 0.8
+                fi
+                ;;
+        esac
+    done
+}
+
+blocks_menu() {
+    local choice
+    while true; do
+        print_blocks_menu
+        printf '%sSelect%s: ' "$C_BOLD" "$C_RESET"
+        read -r choice || choice=q
+        case "$choice" in
+            q|Q)
+                printf '%sBye.%s\n' "$C_DIM" "$C_RESET"
+                return 0
+                ;;
+            *)
+                if [[ "$choice" =~ ^[1-9][0-9]*$ ]] &&
+                   [[ "$choice" -ge 1 && "$choice" -le ${#BLOCK_NAMES[@]} ]]; then
+                    block_menu "${BLOCK_NAMES[$((choice - 1))]}"
+                else
+                    printf '%sInvalid choice%s\n' "$C_YELLOW" "$C_RESET"
+                    sleep 0.8
+                fi
+                ;;
+        esac
+    done
+}
+
+print_list() {
+    local block name
+    for block in "${BLOCK_NAMES[@]}"; do
+        printf '%s\n' "$block"
+        for name in $(list_scenarios "$block"); do
+            printf '  scenario  %s\n' "$name"
+        done
+        for name in $(list_actions "$block"); do
+            printf '  action    %s\n' "$name"
+        done
+    done
+}
+
+# --- CLI ---
+BLOCK=""
+TARGET=""
+SKIP_PROMPT=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        -l|--list)
+            print_list
+            exit 0
+            ;;
+        -n|--instances)
+            [[ "${2:-}" =~ ^[1-9][0-9]*$ ]] || die "invalid --instances value: ${2:-}"
+            INSTANCE_COUNT="$2"
+            save_instance_count
+            SKIP_PROMPT=1
+            shift 2
+            ;;
+        *)
+            if [[ "$1" =~ ^[1-9][0-9]*$ ]]; then
+                INSTANCE_COUNT="$1"
+                save_instance_count
+                SKIP_PROMPT=1
+                shift
+            elif [[ -z "$BLOCK" && -d "$TESTS_ROOT/$1/scenarios" ]]; then
+                BLOCK="$1"
+                shift
+            elif [[ -n "$BLOCK" && -z "$TARGET" ]]; then
+                TARGET="$1"
+                shift
+            elif [[ -z "$BLOCK" && -d "$TESTS_ROOT/taskbar/scenarios" &&
+                    ( -x "$TESTS_ROOT/taskbar/scenarios/$1" ||
+                      -x "$TESTS_ROOT/taskbar/actions/$1" ||
+                      "$1" == "all" ) ]]; then
+                # Shorthand: ./tests/start smoke 5
+                BLOCK=taskbar
+                TARGET="$1"
+                shift
+            else
+                die "unknown argument: $1 (try --help)"
+            fi
+            ;;
+    esac
+done
+
+[[ ${#BLOCK_NAMES[@]} -gt 0 ]] || die "no test blocks found under $TESTS_ROOT"
+
+if [[ -z "$BLOCK" ]]; then
+    blocks_menu
+    exit 0
+fi
+
+[[ -d "$TESTS_ROOT/$BLOCK/scenarios" ]] || die "unknown block: $BLOCK"
+
+if [[ -z "$TARGET" ]]; then
+    block_menu "$BLOCK"
+    exit 0
+fi
+
+if [[ "$SKIP_PROMPT" -eq 0 && -t 0 ]]; then
+    prompt_instances
+fi
+
+if [[ "$TARGET" == "all" ]]; then
+    run_all_scenarios "$BLOCK"
+    exit $?
+fi
+
+if [[ -x "$TESTS_ROOT/$BLOCK/scenarios/$TARGET" ]]; then
+    run_scenario "$BLOCK" "$TARGET"
+    exit $?
+fi
+
+if [[ -x "$TESTS_ROOT/$BLOCK/actions/$TARGET" ]]; then
+    run_action "$BLOCK" "$TARGET"
+    exit $?
+fi
+
+die "unknown target in $BLOCK: $TARGET"

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/common
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/common"
+
+if parse_fixture_count_arg "${1:-}"; then
+    shift
+fi
+
+_pin_one() {
+    if [[ ! -f "$DESKTOP_FILE" ]]; then
+        echo "fixture desktop missing: $DESKTOP_FILE" >&2
+        return 1
+    fi
+    favorites_add "$FIXTURE_DESKTOP_ID" >/dev/null
+    if ! favorites_has "$FIXTURE_DESKTOP_ID"; then
+        echo "failed to pin $FIXTURE_DESKTOP_ID" >&2
+        return 1
+    fi
+    echo "pinned $FIXTURE_DESKTOP_ID"
+}
+
+fixture_foreach _pin_one

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/common
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/common"
+
+if parse_fixture_count_arg "${1:-}"; then
+    shift
+fi
+
+_unpin_one() {
+    favorites_remove "$FIXTURE_DESKTOP_ID" >/dev/null
+    if favorites_has "$FIXTURE_DESKTOP_ID"; then
+        echo "failed to unpin $FIXTURE_DESKTOP_ID" >&2
+        return 1
+    fi
+    echo "unpinned $FIXTURE_DESKTOP_ID"
+}
+
+fixture_foreach _unpin_one

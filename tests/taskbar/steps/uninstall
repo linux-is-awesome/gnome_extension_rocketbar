@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/common
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/common"
+
+if parse_fixture_count_arg "${1:-}"; then
+    shift
+fi
+
+_quit_one() {
+    gdbus call --session \
+        --dest "$FIXTURE_BUS_NAME" \
+        --object-path "$FIXTURE_OBJECT_PATH" \
+        --method "${FIXTURE_IFACE}.Quit" >/dev/null 2>&1 || true
+}
+
+fixture_foreach _quit_one
+
+# Remove requested instances plus any leftover indexed desktops from prior runs.
+rm -f "$DESKTOP_DIR/${FIXTURE_APP_ID}.desktop"
+rm -f "$DESKTOP_DIR/${FIXTURE_APP_ID}.i"*.desktop
+rm -f "$INSTALL_BIN"
+rmdir "$INSTALL_DIR" 2>/dev/null || true
+
+favorites_remove_all_fixtures
+update_desktop_db
+
+echo "uninstalled $FIXTURE_APP_ID (count was $FIXTURE_COUNT)"

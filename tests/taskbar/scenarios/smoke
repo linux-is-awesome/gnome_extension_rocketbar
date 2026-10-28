@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/scenario
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/scenario"
+
+echo "== smoke ×$FIXTURE_COUNT: install =="
+"$STEPS/install" "$FIXTURE_COUNT"
+
+echo "== smoke: quit leftover =="
+"$STEPS/quit" "$FIXTURE_COUNT" || true
+
+echo "== smoke: launch =="
+"$STEPS/launch" "$FIXTURE_COUNT"
+
+echo "== smoke: window count (initial) =="
+scenario_expect_counts 1
+
+echo "== smoke: open window =="
+mapfile -t opened < <("$STEPS/open-window" "$FIXTURE_COUNT")
+echo "opened=${opened[*]}"
+scenario_expect_counts 2
+
+echo "== smoke: close opened windows =="
+for token in "${opened[@]}"; do
+    "$STEPS/close-window" "$FIXTURE_COUNT" "$token"
+done
+scenario_expect_counts 1
+
+echo "== smoke: open two windows each =="
+"$STEPS/open-window" "$FIXTURE_COUNT" >/dev/null
+"$STEPS/open-window" "$FIXTURE_COUNT" >/dev/null
+scenario_expect_counts 3
+
+echo "== smoke: close-all =="
+"$STEPS/close-all" "$FIXTURE_COUNT"
+scenario_expect_counts 0
+
+echo "== smoke: quit =="
+"$STEPS/quit" "$FIXTURE_COUNT"
+
+echo "== smoke: uninstall =="
+"$STEPS/uninstall" "$FIXTURE_COUNT"
+
+echo "smoke ×$FIXTURE_COUNT ok"

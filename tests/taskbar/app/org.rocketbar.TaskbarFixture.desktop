@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Rocketbar Taskbar Fixture
+Comment=Controllable GTK4 app for Rocketbar taskbar service tests
+Exec=org.rocketbar.TaskbarFixture
+Icon=applications-utilities
+Terminal=false
+Categories=Utility;
+StartupNotify=true
+StartupWMClass=org.rocketbar.TaskbarFixture
+NoDisplay=true
+X-GNOME-UsesNotifications=false

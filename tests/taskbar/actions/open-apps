@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# Install and launch N fixture apps, wait until you close them, then clean up.
+set -euo pipefail
+# shellcheck source=../lib/scenario
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/scenario"
+
+cleanup() {
+    trap - INT TERM EXIT
+    echo
+    echo "== open-apps: cleanup =="
+    "$STEPS/quit" "$FIXTURE_COUNT" >/dev/null 2>&1 || true
+    "$STEPS/kill" "$FIXTURE_COUNT" >/dev/null 2>&1 || true
+    "$STEPS/uninstall" "$FIXTURE_COUNT" >/dev/null 2>&1 || true
+    echo "open-apps cleanup done"
+}
+
+# True when every instance is gone or has zero windows.
+all_instances_idle() {
+    local index count
+    for ((index = 1; index <= FIXTURE_COUNT; index++)); do
+        set_fixture_instance "$index"
+        if ! bus_has_owner; then
+            continue
+        fi
+        count="$(fixture_call GetWindowCount 2>/dev/null | parse_uint32 || echo 1)"
+        if [[ -z "$count" || "$count" != "0" ]]; then
+            return 1
+        fi
+    done
+    return 0
+}
+
+any_instance_alive() {
+    local index
+    for ((index = 1; index <= FIXTURE_COUNT; index++)); do
+        set_fixture_instance "$index"
+        if bus_has_owner; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+echo "== open-apps ×$FIXTURE_COUNT =="
+"$STEPS/install" "$FIXTURE_COUNT"
+"$STEPS/quit" "$FIXTURE_COUNT" || true
+"$STEPS/launch" "$FIXTURE_COUNT"
+"$STEPS/settle" "$FIXTURE_COUNT" 1
+scenario_expect_counts 1
+
+trap cleanup INT TERM EXIT
+
+echo
+echo "Apps are running. Close all windows (taskbar / title bar)."
+echo "When every instance has 0 windows (or processes exit), cleanup runs."
+echo "Ctrl+C also triggers cleanup."
+echo
+
+while true; do
+    if all_instances_idle; then
+        # Brief settle so a quick reopen is not raced; then confirm still idle.
+        sleep 0.5
+        if all_instances_idle; then
+            break
+        fi
+    fi
+    if ! any_instance_alive; then
+        break
+    fi
+    sleep 0.4
+done
+
+cleanup
+trap - INT TERM EXIT
+
+echo "open-apps ×$FIXTURE_COUNT ok"

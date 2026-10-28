@@ -1,0 +1,266 @@
+#!/usr/bin/env bash
+# Shared paths and helpers for taskbar fixture steps (host-native).
+
+set -euo pipefail
+
+TASKBAR_TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+FIXTURE_APP_ID="org.rocketbar.TaskbarFixture"
+FIXTURE_OBJECT_PATH="/org/rocketbar/TaskbarFixture/Control"
+FIXTURE_IFACE="org.rocketbar.TaskbarFixture"
+
+FIXTURE_SRC="$TASKBAR_TEST_ROOT/app/$FIXTURE_APP_ID"
+FIXTURE_DESKTOP_TEMPLATE="$TASKBAR_TEST_ROOT/app/${FIXTURE_APP_ID}.desktop"
+
+INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/rocketbar-taskbar-fixture"
+INSTALL_BIN="$INSTALL_DIR/$FIXTURE_APP_ID"
+DESKTOP_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
+FAVORITES_SCHEMA="org.gnome.shell"
+FAVORITES_KEY="favorite-apps"
+
+# Active instance (set by set_fixture_instance / fixture_foreach).
+FIXTURE_COUNT="${FIXTURE_COUNT:-1}"
+FIXTURE_INDEX=1
+FIXTURE_INSTANCE_ID="$FIXTURE_APP_ID"
+FIXTURE_BUS_NAME="$FIXTURE_APP_ID"
+FIXTURE_DESKTOP_ID="${FIXTURE_APP_ID}.desktop"
+DESKTOP_FILE="$DESKTOP_DIR/$FIXTURE_DESKTOP_ID"
+
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=$XDG_RUNTIME_DIR/bus}"
+
+# If $1 is a positive integer, set FIXTURE_COUNT and return 0 (caller should shift).
+parse_fixture_count_arg() {
+    if [[ "${1:-}" =~ ^[1-9][0-9]*$ ]]; then
+        FIXTURE_COUNT="$1"
+        return 0
+    fi
+    FIXTURE_COUNT="${FIXTURE_COUNT:-1}"
+    return 1
+}
+
+fixture_instance_id() {
+    local index="${1:?}"
+    if [[ "$index" -eq 1 ]]; then
+        printf '%s\n' "$FIXTURE_APP_ID"
+    else
+        printf '%s.i%s\n' "$FIXTURE_APP_ID" "$index"
+    fi
+}
+
+set_fixture_instance() {
+    local index="${1:?}"
+    FIXTURE_INDEX="$index"
+    FIXTURE_INSTANCE_ID="$(fixture_instance_id "$index")"
+    FIXTURE_BUS_NAME="$FIXTURE_INSTANCE_ID"
+    FIXTURE_DESKTOP_ID="${FIXTURE_INSTANCE_ID}.desktop"
+    DESKTOP_FILE="$DESKTOP_DIR/$FIXTURE_DESKTOP_ID"
+}
+
+# Run command once per instance with set_fixture_instance applied.
+fixture_foreach() {
+    local index
+    for ((index = 1; index <= FIXTURE_COUNT; index++)); do
+        set_fixture_instance "$index"
+        "$@"
+    done
+}
+
+# Requires set_fixture_instance (via fixture_foreach) first.
+write_desktop_file() {
+    local app_id name
+    app_id="$FIXTURE_INSTANCE_ID"
+    if [[ "$FIXTURE_INDEX" -eq 1 ]]; then
+        name="Rocketbar Taskbar Fixture"
+    else
+        name="Rocketbar Taskbar Fixture #$FIXTURE_INDEX"
+    fi
+    cat > "$DESKTOP_FILE" <<EOF
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=${name}
+Comment=Controllable GTK4 app for Rocketbar taskbar service tests
+Exec=${INSTALL_BIN} --app-id ${app_id}
+Icon=applications-utilities
+Terminal=false
+Categories=Utility;
+StartupNotify=true
+StartupWMClass=${app_id}
+NoDisplay=true
+X-GNOME-UsesNotifications=false
+EOF
+    chmod 644 "$DESKTOP_FILE"
+}
+
+fixture_call() {
+    local method="$1"
+    shift
+    gdbus call --session \
+        --dest "$FIXTURE_BUS_NAME" \
+        --object-path "$FIXTURE_OBJECT_PATH" \
+        --method "${FIXTURE_IFACE}.${method}" \
+        "$@"
+}
+
+bus_has_owner() {
+    gdbus call --session \
+        --dest org.freedesktop.DBus \
+        --object-path /org/freedesktop/DBus \
+        --method org.freedesktop.DBus.NameHasOwner \
+        "$FIXTURE_BUS_NAME" 2>/dev/null | grep -q true
+}
+
+wait_for_bus_name() {
+    local timeout_sec="${1:-15}"
+    local i
+    for ((i = 0; i < timeout_sec * 10; i++)); do
+        if bus_has_owner; then
+            return 0
+        fi
+        sleep 0.1
+    done
+    echo "timeout waiting for bus name $FIXTURE_BUS_NAME" >&2
+    return 1
+}
+
+wait_for_bus_gone() {
+    local timeout_sec="${1:-15}"
+    local i
+    for ((i = 0; i < timeout_sec * 10; i++)); do
+        if ! bus_has_owner; then
+            return 0
+        fi
+        sleep 0.1
+    done
+    echo "timeout waiting for bus name $FIXTURE_BUS_NAME to leave" >&2
+    return 1
+}
+
+# Parse first uint32 from gdbus output like "(uint32 3,)".
+parse_uint32() {
+    sed -n 's/.*uint32[[:space:]]\+\([0-9]\+\).*/\1/p' | head -1
+}
+
+favorites_get() {
+    gsettings get "$FAVORITES_SCHEMA" "$FAVORITES_KEY"
+}
+
+favorites_set() {
+    gsettings set "$FAVORITES_SCHEMA" "$FAVORITES_KEY" "$1"
+}
+
+favorites_has() {
+    local id="${1:-$FIXTURE_DESKTOP_ID}"
+    python3 - "$id" <<'PY'
+import sys
+from gi.repository import Gio
+app_id = sys.argv[1]
+apps = Gio.Settings.new('org.gnome.shell').get_strv('favorite-apps')
+sys.exit(0 if app_id in apps else 1)
+PY
+}
+
+favorites_add() {
+    local id="${1:-$FIXTURE_DESKTOP_ID}"
+    python3 - "$id" <<'PY'
+import sys
+from gi.repository import Gio
+app_id = sys.argv[1]
+settings = Gio.Settings.new('org.gnome.shell')
+apps = list(settings.get_strv('favorite-apps'))
+if app_id not in apps:
+    apps.append(app_id)
+    settings.set_strv('favorite-apps', apps)
+print(app_id)
+PY
+}
+
+favorites_remove() {
+    local id="${1:-$FIXTURE_DESKTOP_ID}"
+    python3 - "$id" <<'PY'
+import sys
+from gi.repository import Gio
+app_id = sys.argv[1]
+settings = Gio.Settings.new('org.gnome.shell')
+apps = [a for a in settings.get_strv('favorite-apps') if a != app_id]
+settings.set_strv('favorite-apps', apps)
+print(app_id)
+PY
+}
+
+favorites_remove_all_fixtures() {
+    python3 - "$FIXTURE_APP_ID" <<'PY'
+import sys
+from gi.repository import Gio
+prefix = sys.argv[1]
+settings = Gio.Settings.new('org.gnome.shell')
+apps = [
+    a for a in settings.get_strv('favorite-apps')
+    if a != f'{prefix}.desktop' and not a.startswith(f'{prefix}.i')
+]
+settings.set_strv('favorite-apps', apps)
+PY
+}
+
+# Exact --app-id match (base id must not match .iN).
+fixture_pids() {
+    python3 - "$INSTALL_BIN" "$FIXTURE_INSTANCE_ID" <<'PY'
+import os
+import sys
+
+binary, app_id = sys.argv[1], sys.argv[2]
+for entry in os.listdir('/proc'):
+    if not entry.isdigit():
+        continue
+    try:
+        with open(f'/proc/{entry}/cmdline', 'rb') as handle:
+            parts = [p.decode('utf-8', 'replace') for p in handle.read().split(b'\0') if p]
+    except OSError:
+        continue
+    for i, part in enumerate(parts):
+        if part != '--app-id' or i + 1 >= len(parts):
+            continue
+        if parts[i + 1] != app_id:
+            continue
+        if binary in parts[0] or any(p == binary for p in parts):
+            print(entry)
+            break
+PY
+}
+
+update_desktop_db() {
+    if command -v update-desktop-database >/dev/null; then
+        update-desktop-database "$DESKTOP_DIR" >/dev/null 2>&1 || true
+    fi
+}
+
+# Snapshot favorites; pair with favorites_restore (e.g. trap on EXIT).
+favorites_backup() {
+    FAVORITES_BACKUP="$(favorites_get)"
+    export FAVORITES_BACKUP
+}
+
+favorites_restore() {
+    if [[ -z "${FAVORITES_BACKUP:-}" ]]; then
+        return 0
+    fi
+    favorites_set "$FAVORITES_BACKUP"
+    unset FAVORITES_BACKUP
+}
+
+# close-window token: "window_id" (count=1) or "index:window_id".
+parse_window_token() {
+    local token="${1:?}"
+    if [[ "$token" =~ ^([1-9][0-9]*):([0-9]+)$ ]]; then
+        WINDOW_TOKEN_INDEX="${BASH_REMATCH[1]}"
+        WINDOW_TOKEN_ID="${BASH_REMATCH[2]}"
+        return 0
+    fi
+    if [[ "$token" =~ ^[0-9]+$ ]]; then
+        WINDOW_TOKEN_INDEX=1
+        WINDOW_TOKEN_ID="$token"
+        return 0
+    fi
+    echo "invalid window token: $token (expected id or index:id)" >&2
+    return 1
+}

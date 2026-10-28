@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/common
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/common"
+
+if parse_fixture_count_arg "${1:-}"; then
+    shift
+fi
+
+_open_one() {
+    wait_for_bus_name 5
+    local result window_id
+    result="$(fixture_call OpenWindow)"
+    window_id="$(printf '%s\n' "$result" | parse_uint32)"
+    if [[ -z "$window_id" ]]; then
+        echo "failed to parse window id from: $result" >&2
+        return 1
+    fi
+    echo "opened $FIXTURE_INSTANCE_ID window_id=$window_id" >&2
+    if [[ "$FIXTURE_COUNT" -eq 1 ]]; then
+        echo "$window_id"
+    else
+        echo "${FIXTURE_INDEX}:${window_id}"
+    fi
+}
+
+fixture_foreach _open_one

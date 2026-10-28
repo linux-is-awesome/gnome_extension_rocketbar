@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/common
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/common"
+
+if parse_fixture_count_arg "${1:-}"; then
+    shift
+fi
+
+_quit_one() {
+    if ! bus_has_owner; then
+        echo "not running: $FIXTURE_BUS_NAME"
+        return 0
+    fi
+    fixture_call Quit >/dev/null
+    wait_for_bus_gone 10
+    echo "quit $FIXTURE_INSTANCE_ID"
+}
+
+fixture_foreach _quit_one

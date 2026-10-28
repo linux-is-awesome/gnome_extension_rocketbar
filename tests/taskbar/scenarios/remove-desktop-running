@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/scenario
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/scenario"
+
+favorites_backup
+trap scenario_cleanup EXIT
+
+echo "== remove-desktop-running ×$FIXTURE_COUNT: install =="
+"$STEPS/install" "$FIXTURE_COUNT"
+"$STEPS/quit" "$FIXTURE_COUNT" || true
+"$STEPS/unpin" "$FIXTURE_COUNT" >/dev/null 2>&1 || true
+
+echo "== remove-desktop-running: pin + launch =="
+"$STEPS/pin" "$FIXTURE_COUNT"
+"$STEPS/launch" "$FIXTURE_COUNT"
+"$STEPS/open-window" "$FIXTURE_COUNT" >/dev/null
+"$STEPS/settle" "$FIXTURE_COUNT" 1
+scenario_expect_counts 2
+
+echo "== remove-desktop-running: remove-desktop, keep running =="
+"$STEPS/remove-desktop" "$FIXTURE_COUNT"
+"$STEPS/settle" "$FIXTURE_COUNT" 2
+scenario_expect_counts 2
+
+echo "== remove-desktop-running: close-all then kill =="
+"$STEPS/close-all" "$FIXTURE_COUNT"
+"$STEPS/settle" "$FIXTURE_COUNT" 1
+scenario_expect_counts 0
+"$STEPS/kill" "$FIXTURE_COUNT"
+"$STEPS/settle" "$FIXTURE_COUNT" 2
+
+echo "== remove-desktop-running: cleanup =="
+"$STEPS/uninstall" "$FIXTURE_COUNT"
+trap - EXIT
+favorites_restore
+
+echo "remove-desktop-running ×$FIXTURE_COUNT ok"

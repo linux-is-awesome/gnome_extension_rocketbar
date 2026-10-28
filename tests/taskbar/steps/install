@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/common
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/common"
+
+if parse_fixture_count_arg "${1:-}"; then
+    shift
+fi
+
+mkdir -p "$INSTALL_DIR" "$DESKTOP_DIR"
+install -m 755 "$FIXTURE_SRC" "$INSTALL_BIN"
+
+fixture_foreach write_desktop_file
+update_desktop_db
+
+echo "installed $FIXTURE_APP_ID ×$FIXTURE_COUNT"
+echo "  bin: $INSTALL_BIN"
+for ((index = 1; index <= FIXTURE_COUNT; index++)); do
+    set_fixture_instance "$index"
+    echo "  desktop: $DESKTOP_FILE"
+done

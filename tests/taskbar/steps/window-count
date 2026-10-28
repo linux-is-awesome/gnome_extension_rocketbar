@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/common
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/common"
+
+if parse_fixture_count_arg "${1:-}"; then
+    shift
+fi
+
+_count_one() {
+    wait_for_bus_name 5
+    local result count
+    result="$(fixture_call GetWindowCount)"
+    count="$(printf '%s\n' "$result" | parse_uint32)"
+    if [[ -z "$count" ]]; then
+        echo "failed to parse window count from: $result" >&2
+        return 1
+    fi
+    echo "window_count $FIXTURE_INSTANCE_ID=$count" >&2
+    echo "$count"
+}
+
+fixture_foreach _count_one

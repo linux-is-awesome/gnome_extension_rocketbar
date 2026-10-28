@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/scenario
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/scenario"
+
+favorites_backup
+trap scenario_cleanup EXIT
+
+echo "== rapid-unpin-kill ×$FIXTURE_COUNT: install =="
+"$STEPS/install" "$FIXTURE_COUNT"
+"$STEPS/quit" "$FIXTURE_COUNT" || true
+"$STEPS/unpin" "$FIXTURE_COUNT" >/dev/null 2>&1 || true
+
+echo "== rapid-unpin-kill: pin + launch =="
+"$STEPS/pin" "$FIXTURE_COUNT"
+"$STEPS/launch" "$FIXTURE_COUNT"
+"$STEPS/settle" "$FIXTURE_COUNT" 1
+scenario_expect_counts 1
+
+echo "== rapid-unpin-kill: unpin + kill (no settle between) =="
+"$STEPS/unpin" "$FIXTURE_COUNT"
+"$STEPS/kill" "$FIXTURE_COUNT"
+"$STEPS/settle" "$FIXTURE_COUNT" 2
+
+echo "== rapid-unpin-kill: cleanup =="
+"$STEPS/uninstall" "$FIXTURE_COUNT"
+trap - EXIT
+favorites_restore
+
+echo "rapid-unpin-kill ×$FIXTURE_COUNT ok (check taskbar for lingering icons)"

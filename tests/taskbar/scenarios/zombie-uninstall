@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Chrome / container-style zombie: pin → run → remove .desktop → hard-kill.
+set -euo pipefail
+# shellcheck source=../lib/scenario
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/scenario"
+
+favorites_backup
+trap scenario_cleanup EXIT
+
+echo "== zombie-uninstall ×$FIXTURE_COUNT: install =="
+"$STEPS/install" "$FIXTURE_COUNT"
+"$STEPS/quit" "$FIXTURE_COUNT" || true
+"$STEPS/unpin" "$FIXTURE_COUNT" >/dev/null 2>&1 || true
+
+echo "== zombie-uninstall: pin + launch =="
+"$STEPS/pin" "$FIXTURE_COUNT"
+"$STEPS/launch" "$FIXTURE_COUNT"
+"$STEPS/settle" "$FIXTURE_COUNT" 1
+scenario_expect_counts 1
+
+echo "== zombie-uninstall: remove-desktop while running =="
+"$STEPS/remove-desktop" "$FIXTURE_COUNT"
+"$STEPS/settle" "$FIXTURE_COUNT" 1
+scenario_expect_counts 1
+
+echo "== zombie-uninstall: kill (service stop) =="
+"$STEPS/kill" "$FIXTURE_COUNT"
+"$STEPS/settle" "$FIXTURE_COUNT" 2
+
+echo "== zombie-uninstall: cleanup =="
+"$STEPS/uninstall" "$FIXTURE_COUNT"
+trap - EXIT
+favorites_restore
+
+echo "zombie-uninstall ×$FIXTURE_COUNT ok (check taskbar for lingering icons)"

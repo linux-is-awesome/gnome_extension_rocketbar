@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/common
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/common"
+
+if parse_fixture_count_arg "${1:-}"; then
+    shift
+fi
+
+_kill_one() {
+    local pids
+    pids="$(fixture_pids)"
+    if [[ -z "$pids" ]]; then
+        if bus_has_owner; then
+            echo "bus still owned but no pids for $FIXTURE_INSTANCE_ID" >&2
+            return 1
+        fi
+        echo "not running: $FIXTURE_INSTANCE_ID"
+        return 0
+    fi
+    # shellcheck disable=SC2086
+    kill -KILL $pids 2>/dev/null || true
+    wait_for_bus_gone 10
+    echo "killed $FIXTURE_INSTANCE_ID ($pids)"
+}
+
+fixture_foreach _kill_one
