@@ -198,6 +198,8 @@ export const PreferencesPage = {
     Misc: 'misc',
     NotificationCounter: 'notificationCounter',
     Taskbar: 'taskbar',
+    TaskbarAppConfig: 'taskbar/appConfig',
+    TaskbarAppConfigs: 'taskbar/appConfigs',
     TaskbarAppButton: 'taskbar/appButton',
     TaskbarIndicators: 'taskbar/indicators',
     TaskbarNotificationBadges: 'taskbar/notificationBadges',

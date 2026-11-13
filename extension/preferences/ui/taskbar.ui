@@ -59,10 +59,29 @@
                         </child>
                         <child>
                             <object class="AdwPreferencesGroup">
+                                <property name="title" translatable="yes">Layout</property>
+                                <child>
+                                    <object class="AdwSpinRow" id="max-length">
+                                        <property name="title" translatable="yes">Max Length (% of Monitor)</property>
+                                        <property name="subtitle" translatable="yes">Limit the taskbar length to a percentage of the monitor size</property>
+                                        <property name="adjustment">
+                                            <object class="GtkAdjustment">
+                                                <property name="lower">10</property>
+                                                <property name="upper">100</property>
+                                                <property name="value">100</property>
+                                                <property name="step-increment">5</property>
+                                            </object>
+                                        </property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="AdwPreferencesGroup">
                                 <property name="title" translatable="yes">Apps</property>
                                 <child>
                                     <object class="AdwExpanderRow">
-                                        <property name="title" translatable="yes">Default Settings</property>
+                                        <property name="title" translatable="yes">Default Behavior</property>
                                         <property name="show-enable-switch">false</property>
                                         <property name="enable-expansion">true</property>
                                         <property name="expanded">false</property>
@@ -98,23 +117,15 @@
                                         </child>
                                     </object>
                                 </child>
-                            </object>
-                        </child>
-                        <child>
-                            <object class="AdwPreferencesGroup">
-                                <property name="title" translatable="yes">Layout</property>
                                 <child>
-                                    <object class="AdwSpinRow" id="max-length">
-                                        <property name="title" translatable="yes">Max Length (% of Monitor)</property>
-                                        <property name="subtitle" translatable="yes">Limit the taskbar length to a percentage of the monitor size</property>
-                                        <property name="adjustment">
-                                            <object class="GtkAdjustment">
-                                                <property name="lower">10</property>
-                                                <property name="upper">100</property>
-                                                <property name="value">100</property>
-                                                <property name="step-increment">5</property>
+                                    <object class="AdwActionRow" id="app-configs-row">
+                                        <property name="title" translatable="yes">Customize</property>
+                                        <property name="activatable">true</property>
+                                        <child>
+                                            <object class="GtkImage">
+                                                <property name="icon-name">go-next-symbolic</property>
                                             </object>
-                                        </property>
+                                        </child>
                                     </object>
                                 </child>
                             </object>
@@ -134,8 +145,23 @@
                                     </object>
                                 </child>
                                 <child>
-                                    <object class="AdwSwitchRow" id="appbutton-menus">
+                                    <object class="AdwActionRow" id="appbutton-menus-row">
                                         <property name="title" translatable="yes">App Menus</property>
+                                        <property name="activatable">false</property>
+                                        <child>
+                                            <object class="GtkSwitch" id="appbutton-menus">
+                                                <property name="valign">center</property>
+                                                <style>
+                                                    <class name="navigation-row-switch" />
+                                                </style>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkImage" id="appbutton-menus-row-arrow">
+                                                <property name="icon-name">go-next-symbolic</property>
+                                                <property name="sensitive">false</property>
+                                            </object>
+                                        </child>
                                     </object>
                                 </child>
                                 <child>

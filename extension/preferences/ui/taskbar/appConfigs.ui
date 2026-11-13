@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <object class="AdwNavigationPage" id="taskbar/appConfigs">
+        <property name="title">Customize Apps</property>
+        <property name="child">
+            <object class="AdwToolbarView">
+                <child type="top">
+                    <object class="AdwHeaderBar">
+                        <property name="title-widget">
+                            <object class="AdwWindowTitle">
+                                <property name="title" translatable="yes">Taskbar</property>
+                                <property name="subtitle" translatable="yes">Customize Apps</property>
+                                <style>
+                                    <class name="child-page-title" />
+                                </style>
+                            </object>
+                        </property>
+                    </object>
+                </child>
+                <property name="content">
+                    <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+                        <child>
+                            <object class="GtkBox" id="search-container">
+                                <property name="visible">false</property>
+                                <property name="orientation">vertical</property>
+                                <property name="halign">center</property>
+                                <property name="margin-bottom">10</property>
+                                <child>
+                                    <object class="GtkSearchEntry" id="search">
+                                        <property name="placeholder-text" translatable="yes">Search apps</property>
+                                        <property name="width-request">330</property>
+                                        <property name="hexpand">false</property>
+                                        <property name="halign">center</property>
+                                        <property name="valign">center</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkStack" id="page-stack">
+                                <property name="vexpand">true</property>
+                                <property name="hexpand">true</property>
+                                <child>
+                                    <object class="GtkBox">
+                                        <property name="halign">center</property>
+                                        <property name="valign">center</property>
+                                        <child>
+                                            <object class="GtkSpinner" id="loading-spinner">
+                                                <property name="spinning">true</property>
+                                                <property name="width-request">32</property>
+                                                <property name="height-request">32</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwPreferencesPage" id="taskbar/appConfigs-page">
+                                        <child>
+                                            <object class="AdwPreferencesGroup" id="customized-apps-group">
+                                                <property name="visible">false</property>
+                                                <property name="title" translatable="yes">Customized Apps</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwPreferencesGroup" id="not-customized-apps-group">
+                                                <property name="title" translatable="yes">Not Customized Apps</property>
+                                                <property name="visible">false</property>
+                                                <child>
+                                                    <object class="AdwActionRow" id="app-row-template">
+                                                        <property name="activatable">true</property>
+                                                        <property name="use-markup">false</property>
+                                                        <child type="prefix">
+                                                            <object class="GtkImage" id="app-icon">
+                                                                <property name="pixel-size">24</property>
+                                                            </object>
+                                                        </child>
+                                                        <child type="suffix">
+                                                            <object class="GtkImage">
+                                                                <property name="icon-name">go-next-symbolic</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwStatusPage" id="empty-message">
+                                        <property name="icon-name">system-search-symbolic</property>
+                                        <property name="title" translatable="yes">No Apps Found</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                    </object>
+                </property>
+            </object>
+        </property>
+    </object>
+</interface>

@@ -10,8 +10,6 @@ import { ConfigOptions,
          NotificationsBehavior,
          PreferredMonitor } from '../../shared/enums/taskbar.js';
 
-const APP_BUTTON_NAVIGATION_ROW_ID = 'appbutton';
-
 /** @enum {string} */
 const ConfigField = {
     ...TaskbarConfigField,
@@ -24,12 +22,23 @@ const ConfigField = {
 };
 
 /** @enum {string} */
+const NavigationRow = {
+    AppConfigs: 'app-configs',
+    AppButtons: 'appbutton',
+    AppButtonIndicators: SettingsKey.AppButtonIndicators,
+    AppButtonNotificationBadges: SettingsKey.AppButtonNotificationBadges,
+    AppButtonProgressBars: SettingsKey.AppButtonProgressBars,
+    AppButtonTooltips: SettingsKey.AppButtonTooltips
+};
+
+/** @enum {string} */
 const ChildPage = {
-    [APP_BUTTON_NAVIGATION_ROW_ID]: PreferencesPage.TaskbarAppButton,
-    [SettingsKey.AppButtonIndicators]: PreferencesPage.TaskbarIndicators,
-    [SettingsKey.AppButtonNotificationBadges]: PreferencesPage.TaskbarNotificationBadges,
-    [SettingsKey.AppButtonProgressBars]: PreferencesPage.TaskbarProgressBars,
-    [SettingsKey.AppButtonTooltips]: PreferencesPage.TaskbarTooltips
+    [NavigationRow.AppConfigs]: PreferencesPage.TaskbarAppConfigs,
+    [NavigationRow.AppButtons]: PreferencesPage.TaskbarAppButton,
+    [NavigationRow.AppButtonIndicators]: PreferencesPage.TaskbarIndicators,
+    [NavigationRow.AppButtonNotificationBadges]: PreferencesPage.TaskbarNotificationBadges,
+    [NavigationRow.AppButtonProgressBars]: PreferencesPage.TaskbarProgressBars,
+    [NavigationRow.AppButtonTooltips]: PreferencesPage.TaskbarTooltips
 };
 
 export default class extends SettingsPage {
