@@ -25,7 +25,7 @@ export default class SettingsPage extends Page {
 
     /**
      * @param {string} name
-     * @param {() => void} callback
+     * @param {(isInitialized?: boolean, params?: {[field: string]: *}) => boolean|void} [callback]
      * @param {string?} [settingsPath]
      */
     constructor(name, callback, settingsPath = null) {

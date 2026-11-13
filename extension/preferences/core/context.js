@@ -35,9 +35,10 @@ export default class Context extends SharedContext {
 
     /**
      * @param {PreferencesPage} targetPage
+     * @param {{[field: string]: *}} [params]
      */
-    static navigateToPage(targetPage) {
-        this.instance.#navigateToPage(targetPage);
+    static navigateToPage(targetPage, params) {
+        this.instance.#navigateToPage(targetPage, params);
     }
 
     /** @type {PreferencesWindow?} */
@@ -139,12 +140,13 @@ export default class Context extends SharedContext {
 
     /**
      * @param {PreferencesPage} targetPage
+     * @param {{[field: string]: *}} [params]
      */
-    #navigateToPage(targetPage) {
+    #navigateToPage(targetPage, params) {
         if (!this.#window) return;
         const page = this.#pages.get(targetPage);
         if (page instanceof BasePage === false) return;
-        page.show(this.#window);
+        page.show(this.#window, params);
     }
 
 }
