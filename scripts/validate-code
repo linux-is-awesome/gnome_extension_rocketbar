@@ -4,7 +4,7 @@ cd ../
 
 echo '# TSCHECK'
 echo ''
-tsc_output=$(npx -p typescript tsc --noEmit -p jsconfig.json 2>&1)
+tsc_output=$(npx tsc --noEmit -p jsconfig.json 2>&1)
 echo "$tsc_output" | grep -E '^(extension/|extension-dev/)' || true
 echo ''
 echo '# ESLINT'
