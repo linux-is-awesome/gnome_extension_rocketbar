@@ -372,7 +372,7 @@ export class Indicators extends Component {
     /** @type {SharedConfig?} */
     static #sharedConfig = null;
 
-    /** @type {{[event: string]: (instance: Indicators) => *}} */
+    /** @type {{[event: string]: (instance: Indicators, data?: *) => *}} */
     static #events = {
         [ComponentEvent.Destroy]: instance => instance.#destroy()
     };

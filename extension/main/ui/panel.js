@@ -19,7 +19,7 @@ const DEFAULT_HEIGHT = -1;
  */
 export default class Panel extends Component {
 
-    /** @type {{[event: string]: (instance: Panel) => *}} */
+    /** @type {{[event: string]: (instance: Panel, data?: *) => *}} */
     static #events = {
         [ComponentEvent.Destroy]: instance => instance.#destroy()
     };

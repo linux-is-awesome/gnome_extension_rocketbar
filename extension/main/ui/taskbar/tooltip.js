@@ -80,7 +80,7 @@ const AppNameProps = {
  */
 class AppStatusItem extends Component {
 
-    /** @type {{[event: string]: (instance: AppStatusItem) => *}} */
+    /** @type {{[event: string]: (instance: AppStatusItem, data?: *) => *}} */
     static #events = {
         [ComponentEvent.Destroy]: instance => instance.#destroy()
     };
@@ -317,7 +317,7 @@ export class Tooltip extends BaseTooltip {
     /** @type {SharedConfig?} */
     static #sharedConfig = null;
 
-    /** @type {{[event: string]: (instance: Tooltip) => *}} */
+    /** @type {{[event: string]: (instance: Tooltip, data?: *) => *}} */
     static #events = {
         [ComponentEvent.Destroy]: instance => instance.#destroy(),
         [TooltipEvent.LongPress]: instance => instance.#longPress()

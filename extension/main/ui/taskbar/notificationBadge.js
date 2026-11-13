@@ -54,7 +54,7 @@ export class NotificationBadge extends Component {
     /** @type {SharedConfig?} */
     static #sharedConfig = null;
 
-    /** @type {{[event: string]: (instance: NotificationBadge) => *}} */
+    /** @type {{[event: string]: (instance: NotificationBadge, data?: *) => *}} */
     static #events = {
         [ComponentEvent.Destroy]: instance => instance.#destroy()
     };

@@ -54,7 +54,7 @@ const SpacerProps = {
  */
 class DateMenu extends Component {
 
-    /** @type {{[event: string]: (instance: DateMenu) => *}} */
+    /** @type {{[event: string]: (instance: DateMenu, data?: *) => *}} */
     static #events = {
         [ComponentEvent.Destroy]: instance => instance.#destroy()
     };
@@ -134,7 +134,7 @@ class DateMenu extends Component {
  */
 export default class NotificationCounter extends Component {
 
-    /** @type {{[event: string]: (instance: NotificationCounter) => *}} */
+    /** @type {{[event: string]: (instance: NotificationCounter, data?: *) => *}} */
     static #events = {
         [ComponentEvent.Destroy]: instance => instance.#destroy(),
         [ComponentEvent.Init]: instance => Context.jobs.shared(instance, () => instance.#rerender(), Delay.Background),

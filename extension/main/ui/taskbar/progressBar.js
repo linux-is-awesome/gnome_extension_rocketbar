@@ -37,7 +37,7 @@ export class ProgressBar extends Component {
     /** @type {SharedConfig?} */
     static #sharedConfig = null;
 
-    /** @type {{[event: string]: (instance: ProgressBar) => *}} */
+    /** @type {{[event: string]: (instance: ProgressBar, data?: *) => *}} */
     static #events = {
         [ComponentEvent.Destroy]: instance => instance.#destroy()
     };

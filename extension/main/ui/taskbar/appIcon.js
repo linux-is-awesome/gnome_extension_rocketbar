@@ -47,7 +47,7 @@ export class AppIcon extends Icon {
     /** @type {string?} */
     static iconThemeName = null;
 
-    /** @type {{[event: string]: (instance: AppIcon) => *}} */
+    /** @type {{[event: string]: (instance: AppIcon, data?: *) => *}} */
     static #events = {
         [ComponentEvent.Destroy]: instance => instance.#destroy(),
         [IconEvent.TextureChanged]: instance => instance.#handleIconTexture()

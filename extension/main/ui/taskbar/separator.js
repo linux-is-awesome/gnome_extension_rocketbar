@@ -43,7 +43,7 @@ const BodyProps = {
  */
 export class Separator extends Component {
 
-    /** @type {{[event: string]: (instance: Separator) => *}} */
+    /** @type {{[event: string]: (instance: Separator, data?: *) => *}} */
     static #events = {
         [ComponentEvent.Destroy]: instance => instance.#destroy(),
         [ComponentEvent.Init]: instance => (instance.#updateStyle(), instance.#handleState())
