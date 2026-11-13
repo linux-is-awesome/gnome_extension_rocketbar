@@ -3,7 +3,7 @@
 if [ "$1" = "new-window" ]; then
     script_dir="$(cd "$(dirname "$0")" && pwd)"
     script_name="$(basename "$0")"
-    x-terminal-emulator --command="sh -c 'cd '$script_dir' && ./$script_name'"
+    xdg-terminal-exec -- "$script_dir/$script_name"
     exit 0
 fi
 
