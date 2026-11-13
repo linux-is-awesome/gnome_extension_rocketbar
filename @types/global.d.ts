@@ -99,6 +99,103 @@ declare module 'resource:///org/gnome/shell/ui/dnd.js' {
 
 }
 
+declare module 'resource:///org/gnome/shell/ui/popupMenu.js' {
+
+    /**
+     * `open()` / `close()` transition arg.
+     * GNOME ≤50: `BoxPointer.PopupAnimation` bitflags (`number`), or `boolean` animate on/off.
+     * GNOME 51+: `{animate?, fadeOnly?, triggerEvent?}` object only.
+     */
+    type PopupMenuTransitionParams = {
+        animate?: boolean
+        fadeOnly?: boolean
+        triggerEvent?: Clutter.Event
+    } | boolean | number
+
+    interface PopupMenuBase {
+
+        // Shell subclasses that redeclare open/close in .js need the same wider
+        // signatures on their own interface merge — this base alone is not enough.
+
+        /**
+         * GNOME ≤50: `BoxPointer.PopupAnimation` / `boolean`; GNOME 51+: `{animate?, fadeOnly?, triggerEvent?}`.
+         */
+        open(params?: PopupMenuTransitionParams): boolean | void
+
+        /**
+         * GNOME ≤50: `BoxPointer.PopupAnimation` / `boolean`; GNOME 51+: `{animate?, fadeOnly?, triggerEvent?}`.
+         */
+        close(params?: PopupMenuTransitionParams): boolean | void
+
+    }
+
+    interface PopupMenu {
+
+        // open/close duplicated: Shell redeclares them on PopupMenu (not only PopupMenuBase).
+
+        /** Introduced in GNOME 51 */
+        _keyController?: {
+            get_key(): [boolean, number]
+            get_state(): [boolean, boolean, boolean]
+        }
+
+        /**
+         * GNOME ≤50: `(actor, event)` from `key-press-event`; GNOME 51: no args, use `_keyController`.
+         */
+        _onKeyPress(actor?: Clutter.Actor, event?: Clutter.Event): boolean
+
+        /**
+         * GNOME ≤50: `BoxPointer.PopupAnimation` / `boolean`; GNOME 51+: `{animate?, fadeOnly?, triggerEvent?}`.
+         */
+        open(params?: PopupMenuTransitionParams): boolean | void
+
+        /**
+         * GNOME ≤50: `BoxPointer.PopupAnimation` / `boolean`; GNOME 51+: `{animate?, fadeOnly?, triggerEvent?}`.
+         */
+        close(params?: PopupMenuTransitionParams): boolean | void
+
+    }
+
+    interface PopupDummyMenu {
+
+        // Own open/close: Shell PopupDummyMenu extends EventEmitter, not PopupMenuBase.
+
+        /**
+         * GNOME ≤50: `BoxPointer.PopupAnimation` / `boolean`; GNOME 51+: `{animate?, fadeOnly?, triggerEvent?}`.
+         */
+        open(params?: PopupMenuTransitionParams): void
+
+        /**
+         * GNOME ≤50: `BoxPointer.PopupAnimation` / `boolean`; GNOME 51+: `{animate?, fadeOnly?, triggerEvent?}`.
+         */
+        close(params?: PopupMenuTransitionParams): void
+
+    }
+
+}
+
+declare module 'resource:///org/gnome/shell/ui/appMenu.js' {
+
+    import type { PopupMenuTransitionParams } from 'resource:///org/gnome/shell/ui/popupMenu.js';
+
+    interface AppMenu {
+
+        // open/close duplicated: Menu.super resolves through AppMenu's redeclaration chain.
+
+        /**
+         * GNOME ≤50: `BoxPointer.PopupAnimation` / `boolean`; GNOME 51+: `{animate?, fadeOnly?, triggerEvent?}`.
+         */
+        open(params?: PopupMenuTransitionParams): boolean | void
+
+        /**
+         * GNOME ≤50: `BoxPointer.PopupAnimation` / `boolean`; GNOME 51+: `{animate?, fadeOnly?, triggerEvent?}`.
+         */
+        close(params?: PopupMenuTransitionParams): boolean | void
+
+    }
+
+}
+
 declare module 'resource:///org/gnome/shell/ui/appFavorites.js' {
 
     interface AppFavorites {

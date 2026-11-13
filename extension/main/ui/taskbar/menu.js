@@ -2,7 +2,7 @@
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupBaseMenuItem} PopupBaseMenuItem
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupMenuItem} PopupMenuItem
  * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupSeparatorMenuItem} PopupSeparatorMenuItem
- * @typedef {import('resource:///org/gnome/shell/ui/boxpointer.js').PopupAnimation} BoxPointer.PopupAnimation
+ * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupMenuTransitionParams} PopupMenuTransitionParams
  * @typedef {import('./appButton.js').AppButton} AppButton
  * @typedef {import('../../../shared/utils/config.js').Config} Config
  * @typedef {import('../base/menu.js').RadioGroup} RadioGroup
@@ -661,20 +661,20 @@ export class Menu extends AppMenu {
 
     /**
      * @override
-     * @param {BoxPointer.PopupAnimation} animation
+     * @param {PopupMenuTransitionParams} [params]
      */
-    open(animation) {
+    open(params) {
         if (!this.#appButton) return;
         this.rerender();
-        super.open(animation);
+        super.open(params);
     }
 
     /**
      * @override
-     * @param {BoxPointer.PopupAnimation} [animation]
+     * @param {PopupMenuTransitionParams} [params]
      */
-    close(animation) {
-        super.close(animation);
+    close(params) {
+        super.close(params);
         this.#clearWindows();
     }
 
@@ -788,14 +788,15 @@ export class Menu extends AppMenu {
 
     /**
      * @override
-     * @param {*} actor
-     * @param {Clutter.Event} event
+     * @param {Clutter.Actor} [actor] Deprecated since GNOME 51.
+     * @param {Clutter.Event} [event] Deprecated since GNOME 51.
      * @returns {boolean}
      */
-    _onKeyPress(actor, event) {
-        const key = event?.get_key_symbol();
-        if (key === Clutter.KEY_space ||
-            key === Clutter.KEY_Return) return Clutter.EVENT_PROPAGATE;
+    _onKeyPress(/** @deprecated */actor, /** @deprecated */event) {
+        const [, keySymbol] = this._keyController?.get_key() ?? [];
+        const symbol = keySymbol ?? event?.get_key_symbol();
+        if (symbol === Clutter.KEY_space ||
+            symbol === Clutter.KEY_Return) return Clutter.EVENT_PROPAGATE;
         return super._onKeyPress(actor, event);
     }
 

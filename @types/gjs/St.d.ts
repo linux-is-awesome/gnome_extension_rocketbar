@@ -179,15 +179,30 @@ declare module 'gi://St' {
      */
     enum ButtonMask {
         /**
+         * Primary (left) button — GNOME 51+
+         */
+        PRIMARY,
+        /**
+         * Middle button — GNOME 51+
+         */
+        MIDDLE,
+        /**
+         * Secondary (right) button — GNOME 51+
+         */
+        SECONDARY,
+        /**
          * button 1 (left)
+         * @deprecated since GNOME 51 — use {@link ButtonMask.PRIMARY}
          */
         ONE,
         /**
          * button 2 (middle)
+         * @deprecated since GNOME 51 — use {@link ButtonMask.MIDDLE}
          */
         TWO,
         /**
          * button 3 (right)
+         * @deprecated since GNOME 51 — use {@link ButtonMask.SECONDARY}
          */
         THREE,
     }

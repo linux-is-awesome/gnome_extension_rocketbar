@@ -1,6 +1,6 @@
 /**
  * @typedef {import('gi://Mtk').Rectangle} Mtk.Rectangle
- * @typedef {import('resource:///org/gnome/shell/ui/boxpointer.js').PopupAnimation} BoxPointer.PopupAnimation
+ * @typedef {import('resource:///org/gnome/shell/ui/popupMenu.js').PopupMenuTransitionParams} PopupMenuTransitionParams
  */
 
 import Clutter from 'gi://Clutter';
@@ -23,7 +23,9 @@ const DefaultProps = {
     can_focus: true,
     y_expand: false,
     x_expand: false,
-    button_mask: St.ButtonMask.ONE | St.ButtonMask.TWO | St.ButtonMask.THREE,
+    button_mask: (St.ButtonMask.PRIMARY ?? St.ButtonMask.ONE) |
+                 (St.ButtonMask.MIDDLE ?? St.ButtonMask.TWO) |
+                 (St.ButtonMask.SECONDARY ?? St.ButtonMask.THREE),
     style_class: STYLE_CLASS
 };
 
@@ -105,12 +107,12 @@ class ButtonMenuTrigger extends PopupDummyMenu {
 
     /**
      * @override
-     * @param {BoxPointer.PopupAnimation} [animation]
+     * @param {PopupMenuTransitionParams} [params]
      */
-    open(animation) {
+    open(params) {
         const menu = this.#button?.menu;
         if (!menu) return super.open();
-        if (animation) menu.open(animation);
+        if (params) menu.open(params);
         else menu.toggle();
     }
 

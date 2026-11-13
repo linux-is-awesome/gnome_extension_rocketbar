@@ -7,5 +7,5 @@
     "url": "https://github.com/linux-is-awesome/gnome_extension_rocketbar",
     "version": 14,
     "version-name": "2.1",
-    "shell-version": ["48","49","50"]
+    "shell-version": ["48","49","50","51"]
 }
