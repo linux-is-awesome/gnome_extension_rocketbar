@@ -17,11 +17,189 @@
                     </object>
                 </child>
                 <property name="content">
-                    <object class="AdwPreferencesPage" id="taskbar/appConfig-page">
-
+                    <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+                        <child>
+                            <object class="GtkImage" id="app-header-icon">
+                                <property name="pixel-size">64</property>
+                                <property name="halign">center</property>
+                                <property name="valign">center</property>
+                                <property name="margin-top">10</property>
+                                <property name="icon-name">application-x-executable</property>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="AdwPreferencesPage" id="taskbar/appConfig-page">
+                                <property name="vexpand">true</property>
+                                <child>
+                                    <object class="AdwPreferencesGroup">
+                                        <property name="title" translatable="yes">Behavior</property>
+                                        <child>
+                                            <object class="AdwComboRow" id="preferred-monitor">
+                                                <property name="title" translatable="yes">Preferred Monitor</property>
+                                                <property name="model">preferred-monitor-options</property>
+                                                <child type="suffix">
+                                                    <object class="GtkButton" id="preferred-monitor-reset">
+                                                        <property name="valign">center</property>
+                                                        <property name="icon-name">edit-undo-symbolic</property>
+                                                        <property name="tooltip-text" translatable="yes">Reset to Default</property>
+                                                        <property name="sensitive">false</property>
+                                                        <style>
+                                                            <class name="flat"/>
+                                                        </style>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwComboRow" id="activation-behavior">
+                                                <property name="title" translatable="yes">Activation Behavior</property>
+                                                <property name="model">activate-behavior-options</property>
+                                                <child type="suffix">
+                                                    <object class="GtkButton" id="activation-behavior-reset">
+                                                        <property name="valign">center</property>
+                                                        <property name="icon-name">edit-undo-symbolic</property>
+                                                        <property name="tooltip-text" translatable="yes">Reset to Default</property>
+                                                        <property name="sensitive">false</property>
+                                                        <style>
+                                                            <class name="flat"/>
+                                                        </style>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwComboRow" id="attention-behavior">
+                                                <property name="title" translatable="yes">Focus Demanding Attention Windows</property>
+                                                <property name="model">attention-behavior-options</property>
+                                                <child type="suffix">
+                                                    <object class="GtkButton" id="attention-behavior-reset">
+                                                        <property name="valign">center</property>
+                                                        <property name="icon-name">edit-undo-symbolic</property>
+                                                        <property name="tooltip-text" translatable="yes">Reset to Default</property>
+                                                        <property name="sensitive">false</property>
+                                                        <style>
+                                                            <class name="flat"/>
+                                                        </style>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwComboRow" id="attention-notifications-behavior">
+                                                <property name="title" translatable="yes">Attention Notifications</property>
+                                                <property name="model">notifications-behavior-options</property>
+                                                <child type="suffix">
+                                                    <object class="GtkButton" id="attention-notifications-behavior-reset">
+                                                        <property name="valign">center</property>
+                                                        <property name="icon-name">edit-undo-symbolic</property>
+                                                        <property name="tooltip-text" translatable="yes">Reset to Default</property>
+                                                        <property name="sensitive">false</property>
+                                                        <style>
+                                                            <class name="flat"/>
+                                                        </style>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwComboRow" id="notifications-behavior">
+                                                <property name="title" translatable="yes">Standard Notifications</property>
+                                                <property name="model">notifications-behavior-options</property>
+                                                <child type="suffix">
+                                                    <object class="GtkButton" id="notifications-behavior-reset">
+                                                        <property name="valign">center</property>
+                                                        <property name="icon-name">edit-undo-symbolic</property>
+                                                        <property name="tooltip-text" translatable="yes">Reset to Default</property>
+                                                        <property name="sensitive">false</property>
+                                                        <style>
+                                                            <class name="flat"/>
+                                                        </style>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwPreferencesGroup">
+                                        <property name="title" translatable="yes">Icon</property>
+                                        <child>
+                                            <object class="AdwSpinRow" id="appbutton-icon-size">
+                                                <property name="title" translatable="yes">Size</property>
+                                                <property name="adjustment">
+                                                    <object class="GtkAdjustment">
+                                                        <property name="value">16</property>
+                                                        <property name="lower">16</property>
+                                                        <property name="upper">64</property>
+                                                        <property name="step-increment">1</property>
+                                                    </object>
+                                                </property>
+                                                <child type="suffix">
+                                                    <object class="GtkButton" id="appbutton-icon-size-reset">
+                                                        <property name="valign">center</property>
+                                                        <property name="icon-name">edit-undo-symbolic</property>
+                                                        <property name="tooltip-text" translatable="yes">Reset to Default</property>
+                                                        <property name="sensitive">false</property>
+                                                        <style>
+                                                            <class name="flat"/>
+                                                        </style>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="AdwPreferencesGroup">
+                                        <child>
+                                            <object class="AdwActionRow" id="reset-all">
+                                                <property name="title" translatable="yes">Reset All to Default</property>
+                                                <property name="activatable">true</property>
+                                                <property name="sensitive">false</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
                     </object>
                 </property>
             </object>
         </property>
+    </object>
+    <object class="GtkStringList" id="preferred-monitor-options">
+        <items>
+            <item translatable="yes">Default</item>
+            <item translatable="yes">Primary</item>
+            <item translatable="yes">Left of Primary</item>
+            <item translatable="yes">Right of Primary</item>
+            <item translatable="yes">Above Primary</item>
+            <item translatable="yes">Below Primary</item>
+        </items>
+    </object>
+    <object class="GtkStringList" id="activate-behavior-options">
+        <items>
+            <item translatable="yes">Default</item>
+            <item translatable="yes">Find Window</item>
+            <item translatable="yes">Move Windows</item>
+        </items>
+    </object>
+    <object class="GtkStringList" id="attention-behavior-options">
+        <items>
+            <item translatable="yes">Default</item>
+            <item translatable="yes">When Active</item>
+            <item translatable="yes">On Active Workspace</item>
+            <item translatable="yes">Always</item>
+        </items>
+    </object>
+    <object class="GtkStringList" id="notifications-behavior-options">
+        <items>
+            <item translatable="yes">Default</item>
+            <item translatable="yes">Disable</item>
+            <item translatable="yes">Always Hide</item>
+            <item translatable="yes">Always Show</item>
+            <item translatable="yes">Always Show as Critical</item>
+        </items>
     </object>
 </interface>
