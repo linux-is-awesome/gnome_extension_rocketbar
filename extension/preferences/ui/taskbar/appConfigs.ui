@@ -25,6 +25,7 @@
                                 <property name="visible">false</property>
                                 <property name="orientation">vertical</property>
                                 <property name="halign">center</property>
+                                <property name="margin-top">10</property>
                                 <property name="margin-bottom">10</property>
                                 <child>
                                     <object class="GtkSearchEntry" id="search">
