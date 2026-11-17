@@ -1,5 +1,4 @@
 /**
- * @typedef {import('gi://Adw').PreferencesWindow} Adw.PreferencesWindow
  * @typedef {import('resource:///org/gnome/shell/dbusServices/extensions/extensionPrefsDialog.js').ExtensionPrefsDialog} ExtensionPrefsDialog
  * @typedef {Adw.PreferencesWindow & ExtensionPrefsDialog} PreferencesWindow
  * @typedef {import('resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js').ExtensionPreferences} Extension
@@ -7,6 +6,7 @@
 
 import Gdk from 'gi://Gdk';
 import Gtk from 'gi://Gtk';
+import Adw from 'gi://Adw';
 import SharedContext from '../../shared/core/context.js';
 import { NavigationApiService } from '../../shared/api/navigationApi.js';
 import BasePage from '../pages/base/page.js';
@@ -48,6 +48,9 @@ export default class Context extends SharedContext {
     /** @type {Map<PreferencesPage, Promise|BasePage>} */
     #pages = new Map();
 
+    /** @type {Adw.NavigationView?} */
+    #navigationView = null;
+
     /** @type {NavigationApiService?} */
     #navigationApi = null;
 
@@ -69,6 +72,7 @@ export default class Context extends SharedContext {
         this.#setWindowSize(this.#window);
         this.#loadStyles();
         await this.#loadPages();
+        this.#navigationView = this.#getNavigationView();
         this.#navigationApi = new NavigationApiService((...args) => this.#navigateToPage(...args));
         return this;
     }
@@ -89,6 +93,7 @@ export default class Context extends SharedContext {
         this.#navigationApi = null;
         this.#pages.clear();
         this.#window = null;
+        this.#navigationView = null;
         return true;
     }
 
@@ -146,15 +151,32 @@ export default class Context extends SharedContext {
     }
 
     /**
+     * @param {Gtk.Widget?} [widget]
+     * @returns {Adw.NavigationView?}
+     */
+    #getNavigationView(widget = this.#window) {
+        if (!widget) return null;
+        if (widget instanceof Adw.NavigationView) return widget;
+        for (let child = widget.get_first_child(); child; child = child.get_next_sibling()) {
+            const navigationView = this.#getNavigationView(child);
+            if (navigationView) return navigationView;
+        }
+        return null;
+    }
+
+    /**
      * @param {PreferencesPage} targetPage
      * @param {{[field: string]: *}} [params]
+     * @param {boolean} [animate]
      */
-    #navigateToPage(targetPage, params) {
+    #navigateToPage(targetPage, params, animate = true) {
         if (!this.#window) return;
         const page = this.#pages.get(targetPage);
         if (page instanceof BasePage === false) return;
+        this.#navigationView?.set_animate_transitions(animate);
         page.show(this.#window, params);
         this.#window.present();
+        this.#navigationView?.set_animate_transitions(true);
     }
 
 }
