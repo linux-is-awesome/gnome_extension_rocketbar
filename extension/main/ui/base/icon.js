@@ -7,7 +7,7 @@ import { Delay, Event } from '../../../shared/enums/general.js';
 
 const ASSETS_ICONS_PATH = `${Context.path}/assets/icons/`;
 const ASSETS_ICON_FILE_TYPE = '.svg';
-const ICON_PATH_REGEXP_STRING = /^\/(.)*(\.(svg|png))$/;
+const ICON_PATH_REGEXP = /^\/(.)*(\.(svg|png))$/;
 const ICON_PATH_SEPARATOR = '/';
 
 /** @type {{[prop: string]: *}} */
@@ -35,7 +35,7 @@ export class Icon extends Component {
         if (typeof path !== 'string') return false;
         path = path.trim();
         if (!path) return false;
-        return ICON_PATH_REGEXP_STRING.test(path);
+        return ICON_PATH_REGEXP.test(path);
     }
 
     /** @type {string?} */

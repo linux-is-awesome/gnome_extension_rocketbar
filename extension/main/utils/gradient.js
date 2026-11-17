@@ -1,6 +1,6 @@
 const INTENSITY_MIN = 0;
 const INTENSITY_MAX = 10;
-const COLOR_REGEXP_STRING = /[^\d,]/g;
+const COLOR_REGEXP = /[^\d,]/g;
 const COLOR_STRING_SPLITTER = ',';
 const COLOR_STRING_LENGTH = 3;
 const GRADIENT_STRING_DIRECTION = 'background-gradient-direction';
@@ -23,7 +23,7 @@ export const GradientDirection = {
 export const Gradient = (colorString, intensity = INTENSITY_MAX, ratio = INTENSITY_MIN, direction = GradientDirection.Vertical) => {
     if (typeof colorString !== 'string') return '';
     /** @type {string[]} */
-    const color = colorString.replace(COLOR_REGEXP_STRING, '').split(COLOR_STRING_SPLITTER);
+    const color = colorString.replace(COLOR_REGEXP, '').split(COLOR_STRING_SPLITTER);
     color.length = COLOR_STRING_LENGTH;
     /** @type {number} */
     const startOpacity = Math.max(intensity - ratio, INTENSITY_MIN) / INTENSITY_MAX;

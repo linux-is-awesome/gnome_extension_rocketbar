@@ -10,7 +10,7 @@ import { NotificationSourceInfo } from '../utils/notificationSourceInfo.js';
 import { Event, Delay } from '../../shared/enums/general.js';
 import { SettingsKey } from '../../shared/enums/settings.js';
 
-const APPID_REGEXP_STRING = /.desktop/g;
+const APPID_REGEXP = /.desktop/g;
 
 /** @enum {string} */
 const ConfigField = {
@@ -99,7 +99,7 @@ class NotificationService {
             if (source._inDestruction) continue;
             const { app } = NotificationSourceInfo(source, this.#windowTracker);
             const sourceAppId = app?.id;
-            if (sourceAppId?.replace(APPID_REGEXP_STRING, '') !== appId) continue;
+            if (sourceAppId?.replace(APPID_REGEXP, '') !== appId) continue;
             source.destroy();
         }
         if (!this.#config.enableLauncherApi) return;
@@ -159,7 +159,7 @@ class NotificationService {
             const sourceAppId = app?.id;
             if (typeof sourceAppId !== 'string' ||
                 (isAttentionSource && !countAttentionSources)) continue;
-            const appId = sourceAppId.replace(APPID_REGEXP_STRING, '');
+            const appId = sourceAppId.replace(APPID_REGEXP, '');
             if (!isAttentionSource && launcherApiCount?.has(appId)) continue;
             const oldCount = this.#countByAppId.get(appId) ?? 0;
             this.#countByAppId.set(appId, oldCount + sourceCount);
@@ -200,7 +200,7 @@ export class NotificationHandler {
     get appId() {
         if (!this.#app) return null;
         if (this.#appId) return this.#appId;
-        this.#appId = this.#app.id?.replace(APPID_REGEXP_STRING, '') ?? null;
+        this.#appId = this.#app.id?.replace(APPID_REGEXP, '') ?? null;
         return this.#appId;
     }
 
