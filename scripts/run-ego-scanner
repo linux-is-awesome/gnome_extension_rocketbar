@@ -1,0 +1,16 @@
+#!/bin/sh
+
+cd ../
+
+TARGET="${1:-$(pwd)/extension}"
+
+echo '# SHEXLI'
+echo ''
+
+if command -v shexli >/dev/null 2>&1; then
+    shexli "$TARGET"
+    exit $?
+fi
+
+echo 'shexli not found.' >&2
+exit 1

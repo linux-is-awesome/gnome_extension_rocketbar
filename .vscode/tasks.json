@@ -214,6 +214,17 @@
                 "panel": "shared"
             },
             "problemMatcher": []
+        },
+        {
+            "label": "run-ego-scanner",
+            "type": "shell",
+            "command": "cd scripts && ./run-ego-scanner",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
         }
     ]
 }
