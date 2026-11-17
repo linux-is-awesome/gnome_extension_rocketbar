@@ -1,10 +1,21 @@
 #!/bin/sh
 
-cd ../
+if [ -n "$1" ]; then
+    TARGET=$1
+else
+    ./build || exit 1
+    UUID=$(grep -oP '(?<="uuid": ")[^"]*' ../extension/metadata.json)
+    TARGET="$(cd ../release && pwd)/${UUID}.shell-extension.zip"
+fi
 
-TARGET="${1:-$(pwd)/extension}"
+if [ ! -e "$TARGET" ]; then
+    echo "release package not found: $TARGET" >&2
+    exit 1
+fi
 
 echo '# SHEXLI'
+echo ''
+echo "target: $TARGET"
 echo ''
 
 if command -v shexli >/dev/null 2>&1; then
