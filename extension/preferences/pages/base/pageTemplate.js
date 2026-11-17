@@ -55,6 +55,16 @@ export default class PageTemplate {
 
     /**
      * @param {string} id
+     * @returns {Adw.ButtonRow}
+     */
+    getButtonRow(id) {
+        const result = this.#template.get_object(id);
+        if (result instanceof Adw.ButtonRow) return result;
+        throw new Error(`${id} is not an instane of Adw.ButtonRow.`);
+    }
+
+    /**
+     * @param {string} id
      * @returns {Adw.SwitchRow}
      */
     getSwitchRow(id) {

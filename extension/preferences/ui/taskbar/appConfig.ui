@@ -153,10 +153,12 @@
                                 <child>
                                     <object class="AdwPreferencesGroup">
                                         <child>
-                                            <object class="AdwActionRow" id="reset-all">
+                                            <object class="AdwButtonRow" id="reset-all">
                                                 <property name="title" translatable="yes">Reset All to Default</property>
-                                                <property name="activatable">true</property>
-                                                <property name="sensitive">false</property>
+                                                <property name="visible">false</property>
+                                                <style>
+                                                    <class name="destructive-action"/>
+                                                </style>
                                             </object>
                                         </child>
                                     </object>

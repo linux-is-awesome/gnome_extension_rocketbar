@@ -55,8 +55,7 @@ export default class extends AppSettingsPage {
     #initialize(isInitialized, params = {}) {
         if (!isInitialized) {
             for (const key in ConfigField) this.#connectResetButton(ConfigField[key]);
-            const resetAllButton = this.getActionRow(Widget.ResetAll);
-            resetAllButton.connect(Event.Activated, () => this.#resetAll());
+            this.getButtonRow(Widget.ResetAll).connect(Event.Activated, () => this.#resetAll());
         }
         const { appId = null } = params;
         this.#appId = appId;
@@ -149,7 +148,7 @@ export default class extends AppSettingsPage {
             const isActive = hasOverride && this.hasOverride(this.#appId, OverrideKey[settingsKey]);
             resetButton.set_sensitive(isActive);
         }
-        this.getActionRow(Widget.ResetAll).set_sensitive(hasOverride);
+        this.getButtonRow(Widget.ResetAll).set_visible(hasOverride);
     }
 
 }
