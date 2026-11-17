@@ -59,6 +59,7 @@ export default class Page extends PageTemplate {
         if (!window || !this.#instance) return;
         if (!this.#wrapper) return window.set_visible_page(this.#instance);
         this.#initialize(this.#instance, params);
+        if (this.#wrapper.get_parent()) return;
         window.push_subpage(this.#wrapper);
     }
 
