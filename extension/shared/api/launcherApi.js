@@ -8,11 +8,11 @@ import { Config } from '../utils/config.js';
 import { Progress } from '../enums/general.js';
 import { SettingsKey } from '../enums/settings.js';
 
-const DBUS_NAME = 'com.canonical.Unity';
-const DBUS_SIGNAL_SOURCE = 'com.canonical.Unity.LauncherEntry';
-const LAUNCHER_ENTRY_COUNT_KEY = 'count';
-const LAUNCHER_ENTRY_PROGRESS_KEY = 'progress';
-const LAUNCHER_ENTRY_PROGRESS_VISIBLE_KEY = 'progress-visible';
+const API_NAME = 'com.canonical.Unity';
+const API_INTERFACE = 'com.canonical.Unity.LauncherEntry';
+const API_PAYLOAD_PARAMS_KEY_COUNT = 'count';
+const API_PAYLOAD_PARAMS_KEY_PROGRESS = 'progress';
+const API_PAYLOAD_PARAMS_KEY_PROGRESS_VISIBLE = 'progress-visible';
 const APPID_REGEXP = /(^\w+:|^)\/\/|(.desktop)/g;
 const PROGRESS_VALUE_DECIMAL_PLACES = 2;
 
@@ -46,10 +46,10 @@ class LauncherApi {
 
     constructor() {
         this.#dbusId = Gio.DBus.session.own_name(
-            DBUS_NAME, Gio.BusNameOwnerFlags.REPLACE, null, () => this.destroy());
+            API_NAME, Gio.BusNameOwnerFlags.REPLACE, null, () => this.destroy());
         this.#signalId = Gio.DBus.session.signal_subscribe(
-            null, DBUS_SIGNAL_SOURCE, null, null, null, Gio.DBusSignalFlags.NONE,
-            (_, __, ___, ____, _____, params) => this.#update(params));
+            null, API_INTERFACE, null, null, null, Gio.DBusSignalFlags.NONE,
+            (_, __, ___, ____, _____, payload) => this.#handlePayload(payload));
     }
 
     destroy() {
@@ -75,17 +75,17 @@ class LauncherApi {
     }
 
     /**
-     * @param {GLib.Variant} params
+     * @param {GLib.Variant} payload
      */
-    #update(params) {
-        if (!this.notifications || !params) return;
-        /** @type {[appUri: string, props: {[key: string]: GLib.Variant}]} */
-        const [appUri, props] = params.deepUnpack();
+    #handlePayload(payload) {
+        if (!this.notifications || !payload) return;
+        /** @type {[appUri: string, params: {[key: string]: GLib.Variant}]} */
+        const [appUri, params] = payload.deepUnpack();
         const appId = appUri?.replace(APPID_REGEXP, '');
-        if (!appId || !props) return;
-        const count = props[LAUNCHER_ENTRY_COUNT_KEY]?.get_int64() ?? 0;
-        const progress = props[LAUNCHER_ENTRY_PROGRESS_KEY]?.get_double() ?? null;
-        const progressVisibility = props[LAUNCHER_ENTRY_PROGRESS_VISIBLE_KEY]?.get_boolean() ?? null;
+        if (!appId || !params) return;
+        const count = params[API_PAYLOAD_PARAMS_KEY_COUNT]?.get_int64() ?? 0;
+        const progress = params[API_PAYLOAD_PARAMS_KEY_PROGRESS]?.get_double() ?? null;
+        const progressVisibility = params[API_PAYLOAD_PARAMS_KEY_PROGRESS_VISIBLE]?.get_boolean() ?? null;
         this.#handleNotifications(appId, count);
         this.#handleProgress(appId, progress, progressVisibility);
     }
