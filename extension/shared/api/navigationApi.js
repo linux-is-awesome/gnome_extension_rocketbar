@@ -1,13 +1,18 @@
+/**
+ * @typedef {{page: string, params: {[field: string]: *}, animate?: boolean}} NavigationPayload
+ * @typedef {(page: string, params: {[field: string]: *}, animate?: boolean) => void} NavigationCallback
+ */
+
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Context from '../core/context.js';
-import { MetadataField } from '../enums/general.js';
+import { MetadataField, Event } from '../enums/general.js';
 
 const API_ENDPOINT_REGEXP = /[^A-Za-z0-9_]/g;
 const API_BASE_PATH = 'org.gnome.Shell.Extensions';
 const API_INTERFACE = `${API_BASE_PATH}.Rocketbar.NavigationApi`;
 const API_SIGNAL_NAVIGATE = 'Navigate';
-const API_PARAMS_SIGNATURE = '(sa{sv})';
+const API_PARAMS_SIGNATURE = '(sa{sv}b)';
 const API_CLIENT_WAIT_TIMEOUT = 5000;
 
 /**
@@ -42,7 +47,7 @@ const GLibVariantValue = value => {
 
 class NavigationApi {
 
-    /** @type {((page: string, params: {[field: string]: *}) => void)?} */
+    /** @type {NavigationCallback?} */
     #callback = null;
 
     /** @type {number?} */
@@ -53,7 +58,7 @@ class NavigationApi {
 
     /**
      * @param {string} uuid
-     * @param {(page: string, params: {[field: string]: *}) => void} callback
+     * @param {NavigationCallback} callback
      */
     constructor(uuid, callback) {
         if (!uuid || typeof uuid !== 'string') return;
@@ -79,7 +84,7 @@ class NavigationApi {
      */
     #handlePayload(payload) {
         if (!payload || typeof this.#callback !== 'function') return;
-        const [page = null, params = {}] = payload.deepUnpack();
+        const [page = null, params = {}, animate = true] = payload.deepUnpack();
         if (!page) return;
         const callbackParams = {};
         for (const key in params) {
@@ -87,7 +92,7 @@ class NavigationApi {
             callbackParams[key] = value instanceof GLib.Variant ?
                                   value.deepUnpack() : value;
         }
-        this.#callback(page, callbackParams);
+        this.#callback(page, callbackParams, animate);
     }
 
 }
@@ -98,7 +103,7 @@ export class NavigationApiService {
     static #api = null;
 
     /**
-     * @param {(page: string, params: {[field: string]: *}) => void} callback
+     * @param {NavigationCallback} callback
      */
     constructor(callback) {
         const uuid = Context.metadata?.[MetadataField.Uuid];
@@ -119,26 +124,26 @@ export class NavigationApiClient {
     #uuid = null;
 
     /** @type {(() => void)?} */
-    #navigationCallback = null;
+    #startServiceCallback = null;
 
     /** @type {number?} */
     #watcherId = null;
 
-    /** @type {{page: string, params: {[field: string]: *}}?} */
+    /** @type {NavigationPayload?} */
     #payload = null;
 
     /**
-     * @param {(() => void)?} [navigationCallback]
+     * @param {(() => void)?} [startServiceCallback]
      */
-    constructor(navigationCallback) {
+    constructor(startServiceCallback) {
         const uuid = Context.metadata?.[MetadataField.Uuid] ?? null;
         this.#uuid = typeof uuid === 'string' ? uuid : null;
-        this.#navigationCallback = navigationCallback ?? null;
+        this.#startServiceCallback = startServiceCallback ?? null;
     }
 
     destroy() {
         this.#cancel();
-        this.#navigationCallback = null;
+        this.#startServiceCallback = null;
         this.#uuid = null;
     }
 
@@ -148,35 +153,49 @@ export class NavigationApiClient {
      */
     navigate(page, params = {}) {
         this.#cancel();
-        if (!page || typeof page !== 'string' || !this.#uuid) return;
+        if (!page || !this.#uuid ||
+            typeof page !== 'string' ||
+            typeof this.#startServiceCallback !== 'function') return;
         try {
             const { name } = Api(this.#uuid);
             this.#payload = { page, params };
-            let canNavigate = false;
-            const watcherCallback = () => {
-                canNavigate = true;
-                this.#emit();
-            };
             this.#watcherId = Gio.bus_watch_name(
                 Gio.BusType.SESSION, name, Gio.BusNameWatcherFlags.NONE,
-                watcherCallback, null);
-            if (canNavigate) return;
+                () => this.#emit(), null);
             Context.jobs.new(this, API_CLIENT_WAIT_TIMEOUT).destroy(() => this.#cancel());
-            if (typeof this.#navigationCallback !== 'function') return;
-            this.#navigationCallback();
+            this.#connect(isServiceReady => {
+                if (isServiceReady || !this.#payload || !this.#startServiceCallback) return;
+                this.#payload.animate = false;
+                this.#startServiceCallback();
+            });
         } catch (e) {
             this.#cancel();
             Context.logError(`${this.constructor.name} failed to start navigation.`, e);
         }
     }
 
+    /**
+     * @param {(isServiceReady: boolean) => void} callback
+     */
+    #connect(callback) {
+        if (typeof global === 'undefined') return callback(false);
+        const window = global.get_window_actors().find(
+            actor => actor.get_meta_window()?.get_wm_class() === API_BASE_PATH)?.get_meta_window();
+        if (!window) return callback(false);
+        const extensionName = Context.metadata?.[MetadataField.Name];
+        if (window.get_title() === extensionName) return callback(true);
+        Context.signals.add(this, [window,
+            Event.Unmanaged, () => (Context.signals.removeAll(this), callback(false))]);
+        window.delete(global.get_current_time());
+    }
+
     #emit() {
         if (!this.#payload || !this.#uuid) return;
-        const { page, params } = this.#payload;
+        const { page, params, animate = true } = this.#payload;
         this.#cancel();
         try {
             const { name, path } = Api(this.#uuid);
-            const dbusParams = [page, this.#packParams(params)];
+            const dbusParams = [page, this.#packParams(params), animate];
             Gio.DBus.session.emit_signal(
                 name, path, API_INTERFACE, API_SIGNAL_NAVIGATE,
                 new GLib.Variant(API_PARAMS_SIGNATURE, dbusParams));
@@ -186,6 +205,7 @@ export class NavigationApiClient {
     }
 
     #cancel() {
+        Context.signals.removeAll(this);
         Context.jobs.removeAll(this);
         if (this.#watcherId) Gio.bus_unwatch_name(this.#watcherId);
         this.#watcherId = null;
