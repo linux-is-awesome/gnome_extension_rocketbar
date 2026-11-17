@@ -102,6 +102,10 @@ class AppStatusItem extends Component {
     }
 
     /**
+     * SHEXLI-FALSE-POSITIVE: EGO-L-002, EGO-L-005
+     *   Root cause: shexli misses `#destroy` via `notifyCallback`.
+     *   Actual outcome: `#value = null` in `#destroy`; `St.Label` gets destroyed with the actor tree.
+     *
      * @param {string} name
      * @param {boolean} [reactive]
      */
