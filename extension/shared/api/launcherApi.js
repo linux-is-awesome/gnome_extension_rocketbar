@@ -4,16 +4,16 @@
 
 import Gio from 'gi://Gio';
 import Context from '../core/context.js';
-import { Config } from '../../shared/utils/config.js';
-import { Progress } from '../../shared/enums/general.js';
-import { SettingsKey } from '../../shared/enums/settings.js';
+import { Config } from '../utils/config.js';
+import { Progress } from '../enums/general.js';
+import { SettingsKey } from '../enums/settings.js';
 
 const DBUS_NAME = 'com.canonical.Unity';
 const DBUS_SIGNAL_SOURCE = 'com.canonical.Unity.LauncherEntry';
 const LAUNCHER_ENTRY_COUNT_KEY = 'count';
 const LAUNCHER_ENTRY_PROGRESS_KEY = 'progress';
 const LAUNCHER_ENTRY_PROGRESS_VISIBLE_KEY = 'progress-visible';
-const APPID_REGEXP_STRING = /(^\w+:|^)\/\/|(.desktop)/g;
+const APPID_REGEXP = /(^\w+:|^)\/\/|(.desktop)/g;
 const PROGRESS_VALUE_DECIMAL_PLACES = 2;
 
 /** @enum {string} */
@@ -27,7 +27,7 @@ const LauncherApiNotify = {
     Progress: 'progress'
 };
 
-class LauncherApiService {
+class LauncherApi {
 
     /** @type {number?} */
     #dbusId = null;
@@ -81,7 +81,7 @@ class LauncherApiService {
         if (!this.notifications || !params) return;
         /** @type {[appUri: string, props: {[key: string]: GLib.Variant}]} */
         const [appUri, props] = params.deepUnpack();
-        const appId = appUri?.replace(APPID_REGEXP_STRING, '');
+        const appId = appUri?.replace(APPID_REGEXP, '');
         if (!appId || !props) return;
         const count = props[LAUNCHER_ENTRY_COUNT_KEY]?.get_int64() ?? 0;
         const progress = props[LAUNCHER_ENTRY_PROGRESS_KEY]?.get_double() ?? null;
@@ -128,10 +128,10 @@ class LauncherApiService {
 
 }
 
-export default class LauncherApiProxy {
+export default class LauncherApiService {
 
-    /** @type {LauncherApiService?} */
-    static #service = null;
+    /** @type {LauncherApi?} */
+    static #api = null;
 
     /** @type {Map<*, () => void>?} */
     #notificationClients = new Map();
@@ -144,12 +144,12 @@ export default class LauncherApiProxy {
 
     /** @type {Map<string, number>?} */
     get notifications() {
-        return LauncherApiProxy.#service?.notifications ?? null;
+        return LauncherApiService.#api?.notifications ?? null;
     }
 
     /** @type {Map<string, number>?} */
     get progress() {
-        return LauncherApiProxy.#service?.progress ?? null;
+        return LauncherApiService.#api?.progress ?? null;
     }
 
     constructor() {
@@ -160,15 +160,15 @@ export default class LauncherApiProxy {
      * @param {boolean} [isFinal]
      */
     destroy(isFinal = true) {
-        LauncherApiProxy.#service?.disconnect();
+        LauncherApiService.#api?.disconnect();
         Context.signals.removeAll(this);
         this.#notificationClients?.clear();
         this.#progressClients?.clear();
         this.#notificationClients = null;
         this.#progressClients = null;
         if (!isFinal) return;
-        LauncherApiProxy.#service?.destroy();
-        LauncherApiProxy.#service = null;
+        LauncherApiService.#api?.destroy();
+        LauncherApiService.#api = null;
     }
 
     /**
@@ -203,7 +203,7 @@ export default class LauncherApiProxy {
      * @param {string} appId
      */
     clearNotifications(appId) {
-        const notifications = LauncherApiProxy.#service?.notifications;
+        const notifications = LauncherApiService.#api?.notifications;
         if (!notifications?.has(appId)) return;
         notifications.delete(appId);
         this.#notifyClients(LauncherApiNotify.Notifications);
@@ -211,12 +211,12 @@ export default class LauncherApiProxy {
 
     #handleConfig() {
         if (!this.#config.enableLauncherApi) {
-            LauncherApiProxy.#service?.destroy();
-            LauncherApiProxy.#service = null;
+            LauncherApiService.#api?.destroy();
+            LauncherApiService.#api = null;
             return;
         }
-        LauncherApiProxy.#service ??= new LauncherApiService();
-        LauncherApiProxy.#service.connect(notifyType => this.#notifyClients(notifyType));
+        LauncherApiService.#api ??= new LauncherApi();
+        LauncherApiService.#api.connect(notifyType => this.#notifyClients(notifyType));
     }
 
     /**

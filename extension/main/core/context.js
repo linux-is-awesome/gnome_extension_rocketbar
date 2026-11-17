@@ -8,7 +8,7 @@ import Desktop from './context/desktop.js';
 import Hooks from './context/hooks.js';
 import Monitors from './context/monitors.js';
 import Modules from '../services/modules.js';
-import LauncherApi from '../services/launcherApi.js';
+import LauncherApiService from '../../shared/api/launcherApi.js';
 import { SessionModesWatchdog } from '../../shared/utils/sessionModesWatchdog.js';
 import { Event, SessionMode } from '../../shared/enums/general.js';
 
@@ -47,10 +47,10 @@ export default class Context extends SharedContext {
         return instance.#monitors;
     }
 
-    /** @type {LauncherApi} */
+    /** @type {LauncherApiService} */
     static get launcherApi() {
         const result = this.instance.#launcherApi;
-        if (!result) throw new Error(`${this.name} has invalid ${LauncherApi.name} instance.`);
+        if (!result) throw new Error(`${this.name} has invalid ${LauncherApiService.name} instance.`);
         return result;
     }
 
@@ -66,7 +66,7 @@ export default class Context extends SharedContext {
     /** @type {Modules?} */
     #modules = null;
 
-    /** @type {LauncherApi?} */
+    /** @type {LauncherApiService?} */
     #launcherApi = null;
 
     /** @type {Desktop?} */
@@ -103,7 +103,7 @@ export default class Context extends SharedContext {
     }
 
     #initialize() {
-        this.#launcherApi = new LauncherApi();
+        this.#launcherApi = new LauncherApiService();
         this.#modules = new Modules();
         Context.signals.add(this, [global, Event.Shutdown, () => SessionModesWatchdog()]);
     }
