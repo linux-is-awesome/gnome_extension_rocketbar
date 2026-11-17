@@ -42,7 +42,7 @@ export default class extends AppSettingsPage {
     #loadApps() {
         try {
             const apps = [...this.appsById.values()]
-                .filter(app => app.should_show() && !!app.get_display_name())
+                .filter(app => !!app.get_display_name())
                 .sort((a, b) => a.get_display_name().localeCompare(b.get_display_name()));
             if (!apps.length) return this.#showEmptyMessage();
             const search = this.getSearchEntry(Widget.Search);
@@ -102,10 +102,12 @@ export default class extends AppSettingsPage {
         for (const appRow of this.#appRows) {
             const appId = appRow.get_name();
             if (!appId) continue;
+            const app = this.appsById.get(appId);
             const hasConfigOverride = this.hasOverride(appId);
             const group = hasConfigOverride ? customizedAppsGroup : defaultAppsGroup;
-            const isVisible = !this.#searchString ||
-                              appRow.get_title().toLowerCase().includes(this.#searchString);
+            const isVisible = this.#searchString ?
+                              appRow.get_title().toLowerCase().includes(this.#searchString) :
+                              hasConfigOverride || !!app?.should_show();
             appRow.set_visible(isVisible);
             group.add(appRow);
             if (!isVisible) continue;
