@@ -8,6 +8,7 @@
 import Gdk from 'gi://Gdk';
 import Gtk from 'gi://Gtk';
 import SharedContext from '../../shared/core/context.js';
+import { NavigationApiService } from '../../shared/api/navigationApi.js';
 import BasePage from '../pages/base/page.js';
 import { PreferencesPage } from '../../shared/enums/general.js';
 
@@ -47,6 +48,9 @@ export default class Context extends SharedContext {
     /** @type {Map<PreferencesPage, Promise|BasePage>} */
     #pages = new Map();
 
+    /** @type {NavigationApiService?} */
+    #navigationApi = null;
+
     /**
      * @param {Extension} extension
      * @param {PreferencesWindow} window
@@ -65,6 +69,7 @@ export default class Context extends SharedContext {
         this.#setWindowSize(this.#window);
         this.#loadStyles();
         await this.#loadPages();
+        this.#navigationApi = new NavigationApiService((...args) => this.#navigateToPage(...args));
         return this;
     }
 
@@ -80,6 +85,8 @@ export default class Context extends SharedContext {
      * @returns {boolean}
      */
     #destroy() {
+        this.#navigationApi?.destroy();
+        this.#navigationApi = null;
         this.#pages.clear();
         this.#window = null;
         return true;
@@ -147,6 +154,7 @@ export default class Context extends SharedContext {
         const page = this.#pages.get(targetPage);
         if (page instanceof BasePage === false) return;
         page.show(this.#window, params);
+        this.#window.present();
     }
 
 }

@@ -9,6 +9,7 @@ import Hooks from './context/hooks.js';
 import Monitors from './context/monitors.js';
 import Modules from '../services/modules.js';
 import LauncherApiService from '../../shared/api/launcherApi.js';
+import { NavigationApiClient } from '../../shared/api/navigationApi.js';
 import { SessionModesWatchdog } from '../../shared/utils/sessionModesWatchdog.js';
 import { Event, SessionMode } from '../../shared/enums/general.js';
 
@@ -54,6 +55,13 @@ export default class Context extends SharedContext {
         return result;
     }
 
+    /** @type {NavigationApiClient} */
+    static get navigationApi() {
+        const instance = this.instance;
+        instance.#navigationApi ??= new NavigationApiClient(instance.#navigationCallback);
+        return instance.#navigationApi;
+    }
+
     /**
      * @override
      * @param {*} client
@@ -69,6 +77,9 @@ export default class Context extends SharedContext {
     /** @type {LauncherApiService?} */
     #launcherApi = null;
 
+    /** @type {NavigationApiClient?} */
+    #navigationApi = null;
+
     /** @type {Desktop?} */
     #desktop = null;
 
@@ -77,6 +88,9 @@ export default class Context extends SharedContext {
 
     /** @type {Monitors?} */
     #monitors = null;
+
+    /** @type {(() => void)?} */
+    #navigationCallback = null;
 
     /** @type {boolean} */
     get #isSessionUnlocked() {
@@ -90,6 +104,7 @@ export default class Context extends SharedContext {
     constructor(extension) {
         super(extension, () => this.#destroy());
         Context.#instance = this;
+        this.#navigationCallback = () => extension.openPreferences();
         if (this.#isSessionUnlocked) this.#initialize();
         else Context.jobs.new(this).destroy(() => this.#initialize());
     }
@@ -118,13 +133,16 @@ export default class Context extends SharedContext {
             this.#modules?.destroy();
             this.#desktop?.destroy();
             this.#monitors?.destroy();
+            this.#navigationApi?.destroy();
             this.#launcherApi?.destroy(isFinal);
         } finally {
             this.#modules = null;
             this.#launcherApi = null;
+            this.#navigationApi = null;
             this.#desktop = null;
             this.#hooks = null;
             this.#monitors = null;
+            this.#navigationCallback = null;
         }
         return isFinal;
     }

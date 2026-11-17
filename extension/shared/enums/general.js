@@ -161,6 +161,7 @@ export const SessionMode = {
 export const MetadataField = {
     Name: 'name',
     Url: 'url',
+    Uuid: 'uuid',
     SettingsSchema: 'settings-schema',
     VersionName: 'version-name',
     SessionModes: 'session-modes',
