@@ -8,10 +8,10 @@ import Desktop from './context/desktop.js';
 import Hooks from './context/hooks.js';
 import Monitors from './context/monitors.js';
 import Modules from '../services/modules.js';
-import LauncherApiService from '../../shared/api/launcherApi.js';
+import LauncherApi from '../../shared/api/launcherApi.js';
+import SessionModes from '../services/sessionModes.js';
 import { NavigationApiClient } from '../../shared/api/navigationApi.js';
-import { SessionModesWatchdog } from '../../shared/utils/sessionModesWatchdog.js';
-import { Event, SessionMode } from '../../shared/enums/general.js';
+import { SessionMode } from '../../shared/enums/general.js';
 
 export default class Context extends SharedContext {
 
@@ -48,10 +48,10 @@ export default class Context extends SharedContext {
         return instance.#monitors;
     }
 
-    /** @type {LauncherApiService} */
+    /** @type {LauncherApi} */
     static get launcherApi() {
         const result = this.instance.#launcherApi;
-        if (!result) throw new Error(`${this.name} has invalid ${LauncherApiService.name} instance.`);
+        if (!result) throw new Error(`${this.name} has invalid ${LauncherApi.name} instance.`);
         return result;
     }
 
@@ -71,10 +71,13 @@ export default class Context extends SharedContext {
         super.clearStorage(client);
     }
 
+    /** @type {SessionModes?} */
+    #sessionModes = null;
+
     /** @type {Modules?} */
     #modules = null;
 
-    /** @type {LauncherApiService?} */
+    /** @type {LauncherApi?} */
     #launcherApi = null;
 
     /** @type {NavigationApiClient?} */
@@ -118,9 +121,9 @@ export default class Context extends SharedContext {
     }
 
     #initialize() {
-        this.#launcherApi = new LauncherApiService();
+        this.#launcherApi = new LauncherApi();
+        this.#sessionModes = new SessionModes();
         this.#modules = new Modules();
-        Context.signals.add(this, [global, Event.Shutdown, () => SessionModesWatchdog()]);
     }
 
     /**
@@ -134,8 +137,10 @@ export default class Context extends SharedContext {
             this.#desktop?.destroy();
             this.#monitors?.destroy();
             this.#navigationApi?.destroy();
+            this.#sessionModes?.destroy();
             this.#launcherApi?.destroy(isFinal);
         } finally {
+            this.#sessionModes = null;
             this.#modules = null;
             this.#launcherApi = null;
             this.#navigationApi = null;

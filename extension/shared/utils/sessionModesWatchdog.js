@@ -5,14 +5,56 @@ import { SettingsKey } from '../enums/settings.js';
 
 const METADATA_FILE_NAME = 'metadata.json';
 
-export const SessionModesWatchdog = () => {
+/**
+ * @param {Gio.File} file
+ * @returns {Promise<string>}
+ */
+const FileContentInput = file => new Promise((resolve, reject) => {
+    file.load_contents_async(null, (_, result) => {
+        try {
+            const [success, contents] = file.load_contents_finish(result);
+            if (!success) throw new Error(`${FileContentInput.name} failed to load ${file.get_basename()}.`);
+            resolve(new TextDecoder().decode(contents));
+        } catch (e) {
+            reject(e);
+        }
+    });
+});
+
+/**
+ * @param {Gio.File} file
+ * @param {string} contents
+ * @returns {Promise<void>}
+ */
+const FileContentOutput = (file, contents) => new Promise((resolve, reject) => {
+    file.replace_contents_async(
+        new TextEncoder().encode(contents),
+        null, false, Gio.FileCreateFlags.NONE, null, (_, result) => {
+            try {
+                file.replace_contents_finish(result);
+                resolve();
+            } catch (e) {
+                reject(e);
+            }
+        }
+    );
+});
+
+/**
+ * @returns {Gio.File?}
+ */
+export const MetadataFile = () => {
+    const path = Context.path;
+    if (!path) return null;
+    return Gio.File.new_for_path(`${path}/${METADATA_FILE_NAME}`);
+};
+
+export const SessionModesWatchdog = async () => {
     try {
-        const metadataFile = Gio.file_new_for_path(`${Context.path}/${METADATA_FILE_NAME}`);
-        const [success, contents] = metadataFile.load_contents(null);
-        if (!success) throw new Error(`Failed to load ${METADATA_FILE_NAME}.`);
         const settings = Context.getSettings();
-        if (!settings) return;
-        const metadata = JSON.parse(new TextDecoder().decode(contents));
+        const file = MetadataFile();
+        if (!file || !settings) return;
+        const metadata = JSON.parse(await FileContentInput(file));
         const sessionModesValue = metadata[MetadataField.SessionModes];
         const sessionModes = new Set(Array.isArray(sessionModesValue) ? sessionModesValue : []);
         const isLockscreenEnabled = !!settings.get(SettingsKey.SessionModeLockscreen);
@@ -22,9 +64,8 @@ export const SessionModesWatchdog = () => {
         else return;
         sessionModes.add(SessionMode.Desktop);
         metadata[MetadataField.SessionModes] = [...sessionModes];
-        const resultMetadata = new TextEncoder().encode(JSON.stringify(metadata, null, 4));
-        metadataFile.replace_contents(resultMetadata, null, false, Gio.FileCreateFlags.NONE, null);
+        await FileContentOutput(file, JSON.stringify(metadata, null, 4));
     } catch (e) {
-        Context.logError('failed to watch session modes.', e);
+        Context.logError(`${SessionModesWatchdog.name} failed to update session modes.`, e);
     }
 };
