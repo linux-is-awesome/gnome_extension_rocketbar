@@ -86,7 +86,6 @@ Terminal=false
 Categories=Utility;
 StartupNotify=true
 StartupWMClass=${app_id}
-NoDisplay=true
 X-GNOME-UsesNotifications=false
 EOF
     chmod 644 "$DESKTOP_FILE"
@@ -139,6 +138,30 @@ wait_for_bus_gone() {
 # Parse first uint32 from gdbus output like "(uint32 3,)".
 parse_uint32() {
     sed -n 's/.*uint32[[:space:]]\+\([0-9]\+\).*/\1/p' | head -1
+}
+
+desktop_should_show() {
+    local id="${1:-$FIXTURE_DESKTOP_ID}"
+    python3 - "$id" <<'PY'
+import sys
+from gi.repository import Gio
+info = Gio.DesktopAppInfo.new(sys.argv[1])
+sys.exit(0 if info is not None and info.should_show() else 1)
+PY
+}
+
+wait_for_desktop() {
+    local id="${1:-$FIXTURE_DESKTOP_ID}"
+    local timeout_sec="${2:-10}"
+    local i
+    for ((i = 0; i < timeout_sec * 10; i++)); do
+        if desktop_should_show "$id"; then
+            return 0
+        fi
+        sleep 0.1
+    done
+    echo "timeout waiting for desktop $id" >&2
+    return 1
 }
 
 favorites_get() {

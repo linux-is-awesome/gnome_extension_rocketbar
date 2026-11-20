@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/common
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/common"
+
+if parse_fixture_count_arg "${1:-}"; then
+    shift
+fi
+
+fixture_foreach write_desktop_file
+update_desktop_db
+fixture_foreach wait_for_desktop
+echo "restored desktop ×$FIXTURE_COUNT"

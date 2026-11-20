@@ -11,9 +11,7 @@ echo "== remove-desktop-running ×$FIXTURE_COUNT: install =="
 "$STEPS/quit" "$FIXTURE_COUNT" || true
 "$STEPS/unpin" "$FIXTURE_COUNT" >/dev/null 2>&1 || true
 
-echo "== remove-desktop-running: pin + launch =="
-"$STEPS/pin" "$FIXTURE_COUNT"
-"$STEPS/launch" "$FIXTURE_COUNT"
+scenario_pin_then_launch
 "$STEPS/open-window" "$FIXTURE_COUNT" >/dev/null
 "$STEPS/settle" "$FIXTURE_COUNT" 1
 scenario_expect_counts 2

@@ -30,3 +30,25 @@ scenario_expect_counts() {
         fi
     done <<< "$got"
 }
+
+scenario_expect_still_running() {
+    local index
+    for ((index = 1; index <= FIXTURE_COUNT; index++)); do
+        set_fixture_instance "$index"
+        if [[ -z "$(fixture_pids)" ]]; then
+            echo "app already dead: $FIXTURE_INSTANCE_ID" >&2
+            return 1
+        fi
+    done
+}
+
+# Requires install (+ wait_for_desktop). Pin while idle, then launch onto that favorite.
+scenario_pin_then_launch() {
+    echo "== pin (not running) =="
+    "$STEPS/pin" "$FIXTURE_COUNT"
+    "$STEPS/settle" "$FIXTURE_COUNT" 3
+    echo "== launch onto pinned app =="
+    "$STEPS/launch" "$FIXTURE_COUNT"
+    "$STEPS/settle" "$FIXTURE_COUNT" 2
+    scenario_expect_counts 1
+}

@@ -11,11 +11,7 @@ echo "== kill-pinned ×$FIXTURE_COUNT: install =="
 "$STEPS/quit" "$FIXTURE_COUNT" || true
 "$STEPS/unpin" "$FIXTURE_COUNT" >/dev/null 2>&1 || true
 
-echo "== kill-pinned: pin + launch =="
-"$STEPS/pin" "$FIXTURE_COUNT"
-"$STEPS/launch" "$FIXTURE_COUNT"
-"$STEPS/settle" "$FIXTURE_COUNT" 1
-scenario_expect_counts 1
+scenario_pin_then_launch
 
 echo "== kill-pinned: kill while still pinned =="
 "$STEPS/kill" "$FIXTURE_COUNT"

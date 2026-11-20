@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Install → see desktop → pin → run → unpin+kill with no settle (stale-button race).
 set -euo pipefail
 # shellcheck source=../lib/scenario
 source "$(cd "$(dirname "$0")/.." && pwd)/lib/scenario"
@@ -11,20 +12,18 @@ echo "== rapid-unpin-kill ×$FIXTURE_COUNT: install =="
 "$STEPS/quit" "$FIXTURE_COUNT" || true
 "$STEPS/unpin" "$FIXTURE_COUNT" >/dev/null 2>&1 || true
 
-echo "== rapid-unpin-kill: pin + launch =="
-"$STEPS/pin" "$FIXTURE_COUNT"
-"$STEPS/launch" "$FIXTURE_COUNT"
-"$STEPS/settle" "$FIXTURE_COUNT" 1
-scenario_expect_counts 1
+scenario_pin_then_launch
 
-echo "== rapid-unpin-kill: unpin + kill (no settle between) =="
+echo "== rapid-unpin-kill: race unpin + kill (no settle between) =="
 "$STEPS/unpin" "$FIXTURE_COUNT"
 "$STEPS/kill" "$FIXTURE_COUNT"
-"$STEPS/settle" "$FIXTURE_COUNT" 2
+
+echo "== rapid-unpin-kill: watch taskbar =="
+"$STEPS/settle" "$FIXTURE_COUNT" 5
 
 echo "== rapid-unpin-kill: cleanup =="
 "$STEPS/uninstall" "$FIXTURE_COUNT"
 trap - EXIT
 favorites_restore
 
-echo "rapid-unpin-kill ×$FIXTURE_COUNT ok (check taskbar for lingering icons)"
+echo "rapid-unpin-kill ×$FIXTURE_COUNT ok (check taskbar for lingering / duplicate icons)"

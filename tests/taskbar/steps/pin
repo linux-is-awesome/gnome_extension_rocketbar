@@ -12,6 +12,10 @@ _pin_one() {
         echo "fixture desktop missing: $DESKTOP_FILE" >&2
         return 1
     fi
+    if ! desktop_should_show "$FIXTURE_DESKTOP_ID"; then
+        echo "fixture not favorite-eligible: $FIXTURE_DESKTOP_ID" >&2
+        return 1
+    fi
     favorites_add "$FIXTURE_DESKTOP_ID" >/dev/null
     if ! favorites_has "$FIXTURE_DESKTOP_ID"; then
         echo "failed to pin $FIXTURE_DESKTOP_ID" >&2

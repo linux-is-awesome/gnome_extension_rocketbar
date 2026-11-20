@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Chrome / container-style zombie: pin → run → remove .desktop → hard-kill.
+# Pinned+running → remove .desktop (id stays in favorite-apps) → kill.
 set -euo pipefail
 # shellcheck source=../lib/scenario
 source "$(cd "$(dirname "$0")/.." && pwd)/lib/scenario"
@@ -12,24 +12,23 @@ echo "== zombie-uninstall ×$FIXTURE_COUNT: install =="
 "$STEPS/quit" "$FIXTURE_COUNT" || true
 "$STEPS/unpin" "$FIXTURE_COUNT" >/dev/null 2>&1 || true
 
-echo "== zombie-uninstall: pin + launch =="
-"$STEPS/pin" "$FIXTURE_COUNT"
-"$STEPS/launch" "$FIXTURE_COUNT"
-"$STEPS/settle" "$FIXTURE_COUNT" 1
-scenario_expect_counts 1
+scenario_pin_then_launch
 
-echo "== zombie-uninstall: remove-desktop while running =="
+echo "== zombie-uninstall: remove-desktop (keep pinned in gsettings, keep running) =="
 "$STEPS/remove-desktop" "$FIXTURE_COUNT"
-"$STEPS/settle" "$FIXTURE_COUNT" 1
-scenario_expect_counts 1
+scenario_expect_still_running
+"$STEPS/settle" "$FIXTURE_COUNT" 3
+scenario_expect_still_running
 
-echo "== zombie-uninstall: kill (service stop) =="
+echo "== zombie-uninstall: kill (no unpin) =="
 "$STEPS/kill" "$FIXTURE_COUNT"
-"$STEPS/settle" "$FIXTURE_COUNT" 2
+
+echo "== zombie-uninstall: watch taskbar =="
+"$STEPS/settle" "$FIXTURE_COUNT" 5
 
 echo "== zombie-uninstall: cleanup =="
 "$STEPS/uninstall" "$FIXTURE_COUNT"
 trap - EXIT
 favorites_restore
 
-echo "zombie-uninstall ×$FIXTURE_COUNT ok (check taskbar for lingering icons)"
+echo "zombie-uninstall ×$FIXTURE_COUNT ok (check taskbar for lingering / duplicate icons)"

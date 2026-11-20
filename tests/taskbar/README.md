@@ -32,7 +32,6 @@ Default is **1** (same as before). Pass a positive integer to steps/scenarios fo
 ```
 
 Ids: `org.rocketbar.TaskbarFixture`, then `.i2`, `.i3`, …  
-Generated `.desktop` files use `NoDisplay=true` (hidden from the app grid, still launchable).
 
 Window tokens from `open-window`: bare `id` when count is 1; `index:id` when count > 1.
 
@@ -55,13 +54,18 @@ Or call scenarios directly:
 ./tests/taskbar/scenarios/smoke 5
 ```
 
-Odd / race cases:
+Odd / race cases (visual: lingering / duplicate taskbar icons):
 
 ```bash
 ./tests/taskbar/scenarios/zombie-uninstall
 ./tests/taskbar/scenarios/zombie-uninstall 3
+./tests/taskbar/scenarios/remove-desktop-kill
 ./tests/taskbar/scenarios/remove-desktop-running
+./tests/taskbar/scenarios/desktop-restore-running
 ./tests/taskbar/scenarios/rapid-unpin-kill
+./tests/taskbar/scenarios/rapid-kill-unpin
+./tests/taskbar/scenarios/rapid-favorite-flip
+./tests/taskbar/scenarios/launch-then-pin
 ./tests/taskbar/scenarios/unpin-close
 ./tests/taskbar/scenarios/kill-pinned
 ./tests/taskbar/scenarios/unpinned-close
@@ -73,10 +77,10 @@ Scenarios that touch favorites restore `org.gnome.shell favorite-apps` on exit.
 
 | Step | Role |
 |------|------|
-| `install` / `uninstall` | Binary + N hidden `.desktop` files (`--app-id`) |
+| `install` / `uninstall` | Binary + N `.desktop` files (`--app-id`) |
 | `launch` / `quit` / `kill` | gtk-launch / D-Bus Quit / `SIGKILL` for each instance |
 | `pin` / `unpin` | Favorites for each instance |
-| `remove-desktop` | Delete `.desktop` only (processes kept) |
+| `remove-desktop` / `restore-desktop` | Delete or rewrite `.desktop` only (processes kept) |
 | `open-window` / `close-window` / `close-all` / `window-count` | D-Bus window control |
 | `settle` | Sleep (`settle [count] [seconds]` or `settle [seconds]`) |
 

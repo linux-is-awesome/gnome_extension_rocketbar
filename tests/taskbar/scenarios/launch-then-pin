@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Launch unpinned → pin while running → unpin+kill (late pin / identity stress).
+set -euo pipefail
+# shellcheck source=../lib/scenario
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/scenario"
+
+favorites_backup
+trap scenario_cleanup EXIT
+
+echo "== launch-then-pin ×$FIXTURE_COUNT: install =="
+"$STEPS/install" "$FIXTURE_COUNT"
+"$STEPS/quit" "$FIXTURE_COUNT" || true
+"$STEPS/unpin" "$FIXTURE_COUNT" >/dev/null 2>&1 || true
+
+echo "== launch-then-pin: launch (not pinned) =="
+"$STEPS/settle" "$FIXTURE_COUNT" 2
+"$STEPS/launch" "$FIXTURE_COUNT"
+"$STEPS/settle" "$FIXTURE_COUNT" 2
+scenario_expect_counts 1
+
+echo "== launch-then-pin: pin while running =="
+"$STEPS/pin" "$FIXTURE_COUNT"
+"$STEPS/settle" "$FIXTURE_COUNT" 1
+scenario_expect_counts 1
+
+echo "== launch-then-pin: race unpin + kill =="
+"$STEPS/unpin" "$FIXTURE_COUNT"
+"$STEPS/kill" "$FIXTURE_COUNT"
+
+echo "== launch-then-pin: watch taskbar =="
+"$STEPS/settle" "$FIXTURE_COUNT" 5
+
+echo "== launch-then-pin: cleanup =="
+"$STEPS/uninstall" "$FIXTURE_COUNT"
+trap - EXIT
+favorites_restore
+
+echo "launch-then-pin ×$FIXTURE_COUNT ok (check taskbar for lingering / duplicate icons)"

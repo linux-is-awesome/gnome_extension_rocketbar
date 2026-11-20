@@ -12,6 +12,7 @@ install -m 755 "$FIXTURE_SRC" "$INSTALL_BIN"
 
 fixture_foreach write_desktop_file
 update_desktop_db
+fixture_foreach wait_for_desktop
 
 echo "installed $FIXTURE_APP_ID ×$FIXTURE_COUNT"
 echo "  bin: $INSTALL_BIN"

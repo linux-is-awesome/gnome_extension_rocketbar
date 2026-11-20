@@ -9,5 +9,4 @@ Terminal=false
 Categories=Utility;
 StartupNotify=true
 StartupWMClass=org.rocketbar.TaskbarFixture
-NoDisplay=true
 X-GNOME-UsesNotifications=false
