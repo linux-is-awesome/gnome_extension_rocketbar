@@ -177,6 +177,7 @@ export const Module = {
     TweakOverviewHideSearch: 'tweaks/overview/hideSearch',
     TweakOverviewExpandWorkspaceBackground: 'tweaks/overview/expandWorkspaceBackground',
     TweakOverviewClickActions: 'tweaks/overview/clickActions',
+    TweakOverviewSmoothSearchLeave: 'tweaks/overview/smoothSearchLeave',
     TweakPopupsPreventFocus: 'tweaks/popups/preventFocus',
     TweakPopupsRemoveDelay: 'tweaks/popups/removeDelay',
     TweakInputSourcePrimaryForPasswords: 'tweaks/inputSource/primaryForPasswords',

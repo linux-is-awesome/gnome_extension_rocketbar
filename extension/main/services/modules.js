@@ -14,6 +14,7 @@ const CORE_MODULES = [
     Module.TweakOverviewHideSearch,
     Module.TweakOverviewExpandWorkspaceBackground,
     Module.TweakOverviewClickActions,
+    Module.TweakOverviewSmoothSearchLeave,
     Module.TweakInputSourcePrimaryForPasswords,
     Module.TweakInputSourceUpperCaseLabels,
     Module.TweakPopupsPreventFocus,
@@ -27,6 +28,7 @@ const CORE_MODULES = [
 /** @type {{[sessionMode: SessionMode]: Module[]}} */
 const Modules = {
     [SessionMode.Desktop]: [
+        Module.TweakOverviewSmoothSearchLeave,
         Module.TweakOverviewHideDash,
         Module.TweakOverviewHideShowAppsButton,
         Module.TweakOverviewHideSearch,

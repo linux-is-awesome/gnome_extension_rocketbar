@@ -12,6 +12,7 @@ const MANAGED_MODULES = [
     Module.TweakOverviewHideDash,
     Module.TweakOverviewHideShowAppsButton,
     Module.TweakOverviewExpandWorkspaceBackground,
+    Module.TweakOverviewSmoothSearchLeave,
     Module.TweakPopupsRemoveDelay,
     Module.TweakPopupsPreventFocus,
     Module.TweakInputSourcePrimaryForPasswords,

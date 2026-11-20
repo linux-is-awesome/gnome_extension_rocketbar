@@ -36,6 +36,12 @@
                         <property name="subtitle" translatable="yes">Left button click on an empty space hides the Overview, long press or right button click toggles the App Grid. Close windows using middle button (or left button while holding down the Ctrl key)</property>
                     </object>
                 </child>
+                <child>
+                    <object class="AdwSwitchRow" id="tweaks/overview/smoothSearchLeave">
+                        <property name="title" translatable="yes">Smooth Search Leave</property>
+                        <property name="subtitle" translatable="yes">Return to the workspace view before closing the Overview when search is active. Avoids stutter when launching apps from search or dismissing the Overview while searching</property>
+                    </object>
+                </child>
             </object>
         </child>
         <child>
