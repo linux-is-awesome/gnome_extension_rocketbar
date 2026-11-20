@@ -6,6 +6,10 @@ TESTS_ROOT="$(cd "$(dirname "$0")" && pwd)"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/rocketbar-tests"
 INSTANCE_FILE="$CACHE_DIR/instances"
 INSTANCE_COUNT=1
+# Max random delay (ms) before each parallel fixture job (e.g. kill). Override via env.
+# 1250 avoids aligning with Delay.Scheduled (1000) and spans show/hide + queue delays.
+FIXTURE_PARALLEL_STAGGER_MS="${FIXTURE_PARALLEL_STAGGER_MS:-1250}"
+export FIXTURE_PARALLEL_STAGGER_MS
 
 if [[ -t 1 ]]; then
     C_RESET=$'\033[0m'
@@ -91,6 +95,8 @@ Options:
   -n, --instances N   Instance count (default: last saved, or 1)
   -l, --list          List blocks and their scenarios/actions
 
+  Parallel kill stagger defaults to FIXTURE_PARALLEL_STAGGER_MS=1250 (override in env).
+
 Examples:
   $(basename "$0")
   $(basename "$0") taskbar smoke 5
@@ -124,9 +130,10 @@ run_scenario() {
     local script="$TESTS_ROOT/$block/scenarios/$name"
     [[ -x "$script" ]] || die "unknown scenario: $block/$name"
 
-    printf '\n%s▶%s %s%s/%s%s  %s×%s%s\n' \
+    printf '\n%s▶%s %s%s/%s%s  %s×%s%s  %sstagger ≤%sms%s\n' \
         "$C_GREEN" "$C_RESET" "$C_BOLD" "$block" "$name" "$C_RESET" \
-        "$C_DIM" "$INSTANCE_COUNT" "$C_RESET"
+        "$C_DIM" "$INSTANCE_COUNT" "$C_RESET" \
+        "$C_DIM" "$FIXTURE_PARALLEL_STAGGER_MS" "$C_RESET"
 
     if "$script" "$INSTANCE_COUNT"; then
         printf '%s✓%s %s/%s ok\n' "$C_GREEN" "$C_RESET" "$block" "$name"
@@ -142,9 +149,10 @@ run_action() {
     local script="$TESTS_ROOT/$block/actions/$name"
     [[ -x "$script" ]] || die "unknown action: $block/$name"
 
-    printf '\n%s▶%s %s%s/%s%s  %s×%s%s\n' \
+    printf '\n%s▶%s %s%s/%s%s  %s×%s%s  %sstagger ≤%sms%s\n' \
         "$C_GREEN" "$C_RESET" "$C_BOLD" "$block" "$name" "$C_RESET" \
-        "$C_DIM" "$INSTANCE_COUNT" "$C_RESET"
+        "$C_DIM" "$INSTANCE_COUNT" "$C_RESET" \
+        "$C_DIM" "$FIXTURE_PARALLEL_STAGGER_MS" "$C_RESET"
 
     if "$script" "$INSTANCE_COUNT"; then
         printf '%s✓%s %s/%s ok\n' "$C_GREEN" "$C_RESET" "$block" "$name"

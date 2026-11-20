@@ -65,6 +65,28 @@ fixture_foreach() {
     done
 }
 
+# Same as fixture_foreach, but each instance runs in a background subshell (then wait).
+# Optional FIXTURE_PARALLEL_STAGGER_MS: sleep a random 0..N ms before the command (per job).
+fixture_foreach_parallel() {
+    local index pid status=0 stagger_ms="${FIXTURE_PARALLEL_STAGGER_MS:-0}"
+    local -a pids=()
+    for ((index = 1; index <= FIXTURE_COUNT; index++)); do
+        (
+            set_fixture_instance "$index"
+            if [[ "$stagger_ms" =~ ^[1-9][0-9]*$ ]]; then
+                local ms=$((RANDOM % (stagger_ms + 1)))
+                sleep $((ms / 1000)).$(printf '%03d' $((ms % 1000)))
+            fi
+            "$@"
+        ) &
+        pids+=("$!")
+    done
+    for pid in "${pids[@]}"; do
+        wait "$pid" || status=1
+    done
+    return "$status"
+}
+
 # Requires set_fixture_instance (via fixture_foreach) first.
 write_desktop_file() {
     local app_id name

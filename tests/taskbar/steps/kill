@@ -24,4 +24,4 @@ _kill_one() {
     echo "killed $FIXTURE_INSTANCE_ID ($pids)"
 }
 
-fixture_foreach _kill_one
+fixture_foreach_parallel _kill_one

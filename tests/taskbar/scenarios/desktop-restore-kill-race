@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# desktop-restore then unpin + parallel kill (one job per fixture). Prefer count ≥ 2.
+set -euo pipefail
+# shellcheck source=../lib/scenario
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/scenario"
+
+favorites_backup
+trap scenario_cleanup EXIT
+
+echo "== desktop-restore-kill-race ×$FIXTURE_COUNT: install =="
+"$STEPS/install" "$FIXTURE_COUNT"
+"$STEPS/quit" "$FIXTURE_COUNT" || true
+"$STEPS/unpin" "$FIXTURE_COUNT" >/dev/null 2>&1 || true
+
+scenario_pin_then_launch
+
+echo "== desktop-restore-kill-race: remove-desktop =="
+"$STEPS/remove-desktop" "$FIXTURE_COUNT"
+scenario_expect_still_running
+"$STEPS/settle" "$FIXTURE_COUNT" 2
+scenario_expect_still_running
+
+echo "== desktop-restore-kill-race: restore-desktop (still running) =="
+"$STEPS/restore-desktop" "$FIXTURE_COUNT"
+"$STEPS/settle" "$FIXTURE_COUNT" 2
+scenario_expect_counts 1
+scenario_expect_still_running
+
+echo "== desktop-restore-kill-race: watch for duplicates =="
+"$STEPS/settle" "$FIXTURE_COUNT" 3
+
+echo "== desktop-restore-kill-race: unpin + staggered parallel kill =="
+"$STEPS/unpin" "$FIXTURE_COUNT"
+export FIXTURE_PARALLEL_STAGGER_MS="${FIXTURE_PARALLEL_STAGGER_MS:-1250}"
+"$STEPS/kill" "$FIXTURE_COUNT"
+
+echo "== desktop-restore-kill-race: watch taskbar =="
+"$STEPS/settle" "$FIXTURE_COUNT" 5
+
+echo "== desktop-restore-kill-race: cleanup =="
+"$STEPS/uninstall" "$FIXTURE_COUNT"
+trap - EXIT
+favorites_restore
+
+echo "desktop-restore-kill-race ×$FIXTURE_COUNT ok (check separator / lingering icons)"

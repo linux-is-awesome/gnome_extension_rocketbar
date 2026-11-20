@@ -62,6 +62,7 @@ Odd / race cases (visual: lingering / duplicate taskbar icons):
 ./tests/taskbar/scenarios/remove-desktop-kill
 ./tests/taskbar/scenarios/remove-desktop-running
 ./tests/taskbar/scenarios/desktop-restore-running
+./tests/taskbar/scenarios/desktop-restore-kill-race
 ./tests/taskbar/scenarios/rapid-unpin-kill
 ./tests/taskbar/scenarios/rapid-kill-unpin
 ./tests/taskbar/scenarios/rapid-favorite-flip
@@ -78,7 +79,7 @@ Scenarios that touch favorites restore `org.gnome.shell favorite-apps` on exit.
 | Step | Role |
 |------|------|
 | `install` / `uninstall` | Binary + N `.desktop` files (`--app-id`) |
-| `launch` / `quit` / `kill` | gtk-launch / D-Bus Quit / `SIGKILL` for each instance |
+| `launch` / `quit` / `kill` | gtk-launch / D-Bus Quit / `SIGKILL` (kill runs all instances in parallel) |
 | `pin` / `unpin` | Favorites for each instance |
 | `remove-desktop` / `restore-desktop` | Delete or rewrite `.desktop` only (processes kept) |
 | `open-window` / `close-window` / `close-all` / `window-count` | D-Bus window control |
