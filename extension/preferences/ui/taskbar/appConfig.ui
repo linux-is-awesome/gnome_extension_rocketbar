@@ -37,6 +37,7 @@
                                         <child>
                                             <object class="AdwComboRow" id="preferred-monitor">
                                                 <property name="title" translatable="yes">Preferred Monitor</property>
+                                                <property name="subtitle" translatable="yes">Works when Multi-Monitor Window Routing is enabled</property>
                                                 <property name="model">preferred-monitor-options</property>
                                                 <child type="suffix">
                                                     <object class="GtkButton" id="preferred-monitor-reset">
@@ -54,6 +55,7 @@
                                         <child>
                                             <object class="AdwComboRow" id="activation-behavior">
                                                 <property name="title" translatable="yes">Activation Behavior</property>
+                                                <property name="subtitle" translatable="yes">Works when Isolate Workspaces is enabled</property>
                                                 <property name="model">activate-behavior-options</property>
                                                 <child type="suffix">
                                                     <object class="GtkButton" id="activation-behavior-reset">
