@@ -5,8 +5,9 @@ import Context from '../../core/context.js';
 const STAGE_GRAB_FUNCTION_NAME = 'grab';
 
 const FakePopupGrab = () => ({
-    get_seat_state: () => Clutter.GrabState.KEYBOARD,
-    dismiss: () => {}
+    get_seat_state: () => Clutter.GrabState?.KEYBOARD,
+    dismiss: () => {},
+    is_revoked: () => false
 });
 
 export default class {

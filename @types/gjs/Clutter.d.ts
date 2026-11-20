@@ -1563,6 +1563,9 @@ declare module 'gi://Clutter' {
         ZERO_COPY,
         VSYNC,
     }
+    /**
+     * @deprecated since GNOME 50 — removed with the X11 backend; grabs are non-failable.
+     */
     enum GrabState {
         NONE,
         POINTER,
@@ -25683,10 +25686,17 @@ declare module 'gi://Clutter' {
          */
         dismiss(): void
         /**
+         * Whether this grab has been revoked.
+         * Note: Preferred over {@link Grab.get_seat_state} since GNOME 50 (grabs are non-failable).
+         * @returns `true` if the grab was revoked.
+         */
+        is_revoked(): boolean
+        /**
          * Returns the windowing-level state of the
          * grab, the devices that are guaranteed to be
          * grabbed.
          * @returns The state of the grab.
+         * @deprecated since GNOME 50 — removed with the X11 backend; grabs are non-failable.
          */
         get_seat_state(): GrabState
         ref(): Grab
