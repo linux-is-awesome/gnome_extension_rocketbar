@@ -225,6 +225,18 @@
                 "panel": "shared"
             },
             "problemMatcher": []
+        },
+        {
+            "label": "test-menu",
+            "type": "shell",
+            "command": "./tests/start",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "focus": true
+            },
+            "problemMatcher": []
         }
     ]
 }
