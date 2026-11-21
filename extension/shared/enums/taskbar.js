@@ -22,7 +22,8 @@ export const ConfigKey = {
 /** @enum {string} */
 export const ConfigField = {
     enableSeparator: SettingsKey.Separator,
-    maxLength: SettingsKey.MaxLength
+    maxLength: SettingsKey.MaxLength,
+    isolateWorkspaces: SettingsKey.IsolateWorkspaces
 };
 
 /** @enum {string} */

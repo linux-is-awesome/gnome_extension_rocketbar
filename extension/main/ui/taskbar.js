@@ -279,6 +279,13 @@ export default class Taskbar extends ScrollView {
     /** @type {number} */
     #separatorPosition = -1;
 
+    /** @type {Meta.Workspace?} */
+    get #currentWorkspace() {
+        if (!this.#config || !this.#service) return null;
+        if (this.#config.isolateWorkspaces) return this.#service.workspace;
+        return global.workspace_manager.get_workspace_by_index(0);
+    }
+
     /**
      * @override
      * @type {St.BoxLayout}
@@ -322,6 +329,9 @@ export default class Taskbar extends ScrollView {
                 break;
             case ConfigField.maxLength:
                 this.#updateMaxLength();
+                break;
+            case ConfigField.isolateWorkspaces:
+                this.#runningApps?.clear();
                 break;
         }
     }
@@ -415,7 +425,7 @@ export default class Taskbar extends ScrollView {
         const dropResult = this.#dndHandler?.handleDrop();
         if (!dropResult || !this.#activatedApps || !this.#runningApps) return false;
         const [candidate, slots] = dropResult;
-        const workspace = this.#service?.workspace;
+        const workspace = this.#currentWorkspace;
         const favorites = this.#service?.favorites;
         const candidateApp = candidate.app;
         if (!candidateApp || !workspace) return true;
@@ -569,7 +579,7 @@ export default class Taskbar extends ScrollView {
      * @returns {Set<Shell.App>?}
      */
     #getRunningApps() {
-        const workspace = this.#service?.workspace;
+        const workspace = this.#currentWorkspace;
         if (!this.#service || !workspace || !this.#runningApps) return null;
         let runningApps = this.#service.apps;
         if (this.#activatedApps?.size) {
