@@ -67,8 +67,8 @@ export default class Panel extends Component {
         this.#handleItems();
         if (!this.#setClickGestureButton(Clutter.BUTTON_PRIMARY)) return;
         Context.signals.add(this, [Overview,
-            Event.Showing, () => this.#setClickGestureButton(Clutter.BUTTON_SECONDARY + 1),
-            Event.Hiding, () => this.#setClickGestureButton(Clutter.BUTTON_PRIMARY)]);
+            Event.Showing, () => void this.#setClickGestureButton(Clutter.BUTTON_SECONDARY + 1),
+            Event.Hiding, () => void this.#setClickGestureButton(Clutter.BUTTON_PRIMARY)]);
     }
 
     #destroy() {
