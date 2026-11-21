@@ -185,6 +185,7 @@ export const Module = {
     TweakMenusClickToOpen: 'tweaks/menus/clickToOpen',
     TweakMenusAutoAlign: 'tweaks/menus/autoAlign',
     TweakNotificationsSystemBypassDnd: 'tweaks/notifications/systemBypassDnd',
+    TweakLockscreenRestoreUnlockAnimation: 'tweaks/lockscreen/restoreUnlockAnimation',
     Panel: 'ui/panel',
     NotificationCounter: 'ui/notificationCounter',
     Taskbar: 'ui/taskbar'

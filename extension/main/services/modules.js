@@ -12,9 +12,9 @@ const CORE_MODULES = [
     Module.TweakOverviewHideDash,
     Module.TweakOverviewHideShowAppsButton,
     Module.TweakOverviewHideSearch,
+    Module.TweakOverviewSmoothSearchLeave,
     Module.TweakOverviewExpandWorkspaceBackground,
     Module.TweakOverviewClickActions,
-    Module.TweakOverviewSmoothSearchLeave,
     Module.TweakInputSourcePrimaryForPasswords,
     Module.TweakInputSourceUpperCaseLabels,
     Module.TweakPopupsPreventFocus,
@@ -22,16 +22,17 @@ const CORE_MODULES = [
     Module.TweakMenusClickToOpen,
     Module.TweakMenusAutoAlign,
     Module.TweakNotificationsSystemBypassDnd,
+    Module.TweakLockscreenRestoreUnlockAnimation,
     Module.Panel
 ];
 
 /** @type {{[sessionMode: SessionMode]: Module[]}} */
 const Modules = {
     [SessionMode.Desktop]: [
-        Module.TweakOverviewSmoothSearchLeave,
         Module.TweakOverviewHideDash,
         Module.TweakOverviewHideShowAppsButton,
         Module.TweakOverviewHideSearch,
+        Module.TweakOverviewSmoothSearchLeave,
         Module.TweakOverviewExpandWorkspaceBackground,
         Module.TweakOverviewClickActions,
         Module.TweakPopupsPreventFocus,
@@ -51,6 +52,7 @@ const Modules = {
         Module.TweakInputSourceUpperCaseLabels,
         Module.TweakMenusClickToOpen,
         Module.TweakMenusAutoAlign,
+        Module.TweakLockscreenRestoreUnlockAnimation,
         Module.Panel
     ]
 };

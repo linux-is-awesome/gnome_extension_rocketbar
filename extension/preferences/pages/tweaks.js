@@ -19,12 +19,14 @@ const MANAGED_MODULES = [
     Module.TweakInputSourceUpperCaseLabels,
     Module.TweakMenusClickToOpen,
     Module.TweakMenusAutoAlign,
-    Module.TweakNotificationsSystemBypassDnd
+    Module.TweakNotificationsSystemBypassDnd,
+    Module.TweakLockscreenRestoreUnlockAnimation
 ];
 
 /** @enum {string} */
 const ConfigField = {
-    [CONFIG_KEY_MODULES]: SettingsKey.Modules
+    [CONFIG_KEY_MODULES]: SettingsKey.Modules,
+    sessionModeLockscreen: SettingsKey.SessionModeLockscreen
 };
 
 export default class extends Page {
@@ -48,6 +50,12 @@ export default class extends Page {
      */
     #handleConfig(settingKey) {
         const modules = this.#modules;
+        const lockscreenGroup = this.getGroup(ConfigField.sessionModeLockscreen);
+        const isLockscreenSessionModeChanged = settingKey === ConfigField.sessionModeLockscreen;
+        const { sessionModeLockscreen } = this.#config;
+        if (!settingKey ||
+            isLockscreenSessionModeChanged) lockscreenGroup.set_sensitive(!!sessionModeLockscreen);
+        if (isLockscreenSessionModeChanged) return;
         for (const module of MANAGED_MODULES) {
             const widget = this.getSwitchRow(module);
             const isModuleActive = !!modules?.has(module);

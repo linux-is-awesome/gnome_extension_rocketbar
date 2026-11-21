@@ -106,5 +106,17 @@
                 </child>
             </object>
         </child>
+        <child>
+            <object class="AdwPreferencesGroup" id="session-mode-lockscreen">
+                <property name="title" translatable="yes">Lockscreen</property>
+                <property name="description" translatable="yes">Requires Lockscreen session mode for the extension to be enabled</property>
+                <child>
+                    <object class="AdwSwitchRow" id="tweaks/lockscreen/restoreUnlockAnimation">
+                        <property name="title" translatable="yes">Restore Unlock Animation</property>
+                        <property name="subtitle" translatable="yes">Bring back the unlock slide-up animation</property>
+                    </object>
+                </child>
+            </object>
+        </child>
     </object>
 </interface>
