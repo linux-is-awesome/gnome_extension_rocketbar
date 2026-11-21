@@ -79,7 +79,7 @@ export default class {
         if (this.#searchContainer instanceof St.Widget === false) return;
         this.#hideCtrlAltTabItem();
         this.#searchContainer.remove_all_transitions();
-        this.#searchContainer.set({ ...AnimationType.OpacityMin, height: 0 });
+        this.#searchContainer.set({ ...AnimationType.OpacityMin, ...AnimationType.TranslationReset, height: 0 });
         if (!this.#workspaceThumbnails?.visible) return;
         this.#workspaceThumbnails.expandFraction = 1.0;
     }
