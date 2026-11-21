@@ -117,9 +117,10 @@ export default class ChangeTracker {
      * @param {Shell.App} app
      */
     trackAppChange(app) {
-        if (!this.#isActive || !this.#trackedApps || !this.#clients || !app) return;
-        const isAlreadyTracked = this.#trackedApps.has(app);
+        if (!this.#isActive || !this.#clients || !app) return;
         this.#hasChangedApps = true;
+        if (!this.#trackedApps) return;
+        const isAlreadyTracked = this.#trackedApps.has(app);
         this.#trackedApps.set(app, TaskbarEvent.Change);
         this.#trackedClients = new Set(this.#clients.keys());
         if (isAlreadyTracked) return;
