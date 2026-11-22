@@ -128,6 +128,14 @@ export default class Monitors {
         return !!this.#clients?.has(client);
     }
 
+    /**
+     * @param {*} client
+     * @returns {boolean}
+     */
+    isWaitingUpdate(client) {
+        return !!this.#clients?.has(client) && this.#isUpdating;
+    }
+
     #enqueueUpdate() {
         this.#isUpdating = true;
         Context.jobs.replace(this, Delay.Queue).destroy(() => this.#update());

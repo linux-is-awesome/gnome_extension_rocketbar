@@ -8,6 +8,7 @@ import Shell from 'gi://Shell';
 import { activateWindow as FocusedWindow } from 'resource:///org/gnome/shell/ui/main.js';
 import { Source as MessageTraySource, Urgency } from 'resource:///org/gnome/shell/ui/messageTray.js';
 import Context from '../core/context.js';
+import { WindowManager } from '../core/shell.js';
 import WindowInfo from './taskbar/windowInfo.js';
 import ChangeTracker from './taskbar/changeTracker.js';
 import Favorites from './taskbar/favorites.js';
@@ -94,13 +95,6 @@ class TaskbarService {
     /** @type {boolean} */
     get isWorkspaceChanged() {
         return this.#oldWorkspace !== this.workspace;
-    }
-
-    /** @type {boolean} */
-    get isRouting() {
-        if (this.#isRouting) return true;
-        const monitors = Context.monitors;
-        return monitors.has(this) && monitors.isUpdating;
     }
 
     constructor() {
@@ -215,8 +209,14 @@ class TaskbarService {
             const appConfig = InnerConfig(this.#config, ConfigKey.AppConfig);
             this.#appConfig = appConfig && !Array.isArray(appConfig) ? appConfig : {};
         }
-        if (!windowRouting || !windowRoutingWatchdog) Context.monitors.disconnect(this);
-        else Context.monitors.connect(this, () => this.#scheduleWindowRouting());
+        if (!windowRouting || !windowRoutingWatchdog) {
+            Context.monitors.disconnect(this);
+            Context.hooks.remove(this, WindowManager);
+        } else {
+            Context.monitors.connect(this, () => this.#scheduleWindowRouting());
+            Context.hooks.add(this, WindowManager, WindowManager._shouldAnimate,
+                () => !!this.#routingHelper || Context.monitors.isWaitingUpdate(this) ? false : undefined, true);
+        }
     }
 
     #loadWindows() {
@@ -501,7 +501,8 @@ class TaskbarService {
         if (!this.#windows || !window) return false;
         const windowInfo = this.#windows.get(window);
         if (!windowInfo) return false;
-        if (this.isRouting) this.#scheduleWindowRouting();
+        const isRoutingStarting = this.#isRouting || Context.monitors.isWaitingUpdate(this);
+        if (isRoutingStarting) this.#scheduleWindowRouting();
         else if (!windowInfo.isRouting) {
             windowInfo.update(false);
             const { isWorkspaceChanged, app } = windowInfo;
@@ -537,8 +538,6 @@ class TaskbarService {
         this.#isRouting = true;
         if (!this.#routingHelper) this.#createRoutingHelper();
         Context.jobs.replace(this, Delay.Scheduled).destroy(() => this.#startWindowRouting());
-        if (!Context.monitors.isUpdating) return;
-        Context.desktop.animations = false;
     }
 
     /**
@@ -553,6 +552,8 @@ class TaskbarService {
         this.#routingHelper = new Clutter.Actor(RoutingHelperProps);
         Context.desktop.addOverlay(this.#routingHelper, true);
         for (const [window, windowInfo] of this.#windows) {
+            const windowActor = window.get_compositor_private();
+            if (windowActor instanceof Clutter.Actor) windowActor.remove_all_transitions();
             const { app } = windowInfo;
             const name = `${this.#routingHelper.name}-WindowClone_${app.id}`;
             const clone = new WindowPreview(window, name).setSize(1, 1);
@@ -564,7 +565,6 @@ class TaskbarService {
         if (!this.#windows?.size) return this.#stopWindowRouting();
         this.#isRouting = false;
         let hasRoutingWindows = false;
-        Context.desktop.animations = false;
         for (const [_, windowInfo] of this.#windows) {
             const isRoutingWindow = this.#routeWindow(windowInfo);
             if (!isRoutingWindow) windowInfo.update();
@@ -579,7 +579,6 @@ class TaskbarService {
         this.#isRouting = false;
         this.#routingHelper?.destroy();
         this.#routingHelper = null;
-        Context.desktop.animations = true;
     }
 
     /**

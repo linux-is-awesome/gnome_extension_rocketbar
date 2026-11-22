@@ -37,9 +37,6 @@ export default class Desktop {
     /** @type {Gio.Settings?} */
     #uiSettings = MainLayout._interfaceSettings ?? null;
 
-    /** @type {number?} */
-    #oldAnimationSpeed = null;
-
     /** @type {St.Widget?} */
     #desktopActor = MainLayout.uiGroup instanceof St.Widget ?
                     MainLayout.uiGroup : null;
@@ -91,22 +88,8 @@ export default class Desktop {
         return enable_animations && slow_down_factor > 0;
     }
 
-    /** @param {boolean} enable */
-    set animations(enable) {
-        const isDisabled = typeof this.#oldAnimationSpeed === 'number';
-        if (!enable && isDisabled) return;
-        if (enable && isDisabled) {
-            this.settings.slow_down_factor = this.#oldAnimationSpeed ?? 1;
-            this.#oldAnimationSpeed = null;
-        } else if (!enable) {
-            this.#oldAnimationSpeed = this.settings.slow_down_factor ?? 1;
-            this.settings.slow_down_factor = 0;
-        }
-    }
-
     destroy() {
         Context.signals.removeAll(this);
-        this.animations = true;
         this.#initClients?.clear();
         this.#scaleClients?.clear();
         this.#initClients = null;
