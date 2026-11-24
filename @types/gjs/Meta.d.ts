@@ -1,6 +1,7 @@
 declare module 'gi://Meta' {
 
     import type GObject from 'gi://GObject';
+    import type Clutter from 'gi://Clutter';
     import type Mtk from 'gi://Mtk';
 
     /**
