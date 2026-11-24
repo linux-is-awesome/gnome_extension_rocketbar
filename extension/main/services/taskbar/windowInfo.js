@@ -72,6 +72,11 @@ export default class WindowInfo {
                typeof this.#targetWorkspace === 'number';
     }
 
+    stopRouting() {
+        this.#targetMonitor = null;
+        this.#targetWorkspace = null;
+    }
+
     /**
      * @returns {number?}
      */
@@ -82,7 +87,8 @@ export default class WindowInfo {
         const windowMonitor = this.window.get_monitor();
         const monitor = targetMonitor >= 0 ? targetMonitor : windowMonitor;
         this.#targetMonitor = null;
-        if (monitor < 0 || monitor === windowMonitor) return null;
+        if (monitor < 0 || monitor === windowMonitor ||
+            monitor >= global.display.get_n_monitors()) return null;
         this.window.move_to_monitor(monitor);
         return monitor;
     }
