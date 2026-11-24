@@ -11,8 +11,8 @@ import Context from '../core/context.js';
 import { WindowManager } from '../core/shell.js';
 import WindowInfo from './taskbar/windowInfo.js';
 import ChangeTracker from './taskbar/changeTracker.js';
+import RoutingHelper from './taskbar/routingHelper.js';
 import Favorites from './taskbar/favorites.js';
-import { WindowPreview } from '../ui/base/windowPreview.js';
 import { Config, InnerConfig } from '../../shared/utils/config.js';
 import { AppConfigValue } from '../../shared/utils/taskbar/appConfig.js';
 import { AppWindow } from '../utils/appWindow.js';
@@ -24,11 +24,7 @@ import { ServiceConfigField as ConfigField,
          AttentionBehavior,
          NotificationsBehavior } from '../../shared/enums/taskbar.js';
 
-/** @type {{[prop: string]: *}} */
-const RoutingHelperProps = {
-    name: 'Rocketbar__TaskbarService_RoutingHelper',
-    opacity: 0
-};
+const MAX_FINISH_ROUTING_ATTEMPTS = 20;
 
 /** @enum {string} */
 export const TaskbarEvent = {
@@ -52,7 +48,7 @@ class TaskbarService {
     /** @type {{window: Meta.Window, app: Shell.App}?} */
     #focusedWindowInfo = null;
 
-    /** @type {Clutter.Actor?} */
+    /** @type {RoutingHelper?} */
     #routingHelper = null;
 
     /** @type {boolean} */
@@ -353,6 +349,7 @@ class TaskbarService {
         if (!this.#windows || !window) return;
         const windowInfo = this.#windows.get(window);
         if (!windowInfo) return;
+        this.#routingHelper?.preventWindowJumping(window);
         if (windowInfo.isRouting) windowInfo.routeToWorkspace();
         else this.#handleWindowMotion(window);
     }
@@ -536,49 +533,44 @@ class TaskbarService {
     #scheduleWindowRouting() {
         if (!this.#windows?.size) return this.#stopWindowRouting();
         this.#isRouting = true;
-        if (!this.#routingHelper) this.#createRoutingHelper();
+        this.#routingHelper ??= new RoutingHelper(this.#windows);
         Context.jobs.replace(this, Delay.Scheduled).destroy(() => this.#startWindowRouting());
-    }
-
-    /**
-     * Note: To correctly process monitor and workspace changes,
-     *       all windows must be visible on the screen.
-     *       Otherwise, some events may not be triggered.
-     *       This function creates invisible window clones
-     *       to ensure that all events are triggered.
-     */
-    #createRoutingHelper() {
-        if (!this.#windows?.size || this.#routingHelper) return;
-        this.#routingHelper = new Clutter.Actor(RoutingHelperProps);
-        Context.desktop.addOverlay(this.#routingHelper, true);
-        for (const [window, windowInfo] of this.#windows) {
-            const windowActor = window.get_compositor_private();
-            if (windowActor instanceof Clutter.Actor) windowActor.remove_all_transitions();
-            const { app } = windowInfo;
-            const name = `${this.#routingHelper.name}-WindowClone_${app.id}`;
-            const clone = new WindowPreview(window, name).setSize(1, 1);
-            this.#routingHelper.add_child(clone.actor);
-        }
     }
 
     #startWindowRouting() {
         if (!this.#windows?.size) return this.#stopWindowRouting();
+        if (Context.monitors.isWaitingUpdate(this) ||
+            this.#routingHelper?.hasJumpingWindows) return this.#scheduleWindowRouting();
         this.#isRouting = false;
         let hasRoutingWindows = false;
-        for (const [_, windowInfo] of this.#windows) {
+        for (const windowInfo of this.#windows.values()) {
             const isRoutingWindow = this.#routeWindow(windowInfo);
             if (!isRoutingWindow) windowInfo.update();
             hasRoutingWindows ||= isRoutingWindow;
         }
         if (!hasRoutingWindows) return this.#stopWindowRouting();
-        Context.jobs.new(this, Delay.Scheduled).destroy(() =>
-            (this.#stopWindowRouting(), this.tracker?.trackAll()));
+        Context.jobs.new(this, Delay.Scheduled).destroy(() => this.#finishWindowRouting());
+    }
+
+    /**
+     * @param {number} [attempt]
+     */
+    #finishWindowRouting(attempt = 0) {
+        const isRouting = [...this.#windows?.values() ?? []].some(windowInfo => windowInfo.isRouting);
+        if (isRouting && attempt < MAX_FINISH_ROUTING_ATTEMPTS) {
+            Context.jobs.new(this, Delay.Queue).destroy(() => this.#finishWindowRouting(++attempt));
+            return;
+        }
+        this.#stopWindowRouting();
+        this.tracker?.trackAll();
     }
 
     #stopWindowRouting() {
         this.#isRouting = false;
         this.#routingHelper?.destroy();
         this.#routingHelper = null;
+        if (!this.#windows?.size) return;
+        for (const windowInfo of this.#windows.values()) windowInfo.stopRouting();
     }
 
     /**
@@ -594,7 +586,8 @@ class TaskbarService {
         if (!isRouting) return false;
         const monitor = windowInfo.routeToMonitor();
         if (typeof monitor !== 'number') windowInfo.routeToWorkspace();
-        windowInfo.updateMonitor(monitor).updateWorkspace();
+        windowInfo.updateMonitor(monitor);
+        if (!windowInfo.isRouting) windowInfo.updateWorkspace();
         return true;
     }
 
