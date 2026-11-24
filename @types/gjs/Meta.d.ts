@@ -6023,10 +6023,11 @@ declare module 'gi://Meta' {
          * Gets the current maximization state of the window, as combination
          * of the %META_MAXIMIZE_HORIZONTAL and %META_MAXIMIZE_VERTICAL flags;
          * @returns current maximization state
+         * @deprecated since GNOME 49 — use is_maximized()
          */
         get_maximized(): MaximizeFlags
         /**
-         * Returns whether the window is maximized (horizontally and/or vertically).
+         * Returns whether the window is maximized vertically and horizontally.
          * @returns %TRUE if the window is maximized
          */
         is_maximized(): boolean
@@ -6212,12 +6213,12 @@ declare module 'gi://Meta' {
         lower_with_transients(timestamp: number): void
         make_above(): void
         make_fullscreen(): void
+        maximize(): void
         /**
-         * Maximizes the window in the given directions. If no directions are given,
-         * maximizes in both directions (META_MAXIMIZE_BOTH).
-         * @param directions which directions to maximize (optional, defaults to both)
+         * @param directions which directions to maximize
+         * @deprecated since GNOME 49 — use maximize()
          */
-        maximize(directions?: MaximizeFlags): void
+        maximize(directions: MaximizeFlags): void
         minimize(): void
         /**
          * Moves the window to the desired location on window's assigned
@@ -6288,12 +6289,12 @@ declare module 'gi://Meta' {
         unmake_fullscreen(): void
         /** Removes the mapped inhibition from the window. */
         uninhibit_mapped(): void
+        unmaximize(): void
         /**
-         * Unmaximizes the window in the given directions. If no directions are given,
-         * unmaximizes in both directions (META_MAXIMIZE_BOTH).
-         * @param directions which directions to unmaximize (optional, defaults to both)
+         * @param directions which directions to unmaximize
+         * @deprecated since GNOME 49 — use unmaximize()
          */
-        unmaximize(directions?: MaximizeFlags): void
+        unmaximize(directions: MaximizeFlags): void
         unminimize(): void
         unset_demands_attention(): void
         unstick(): void

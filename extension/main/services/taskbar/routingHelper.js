@@ -1,14 +1,16 @@
 
 /**
- * @typedef {import('gi://Meta').Window} Meta.Window
  * @typedef {import('../../../shared/core/context/signals.js').Signals.SignalTracker} SignalTracker
  * @typedef {import('./windowInfo.js').default} WindowInfo
  */
 
 import Clutter from 'gi://Clutter';
+import Meta from 'gi://Meta';
 import Context from '../../core/context.js';
 import { WindowPreview } from '../../ui/base/windowPreview.js';
 import { Delay, Event } from '../../../shared/enums/general.js';
+
+const IS_NEW_API = typeof Meta.Window.prototype.is_maximized === 'function';
 
 const WINDOW_JUMP_THRESHOLD = 4;
 const MAX_JUMP_PREVENT_ATTEMPTS = 2;
@@ -58,7 +60,9 @@ class JumpingWindowTracker {
             this.#targetMonitor = this.#window.get_monitor();
         }
         this.#jumps.push(now);
-        if (this.#jumps.length < WINDOW_JUMP_THRESHOLD || !this.#window.is_maximized()) return;
+        if (this.#jumps.length < WINDOW_JUMP_THRESHOLD ||
+            !this.#window.maximized_horizontally ||
+            !this.#window.maximized_vertically) return;
         this.#preventJumping();
     }
 
@@ -70,12 +74,14 @@ class JumpingWindowTracker {
         this.isActive = true;
         this.#attempts++;
         Context.signals.add(this, [this.#window, Event.Unmanaged, () => this.#finalize(true)]);
-        if (this.#window.is_maximized()) await this.#run(
-            Event.WindowSizeChanged, () => this.#window?.unmaximize());
-        if (this.#canMove(targetMonitor)) await this.#run(
-            Event.WindowPositionChanged, () => this.#window?.move_to_monitor(targetMonitor));
-        if (!this.#window.is_maximized()) await this.#run(
-            Event.WindowSizeChanged, () => this.#window?.maximize());
+        if (this.#window.maximized_horizontally &&
+            this.#window.maximized_vertically) await this.#run(Event.WindowSizeChanged,
+                () => IS_NEW_API ? this.#window?.unmaximize() : this.#window?.unmaximize(Meta.MaximizeFlags.BOTH));
+        if (this.#canMove(targetMonitor)) await this.#run(Event.WindowPositionChanged,
+                () => this.#window?.move_to_monitor(targetMonitor));
+        if (!this.#window.maximized_horizontally &&
+            !this.#window.maximized_vertically) await this.#run(Event.WindowSizeChanged,
+                () => IS_NEW_API ? this.#window?.maximize() : this.#window?.maximize(Meta.MaximizeFlags.BOTH));
         this.#finalize();
     }
 
