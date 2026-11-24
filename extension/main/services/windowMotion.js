@@ -67,7 +67,7 @@ class WindowMotionTrackingService {
     #update() {
         if (!this.#job) return;
         if (!this.#workspace) this.#trackWorkspace();
-        for (const [_, callback] of this.#clients) callback();
+        for (const callback of this.#clients.values()) callback();
     }
 
     #trackWorkspace() {

@@ -53,7 +53,7 @@ export default class Signals {
 
     destroy() {
         if (!this.#connections) return;
-        for (const [_, connections] of this.#connections) this.#disconnectAll(connections);
+        for (const connections of this.#connections.values()) this.#disconnectAll(connections);
         this.#connections.clear();
         this.#connections = null;
     }
@@ -194,7 +194,7 @@ export default class Signals {
      */
     #disconnectTarget(target, connections) {
         if (typeof target?.disconnect !== 'function') return;
-        for (const [_, id] of connections) {
+        for (const id of connections.values()) {
             if (typeof id !== 'number' && typeof id !== 'string') continue;
             try {
                 target.disconnect(id);

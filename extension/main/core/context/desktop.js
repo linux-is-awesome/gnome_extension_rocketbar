@@ -238,7 +238,7 @@ export default class Desktop {
      */
     #notifyClients(clients) {
         if (!clients?.size) return;
-        for (const [_, callback] of clients) callback();
+        for (const callback of clients.values()) callback();
     }
 
 }

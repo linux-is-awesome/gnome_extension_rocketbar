@@ -130,7 +130,7 @@ export default class Context extends SharedContext {
         const pages = Object.values(PreferencesPage);
         for (const page of pages) this.#pages.set(page, this.#loadPage(page));
         await Promise.all([...this.#pages.values()]);
-        for (const [_, page] of this.#pages) {
+        for (const page of this.#pages.values()) {
             if (page instanceof BasePage === false) continue;
             page.setParent(this.#window);
         }

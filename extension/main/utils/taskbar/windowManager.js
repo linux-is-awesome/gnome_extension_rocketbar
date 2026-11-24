@@ -219,7 +219,7 @@ export class WindowManager {
         if (!windows.length) return;
         const hasNoActiveWindows = Overview.visible || (!this.#hasFocus && !this.#queue);
         if (hasNoActiveWindows) return this.#focusPrimaryWindow(windows);
-        for (const [_, otherWindows] of windowsByWorkspace) {
+        for (const otherWindows of windowsByWorkspace.values()) {
             if (otherWindows === workspaceWindows) continue;
             windows = !this.#hasFocus ? [...otherWindows, ...windows] : [...windows, ...otherWindows];
         }

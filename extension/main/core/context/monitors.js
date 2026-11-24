@@ -166,7 +166,7 @@ export default class Monitors {
 
     #notifyClients() {
         if (!this.#clients?.size) return;
-        for (const [_, callback] of this.#clients) callback();
+        for (const callback of this.#clients.values()) callback();
     }
 
 }

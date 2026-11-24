@@ -82,7 +82,7 @@ class Hook {
     #executeBeforeClients(sender, args) {
         let result;
         if (!this.#originFunction || !this.#beforeClients) return [result, args];
-        for (const [_, callback] of this.#beforeClients) {
+        for (const callback of this.#beforeClients.values()) {
             try {
                 const callbackResult = callback(sender, ...args) ?? result;
                 if (callbackResult === result) continue;
@@ -110,7 +110,7 @@ class Hook {
     #executeAfterClients(sender, originResult, args) {
         let result;
         if (!this.#originFunction || !this.#afterClients) return result;
-        for (const [_, callback] of this.#afterClients) {
+        for (const callback of this.#afterClients.values()) {
             try {
                 const callbackResult = callback(sender, originResult, ...args);
                 if (typeof callbackResult === 'undefined') continue;
@@ -131,8 +131,8 @@ export default class Hooks {
 
     destroy() {
         if (!this.#hooks) return;
-        for (const [_, hooks] of this.#hooks) {
-            for (const [__, hook] of hooks) hook.destroy();
+        for (const hooks of this.#hooks.values()) {
+            for (const hook of hooks.values()) hook.destroy();
         }
         this.#hooks.clear();
         this.#hooks = null;
