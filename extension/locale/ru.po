@@ -5,9 +5,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: Rocketbar 2.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-21 16:20+0300\n"
+"POT-Creation-Date: 2026-11-25 13:55+0300\n"
 "PO-Revision-Date: 2026-01-26 22:53+0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -15,8 +15,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
-"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 #: preferences/ui/about.ui:4
 msgid "About"
@@ -63,14 +62,10 @@ msgid "Launcher API"
 msgstr "Launcher API"
 
 #: preferences/ui/misc.ui:12
-msgid ""
-"Provides notification counters and progress tracking for applications that "
-"support this API"
-msgstr ""
-"Предоставляет счетчики уведомлений и отслеживание прогресса для приложений, "
-"поддерживающих этот API"
+msgid "Provides notification counters and progress tracking for applications that support this API"
+msgstr "Предоставляет счетчики уведомлений и отслеживание прогресса для приложений, поддерживающих этот API"
 
-#: preferences/ui/misc.ui:19 preferences/ui/tweaks.ui:76
+#: preferences/ui/misc.ui:19 preferences/ui/tweaks.ui:100
 msgid "Notifications"
 msgstr "Уведомления"
 
@@ -79,12 +74,8 @@ msgid "Launcher API Integration"
 msgstr "Интеграция с Launcher API"
 
 #: preferences/ui/misc.ui:23
-msgid ""
-"Retrieve notification count from the Launcher API for applications that "
-"support this API"
-msgstr ""
-"Получать количество уведомлений из Launcher API для приложений, "
-"поддерживающих этот API"
+msgid "Retrieve notification count from the Launcher API for applications that support this API"
+msgstr "Получать количество уведомлений из Launcher API для приложений, поддерживающих этот API"
 
 #: preferences/ui/misc.ui:29
 msgid "Count Attention Notifications"
@@ -92,35 +83,30 @@ msgstr "Учитывать уведомления о внимании"
 
 #: preferences/ui/misc.ui:30
 msgid "Enable counting of Window Attention notifications for applications"
-msgstr ""
-"Разрешить подсчет уведомлений об окнах требующих внимания для приложений"
+msgstr "Разрешить подсчет уведомлений об окнах требующих внимания для приложений"
 
 #: preferences/ui/misc.ui:37
 msgid "Extension Session Modes"
 msgstr "Режимы работы расширения"
 
-#: preferences/ui/misc.ui:40
+#: preferences/ui/misc.ui:40 preferences/ui/tweaks.ui:111
 msgid "Lockscreen"
 msgstr "Экран разблокировки"
 
 #: preferences/ui/misc.ui:41
-msgid ""
-"Run the extension on the lockscreen. Enabled customizations marked with (LS) "
-"will be applied. Requires logging out for changes to take effect"
-msgstr ""
-"Запускать расширение на экране разблокировки. Включенные настройки с "
-"пометкой (LS) будут применены. Требуется выход из системы для применения "
-"изменений"
+msgid "Run the extension on the lockscreen. Enabled customizations marked with (LS) will be applied. Requires logging out for changes to take effect"
+msgstr "Запускать расширение на экране разблокировки. Включенные настройки с пометкой (LS) будут применены. Требуется выход из системы для применения изменений"
 
-#: preferences/ui/notificationCounter.ui:4 preferences/ui/panel.ui:80
+#: preferences/ui/notificationCounter.ui:4 preferences/ui/panel.ui:129
 msgid "Notification Counter"
 msgstr "Счетчик уведомлений"
 
-#: preferences/ui/notificationCounter.ui:15 preferences/ui/taskbar.ui:15
-#: preferences/ui/taskbar/appButton.ui:24
+#: preferences/ui/notificationCounter.ui:15
 #: preferences/ui/taskbar/indicators.ui:24
-#: preferences/ui/taskbar/notificationBadges.ui:24
 #: preferences/ui/taskbar/progressBars.ui:24
+#: preferences/ui/taskbar/notificationBadges.ui:24
+#: preferences/ui/taskbar/appButton.ui:24 preferences/ui/panel.ui:8
+#: preferences/ui/taskbar.ui:15
 msgid "General"
 msgstr "Общие"
 
@@ -137,12 +123,13 @@ msgstr "Центрирование часов"
 msgid "Max Count To Display"
 msgstr "Максимальное значение счетчика"
 
-#: preferences/ui/notificationCounter.ui:43 preferences/ui/taskbar.ui:105
-#: preferences/ui/taskbar/appButton.ui:223
+#: preferences/ui/notificationCounter.ui:43
 #: preferences/ui/taskbar/indicators.ui:35
-#: preferences/ui/taskbar/notificationBadges.ui:48
-#: preferences/ui/taskbar/progressBars.ui:35
 #: preferences/ui/taskbar/tooltips.ui:55
+#: preferences/ui/taskbar/progressBars.ui:35
+#: preferences/ui/taskbar/notificationBadges.ui:48
+#: preferences/ui/taskbar/appButton.ui:223 preferences/ui/panel.ui:43
+#: preferences/ui/taskbar.ui:62
 msgid "Layout"
 msgstr "Макет"
 
@@ -155,28 +142,32 @@ msgid "Vertical Centering"
 msgstr "Вертикальное выравнивание"
 
 #: preferences/ui/notificationCounter.ui:72
-#: preferences/ui/taskbar/appButton.ui:270
 #: preferences/ui/taskbar/notificationBadges.ui:64
+#: preferences/ui/taskbar/appButton.ui:270
 msgid "Roundness"
 msgstr "Скругление"
 
 #: preferences/ui/notificationCounter.ui:87
 #: preferences/ui/taskbar/indicators.ui:185
-#: preferences/ui/taskbar/notificationBadges.ui:92
 #: preferences/ui/taskbar/progressBars.ui:79
+#: preferences/ui/taskbar/notificationBadges.ui:92
 msgid "Colors"
 msgstr "Цвета"
 
-#: preferences/ui/notificationCounter.ui:90 preferences/ui/taskbar.ui:230
-#: preferences/ui/taskbar.ui:240 preferences/ui/taskbar.ui:247
-#: preferences/ui/taskbar.ui:255 shared/enums/labels.js:27
+#: preferences/ui/notificationCounter.ui:90
+#: preferences/ui/taskbar/appConfig.ui:177
+#: preferences/ui/taskbar/appConfig.ui:187
+#: preferences/ui/taskbar/appConfig.ui:194
+#: preferences/ui/taskbar/appConfig.ui:202 preferences/ui/taskbar.ui:258
+#: preferences/ui/taskbar.ui:268 preferences/ui/taskbar.ui:275
+#: preferences/ui/taskbar.ui:283
 msgid "Default"
 msgstr "По умолчанию"
 
 #: preferences/ui/notificationCounter.ui:94
 #: preferences/ui/notificationCounter.ui:139
-#: preferences/ui/taskbar/notificationBadges.ui:95
 #: preferences/ui/taskbar/progressBars.ui:82
+#: preferences/ui/taskbar/notificationBadges.ui:95
 msgid "Background"
 msgstr "Фон"
 
@@ -200,262 +191,189 @@ msgstr "Не беспокоить"
 msgid "Use a different set of colors while Do Not Disturb mode is active"
 msgstr "Использовать другой набор цветов при активном режиме «Не беспокоить»"
 
-#: preferences/ui/panel.ui:4
-msgid "Panel"
-msgstr "Панель"
-
-#: preferences/ui/panel.ui:10
-msgid "Enable Customization"
-msgstr "Разрешить кастомизацию"
-
-#: preferences/ui/panel.ui:17 preferences/ui/taskbar/appButton.ui:41
-msgid "Actions"
-msgstr "Действия"
-
-#: preferences/ui/panel.ui:21
-msgid "Sound Volume Control (LS)"
-msgstr "Управление громкостью звука (LS)"
-
-#: preferences/ui/panel.ui:22
-msgid ""
-"Scroll to change the output sound volume, middle button click to toggle "
-"mute. Hold down the Ctrl key to slow down the volume change"
-msgstr ""
-"Прокрутка для изменения громкости, средняя кнопка для отключения звука. "
-"Удерживайте Ctrl для замедления изменения громкости"
-
-#: preferences/ui/panel.ui:27
-msgid "Click To Hide Overview"
-msgstr "Клик для выхода из режима обзора"
-
-#: preferences/ui/panel.ui:28
-msgid "When in Overview, left button click on the panel hides the Overview"
-msgstr ""
-"В режиме обзора клик левой кнопкой по панели позволяет выйти из этого режима"
-
-#: preferences/ui/panel.ui:35 preferences/ui/taskbar.ui:4
-#: preferences/ui/taskbar/appButton.ui:11
 #: preferences/ui/taskbar/indicators.ui:11
-#: preferences/ui/taskbar/notificationBadges.ui:11
-#: preferences/ui/taskbar/progressBars.ui:11
 #: preferences/ui/taskbar/tooltips.ui:11
+#: preferences/ui/taskbar/progressBars.ui:11
+#: preferences/ui/taskbar/notificationBadges.ui:11
+#: preferences/ui/taskbar/appButton.ui:11
+#: preferences/ui/taskbar/appConfigs.ui:11 preferences/ui/panel.ui:84
+#: preferences/ui/taskbar.ui:4
 msgid "Taskbar"
 msgstr "Панель задач"
 
-#: preferences/ui/panel.ui:44
-msgid "Alignment"
-msgstr "Выравнивание"
-
-#: preferences/ui/panel.ui:51 preferences/ui/taskbar/indicators.ui:27
-#: preferences/ui/taskbar/notificationBadges.ui:27
-#: preferences/ui/taskbar/progressBars.ui:27
-msgid "Position"
-msgstr "Позиция"
-
-#: preferences/ui/panel.ui:65 preferences/ui/panel.ui:89
-#: shared/enums/labels.js:9
-msgid "Customize"
-msgstr "Настроить"
-
-#: preferences/ui/panel.ui:105
-msgid "Left"
-msgstr "Слева"
-
-#: preferences/ui/panel.ui:106
-msgid "Center"
-msgstr "По центру"
-
-#: preferences/ui/panel.ui:107
-msgid "Right"
-msgstr "Справа"
-
-#: preferences/ui/taskbar.ui:18
-msgid "Isolate Workspaces"
-msgstr "Изолировать рабочие столы"
-
-#: preferences/ui/taskbar.ui:19
-msgid "Show apps from the current workspace only"
-msgstr "Показывать только приложения текущего рабочего стола"
-
-#: preferences/ui/taskbar.ui:24
-msgid "Include All Windows"
-msgstr "Добавить все окна"
-
-#: preferences/ui/taskbar.ui:25
-msgid "Enable management of windows marked to skip the taskbar"
-msgstr "Управлять окнами, помеченными для исключенния из панели задач"
-
-#: preferences/ui/taskbar.ui:30
-msgid "Show Pinned Apps"
-msgstr "Показывать прикрепленные приложения"
-
-#: preferences/ui/taskbar.ui:31
-msgid "Always show pinned apps on the taskbar, even if they are not running"
-msgstr ""
-"Всегда показывать прикрепленные приложения на панели задач, даже если они не "
-"запущены"
-
-#: preferences/ui/taskbar.ui:37
-msgid "Always Show Separator"
-msgstr "Всегда показывать разделитель"
-
-#: preferences/ui/taskbar.ui:38
-msgid "Make the separator between pinned and running apps always visible"
-msgstr ""
-"Всегда показывать разделитель между прикрепленными и запущенными приложениями"
-
-#: preferences/ui/taskbar.ui:45
-msgid "Multi-Monitor Window Routing"
-msgstr "Маршрутизация окон на нескольких мониторах"
-
-#: preferences/ui/taskbar.ui:46
-msgid ""
-"Enable preferred monitor selection for each app and automatically route all "
-"newly opened windows there"
-msgstr ""
-"Позволяет выбор предпочитаемого монитора для каждого приложения для "
-"автоматического перемещения новых окон на выбранный монитор"
-
-#: preferences/ui/taskbar.ui:52
-msgid "Handle Monitor Changes"
-msgstr "Обрабатывать изменение мониторов"
-
-#: preferences/ui/taskbar.ui:53
-msgid "Automatically attempt to restore window positions after monitor changes"
-msgstr "Автоматически восстанавливать позиции окон после изменения мониторов"
-
-#: preferences/ui/taskbar.ui:62
-msgid "Apps"
-msgstr "Приложения"
-
-#: preferences/ui/taskbar.ui:65
-msgid "Default Settings"
-msgstr "Настройки по умолчанию"
-
-#: preferences/ui/taskbar.ui:71 shared/enums/labels.js:39
-msgid "Preferred Monitor"
-msgstr "Предпочитаемый монитор"
-
-#: preferences/ui/taskbar.ui:77 shared/enums/labels.js:10
-msgid "Activation Behavior"
-msgstr "Поведение при активации"
-
-#: preferences/ui/taskbar.ui:83
-msgid "Focus Demanding Attention Windows"
-msgstr "Фокусировка окон, требующих внимания"
-
-#: preferences/ui/taskbar.ui:89 shared/enums/labels.js:12
-msgid "Attention Notifications"
-msgstr "Уведомления о внимании"
-
-#: preferences/ui/taskbar.ui:95 shared/enums/labels.js:13
-msgid "Standard Notifications"
-msgstr "Обычные уведомления"
-
-#: preferences/ui/taskbar.ui:108 preferences/ui/taskbar/tooltips.ui:58
-msgid "Max Length (% of Monitor)"
-msgstr "Макс. длина (% монитора)"
-
-#: preferences/ui/taskbar.ui:109
-msgid "Limit the taskbar length to a percentage of the monitor size"
-msgstr "Ограничить длину панели задач в процентах от размера монитора"
-
-#: preferences/ui/taskbar.ui:124
-msgid "Components"
-msgstr "Компоненты"
-
-#: preferences/ui/taskbar.ui:127 preferences/ui/taskbar/appButton.ui:12
-msgid "App Buttons"
-msgstr "Кнопки приложений"
-
-#: preferences/ui/taskbar.ui:138
-msgid "App Menus"
-msgstr "Меню приложений"
-
-#: preferences/ui/taskbar.ui:143 preferences/ui/taskbar/indicators.ui:12
+#: preferences/ui/taskbar/indicators.ui:12 preferences/ui/taskbar.ui:171
 msgid "Indicators"
 msgstr "Индикаторы"
 
-#: preferences/ui/taskbar.ui:163
-#: preferences/ui/taskbar/notificationBadges.ui:12
-msgid "Notification Badges"
-msgstr "Счетчики уведомлений"
+#: preferences/ui/taskbar/indicators.ui:27
+#: preferences/ui/taskbar/progressBars.ui:27
+#: preferences/ui/taskbar/notificationBadges.ui:27 preferences/ui/panel.ui:100
+msgid "Position"
+msgstr "Позиция"
 
-#: preferences/ui/taskbar.ui:183 preferences/ui/taskbar/progressBars.ui:12
-msgid "Progress Bars"
-msgstr "Полосы прогресса"
+#: preferences/ui/taskbar/indicators.ui:38
+#: preferences/ui/taskbar/indicators.ui:188
+msgid "Active"
+msgstr "Активный"
 
-#: preferences/ui/taskbar.ui:203 preferences/ui/taskbar/tooltips.ui:12
+#: preferences/ui/taskbar/indicators.ui:42
+#: preferences/ui/taskbar/indicators.ui:116
+msgid "Limit"
+msgstr "Количество"
+
+#: preferences/ui/taskbar/indicators.ui:55
+#: preferences/ui/taskbar/indicators.ui:129
+#: preferences/ui/taskbar/notificationBadges.ui:51
+#: preferences/ui/taskbar/appConfig.ui:131
+msgid "Size"
+msgstr "Размер"
+
+#: preferences/ui/taskbar/indicators.ui:68
+#: preferences/ui/taskbar/indicators.ui:142
+msgid "Weight"
+msgstr "Толщина"
+
+#: preferences/ui/taskbar/indicators.ui:81
+#: preferences/ui/taskbar/indicators.ui:155
+#: preferences/ui/taskbar/appButton.ui:283
+msgid "Spacing"
+msgstr "Промежуток"
+
+#: preferences/ui/taskbar/indicators.ui:94
+#: preferences/ui/taskbar/indicators.ui:168
+#: preferences/ui/taskbar/progressBars.ui:64
+#: preferences/ui/taskbar/notificationBadges.ui:77
+msgid "Offset"
+msgstr "Отступ"
+
+#: preferences/ui/taskbar/indicators.ui:109
+#: preferences/ui/taskbar/indicators.ui:212
+msgid "Inactive"
+msgstr "Неактивный"
+
+#: preferences/ui/taskbar/indicators.ui:110
+msgid "Use a different layout for inactive indicators"
+msgstr "Использовать другой макет для неактивных индикаторов"
+
+#: preferences/ui/taskbar/indicators.ui:192
+#: preferences/ui/taskbar/indicators.ui:219
+msgid "Color Type"
+msgstr "Тип цвета"
+
+#: preferences/ui/taskbar/indicators.ui:198
+#: preferences/ui/taskbar/indicators.ui:225
+#: preferences/ui/taskbar/appButton.ui:320
+msgid "Color"
+msgstr "Цвет"
+
+#: preferences/ui/taskbar/indicators.ui:213
+msgid "Use a different color for inactive indicators"
+msgstr "Использовать другой цвет для неактивных индикаторов"
+
+#: preferences/ui/taskbar/indicators.ui:247
+#: preferences/ui/taskbar/progressBars.ui:114 preferences/ui/panel.ui:154
+msgid "Top"
+msgstr "Вверху"
+
+#: preferences/ui/taskbar/indicators.ui:248
+#: preferences/ui/taskbar/progressBars.ui:115 preferences/ui/panel.ui:155
+msgid "Bottom"
+msgstr "Внизу"
+
+#: preferences/ui/taskbar/indicators.ui:253
+#: preferences/ui/taskbar/appButton.ui:356
+msgid "Static Color"
+msgstr "Статический цвет"
+
+#: preferences/ui/taskbar/indicators.ui:254
+#: preferences/ui/taskbar/appButton.ui:357
+msgid "Dominant Color"
+msgstr "Доминирующий цвет"
+
+#: preferences/ui/taskbar/tooltips.ui:12 preferences/ui/taskbar.ui:231
 msgid "Tooltips"
 msgstr "Всплывающие подсказки"
 
-#: preferences/ui/taskbar.ui:231 shared/enums/labels.js:40
-msgid "Primary"
-msgstr "Основной"
+#: preferences/ui/taskbar/tooltips.ui:24
+msgid "Delays"
+msgstr "Задержки"
 
-#: preferences/ui/taskbar.ui:232 shared/enums/labels.js:41
-msgid "Left of Primary"
-msgstr "Слева от основного"
+#: preferences/ui/taskbar/tooltips.ui:27
+msgid "Show"
+msgstr "Появление"
 
-#: preferences/ui/taskbar.ui:233 shared/enums/labels.js:42
-msgid "Right of Primary"
-msgstr "Справа от основного"
+#: preferences/ui/taskbar/tooltips.ui:40
+msgid "Hide"
+msgstr "Исчезновение"
 
-#: preferences/ui/taskbar.ui:234 shared/enums/labels.js:43
-msgid "Above Primary"
-msgstr "Выше основного"
+#: preferences/ui/taskbar/tooltips.ui:58 preferences/ui/taskbar.ui:65
+msgid "Max Length (% of Monitor)"
+msgstr "Макс. длина (% монитора)"
 
-#: preferences/ui/taskbar.ui:235 shared/enums/labels.js:44
-msgid "Below Primary"
-msgstr "Ниже основного"
+#: preferences/ui/taskbar/tooltips.ui:59
+msgid "Limit the tooltip length to a percentage of the monitor size"
+msgstr "Ограничить длину подсказки в процентах от размера монитора"
 
-#: preferences/ui/taskbar.ui:241 shared/enums/labels.js:20
-msgid "Find Window"
-msgstr "Найти окно"
+#: preferences/ui/taskbar/tooltips.ui:74
+msgid "Windows"
+msgstr "Окна"
 
-#: preferences/ui/taskbar.ui:242 shared/enums/labels.js:21
-msgid "Move Windows"
-msgstr "Переместить окна"
+#: preferences/ui/taskbar/tooltips.ui:77
+msgid "Shrink Window Titles"
+msgstr "Сокращать заголовки окон"
 
-#: preferences/ui/taskbar.ui:248
-msgid "When Active"
-msgstr "Если активно"
+#: preferences/ui/taskbar/tooltips.ui:78
+msgid "Remove application names from window titles"
+msgstr "Удалять имена приложений из заголовков окон"
 
-#: preferences/ui/taskbar.ui:249
-msgid "On Active Workspace"
-msgstr "На активном столе"
+#: preferences/ui/taskbar/progressBars.ui:12 preferences/ui/taskbar.ui:211
+msgid "Progress Bars"
+msgstr "Полосы прогресса"
 
-#: preferences/ui/taskbar.ui:250
-msgid "Always"
-msgstr "Всегда"
+#: preferences/ui/taskbar/progressBars.ui:38
+msgid "Width"
+msgstr "Ширина"
 
-#: preferences/ui/taskbar.ui:256 shared/enums/labels.js:45
-msgid "Disable"
-msgstr "Отключить"
+#: preferences/ui/taskbar/progressBars.ui:51 preferences/ui/panel.ui:53
+msgid "Height"
+msgstr "Высота"
 
-#: preferences/ui/taskbar.ui:257 shared/enums/labels.js:46
-msgid "Always Hide"
-msgstr "Всегда скрывать"
+#: preferences/ui/taskbar/progressBars.ui:94
+msgid "Fill"
+msgstr "Заливка"
 
-#: preferences/ui/taskbar.ui:258 shared/enums/labels.js:47
-msgid "Always Show"
-msgstr "Всегда показывать"
+#: preferences/ui/taskbar/notificationBadges.ui:12
+#: preferences/ui/taskbar.ui:191
+msgid "Notification Badges"
+msgstr "Счетчики уведомлений"
 
-#: preferences/ui/taskbar.ui:259
-msgid "Always Show as Critical"
-msgstr "Сделать критическими"
+#: preferences/ui/taskbar/notificationBadges.ui:139
+msgid "Top Left"
+msgstr "Верхний левый"
+
+#: preferences/ui/taskbar/notificationBadges.ui:140
+msgid "Top Right"
+msgstr "Верхний правый"
+
+#: preferences/ui/taskbar/notificationBadges.ui:141
+msgid "Bottom Left"
+msgstr "Нижний левый"
+
+#: preferences/ui/taskbar/notificationBadges.ui:142
+msgid "Bottom Right"
+msgstr "Нижний правый"
+
+#: preferences/ui/taskbar/appButton.ui:12 preferences/ui/taskbar.ui:140
+msgid "App Buttons"
+msgstr "Кнопки приложений"
 
 #: preferences/ui/taskbar/appButton.ui:27
 msgid "Drag And Drop"
 msgstr "Перетаскивание"
 
 #: preferences/ui/taskbar/appButton.ui:28
-msgid ""
-"Use drag and drop to rearrange apps on the taskbar, unpin pinned apps, and "
-"launch new app instances by dropping them into the Overview"
-msgstr ""
-"Использовать перетаскивание для изменения порядка приложений на панели "
-"задач, открепления и запуска новых экземпляров через режим обзора"
+msgid "Use drag and drop to rearrange apps on the taskbar, unpin pinned apps, and launch new app instances by dropping them into the Overview"
+msgstr "Использовать перетаскивание для изменения порядка приложений на панели задач, открепления и запуска новых экземпляров через режим обзора"
 
 #: preferences/ui/taskbar/appButton.ui:33 shared/enums/labels.js:8
 msgid "Sound Volume Control"
@@ -463,8 +381,11 @@ msgstr "Управление громкостью звука"
 
 #: preferences/ui/taskbar/appButton.ui:34
 msgid "Enable control of input and output sound volumes for apps"
-msgstr ""
-"Включить управление громкостью входного и выходного звука для приложений"
+msgstr "Включить управление громкостью входного и выходного звука для приложений"
+
+#: preferences/ui/taskbar/appButton.ui:41 preferences/ui/panel.ui:25
+msgid "Actions"
+msgstr "Действия"
 
 #: preferences/ui/taskbar/appButton.ui:44
 msgid "Scroll"
@@ -576,7 +497,7 @@ msgstr "Вверх/Вниз"
 msgid "Open menu"
 msgstr "Открыть меню"
 
-#: preferences/ui/taskbar/appButton.ui:226 shared/enums/labels.js:15
+#: preferences/ui/taskbar/appButton.ui:226
 msgid "Icon Size"
 msgstr "Размер иконок"
 
@@ -592,12 +513,6 @@ msgstr "По горизонтали"
 msgid "Vertical"
 msgstr "По вертикали"
 
-#: preferences/ui/taskbar/appButton.ui:283
-#: preferences/ui/taskbar/indicators.ui:81
-#: preferences/ui/taskbar/indicators.ui:155
-msgid "Spacing"
-msgstr "Промежуток"
-
 #: preferences/ui/taskbar/appButton.ui:298
 msgid "Backlight"
 msgstr "Подсветка"
@@ -609,12 +524,6 @@ msgstr "Интенсивность"
 #: preferences/ui/taskbar/appButton.ui:314
 msgid "Type"
 msgstr "Тип"
-
-#: preferences/ui/taskbar/appButton.ui:320
-#: preferences/ui/taskbar/indicators.ui:198
-#: preferences/ui/taskbar/indicators.ui:225
-msgid "Color"
-msgstr "Цвет"
 
 #: preferences/ui/taskbar/appButton.ui:341
 msgid "None"
@@ -640,127 +549,266 @@ msgstr "Громкость входа"
 msgid "Activate/Minimize"
 msgstr "Активир./Свернуть"
 
-#: preferences/ui/taskbar/appButton.ui:356
-#: preferences/ui/taskbar/indicators.ui:253
-msgid "Static Color"
-msgstr "Статический цвет"
+#: preferences/ui/taskbar/appConfigs.ui:12
+#: preferences/ui/taskbar/appConfig.ui:11
+msgid "Customize Apps"
+msgstr "Настройка приложений"
 
-#: preferences/ui/taskbar/appButton.ui:357
-#: preferences/ui/taskbar/indicators.ui:254
-msgid "Dominant Color"
-msgstr "Доминирующий цвет"
+#: preferences/ui/taskbar/appConfigs.ui:32
+msgid "Search apps"
+msgstr "Поиск приложений"
 
-#: preferences/ui/taskbar/indicators.ui:38
-#: preferences/ui/taskbar/indicators.ui:188
-msgid "Active"
-msgstr "Активный"
+#: preferences/ui/taskbar/appConfigs.ui:63
+msgid "Customized Apps"
+msgstr "Настроенные приложения"
 
-#: preferences/ui/taskbar/indicators.ui:42
-#: preferences/ui/taskbar/indicators.ui:116
-msgid "Limit"
-msgstr "Количество"
+#: preferences/ui/taskbar/appConfigs.ui:68
+msgid "Not Customized Apps"
+msgstr "Приложения без настройки"
 
-#: preferences/ui/taskbar/indicators.ui:55
-#: preferences/ui/taskbar/indicators.ui:129
-#: preferences/ui/taskbar/notificationBadges.ui:51
-msgid "Size"
-msgstr "Размер"
+#: preferences/ui/taskbar/appConfigs.ui:93
+msgid "No Apps Found"
+msgstr "Приложения не найдены"
 
-#: preferences/ui/taskbar/indicators.ui:68
-#: preferences/ui/taskbar/indicators.ui:142
-msgid "Weight"
-msgstr "Толщина"
+#: preferences/ui/taskbar/appConfig.ui:36
+msgid "Behavior"
+msgstr "Поведение"
 
-#: preferences/ui/taskbar/indicators.ui:94
-#: preferences/ui/taskbar/indicators.ui:168
-#: preferences/ui/taskbar/notificationBadges.ui:77
-#: preferences/ui/taskbar/progressBars.ui:64
-msgid "Offset"
-msgstr "Отступ"
+#: preferences/ui/taskbar/appConfig.ui:39 preferences/ui/taskbar.ui:90
+msgid "Preferred Monitor"
+msgstr "Предпочитаемый монитор"
 
-#: preferences/ui/taskbar/indicators.ui:109
-#: preferences/ui/taskbar/indicators.ui:212
-msgid "Inactive"
-msgstr "Неактивный"
+#: preferences/ui/taskbar/appConfig.ui:40 preferences/ui/taskbar.ui:91
+msgid "Works when Multi-Monitor Window Routing is enabled"
+msgstr "Работает если функция маршрутизации окон на нескольких мониторах включена"
 
-#: preferences/ui/taskbar/indicators.ui:110
-msgid "Use a different layout for inactive indicators"
-msgstr "Использовать другой макет для неактивных индикаторов"
+#: preferences/ui/taskbar/appConfig.ui:46
+#: preferences/ui/taskbar/appConfig.ui:64
+#: preferences/ui/taskbar/appConfig.ui:81
+#: preferences/ui/taskbar/appConfig.ui:98
+#: preferences/ui/taskbar/appConfig.ui:115
+#: preferences/ui/taskbar/appConfig.ui:144
+msgid "Reset to Default"
+msgstr "Вернуть по умолчанию"
 
-#: preferences/ui/taskbar/indicators.ui:192
-#: preferences/ui/taskbar/indicators.ui:219
-msgid "Color Type"
-msgstr "Тип цвета"
+#: preferences/ui/taskbar/appConfig.ui:57 preferences/ui/taskbar.ui:97
+msgid "Activation Behavior"
+msgstr "Поведение при активации"
 
-#: preferences/ui/taskbar/indicators.ui:213
-msgid "Use a different color for inactive indicators"
-msgstr "Использовать другой цвет для неактивных индикаторов"
+#: preferences/ui/taskbar/appConfig.ui:58 preferences/ui/taskbar.ui:98
+msgid "Works when Isolate Workspaces is enabled"
+msgstr "Работает если изоляция рабочих столов включена"
 
-#: preferences/ui/taskbar/indicators.ui:247
-#: preferences/ui/taskbar/progressBars.ui:114
-msgid "Top"
-msgstr "Вверху"
+#: preferences/ui/taskbar/appConfig.ui:75 preferences/ui/taskbar.ui:104
+msgid "Focus Demanding Attention Windows"
+msgstr "Фокусировка окон, требующих внимания"
 
-#: preferences/ui/taskbar/indicators.ui:248
-#: preferences/ui/taskbar/progressBars.ui:115
-msgid "Bottom"
-msgstr "Внизу"
+#: preferences/ui/taskbar/appConfig.ui:92 preferences/ui/taskbar.ui:110
+msgid "Attention Notifications"
+msgstr "Уведомления о внимании"
 
-#: preferences/ui/taskbar/notificationBadges.ui:139
-msgid "Top Left"
-msgstr "Верхний левый"
+#: preferences/ui/taskbar/appConfig.ui:109 preferences/ui/taskbar.ui:116
+msgid "Standard Notifications"
+msgstr "Обычные уведомления"
 
-#: preferences/ui/taskbar/notificationBadges.ui:140
-msgid "Top Right"
-msgstr "Верхний правый"
+#: preferences/ui/taskbar/appConfig.ui:128
+msgid "Icon"
+msgstr "Иконка"
 
-#: preferences/ui/taskbar/notificationBadges.ui:141
-msgid "Bottom Left"
-msgstr "Нижний левый"
+#: preferences/ui/taskbar/appConfig.ui:159
+msgid "Reset All to Default"
+msgstr "Вернуть все по умолчанию"
 
-#: preferences/ui/taskbar/notificationBadges.ui:142
-msgid "Bottom Right"
-msgstr "Нижний правый"
+#: preferences/ui/taskbar/appConfig.ui:178 preferences/ui/taskbar.ui:259
+msgid "Primary"
+msgstr "Основной"
 
-#: preferences/ui/taskbar/progressBars.ui:38
-msgid "Width"
-msgstr "Ширина"
+#: preferences/ui/taskbar/appConfig.ui:179 preferences/ui/taskbar.ui:260
+msgid "Left of Primary"
+msgstr "Слева от основного"
 
-#: preferences/ui/taskbar/progressBars.ui:51
-msgid "Height"
-msgstr "Высота"
+#: preferences/ui/taskbar/appConfig.ui:180 preferences/ui/taskbar.ui:261
+msgid "Right of Primary"
+msgstr "Справа от основного"
 
-#: preferences/ui/taskbar/progressBars.ui:94
-msgid "Fill"
-msgstr "Заливка"
+#: preferences/ui/taskbar/appConfig.ui:181 preferences/ui/taskbar.ui:262
+msgid "Above Primary"
+msgstr "Выше основного"
 
-#: preferences/ui/taskbar/tooltips.ui:24
-msgid "Delays"
-msgstr "Задержки"
+#: preferences/ui/taskbar/appConfig.ui:182 preferences/ui/taskbar.ui:263
+msgid "Below Primary"
+msgstr "Ниже основного"
 
-#: preferences/ui/taskbar/tooltips.ui:27
-msgid "Show"
-msgstr "Появление"
+#: preferences/ui/taskbar/appConfig.ui:188 preferences/ui/taskbar.ui:269
+#: shared/enums/labels.js:10
+msgid "Find Window"
+msgstr "Найти окно"
 
-#: preferences/ui/taskbar/tooltips.ui:40
-msgid "Hide"
-msgstr "Исчезновение"
+#: preferences/ui/taskbar/appConfig.ui:189 preferences/ui/taskbar.ui:270
+#: shared/enums/labels.js:11
+msgid "Move Windows"
+msgstr "Переместить окна"
 
-#: preferences/ui/taskbar/tooltips.ui:59
-msgid "Limit the tooltip length to a percentage of the monitor size"
-msgstr "Ограничить длину подсказки в процентах от размера монитора"
+#: preferences/ui/taskbar/appConfig.ui:195 preferences/ui/taskbar.ui:276
+msgid "When Active"
+msgstr "Если активно"
 
-#: preferences/ui/taskbar/tooltips.ui:74
-msgid "Windows"
-msgstr "Окна"
+#: preferences/ui/taskbar/appConfig.ui:196 preferences/ui/taskbar.ui:277
+msgid "On Active Workspace"
+msgstr "На активном столе"
 
-#: preferences/ui/taskbar/tooltips.ui:77
-msgid "Shrink Window Titles"
-msgstr "Сокращать заголовки окон"
+#: preferences/ui/taskbar/appConfig.ui:197 preferences/ui/taskbar.ui:278
+msgid "Always"
+msgstr "Всегда"
 
-#: preferences/ui/taskbar/tooltips.ui:78
-msgid "Remove application names from window titles"
-msgstr "Удалять имена приложений из заголовков окон"
+#: preferences/ui/taskbar/appConfig.ui:203 preferences/ui/taskbar.ui:284
+msgid "Disable"
+msgstr "Отключить"
+
+#: preferences/ui/taskbar/appConfig.ui:204 preferences/ui/taskbar.ui:285
+msgid "Always Hide"
+msgstr "Всегда скрывать"
+
+#: preferences/ui/taskbar/appConfig.ui:205 preferences/ui/taskbar.ui:286
+msgid "Always Show"
+msgstr "Всегда показывать"
+
+#: preferences/ui/taskbar/appConfig.ui:206 preferences/ui/taskbar.ui:287
+msgid "Always Show as Critical"
+msgstr "Сделать критическими"
+
+#: preferences/ui/panel.ui:4
+msgid "Panel"
+msgstr "Панель"
+
+#: preferences/ui/panel.ui:11
+msgid "Enable Customization"
+msgstr "Разрешить кастомизацию"
+
+#: preferences/ui/panel.ui:16
+msgid "Position (LS)"
+msgstr "Позиция (LS)"
+
+#: preferences/ui/panel.ui:29
+msgid "Sound Volume Control (LS)"
+msgstr "Управление громкостью звука (LS)"
+
+#: preferences/ui/panel.ui:30
+msgid "Scroll to change the output sound volume, middle button click to toggle mute. Hold down the Ctrl key to slow down the volume change"
+msgstr "Прокрутка для изменения громкости, средняя кнопка для отключения звука. Удерживайте Ctrl для замедления изменения громкости"
+
+#: preferences/ui/panel.ui:35
+msgid "Click To Hide Overview"
+msgstr "Клик для выхода из режима обзора"
+
+#: preferences/ui/panel.ui:36
+msgid "When in Overview, left button click on the panel hides the Overview"
+msgstr "В режиме обзора клик левой кнопкой по панели позволяет выйти из этого режима"
+
+#: preferences/ui/panel.ui:47
+msgid "Height Adjustment (LS)"
+msgstr "Настройка высоты (LS)"
+
+#: preferences/ui/panel.ui:68
+msgid "Transparency"
+msgstr "Прозрачность"
+
+#: preferences/ui/panel.ui:74
+msgid "Affected By Maximized Windows"
+msgstr "Зависит от развёрнутых окон"
+
+#: preferences/ui/panel.ui:75
+msgid "Disable transparency when any window is maximized on the same monitor"
+msgstr "Отключать прозрачность, если на этом мониторе есть развёрнутое окно"
+
+#: preferences/ui/panel.ui:93
+msgid "Alignment"
+msgstr "Выравнивание"
+
+#: preferences/ui/panel.ui:114 preferences/ui/panel.ui:138
+#: preferences/ui/taskbar.ui:124 shared/enums/labels.js:9
+msgid "Customize"
+msgstr "Настроить"
+
+#: preferences/ui/panel.ui:160
+msgid "Left"
+msgstr "Слева"
+
+#: preferences/ui/panel.ui:161
+msgid "Center"
+msgstr "По центру"
+
+#: preferences/ui/panel.ui:162
+msgid "Right"
+msgstr "Справа"
+
+#: preferences/ui/taskbar.ui:18
+msgid "Isolate Workspaces"
+msgstr "Изолировать рабочие столы"
+
+#: preferences/ui/taskbar.ui:19
+msgid "Show apps from the current workspace only"
+msgstr "Показывать только приложения текущего рабочего стола"
+
+#: preferences/ui/taskbar.ui:24
+msgid "Include All Windows"
+msgstr "Добавить все окна"
+
+#: preferences/ui/taskbar.ui:25
+msgid "Enable management of windows marked to skip the taskbar"
+msgstr "Управлять окнами, помеченными для исключенния из панели задач"
+
+#: preferences/ui/taskbar.ui:30
+msgid "Show Pinned Apps"
+msgstr "Показывать прикрепленные приложения"
+
+#: preferences/ui/taskbar.ui:31
+msgid "Always show pinned apps on the taskbar, even if they are not running"
+msgstr "Всегда показывать прикрепленные приложения на панели задач, даже если они не запущены"
+
+#: preferences/ui/taskbar.ui:37
+msgid "Always Show Separator"
+msgstr "Всегда показывать разделитель"
+
+#: preferences/ui/taskbar.ui:38
+msgid "Make the separator between pinned and running apps always visible"
+msgstr "Всегда показывать разделитель между прикрепленными и запущенными приложениями"
+
+#: preferences/ui/taskbar.ui:45
+msgid "Multi-Monitor Window Routing"
+msgstr "Маршрутизация окон на нескольких мониторах"
+
+#: preferences/ui/taskbar.ui:46
+msgid "Enable preferred monitor selection for each app and automatically route all newly opened windows there"
+msgstr "Позволяет выбор предпочитаемого монитора для каждого приложения для автоматического перемещения новых окон на выбранный монитор"
+
+#: preferences/ui/taskbar.ui:52
+msgid "Handle Monitor Changes"
+msgstr "Обрабатывать изменение мониторов"
+
+#: preferences/ui/taskbar.ui:53
+msgid "Automatically attempt to restore window positions after monitor changes"
+msgstr "Автоматически восстанавливать позиции окон после изменения мониторов"
+
+#: preferences/ui/taskbar.ui:66
+msgid "Limit the taskbar length to a percentage of the monitor size"
+msgstr "Ограничить длину панели задач в процентах от размера монитора"
+
+#: preferences/ui/taskbar.ui:81
+msgid "Apps"
+msgstr "Приложения"
+
+#: preferences/ui/taskbar.ui:84
+msgid "Default Behavior"
+msgstr "Поведение по умолчанию"
+
+#: preferences/ui/taskbar.ui:137
+msgid "Components"
+msgstr "Компоненты"
+
+#: preferences/ui/taskbar.ui:151
+msgid "App Menus"
+msgstr "Меню приложений"
 
 #: preferences/ui/tweaks.ui:4
 msgid "Tweaks"
@@ -783,189 +831,165 @@ msgid "Hide Dash"
 msgstr "Скрыть панель приложений"
 
 #: preferences/ui/tweaks.ui:18
-msgid ""
-"Hide the Dash and prevent it from rendering behind the scene. The Show Apps "
-"button will remain visible"
-msgstr ""
-"Скрыть панель приложений и запретить ее отрисовку. Кнопка «Показать "
-"приложения» останется видимой"
+msgid "Hide the Dash and prevent it from rendering behind the scene. The Show Apps button will remain visible"
+msgstr "Скрыть панель приложений и запретить ее отрисовку. Кнопка «Показать приложения» останется видимой"
 
 #: preferences/ui/tweaks.ui:23
+msgid "Hide Show Apps Button"
+msgstr "Скрыть кнопку «Показать приложения»"
+
+#: preferences/ui/tweaks.ui:24
+msgid "Hide the Show Apps button in the Dash"
+msgstr "Скрыть кнопку «Показать приложения» на панели приложений"
+
+#: preferences/ui/tweaks.ui:29
+msgid "Expand Workspace Background"
+msgstr "Расширить фон рабочего стола"
+
+#: preferences/ui/tweaks.ui:30
+msgid "Expand the active workspace background to fill the space under the panel during Overview transitions. Enable to avoid visual glitches behind the transparent panel"
+msgstr "Растягивать фон активного рабочего стола на область под панелью при переходах в режиме обзора. Включите, чтобы убрать артефакты за прозрачной панелью"
+
+#: preferences/ui/tweaks.ui:35
 msgid "Click Actions"
 msgstr "Действия по клику"
 
-#: preferences/ui/tweaks.ui:24
-msgid ""
-"Left button click on an empty space hides the Overview, long press or right "
-"button click toggles the App Grid. Close windows using middle button (or "
-"left button while holding down the Ctrl key)"
-msgstr ""
-"Клик левой кнопкой по пустому месту скрывает обзор, долгое нажатие или "
-"правая кнопка переключает меню приложений. Средняя кнопка для закрытия окон "
-"(или левая при удержании Ctrl)"
+#: preferences/ui/tweaks.ui:36
+msgid "Left button click on an empty space hides the Overview, long press or right button click toggles the App Grid. Close windows using middle button (or left button while holding down the Ctrl key)"
+msgstr "Клик левой кнопкой по пустому месту скрывает обзор, долгое нажатие или правая кнопка переключает меню приложений. Средняя кнопка для закрытия окон (или левая при удержании Ctrl)"
 
-#: preferences/ui/tweaks.ui:31
+#: preferences/ui/tweaks.ui:41
+msgid "Smooth Search Leave"
+msgstr "Плавный выход из поиска"
+
+#: preferences/ui/tweaks.ui:42
+msgid "Return to the workspace view before closing the Overview when search is active. Avoids stutter when launching apps from search or dismissing the Overview while searching"
+msgstr "Перед закрытием режима обзора при активном поиске возвращаться к виду рабочего стола. Уменьшает рывки при запуске приложений из поиска или при выходе из обзора во время поиска"
+
+#: preferences/ui/tweaks.ui:49
 msgid "Popups"
 msgstr "Всплывающие окна"
 
-#: preferences/ui/tweaks.ui:34
+#: preferences/ui/tweaks.ui:52
 msgid "Remove Display Delay (LS)"
 msgstr "Убрать задержку отображения (LS)"
 
-#: preferences/ui/tweaks.ui:35
+#: preferences/ui/tweaks.ui:53
 msgid "Instantly display all popups for better recognition"
 msgstr "Мгновенно показывать все всплывающие окна для лучшего распознавания"
 
-#: preferences/ui/tweaks.ui:40
+#: preferences/ui/tweaks.ui:58
 msgid "Prevent Focus Stealing"
 msgstr "Запретить перехват фокуса"
 
-#: preferences/ui/tweaks.ui:41
-msgid ""
-"Prevent window focus from being lost when switching windows or input "
-"languages"
-msgstr ""
-"Предотвратить снятие фокуса с активного окна при переключении окон или "
-"раскладок клавиатуры"
+#: preferences/ui/tweaks.ui:59
+msgid "Prevent window focus from being lost when switching windows or input languages"
+msgstr "Предотвратить снятие фокуса с активного окна при переключении окон или раскладок клавиатуры"
 
-#: preferences/ui/tweaks.ui:48
+#: preferences/ui/tweaks.ui:66
 msgid "Menus"
 msgstr "Меню"
 
-#: preferences/ui/tweaks.ui:51
+#: preferences/ui/tweaks.ui:69
 msgid "Click To Open (LS)"
 msgstr "Открывать по клику (LS)"
 
-#: preferences/ui/tweaks.ui:52
+#: preferences/ui/tweaks.ui:70
 msgid "Require a click to open menus"
 msgstr "Требовать клик для открытия меню"
 
-#: preferences/ui/tweaks.ui:59
+#: preferences/ui/tweaks.ui:75
+msgid "Auto-Align (LS)"
+msgstr "Автовыравнивание (LS)"
+
+#: preferences/ui/tweaks.ui:76
+msgid "Automatically align menus based on their position on the screen. Enable if a non-standard panel position is used"
+msgstr "Автоматически выравнивать меню по их положению на экране. Включите при нестандартном расположении панели"
+
+#: preferences/ui/tweaks.ui:83
 msgid "Input Sources"
 msgstr "Источники ввода"
 
-#: preferences/ui/tweaks.ui:62
+#: preferences/ui/tweaks.ui:86
 msgid "Primary Language For Password Fields (LS)"
 msgstr "Основной язык для полей пароля (LS)"
 
-#: preferences/ui/tweaks.ui:63
-msgid ""
-"Automatically switch to the primary input language when any password field "
-"becomes active"
-msgstr ""
-"Автоматически переключаться на основную раскладку при активации поля пароля"
+#: preferences/ui/tweaks.ui:87
+msgid "Automatically switch to the primary input language when any password field becomes active"
+msgstr "Автоматически переключаться на основную раскладку при активации поля пароля"
 
-#: preferences/ui/tweaks.ui:68
+#: preferences/ui/tweaks.ui:92
 msgid "Uppercase Indicator (LS)"
 msgstr "Индикатор в верхнем регистре (LS)"
 
-#: preferences/ui/tweaks.ui:69
+#: preferences/ui/tweaks.ui:93
 msgid "Display input languages in uppercase (en → EN)"
 msgstr "Отображать языки ввода в верхнем регистре (ru → RU)"
 
-#: preferences/ui/tweaks.ui:79
+#: preferences/ui/tweaks.ui:103
 msgid "Always Show System Notifications"
 msgstr "Всегда показывать системные уведомления"
 
-#: preferences/ui/tweaks.ui:80
+#: preferences/ui/tweaks.ui:104
 msgid "Allow system notifications to bypass Do Not Disturb mode"
 msgstr "Разрешить системным уведомлениям обходить режим «Не беспокоить»"
+
+#: preferences/ui/tweaks.ui:112
+msgid "Requires Lockscreen session mode for the extension to be enabled"
+msgstr "Режим работы расширения «Экран разблокировки» должен быть включен"
+
+#: preferences/ui/tweaks.ui:115
+msgid "Restore Unlock Animation"
+msgstr "Восстановить анимацию разблокировки"
+
+#: preferences/ui/tweaks.ui:116
+msgid "Bring back the unlock slide-up animation"
+msgstr "Возвращает анимацию при разблокировке экрана"
 
 #: shared/enums/labels.js:7
 msgid "Pin"
 msgstr "Прикрепить"
 
-#: shared/enums/labels.js:11
-msgid "Attention Behavior"
-msgstr "Поведение при внимании"
-
-#: shared/enums/labels.js:14
-msgid "Custom Icon"
-msgstr "Пользовательская иконка"
-
-#: shared/enums/labels.js:16
-msgid "Icon from Clipboard"
-msgstr "Иконка из буфера обмена"
-
-#: shared/enums/labels.js:17
-msgid "No Icon Found in Clipboard"
-msgstr "Иконка в буфере не найден"
-
-#: shared/enums/labels.js:18
-msgid "Reset to Default"
-msgstr "Вернуть по умолчанию"
-
-#: shared/enums/labels.js:19
-msgid "Reset All to Default"
-msgstr "Вернуть все по умолчанию"
-
-#: shared/enums/labels.js:22
-msgid "Set Focus When Active"
-msgstr "Фокусировать если активно"
-
-#: shared/enums/labels.js:23
-msgid "Set Focus On Active Workspace"
-msgstr "На активном рабочем столе"
-
-#: shared/enums/labels.js:24
-msgid "Always Set Focus"
-msgstr "Всегда фокусировать"
-
-#: shared/enums/labels.js:25
-msgid "Select Icon"
-msgstr "Выбрать иконку"
-
-#: shared/enums/labels.js:26
-msgid "Icon"
-msgstr "Иконка"
-
-#: shared/enums/labels.js:28
+#: shared/enums/labels.js:12
 msgid "Current Workspace"
 msgstr "Текущий рабочий стол"
 
-#: shared/enums/labels.js:29
+#: shared/enums/labels.js:13
 msgid "Other Workspaces"
 msgstr "Другие рабочие столы"
 
-#: shared/enums/labels.js:30
+#: shared/enums/labels.js:14
 msgid "Minimize All"
 msgstr "Свернуть все"
 
-#: shared/enums/labels.js:31
+#: shared/enums/labels.js:15
 msgid "Raise All"
 msgstr "Показать все"
 
-#: shared/enums/labels.js:32
+#: shared/enums/labels.js:16
 msgid "Close All"
 msgstr "Закрыть все"
 
-#: shared/enums/labels.js:33
+#: shared/enums/labels.js:17
 msgid "This Monitor"
 msgstr "Этот монитор"
 
-#: shared/enums/labels.js:34
+#: shared/enums/labels.js:18
 msgid "Monitor Left"
 msgstr "Монитор слева"
 
-#: shared/enums/labels.js:35
+#: shared/enums/labels.js:19
 msgid "Monitor Right"
 msgstr "Монитор справа"
 
-#: shared/enums/labels.js:36
+#: shared/enums/labels.js:20
 msgid "Monitor Above"
 msgstr "Монитор сверху"
 
-#: shared/enums/labels.js:37
+#: shared/enums/labels.js:21
 msgid "Monitor Below"
 msgstr "Монитор снизу"
 
-#: shared/enums/labels.js:38
+#: shared/enums/labels.js:22
 msgid "Move to"
 msgstr "Переместить на"
-
-#: shared/enums/labels.js:48
-msgid "Critical"
-msgstr "Критическое"
-
-#~ msgid "Find Windows"
-#~ msgstr "Найти окно"

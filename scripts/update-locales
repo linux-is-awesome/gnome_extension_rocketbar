@@ -6,5 +6,6 @@ POT_FILE_NAME=`cat ../metadata.json | grep -oP '(?<="gettext-domain": ")[^"]*'`
 
 for po_file in *.po; do
     echo "Updating $po_file..."
-    msgmerge --update --backup=off "$po_file" $POT_FILE_NAME.pot;
+    msgmerge --update --no-fuzzy --backup=off "$po_file" $POT_FILE_NAME.pot
+    msgattrib --no-obsolete --no-wrap -o "$po_file" "$po_file"
 done
