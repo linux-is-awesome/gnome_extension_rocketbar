@@ -13,7 +13,9 @@ const RGB_STRING_SPLITTER = ',';
 const Pixbuf = (icon, sampleSize) => {
     try {
         if (icon instanceof Gio.FileIcon) {
-            return GdkPixbuf.Pixbuf.new_from_file(icon.get_file().get_path() ?? '');
+            const path = icon.get_file().get_path();
+            if (!path) return null;
+            return GdkPixbuf.Pixbuf.new_from_file_at_size(path, sampleSize, sampleSize);
         }
         if (icon instanceof Gio.ThemedIcon) {
             return Context.desktop.iconTheme.lookup_by_gicon(icon, sampleSize, 0)?.load_icon() ?? null;
