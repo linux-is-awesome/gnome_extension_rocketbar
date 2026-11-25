@@ -320,9 +320,13 @@ class IndicatorsBackend {
      */
     #canUpdate(params) {
         if (!this.#job || !params) return false;
-        if (JSON.stringify(params) === JSON.stringify(this.#params)) return false;
-        this.#params = params;
-        return true;
+        const old = this.#params;
+        for (const key in BackendParams) {
+            if (old[key] === params[key]) continue;
+            this.#params = params;
+            return true;
+        }
+        return false;
     }
 
     /**
