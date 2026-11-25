@@ -11,6 +11,7 @@ import { WindowPreview } from '../../ui/base/windowPreview.js';
 import { Delay, Event } from '../../../shared/enums/general.js';
 
 const IS_NEW_API = typeof Meta.Window.prototype.is_maximized === 'function';
+const LEGACY_MAXIMIZE_FLAG = 3; // Meta.MaximizeFlags.BOTH
 
 const WINDOW_JUMP_THRESHOLD = 4;
 const MAX_JUMP_PREVENT_ATTEMPTS = 2;
@@ -76,12 +77,12 @@ class JumpingWindowTracker {
         Context.signals.add(this, [this.#window, Event.Unmanaged, () => this.#finalize(true)]);
         if (this.#window.maximized_horizontally &&
             this.#window.maximized_vertically) await this.#run(Event.WindowSizeChanged,
-                () => IS_NEW_API ? this.#window?.unmaximize() : this.#window?.unmaximize(Meta.MaximizeFlags.BOTH));
+                () => IS_NEW_API ? this.#window?.unmaximize() : this.#window?.unmaximize(LEGACY_MAXIMIZE_FLAG));
         if (this.#canMove(targetMonitor)) await this.#run(Event.WindowPositionChanged,
                 () => this.#window?.move_to_monitor(targetMonitor));
         if (!this.#window.maximized_horizontally &&
             !this.#window.maximized_vertically) await this.#run(Event.WindowSizeChanged,
-                () => IS_NEW_API ? this.#window?.maximize() : this.#window?.maximize(Meta.MaximizeFlags.BOTH));
+                () => IS_NEW_API ? this.#window?.maximize() : this.#window?.maximize(LEGACY_MAXIMIZE_FLAG));
         this.#finalize();
     }
 
