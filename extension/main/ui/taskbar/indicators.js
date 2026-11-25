@@ -249,6 +249,9 @@ class IndicatorsBackend {
     /** @type {Cogl.Color?} */
     #color = null;
 
+    /** @type {string?} */
+    #oldColorString = null;
+
     /** @type {Indicator[]?} */
     #indicators = [];
 
@@ -270,6 +273,8 @@ class IndicatorsBackend {
         this.#job = null;
         this.#indicators = null;
         this.#canvas = null;
+        this.#color = null;
+        this.#actor = null;
     }
 
     /**
@@ -334,7 +339,11 @@ class IndicatorsBackend {
      */
     #setColor(colorString) {
         if (!this.#canvas) return;
-        this.#color = colorString ? Cogl.Color.from_string(colorString)[1] : this.#color;
+        const isColorChanged = colorString !== this.#oldColorString;
+        if (colorString && (isColorChanged || !this.#color)) {
+            this.#oldColorString = colorString;
+            this.#color = Cogl.Color.from_string(colorString)[1];
+        }
         if (this.#color) this.#canvas.setSourceColor(this.#color);
     }
 
