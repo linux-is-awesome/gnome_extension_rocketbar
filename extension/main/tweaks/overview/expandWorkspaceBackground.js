@@ -22,6 +22,9 @@ export default class {
     /** @type {WorkspaceBackground?} */
     #workspaceBackground = null;
 
+    /** @type {Graphene.Rect?} */
+    #roundedClipBounds = null;
+
     constructor() {
         const overviewControls = Overview._overview?.controls;
         if (!overviewControls) return;
@@ -34,9 +37,9 @@ export default class {
 
     destroy() {
         Context.signals.removeAll(this);
+        this.#finishOverviewAdjustment();
         this.#overviewAdjustment = null;
         this.#workspacesDisplay = null;
-        this.#workspaceBackground = null;
     }
 
     #handleOverviewAdjustment() {
@@ -44,7 +47,7 @@ export default class {
         const { initialState, finalState, progress } = this.#overviewAdjustment.getStateTransitionParams();
         if ((finalState !== ControlsState.HIDDEN && finalState !== ControlsState.WINDOW_PICKER) ||
             (initialState > ControlsState.WINDOW_PICKER && finalState > ControlsState.HIDDEN)) {
-            this.#workspaceBackground = null;
+            this.#finishOverviewAdjustment();
             return;
         }
         const isGrowing = initialState > finalState;
@@ -54,7 +57,7 @@ export default class {
             this.#workspaceBackground = activeWorkspace?._background ?? null;
         } else if (progress >= Progress.Max) {
             this.#adjustWorkspaceBackgroundSize(actualProgress);
-            this.#workspaceBackground = null;
+            this.#finishOverviewAdjustment();
             return;
         }
         if (!this.#workspaceBackground) return;
@@ -71,7 +74,7 @@ export default class {
         if (!monitor) return;
         const backgroundActor = _bgManager?.backgroundActor;
         if (!_workarea || !_bin || !backgroundActor) {
-            this.#workspaceBackground = null;
+            this.#finishOverviewAdjustment();
             return;
         }
         const { x, y, width, height } = _workarea;
@@ -87,7 +90,8 @@ export default class {
         const progressBottom = offsetTop ? 0 : offsetBottom * progress;
         const clipHeight = offsetTop ? height + progressTop :
                                        _bin.get_allocation_box().get_height() + progressBottom;
-        const roundedClipBounds = new Graphene.Rect();
+        this.#roundedClipBounds ??= new Graphene.Rect();
+        const roundedClipBounds = this.#roundedClipBounds;
         roundedClipBounds.origin.x = x - monitor.x;
         roundedClipBounds.origin.y = offsetTop - progressTop;
         roundedClipBounds.size.width = width;
@@ -95,6 +99,11 @@ export default class {
         backgroundActor.content.set_rounded_clip_bounds(roundedClipBounds);
         if (isLastFrame) _bin.remove_clip();
         else _bin.set_clip(0, -progressTop, width, clipHeight);
+    }
+
+    #finishOverviewAdjustment() {
+        this.#workspaceBackground = null;
+        this.#roundedClipBounds = null;
     }
 
 }
