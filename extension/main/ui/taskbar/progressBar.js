@@ -58,8 +58,14 @@ export class ProgressBar extends Component {
     /** @type {Job?} */
     #infiniteProgressJob = null;
 
+    /** @type {Cogl.Color?} */
+    #backgroundColor = null;
+
+    /** @type {Cogl.Color?} */
+    #fillColor = null;
+
     /** @type {Config?} */
-    #config = this.#configProvider.get(this, () => this.actor.queue_repaint());
+    #config = this.#configProvider.get(this, settingsKey => this.#handleConfig(settingsKey));
 
     /** @type {SharedConfig} */
     get #configProvider() {
@@ -114,10 +120,27 @@ export class ProgressBar extends Component {
         await Animation(this, AnimationDuration.Default, animationParams);
     }
 
+    /**
+     * @param {string} [settingsKey]
+     */
+    #handleConfig(settingsKey) {
+        switch (settingsKey) {
+            case ConfigField.backgroundColor:
+                this.#backgroundColor = null;
+                break;
+            case ConfigField.fillColor:
+                this.#fillColor = null;
+                break;
+        }
+        this.actor.queue_repaint();
+    }
+
     #destroy() {
         Context.desktop.disconnect(this);
         this.#progress = Progress.Min;
         this.#toggleInfiniteProgress();
+        this.#backgroundColor = null;
+        this.#fillColor = null;
         this.#appButton = null;
         this.#config = null;
         if (!ProgressBar.#sharedConfig?.destroy(this)) return;
@@ -148,7 +171,9 @@ export class ProgressBar extends Component {
         const { x, progressX, drawWidth, drawHeight,
                 progressWidth, radius, angle,
                 backgroundColor, fillColor } = drawParams;
-        this.#setColor(canvas, backgroundColor);
+        this.#backgroundColor ??= Cogl.Color.from_string(backgroundColor)[1];
+        this.#fillColor ??= Cogl.Color.from_string(fillColor)[1];
+        if (this.#backgroundColor) canvas.setSourceColor(this.#backgroundColor);
         canvas.newSubPath();
         canvas.arc(x, drawHeight, radius, angle, -angle);
         canvas.arc(x + drawWidth, drawHeight, radius, -angle, angle);
@@ -156,7 +181,7 @@ export class ProgressBar extends Component {
         canvas.fillPreserve();
         canvas.setLineWidth(0);
         canvas.stroke();
-        this.#setColor(canvas, fillColor);
+        if (this.#fillColor) canvas.setSourceColor(this.#fillColor);
         canvas.newSubPath();
         canvas.arc(progressX, drawHeight, radius, angle, -angle);
         canvas.arc(progressX + progressWidth, drawHeight, radius, -angle, angle);
@@ -166,15 +191,6 @@ export class ProgressBar extends Component {
         if (actor.opacity === AnimationType.OpacityMax.opacity) return;
         actor.remove_all_transitions();
         this.setProps({ ...AnimationType.OpacityMax, ...AnimationType.ScaleNormal });
-    }
-
-    /**
-     * @param {cairo.Context} canvas
-     * @param {string} colorString
-     */
-    #setColor(canvas, colorString) {
-        const color = Cogl.Color.from_string(colorString)[1];
-        if (color) canvas.setSourceColor(color);
     }
 
 }
