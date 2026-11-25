@@ -26,6 +26,12 @@ curl -L https://github.com/linux-is-awesome/gnome_extension_rocketbar/archive/re
 
 [Suggest a feature](https://github.com/linux-is-awesome/gnome_extension_rocketbar/issues/new?template=feature_request.md)
 
+## Disclaimer
+
+- This project has no fixed release schedule; new versions are published when they are ready.
+- This extension is not tested against every third-party extension; the author is not responsible for breakage caused by those interactions.
+- GitHub issues and comments on EGO are reviewed when possible; there is no guaranteed response time or fix timeline.
+
 ##  🤝 Contributing
 Help with testing and creating translations would be highly appreciated.
 
