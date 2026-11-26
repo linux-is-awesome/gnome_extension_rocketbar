@@ -43,6 +43,9 @@ class Job {
     /** @type {((job: this) => void)?} */
     #destroyCallback = null;
 
+    /** @type {(() => void)?} */
+    #repeatCallback = null;
+
     /**
      * @param {(job: Job) => void} destroyCallback
      * @param {number} delay
@@ -79,12 +82,29 @@ class Job {
         if (!this.#destroyCallback ||
             typeof this.#delay !== 'number' ||
             typeof callback !== 'function') return this;
+        if (this.#repeatCallback) this.#abort(false);
         if (this.#job) this.#abort(!replace && this.#delay > 0 &&
                                    typeof this.#timestamp === 'number' &&
                                    Date.now() - this.#timestamp >= this.#delay);
         this.#timestamp ??= Date.now();
         this.#job = new Promise(resolve => this.#start(resolve)).then(
             isFinished => (isFinished && callback(), isFinished));
+        return this;
+    }
+
+    /**
+     * @param {() => void} callback
+     * @returns {this}
+     */
+    repeat(callback) {
+        if (!this.#destroyCallback ||
+            typeof this.#delay !== 'number' ||
+            typeof callback !== 'function') return this;
+        this.#abort(false);
+        this.#repeatCallback = callback;
+        const delay = this.#delay;
+        const priority = this.#highPriority ? GLib.PRIORITY_HIGH_IDLE : GLib.PRIORITY_DEFAULT_IDLE;
+        this.#id = GLib.timeout_add(priority, Math.max(1, delay), () => this.#repeat());
         return this;
     }
 
@@ -118,17 +138,35 @@ class Job {
     }
 
     /**
+     * @returns {boolean}
+     */
+    #repeat() {
+        if (!this.#destroyCallback ||
+            !this.#repeatCallback) return this.#abort(false);
+        try {
+            this.#repeatCallback();
+        } catch (e) {
+            Context.logError(`${this.constructor.name} failed.`, e);
+        }
+        if (!this.#repeatCallback) return GLib.SOURCE_REMOVE;
+        return GLib.SOURCE_CONTINUE;
+    }
+
+    /**
      * @param {boolean} [result]
+     * @returns {boolean}
      */
     #abort(result = false) {
         if (typeof this.#id === 'number') {
-            const isLaterType = !!Laters &&
+            const isRepeat = typeof this.#repeatCallback === 'function';
+            const isLaterType = !isRepeat && !!Laters &&
                                 typeof this.#delay === 'number' &&
                                 typeof LaterType[this.#delay] === 'number';
             if (isLaterType) Laters.remove(this.#id);
             else GLib.source_remove(this.#id);
         }
-        this.#finish(result);
+        this.#repeatCallback = null;
+        return this.#finish(result);
     }
 
     /**
