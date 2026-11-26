@@ -348,7 +348,7 @@ class IndicatorsBackend {
     }
 
     #animate() {
-        this.#job?.enqueue(() => {
+        this.#job?.repeat(() => {
             if (!this.#indicators) return;
             this.#triggerRerender();
             const validIndicators = [];
@@ -358,7 +358,7 @@ class IndicatorsBackend {
                 if (indicator.animate()) animationsCount++;
                 if (indicator.isValid) validIndicators.push(indicator);
             }
-            if (animationsCount) return this.#animate();
+            if (animationsCount) return;
             this.#indicators = validIndicators;
             this.#job?.enqueue(() => this.#triggerRerender());
         });
