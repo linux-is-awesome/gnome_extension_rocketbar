@@ -34,9 +34,24 @@ INTROSPECTION_XML = f'''
     <method name="ListWindows">
       <arg type="au" name="window_ids" direction="out"/>
     </method>
+    <method name="SetLauncherProgress">
+      <arg type="d" name="progress" direction="in"/>
+      <arg type="b" name="visible" direction="in"/>
+    </method>
+    <method name="ClearLauncherProgress"/>
+    <method name="RunLauncherProgressDemo">
+      <arg type="u" name="duration_sec" direction="in"/>
+    </method>
+    <method name="SetLauncherInfiniteProgress">
+      <arg type="b" name="visible" direction="in"/>
+    </method>
   </interface>
 </node>
 '''
+
+LAUNCHER_ENTRY_PATH = '/com/canonical/unity/launcherentry/1'
+LAUNCHER_ENTRY_IFACE = 'com.canonical.Unity.LauncherEntry'
+LAUNCHER_UPDATE_SIGNAL = 'Update'
 
 
 def parse_app_id(argv):
@@ -72,6 +87,8 @@ class FixtureApp(Gtk.Application):
         self._registration_id = 0
         self._connection = None
         self._iface_info = Gio.DBusNodeInfo.new_for_xml(INTROSPECTION_XML).interfaces[0]
+        self._progress_demo_step = 0
+        self._progress_demo_steps = 0
 
     def do_startup(self):
         Gtk.Application.do_startup(self)
@@ -139,6 +156,59 @@ class FixtureApp(Gtk.Application):
         self.quit()
         return False
 
+    def _launcher_app_uri(self):
+        return f'application://{self._app_id}.desktop'
+
+    def _emit_launcher_update(self, props):
+        if not self._connection:
+            return
+        variants = {}
+        for key, value in props.items():
+            if isinstance(value, bool):
+                variants[key] = GLib.Variant('b', value)
+            else:
+                variants[key] = GLib.Variant('d', float(value))
+        self._connection.emit_signal(
+            None,
+            LAUNCHER_ENTRY_PATH,
+            LAUNCHER_ENTRY_IFACE,
+            LAUNCHER_UPDATE_SIGNAL,
+            GLib.Variant('(sa{sv})', (self._launcher_app_uri(), variants)),
+        )
+
+    def set_launcher_progress(self, progress, visible):
+        props = {'progress-visible': visible}
+        if visible:
+            props['progress'] = progress
+        self._emit_launcher_update(props)
+
+    def clear_launcher_progress(self):
+        self._progress_demo_step = 0
+        self._progress_demo_steps = 0
+        self._emit_launcher_update({'progress-visible': False})
+
+    def set_launcher_infinite_progress(self, visible):
+        if visible:
+            self._emit_launcher_update({'progress-visible': True, 'progress': -1.0})
+        else:
+            self.clear_launcher_progress()
+
+    def run_launcher_progress_demo(self, duration_sec):
+        self._progress_demo_step = 0
+        self._progress_demo_steps = max(1, int(duration_sec) * 10)
+        self.set_launcher_progress(0.0, True)
+        GLib.timeout_add(100, self._on_progress_demo_tick)
+
+    def _on_progress_demo_tick(self):
+        self._progress_demo_step += 1
+        if self._progress_demo_step > self._progress_demo_steps:
+            self.clear_launcher_progress()
+            return False
+        progress = self._progress_demo_step / self._progress_demo_steps
+        self.set_launcher_progress(progress, True)
+        GLib.timeout_add(100, self._on_progress_demo_tick)
+        return False
+
     def _handle_method(self, connection, sender, object_path, interface_name,
                        method_name, parameters, invocation):
         try:
@@ -161,6 +231,21 @@ class FixtureApp(Gtk.Application):
             elif method_name == 'ListWindows':
                 ids = list(self._windows.keys())
                 invocation.return_value(GLib.Variant('(au)', (ids,)))
+            elif method_name == 'SetLauncherProgress':
+                progress, visible = parameters.unpack()
+                self.set_launcher_progress(progress, visible)
+                invocation.return_value(None)
+            elif method_name == 'ClearLauncherProgress':
+                self.clear_launcher_progress()
+                invocation.return_value(None)
+            elif method_name == 'RunLauncherProgressDemo':
+                duration_sec = parameters.unpack()[0]
+                self.run_launcher_progress_demo(duration_sec)
+                invocation.return_value(None)
+            elif method_name == 'SetLauncherInfiniteProgress':
+                visible = parameters.unpack()[0]
+                self.set_launcher_infinite_progress(visible)
+                invocation.return_value(None)
             else:
                 invocation.return_error_literal(
                     Gio.DBusError.quark(),

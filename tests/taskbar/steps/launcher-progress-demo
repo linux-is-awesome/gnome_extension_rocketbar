@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/common
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/common"
+
+if parse_fixture_count_arg "${1:-}"; then
+    shift
+fi
+
+duration_sec="${1:-24}"
+
+_demo_one() {
+    wait_for_bus_name 5
+    fixture_call RunLauncherProgressDemo "$duration_sec" >/dev/null
+    echo "launcher progress demo $FIXTURE_INSTANCE_ID: ${duration_sec}s" >&2
+}
+
+fixture_foreach _demo_one

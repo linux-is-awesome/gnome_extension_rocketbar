@@ -1,0 +1,5 @@
+# Taskbar block menu sections (scenario basenames). Actions live under tests/taskbar/actions/.
+General|smoke
+Launcher progress|launcher-progress-normal launcher-progress-infinite
+Pin and favorites|launch-then-pin kill-pinned unpin-close unpinned-close rapid-favorite-flip rapid-unpin-kill rapid-kill-unpin
+Desktop and install races|remove-desktop-kill remove-desktop-running desktop-restore-running desktop-restore-kill-race zombie-uninstall

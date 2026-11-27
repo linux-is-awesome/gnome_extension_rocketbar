@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Visual: deterministic 0→1 progress on the fixture icon (Unity Launcher API).
+# Requires Rocketbar Misc → Launcher API and Taskbar → Progress bars.
+set -euo pipefail
+# shellcheck source=../lib/scenario
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/scenario"
+
+DEMO_SEC=30
+
+echo "== launcher-progress-normal ×$FIXTURE_COUNT: install =="
+"$STEPS/install" "$FIXTURE_COUNT"
+"$STEPS/quit" "$FIXTURE_COUNT" || true
+
+echo "== launcher-progress-normal: launch =="
+"$STEPS/launch" "$FIXTURE_COUNT"
+"$STEPS/settle" "$FIXTURE_COUNT" 2
+scenario_expect_counts 1
+
+echo "== launcher-progress-normal: progress demo ${DEMO_SEC}s (watch taskbar) =="
+"$STEPS/launcher-progress-demo" "$FIXTURE_COUNT" "$DEMO_SEC"
+"$STEPS/settle" "$FIXTURE_COUNT" $((DEMO_SEC + 2))
+
+echo "== launcher-progress-normal: cleanup =="
+"$STEPS/clear-launcher-progress" "$FIXTURE_COUNT" || true
+"$STEPS/quit" "$FIXTURE_COUNT"
+"$STEPS/uninstall" "$FIXTURE_COUNT"
+
+echo "launcher-progress-normal ×$FIXTURE_COUNT ok (bar should have reached full then cleared)"

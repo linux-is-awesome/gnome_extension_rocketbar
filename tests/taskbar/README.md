@@ -1,8 +1,8 @@
 # Taskbar service fixture
 
-Host-native GTK4 app and step scripts for exercising Rocketbar’s taskbar service
+GTK4 fixture app and step scripts for exercising Rocketbar’s taskbar service
 (install/uninstall, launch/quit, pin/unpin, multi-window, multi-instance,
-desktop-removal races). Run on the host desktop session.
+desktop-removal races).
 
 ## Layout
 
@@ -13,6 +13,7 @@ desktop-removal races). Run on the host desktop session.
 | `lib/scenario` | Scenario bootstrap (optional count, cleanup, count asserts) |
 | `steps/` | Atomic actions (no file extension) |
 | `scenarios/` | Ordered compositions |
+| `menu` | Section titles for `./tests/start` (scenario groups; actions stay in `actions/`) |
 
 ## Dependencies
 
@@ -43,6 +44,8 @@ Instance count is asked before each run (default/last saved value remembered):
 ```bash
 ./tests/start
 ./tests/start taskbar smoke 5
+./tests/start taskbar launcher-progress-normal
+./tests/start taskbar launcher-progress-infinite
 ./tests/start taskbar open-apps 8   # launch N apps; wait until closed, then cleanup
 ./tests/start taskbar all -n 3
 ```
@@ -72,6 +75,15 @@ Odd / race cases (visual: lingering / duplicate taskbar icons):
 ./tests/taskbar/scenarios/unpinned-close
 ```
 
+Launcher API progress (visual — taskbar icon bar):
+
+```bash
+./tests/taskbar/scenarios/launcher-progress-normal
+./tests/taskbar/scenarios/launcher-progress-infinite
+```
+
+Enable **Misc → Launcher API** and **Taskbar → Progress bars** in Rocketbar prefs first.
+
 Scenarios that touch favorites restore `org.gnome.shell favorite-apps` on exit.
 
 ## Steps
@@ -83,6 +95,8 @@ Scenarios that touch favorites restore `org.gnome.shell favorite-apps` on exit.
 | `pin` / `unpin` | Favorites for each instance |
 | `remove-desktop` / `restore-desktop` | Delete or rewrite `.desktop` only (processes kept) |
 | `open-window` / `close-window` / `close-all` / `window-count` | D-Bus window control |
+| `set-launcher-progress` / `clear-launcher-progress` | Unity `LauncherEntry.Update` (fractional progress) |
+| `launcher-progress-demo` / `set-launcher-progress-infinite` | Animated 0→1 demo or infinite (`-1`) progress |
 | `settle` | Sleep (`settle [count] [seconds]` or `settle [seconds]`) |
 
 ## D-Bus control
@@ -90,4 +104,8 @@ Scenarios that touch favorites restore `org.gnome.shell favorite-apps` on exit.
 - Name: application id (`org.rocketbar.TaskbarFixture` or `….iN`)
 - Path: `/org/rocketbar/TaskbarFixture/Control`
 - Interface: `org.rocketbar.TaskbarFixture`
-- Methods: `OpenWindow`, `CloseWindow(u)`, `CloseAll`, `Quit`, `GetWindowCount`, `ListWindows`
+- Methods: `OpenWindow`, `CloseWindow(u)`, `CloseAll`, `Quit`, `GetWindowCount`, `ListWindows`,
+  `SetLauncherProgress(db)`, `ClearLauncherProgress`, `RunLauncherProgressDemo(u)`,
+  `SetLauncherInfiniteProgress(b)`
+- Progress signals use `application://<app-id>.desktop` on
+  `com.canonical.Unity.LauncherEntry` (`/com/canonical/unity/launcherentry/1`).

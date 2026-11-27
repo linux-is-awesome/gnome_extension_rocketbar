@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/common
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/common"
+
+if parse_fixture_count_arg "${1:-}"; then
+    shift
+fi
+
+progress="${1:?progress (0..1, or -1 for infinite)}"
+visible="${2:-1}"
+
+_gdbus_bool() {
+    case "$1" in
+        0 | false | no | off) printf '%s\n' false ;;
+        *) printf '%s\n' true ;;
+    esac
+}
+
+_set_one() {
+    wait_for_bus_name 5
+    fixture_call SetLauncherProgress "$progress" "$(_gdbus_bool "$visible")" >/dev/null
+    echo "launcher progress $FIXTURE_INSTANCE_ID: $progress visible=$visible" >&2
+}
+
+fixture_foreach _set_one

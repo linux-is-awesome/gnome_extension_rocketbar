@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Interactive launcher for Rocketbar host tests (block → scenarios).
+# Interactive launcher for Rocketbar tests (block → scenarios).
 set -euo pipefail
 
 TESTS_ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -54,20 +54,153 @@ list_blocks() {
     done | sort
 }
 
+block_menu_file() {
+    printf '%s/%s/menu\n' "$TESTS_ROOT" "$1"
+}
+
+scenario_is_listed() {
+    local needle="$1"
+    shift
+    local item
+    for item in "$@"; do
+        [[ "$item" == "$needle" ]] && return 0
+    done
+    return 1
+}
+
+# Prints scenario basenames in menu order (or sorted flat list when no menu file).
 list_scenarios() {
     local block="$1"
     local dir="$TESTS_ROOT/$block/scenarios"
-    local path name
+    local menu_file path name line section items
+    local -a names=() listed=() other=()
     [[ -d "$dir" ]] || return 0
-    if [[ -x "$dir/smoke" ]]; then
-        echo "smoke"
+    if [[ -f "$(block_menu_file "$block")" ]]; then
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            [[ "$line" =~ ^[[:space:]]*# ]] && continue
+            [[ -z "${line//[[:space:]]/}" ]] && continue
+            [[ "$line" == *"|"* ]] || continue
+            section="${line%%|*}"
+            section="${section#"${section%%[![:space:]]*}"}"
+            section="${section%"${section##*[![:space:]]}"}"
+            items="${line#*|}"
+            items="${items#"${items%%[![:space:]]*}"}"
+            for name in $items; do
+                if [[ -x "$dir/$name" ]] && ! scenario_is_listed "$name" "${listed[@]}"; then
+                    names+=("$name")
+                    listed+=("$name")
+                fi
+            done
+        done < "$(block_menu_file "$block")"
+        for path in "$dir"/*; do
+            [[ -x "$path" && -f "$path" ]] || continue
+            name="$(basename "$path")"
+            if scenario_is_listed "$name" "${listed[@]}"; then
+                continue
+            fi
+            other+=("$name")
+        done
+        if [[ ${#other[@]} -gt 0 ]]; then
+            local IFS=$'\n'
+            while IFS= read -r name; do
+                [[ -n "$name" ]] && names+=("$name")
+            done <<< "$(printf '%s\n' "${other[@]}" | LC_ALL=C sort)"
+        fi
+        local n
+        for n in "${names[@]}"; do
+            printf '%s\n' "$n"
+        done
+        return 0
     fi
     for path in "$dir"/*; do
         [[ -x "$path" && -f "$path" ]] || continue
-        name="$(basename "$path")"
-        [[ "$name" == "smoke" ]] && continue
-        printf '%s\n' "$name"
+        names+=("$(basename "$path")")
     done
+    if [[ ${#names[@]} -eq 0 ]]; then
+        return 0
+    fi
+    local IFS=$'\n'
+    while IFS= read -r name; do
+        [[ -n "$name" ]] && printf '%s\n' "$name"
+    done <<< "$(printf '%s\n' "${names[@]}" | LC_ALL=C sort)"
+}
+
+MENU_SECTION_LABELS=()
+MENU_SECTION_STARTS=()
+MENU_ENTRY_KIND=()
+MENU_ENTRY_NAME=()
+
+block_menu_prepare() {
+    local block="$1"
+    local dir="$TESTS_ROOT/$block/scenarios"
+    local menu_file path name line section items
+    local -a listed=() other=() section_items=() actions=()
+
+    MENU_SECTION_LABELS=()
+    MENU_SECTION_STARTS=()
+    MENU_ENTRY_KIND=()
+    MENU_ENTRY_NAME=()
+
+    _menu_append_entries() {
+        local title="$1"
+        local kind="$2"
+        shift 2
+        local -a items=("$@")
+        [[ ${#items[@]} -eq 0 ]] && return 0
+        MENU_SECTION_LABELS+=("$title")
+        MENU_SECTION_STARTS+=("${#MENU_ENTRY_KIND[@]}")
+        local item
+        for item in "${items[@]}"; do
+            MENU_ENTRY_KIND+=("$kind")
+            MENU_ENTRY_NAME+=("$item")
+        done
+    }
+
+    if [[ -f "$(block_menu_file "$block")" ]]; then
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            [[ "$line" =~ ^[[:space:]]*# ]] && continue
+            [[ -z "${line//[[:space:]]/}" ]] && continue
+            [[ "$line" == *"|"* ]] || continue
+            section="${line%%|*}"
+            section="${section#"${section%%[![:space:]]*}"}"
+            section="${section%"${section##*[![:space:]]}"}"
+            items="${line#*|}"
+            items="${items#"${items%%[![:space:]]*}"}"
+            section_items=()
+            for name in $items; do
+                if [[ -x "$dir/$name" ]] && ! scenario_is_listed "$name" "${listed[@]}"; then
+                    section_items+=("$name")
+                    listed+=("$name")
+                fi
+            done
+            _menu_append_entries "$section" scenario "${section_items[@]}"
+        done < "$(block_menu_file "$block")"
+        for path in "$dir"/*; do
+            [[ -x "$path" && -f "$path" ]] || continue
+            name="$(basename "$path")"
+            if scenario_is_listed "$name" "${listed[@]}"; then
+                continue
+            fi
+            other+=("$name")
+        done
+        if [[ ${#other[@]} -gt 0 ]]; then
+            local IFS=$'\n'
+            section_items=()
+            while IFS= read -r name; do
+                [[ -n "$name" ]] && section_items+=("$name")
+            done <<< "$(printf '%s\n' "${other[@]}" | LC_ALL=C sort)"
+            _menu_append_entries "Other" scenario "${section_items[@]}"
+        fi
+    elif [[ -d "$dir" ]]; then
+        section_items=()
+        while IFS= read -r name; do
+            [[ -n "$name" ]] && section_items+=("$name")
+        done < <(list_scenarios "$block")
+        _menu_append_entries "Scenarios" scenario "${section_items[@]}"
+    fi
+
+    mapfile -t actions < <(list_actions "$block")
+    _menu_append_entries "Actions" action "${actions[@]}"
 }
 
 list_actions() {
@@ -100,6 +233,8 @@ Options:
 Examples:
   $(basename "$0")
   $(basename "$0") taskbar smoke 5
+  $(basename "$0") taskbar launcher-progress-normal
+  $(basename "$0") taskbar launcher-progress-infinite
   $(basename "$0") taskbar all
   $(basename "$0") taskbar open-apps 8
 EOF
@@ -198,31 +333,35 @@ print_blocks_menu() {
 
 print_block_menu() {
     local block="$1"
-    local i=1 name
-    local -a scenarios actions
-    mapfile -t scenarios < <(list_scenarios "$block")
-    mapfile -t actions < <(list_actions "$block")
+    local menu_n=0 entry_idx=0 section_idx=0 name kind color
+
+    block_menu_prepare "$block"
 
     clear 2>/dev/null || true
     printf '%s%sRocketbar tests%s › %s%s%s\n\n' \
         "$C_BOLD" "$C_MAGENTA" "$C_RESET" "$C_BOLD$C_CYAN" "$block" "$C_RESET"
 
     printf '  %s%s%s) %sRun all scenarios%s\n' "$C_GREEN" "$C_BOLD" "a" "$C_BOLD" "$C_RESET"
-    printf '\n  %sScenarios%s\n' "$C_DIM" "$C_RESET"
-    if [[ ${#scenarios[@]} -eq 0 ]]; then
-        printf '    %s(none)%s\n' "$C_DIM" "$C_RESET"
-    else
-        for name in "${scenarios[@]}"; do
-            printf '  %s%d%s) %s\n' "$C_CYAN" "$i" "$C_RESET" "$name"
-            i=$((i + 1))
-        done
-    fi
 
-    if [[ ${#actions[@]} -gt 0 ]]; then
-        printf '\n  %sActions%s\n' "$C_DIM" "$C_RESET"
-        for name in "${actions[@]}"; do
-            printf '  %s%d%s) %s\n' "$C_YELLOW" "$i" "$C_RESET" "$name"
-            i=$((i + 1))
+    if [[ ${#MENU_ENTRY_KIND[@]} -eq 0 ]]; then
+        printf '\n    %s(no tests)%s\n' "$C_DIM" "$C_RESET"
+    else
+        while [[ "$entry_idx" -lt ${#MENU_ENTRY_KIND[@]} ]]; do
+            if [[ "$section_idx" -lt ${#MENU_SECTION_STARTS[@]} ]] &&
+               [[ "$entry_idx" -eq "${MENU_SECTION_STARTS[$section_idx]}" ]]; then
+                printf '\n  %s%s%s\n' "$C_DIM" "${MENU_SECTION_LABELS[$section_idx]}" "$C_RESET"
+                section_idx=$((section_idx + 1))
+            fi
+            kind="${MENU_ENTRY_KIND[$entry_idx]}"
+            name="${MENU_ENTRY_NAME[$entry_idx]}"
+            menu_n=$((menu_n + 1))
+            if [[ "$kind" == action ]]; then
+                color="$C_YELLOW"
+            else
+                color="$C_CYAN"
+            fi
+            printf '  %s%d%s) %s\n' "$color" "$menu_n" "$C_RESET" "$name"
+            entry_idx=$((entry_idx + 1))
         done
     fi
 
@@ -232,12 +371,9 @@ print_block_menu() {
 
 block_menu() {
     local block="$1"
-    local choice index name
-    local -a scenarios actions items
+    local choice index kind name
     while true; do
-        mapfile -t scenarios < <(list_scenarios "$block")
-        mapfile -t actions < <(list_actions "$block")
-        items=("${scenarios[@]}" "${actions[@]}")
+        block_menu_prepare "$block"
         print_block_menu "$block"
         printf '%sSelect%s: ' "$C_BOLD" "$C_RESET"
         read -r choice || choice=b
@@ -256,11 +392,12 @@ block_menu() {
                 ;;
             *)
                 if [[ "$choice" =~ ^[1-9][0-9]*$ ]] &&
-                   [[ "$choice" -ge 1 && "$choice" -le ${#items[@]} ]]; then
+                   [[ "$choice" -ge 1 && "$choice" -le ${#MENU_ENTRY_KIND[@]} ]]; then
                     index=$((choice - 1))
-                    name="${items[$index]}"
+                    kind="${MENU_ENTRY_KIND[$index]}"
+                    name="${MENU_ENTRY_NAME[$index]}"
                     prompt_instances
-                    if [[ "$index" -lt ${#scenarios[@]} ]]; then
+                    if [[ "$kind" == scenario ]]; then
                         run_scenario "$block" "$name" || true
                     else
                         run_action "$block" "$name" || true
@@ -300,14 +437,31 @@ blocks_menu() {
 }
 
 print_list() {
-    local block name
+    local block title idx entry_idx section_idx kind name
     for block in "${BLOCK_NAMES[@]}"; do
         printf '%s\n' "$block"
-        for name in $(list_scenarios "$block"); do
-            printf '  scenario  %s\n' "$name"
-        done
-        for name in $(list_actions "$block"); do
-            printf '  action    %s\n' "$name"
+        block_menu_prepare "$block"
+        if [[ ${#MENU_SECTION_LABELS[@]} -eq 0 ]]; then
+            printf '  %s(none)%s\n' "$C_DIM" "$C_RESET"
+            continue
+        fi
+        section_idx=0
+        entry_idx=0
+        while [[ "$entry_idx" -lt ${#MENU_ENTRY_KIND[@]} ]]; do
+            if [[ "$section_idx" -lt ${#MENU_SECTION_STARTS[@]} ]] &&
+               [[ "$entry_idx" -eq "${MENU_SECTION_STARTS[$section_idx]}" ]]; then
+                title="${MENU_SECTION_LABELS[$section_idx]}"
+                section_idx=$((section_idx + 1))
+                printf '  [%s]\n' "$title"
+            fi
+            kind="${MENU_ENTRY_KIND[$entry_idx]}"
+            name="${MENU_ENTRY_NAME[$entry_idx]}"
+            if [[ "$kind" == action ]]; then
+                printf '    action    %s\n' "$name"
+            else
+                printf '    scenario  %s\n' "$name"
+            fi
+            entry_idx=$((entry_idx + 1))
         done
     done
 }

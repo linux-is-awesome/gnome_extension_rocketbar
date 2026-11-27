@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Visual: indeterminate / infinite progress on the fixture icon (Unity Launcher API).
+# Requires Rocketbar Misc → Launcher API and Taskbar → Progress bars.
+set -euo pipefail
+# shellcheck source=../lib/scenario
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/scenario"
+
+HOLD_SEC=24
+
+echo "== launcher-progress-infinite ×$FIXTURE_COUNT: install =="
+"$STEPS/install" "$FIXTURE_COUNT"
+"$STEPS/quit" "$FIXTURE_COUNT" || true
+
+echo "== launcher-progress-infinite: launch =="
+"$STEPS/launch" "$FIXTURE_COUNT"
+"$STEPS/settle" "$FIXTURE_COUNT" 2
+scenario_expect_counts 1
+
+echo "== launcher-progress-infinite: infinite on (${HOLD_SEC}s, watch taskbar) =="
+"$STEPS/set-launcher-progress-infinite" "$FIXTURE_COUNT" 1
+"$STEPS/settle" "$FIXTURE_COUNT" "$HOLD_SEC"
+
+echo "== launcher-progress-infinite: clear =="
+"$STEPS/set-launcher-progress-infinite" "$FIXTURE_COUNT" 0
+"$STEPS/settle" "$FIXTURE_COUNT" 1
+
+echo "== launcher-progress-infinite: cleanup =="
+"$STEPS/quit" "$FIXTURE_COUNT"
+"$STEPS/uninstall" "$FIXTURE_COUNT"
+
+echo "launcher-progress-infinite ×$FIXTURE_COUNT ok (indeterminate bar should stop after clear)"

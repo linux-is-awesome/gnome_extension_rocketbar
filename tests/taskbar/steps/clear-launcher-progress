@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shellcheck source=../lib/common
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/common"
+
+if parse_fixture_count_arg "${1:-}"; then
+    shift
+fi
+
+_clear_one() {
+    if ! bus_has_owner; then
+        return 0
+    fi
+    fixture_call ClearLauncherProgress >/dev/null
+    echo "cleared launcher progress $FIXTURE_INSTANCE_ID" >&2
+}
+
+fixture_foreach _clear_one

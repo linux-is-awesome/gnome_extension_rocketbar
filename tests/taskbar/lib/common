@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared paths and helpers for taskbar fixture steps (host-native).
+# Shared paths and helpers for taskbar fixture steps.
 
 set -euo pipefail
 
