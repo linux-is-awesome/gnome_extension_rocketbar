@@ -165,7 +165,6 @@ class Job {
             if (isLaterType) Laters.remove(this.#id);
             else GLib.source_remove(this.#id);
         }
-        this.#repeatCallback = null;
         return this.#finish(result);
     }
 
@@ -175,6 +174,7 @@ class Job {
      */
     #finish(result = true) {
         this.#id = null;
+        this.#repeatCallback = null;
         this.#job?.catch(e => Context.logError(`${this.constructor.name} failed.`, e));
         if (this.#resolver) this.#resolver(result);
         this.#resolver = null;
